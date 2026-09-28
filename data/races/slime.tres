@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="RaceData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/races/slime_frames.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Slime"
+description = "Créature simple… mais capable d'absorber et d'évoluer."
+sprite_frames = ExtResource("2")

@@ -1,0 +1,107 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/world/world_generator.gd" id="1"]
+[ext_resource type="TileSet" path="res://assets/tiles/terrain_tileset.tres" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3"]
+[ext_resource type="Script" path="res://scenes/ui/hud.gd" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/props/hut.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/props/campfire.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/props/barrel.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/props/crate.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/npc/villager.tscn" id="9"]
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="10"]
+[ext_resource type="TileSet" path="res://assets/tiles/ground_dual.tres" id="11"]
+[ext_resource type="Resource" path="res://data/races/humain.tres" id="r0"]
+[ext_resource type="Resource" path="res://data/races/elfe.tres" id="r1"]
+[ext_resource type="Resource" path="res://data/races/nain.tres" id="r2"]
+[ext_resource type="Resource" path="res://data/races/gobelin.tres" id="r3"]
+[ext_resource type="Resource" path="res://data/races/orc.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/races/homme_lezard.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/races/oni.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/races/homme_bete.tres" id="r7"]
+[ext_resource type="Resource" path="res://data/races/lycan.tres" id="r8"]
+[ext_resource type="Resource" path="res://data/races/dryade.tres" id="r9"]
+[ext_resource type="Resource" path="res://data/races/demon.tres" id="r10"]
+[ext_resource type="Resource" path="res://data/races/vampire.tres" id="r11"]
+[ext_resource type="Resource" path="res://data/races/dragonide.tres" id="r12"]
+[ext_resource type="Resource" path="res://data/races/slime.tres" id="r13"]
+[ext_resource type="Resource" path="res://data/races/fee.tres" id="r14"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_height"]
+frequency = 0.025
+fractal_octaves = 4
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_moisture"]
+frequency = 0.04
+fractal_octaves = 3
+
+[node name="Main" type="Node2D"]
+
+[node name="Ambiance" type="CanvasModulate" parent="."]
+color = Color(0.74, 0.76, 0.92, 1)
+
+[node name="World" type="Node2D" parent="." node_paths=PackedStringArray("player")]
+y_sort_enabled = true
+script = ExtResource("1")
+player = NodePath("Player")
+height_noise = SubResource("FastNoiseLite_height")
+moisture_noise = SubResource("FastNoiseLite_moisture")
+hut_scene = ExtResource("5")
+campfire_scene = ExtResource("6")
+barrel_scene = ExtResource("7")
+crate_scene = ExtResource("8")
+villager_scene = ExtResource("9")
+villager_races = Array[ExtResource("10")]([ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14")])
+
+[node name="SolRendu" type="Node2D" parent="World"]
+z_index = -2
+position = Vector2(-16, -16)
+
+[node name="EauProfonde" type="TileMapLayer" parent="World/SolRendu"]
+tile_set = ExtResource("11")
+
+[node name="Eau" type="TileMapLayer" parent="World/SolRendu"]
+tile_set = ExtResource("11")
+
+[node name="Sable" type="TileMapLayer" parent="World/SolRendu"]
+tile_set = ExtResource("11")
+
+[node name="Herbe" type="TileMapLayer" parent="World/SolRendu"]
+tile_set = ExtResource("11")
+
+[node name="Roche" type="TileMapLayer" parent="World/SolRendu"]
+tile_set = ExtResource("11")
+
+[node name="Pave" type="TileMapLayer" parent="World/SolRendu"]
+tile_set = ExtResource("11")
+
+[node name="Sol" type="TileMapLayer" parent="World"]
+self_modulate = Color(1, 1, 1, 0)
+z_index = -1
+tile_set = ExtResource("2")
+
+[node name="Decor" type="TileMapLayer" parent="World"]
+y_sort_enabled = true
+tile_set = ExtResource("2")
+
+[node name="Village" type="Node2D" parent="World"]
+y_sort_enabled = true
+
+[node name="Player" parent="World" instance=ExtResource("3")]
+
+[node name="HUD" type="CanvasLayer" parent="." node_paths=PackedStringArray("world", "player")]
+script = ExtResource("4")
+world = NodePath("../World")
+player = NodePath("../World/Player")
+races = Array[ExtResource("10")]([ExtResource("r0"), ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14")])
+
+[node name="Info" type="Label" parent="HUD"]
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 700.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.1, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "Chargement..."

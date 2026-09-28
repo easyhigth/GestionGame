@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/player/player.gd" id="1"]
+[ext_resource type="Resource" path="res://data/player/player_stats.tres" id="2"]
+[ext_resource type="Resource" path="res://data/races/humain.tres" id="3"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/races/humain_frames.tres" id="4"]
+[ext_resource type="Texture2D" path="res://assets/characters/shadow.png" id="5"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_feet"]
+radius = 7.0
+
+[node name="Player" type="CharacterBody2D"]
+motion_mode = 1
+script = ExtResource("1")
+stats = ExtResource("2")
+race = ExtResource("3")
+
+[node name="Shadow" type="Sprite2D" parent="."]
+position = Vector2(0, -2)
+texture = ExtResource("5")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("4")
+animation = &"idle_down"
+autoplay = "idle_down"
+offset = Vector2(0, -17)
+
+[node name="Collision" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("CircleShape2D_feet")
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(0, -30)
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0

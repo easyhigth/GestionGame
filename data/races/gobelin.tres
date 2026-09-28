@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="RaceData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/races/gobelin_frames.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Gobelin"
+description = "Petits, rusés et nombreux. Évoluent vite quand on les nomme."
+sprite_frames = ExtResource("2")
