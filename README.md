@@ -12,6 +12,8 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - Clic molette maintenu + glisser (joystick droit) : tourner la caméra à 360° autour du héros et changer sa hauteur ; molette : zoom
 - Clic molette simple, F, L ou gâchette gauche : viser la cible la plus proche
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage
+- Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
+- T (ou croix gauche à la manette) : arbre de talents
 - I (ou Tab) : inventaire, équipement et artisanat
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures
 - E près d'un voyageur : lui parler pour le recruter
@@ -53,6 +55,16 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - **Passif** permanent (attaque, magie, vie, critiques, vol de vie, brûlure, étourdissement, ralentissement, absorption de force sur les ennemis vaincus, survie à un coup mortel, parade et esquive facilitées...), renforcé à chaque rang.
 - **Actif** (Q / RB), avec recharge (compteur en bas de l'écran) : explosion, salve de projectiles, ruée, météores, tourbillon, souffle, drain de vie, zones de poison ou de gel, aura, barrière, soin (aussi des habitants), terreur, exécution, téléportation...
 - Les compétences sont décrites dans `tools/skills_database.py` (qui génère `data/skills/*.tres`) : pour en ajouter une, écris une ligne `S(...)` et relance le script. Leur fonctionnement est dans `scripts/hero/hero_skill.gd`.
+
+## Arbre de talents
+- Touche **T** : trois branches de 9 talents, sur 5 rangs (niveaux 1, 3, 6, 10, 14).
+  - **Lame** (corps à corps) : Tourbillon, Charge du taureau, Frappe sismique, Onde tranchante, ultime Tempête de lames ; passifs d'attaque, de vitesse, de critiques, d'exécution.
+  - **Arcanes** (sorts) : Boule de feu, Éclair en chaîne, Nova de givre, Bouclier arcanique, Lumière guérisseuse, ultime Pluie de météores ; passifs de magie et de recharge.
+  - **Ombre** (agilité et survie) : Double saut, Pas de l'ombre (téléportation), Lames empoisonnées, Terreur, ultime Frénésie ; passifs de roulade, de vie, de régénération, de vol de vie.
+- **Points** : 1 par niveau gagné et 1 par âme de boss absorbée (les ultimes coûtent 2). Un talent s'apprend quand on a le niveau de son rang et un talent relié juste au-dessus. Le premier talent de la branche de ta classe est offert.
+- Ronds = passifs (bonus permanents), carrés = actifs (nouvelles attaques et nouveaux sorts). Un actif appris se range dans un des **4 emplacements** (touches 1-4), visibles à droite de la compétence en bas de l'écran avec leur recharge.
+- « Oublier les talents » rend tous les points. Les talents et les emplacements sont sauvegardés.
+- Les talents sont décrits dans `scripts/hero/talent_tree.gd` (liste `NODES` : ajoute une ligne pour créer un talent ; les actifs réutilisent les effets des compétences de `scripts/hero/hero_skill.gd`).
 
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.
@@ -172,3 +184,5 @@ Choix de conception :
 7. Sauvegarde, menus, équilibrage : écran titre, menu pause, 3 emplacements + sauvegarde automatique, options, 3 niveaux de difficulté, réglage des boss. **(fait)**
 
 Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : sons et musiques, cycle jour/nuit et météo, quêtes et personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
+
+Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la Going Medieval (plans bâtis par les habitants), **arbre de talents du héros** (27 talents, 15 nouvelles attaques et nouveaux sorts).

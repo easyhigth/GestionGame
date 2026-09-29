@@ -221,6 +221,7 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 		"pos": [pos.x, pos.y, pos.z],
 		"inventory": inv, "equipment": _equip_ids(p.equipment),
 		"souls": p.souls, "absorbed": p.skill.absorbed if p.skill else {},
+		"talents": p.talents.keys(), "ability_slots": p.ability_slots,
 	}
 
 
@@ -350,6 +351,17 @@ func apply_pending(world: WorldGenerator) -> void:
 		p.soul_bonus = {}
 		for id in pd.get("souls", {}):
 			p.absorb_soul(id, pd.souls[id])
+		# talents (une ancienne sauvegarde sans talents reçoit celui de la classe)
+		p.talents = {}
+		for id in pd.get("talents", []):
+			if not TalentTree.node(id).is_empty():
+				p.talents[id] = true
+		var slots: Array = pd.get("ability_slots", ["", "", "", ""])
+		p.ability_slots = ["", "", "", ""]
+		for i in mini(4, slots.size()):
+			p.ability_slots[i] = str(slots[i])
+		p._give_class_talent()
+		p._apply_talents()
 		var pos := Vector3(pd.pos[0], pd.pos[1], pd.pos[2])
 		world.load_area(pos)
 		p.global_position = pos
