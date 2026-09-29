@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="p"]
+
+[resource]
+script = ExtResource("1")
+id = "taverne"
+display_name = "Taverne"
+description = "On y boit, on y chante, on y échange les nouvelles."
+color = Color(0.816, 0.565, 0.251, 1)
+required = {"tonneau": 2, "table": 2, "comptoir": 1}
+min_cells = 12
+job_id = "aubergiste"
+job_name = "Aubergiste"
+job_slots = 1
+production = ExtResource("p")
+production_count = 3
+production_interval = 60.0
+hero_bonus = {"regen": 1.5}
+effect_text = "Rapporte des pièces d'or. Héros : +1,5 PV/s."

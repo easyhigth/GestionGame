@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "carapace"
+tier_names = PackedStringArray("Carapace", "Écailles", "Armure de Dragon")
+category = "Bête"
+color = Color(0.416, 0.627, 0.416, 1)
+description = "Une carapace naturelle te protège."
+passive = {"def_flat": 6.0}
+active = "barrier"
+active_params = {"dur": 4.0, "reduce": 0.5}
+cooldown = 15.0

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/bloc_planches.tres" id="it_bloc_planches"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="it_wood"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("it_bloc_planches")
+result_count = 4
+ingredients = Array[ExtResource("2")]([ExtResource("it_wood")])
+amounts = PackedInt32Array(1)
+category = "Construction"

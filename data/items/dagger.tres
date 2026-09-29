@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dagger"
+display_name = "Dague"
+description = "Courte et rapide, idéale pour les agiles."
+slot = 1
+attack = 4
+speed_bonus = 0.05
+reach = 1.35
+attack_speed = 1.5

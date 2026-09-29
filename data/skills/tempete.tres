@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "tempete"
+tier_names = PackedStringArray("Tempête", "Cyclone", "Fureur des Éléments")
+category = "Foudre"
+color = Color(0.753, 0.878, 1.000, 1)
+description = "Vent et foudre se déchaînent autour de toi."
+passive = {"stun": 0.05, "spd_pct": 0.05}
+active = "aura"
+active_params = {"radius": 3.0, "dps": 0.55, "dur": 5.0}
+cooldown = 15.0

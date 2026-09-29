@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "telekinesie"
+tier_names = PackedStringArray("Télékinésie", "Emprise", "Main Invisible")
+category = "Esprit"
+color = Color(0.878, 0.753, 1.000, 1)
+description = "Tu soulèves et projettes tes ennemis par la pensée."
+passive = {"mag_pct": 0.1}
+active = "cone"
+active_params = {"range": 6.0, "dmg": 1.0, "kb": 18.0, "angle": 70.0}
+cooldown = 8.0

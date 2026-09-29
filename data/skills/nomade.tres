@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "nomade"
+tier_names = PackedStringArray("Nomade", "Voyageur", "Marcheur des Mondes")
+category = "Survie"
+color = Color(0.878, 0.753, 0.565, 1)
+description = "Toujours en mouvement, tu parcours le monde plus vite."
+passive = {"spd_pct": 0.15, "xp": 0.1}
+active = "blink"
+active_params = {"dist": 7.0}
+cooldown = 6.0

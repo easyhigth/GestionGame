@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "tenebres_2"
+tier_names = PackedStringArray("Pas de l'ombre", "Voile noir", "Marcheur du Vide")
+category = "Ténèbres"
+color = Color(0.478, 0.227, 1.000, 1)
+description = "Tu disparais dans l'ombre et réapparais derrière l'ennemi."
+passive = {"lifesteal": 0.05, "crit": 0.05}
+active = "blink"
+active_params = {"dist": 6.0, "dmg": 1.4}
+cooldown = 6.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "esprit_ancien"
+tier_names = PackedStringArray("Esprit ancien", "Âme éveillée", "Esprit Primordial")
+category = "Esprit"
+color = Color(0.753, 0.941, 1.000, 1)
+description = "Les esprits anciens guident ta magie."
+passive = {"mag_pct": 0.15, "regen": 0.5}
+active = "volley"
+active_params = {"count": 4.0, "dmg": 0.9, "spread": 0.8}
+cooldown = 7.0

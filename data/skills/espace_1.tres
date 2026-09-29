@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "espace_1"
+tier_names = PackedStringArray("Pas spatial", "Distorsion", "Maître de l'Espace")
+category = "Espace"
+color = Color(0.753, 0.541, 1.000, 1)
+description = "Tu plies l'espace : tu te téléportes."
+passive = {"dodge": 0.08, "spd_pct": 0.05}
+active = "blink"
+active_params = {"dist": 8.0, "dmg": 1.0}
+cooldown = 5.0

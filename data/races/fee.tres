@@ -1,10 +1,21 @@
 [gd_resource type="Resource" script_class="RaceData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/races/fee_frames.tres" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/fairy_base.glb" id="m0"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/fairy_base_v2.glb" id="m1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/fairy_base_v3.glb" id="m2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/fairy_equipment.glb" id="eq"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Fée"
 description = "Minuscules et malicieuses, manipulent la magie des fleurs."
-sprite_frames = ExtResource("2")
+model = ExtResource("m0")
+villager_models = Array[PackedScene]([ExtResource("m0"), ExtResource("m1"), ExtResource("m2")])
+equipment = ExtResource("eq")
+model_id = "fairy"
+max_health = 65
+strength = 5
+agility = 16
+magic = 18
+speed_multiplier = 1.15

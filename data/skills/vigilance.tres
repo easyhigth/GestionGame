@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "vigilance"
+tier_names = PackedStringArray("Vigilance", "Garde éternelle", "Sentinelle")
+category = "Survie"
+color = Color(0.753, 0.847, 1.000, 1)
+description = "Rien ne te prend par surprise."
+passive = {"parry": 0.1, "dodge": 0.06, "def_flat": 2.0}
+active = "stun"
+active_params = {"radius": 3.5, "dur": 2.0}
+cooldown = 12.0

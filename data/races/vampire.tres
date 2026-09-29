@@ -1,10 +1,21 @@
 [gd_resource type="Resource" script_class="RaceData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/races/vampire_frames.tres" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/vampire_base.glb" id="m0"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/vampire_base_v2.glb" id="m1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/vampire_base_v3.glb" id="m2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/vampire_equipment.glb" id="eq"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Vampire"
 description = "Nobles de la nuit, charismatiques et immortels."
-sprite_frames = ExtResource("2")
+model = ExtResource("m0")
+villager_models = Array[PackedScene]([ExtResource("m0"), ExtResource("m1"), ExtResource("m2")])
+equipment = ExtResource("eq")
+model_id = "vampire"
+max_health = 100
+strength = 12
+agility = 12
+magic = 13
+speed_multiplier = 1.05

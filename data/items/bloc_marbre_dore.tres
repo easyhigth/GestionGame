@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/blocks/bloc_marbre_dore.png" id="t"]
+
+[resource]
+script = ExtResource("1")
+id = "bloc_marbre_dore"
+display_name = "Marbre doré"
+description = "Du marbre incrusté d'or : la marque d'un empire."
+max_stack = 99
+block_texture = ExtResource("t")
+block_tier = 5
+rarity = 3

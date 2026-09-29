@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "seigneur"
+tier_names = PackedStringArray("Chef", "Seigneur", "Roi des Monstres")
+category = "Commandement"
+color = Color(1.000, 0.816, 0.376, 1)
+description = "Ta présence inspire tes habitants et fait trembler tes ennemis."
+passive = {"def_flat": 2.0, "atk_pct": 0.05, "xp": 0.1}
+active = "fear"
+active_params = {"radius": 7.0, "dur": 3.5}
+cooldown = 16.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "instable"
+tier_names = PackedStringArray("Magie instable", "Surcharge", "Explosion Primordiale")
+category = "Chaos"
+color = Color(1.000, 0.541, 1.000, 1)
+description = "Ta magie déborde et explose autour de toi."
+passive = {"mag_pct": 0.12}
+active = "nova"
+active_params = {"radius": 5.0, "dmg": 2.0}
+cooldown = 14.0

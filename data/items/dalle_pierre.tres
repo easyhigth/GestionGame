@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/blocks/bloc_pierre_brute.png" id="t"]
+
+[resource]
+script = ExtResource("1")
+id = "dalle_pierre"
+display_name = "Dallage de pierre"
+description = "Une dalle de pierre de 50 cm pour les sols."
+max_stack = 99
+block_texture = ExtResource("t")
+block_tier = 1
+rarity = 1
+block_slab = true

@@ -1,0 +1,750 @@
+{
+ "human": {
+  "skin": [
+   "#f2c9a5",
+   "#e0a97f",
+   "#c68a5f",
+   "#9a6440",
+   "#6b4429"
+  ],
+  "hair": [
+   "#6b4423",
+   "#1e1a18",
+   "#d9b04a",
+   "#a8432a",
+   "#b8b8b8",
+   "#3a2a1e"
+  ],
+  "eye": [
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020",
+   "#f2d84a",
+   "#8a4ad0",
+   "#60ffb0"
+  ],
+  "styles": [
+   "Cheveux courts",
+   "Cheveux longs",
+   "Crête"
+  ],
+  "beard": true,
+  "hair_label": "Cheveux"
+ },
+ "elf": {
+  "skin": [
+   "#f6e0c8",
+   "#e6c9a8",
+   "#cfe0d8",
+   "#d9c8e8",
+   "#b08a6a"
+  ],
+  "hair": [
+   "#f0d36a",
+   "#e8e8f0",
+   "#2a2a3a",
+   "#4aa8a0",
+   "#c9a0e0",
+   "#d9704a"
+  ],
+  "eye": [
+   "#2a7ad0",
+   "#2aa060",
+   "#8a4ad0",
+   "#d08a2a",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Cheveux longs",
+   "Cheveux longs (variante)",
+   "Crête"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "goblin": {
+  "skin": [
+   "#7fb046",
+   "#9ab848",
+   "#5f9a5a",
+   "#6aa08a",
+   "#b0a840"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#f2d84a",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "orc": {
+  "skin": [
+   "#e3a59b",
+   "#d48a80",
+   "#b8826a",
+   "#a08a80",
+   "#d9b0a0"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#c02a1c",
+   "#e0902a",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "lizard": {
+  "skin": [
+   "#5a9a4a",
+   "#3a8a7a",
+   "#b08a3a",
+   "#a8503a",
+   "#5a7a9a"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#f2d84a",
+   "#f08030",
+   "#9af04a",
+   "#e04a3a",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "lycan": {
+  "skin": [
+   "#6a5a4a",
+   "#8a8a8a",
+   "#3a3a3e",
+   "#c8c0b0",
+   "#8a4a2a"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#f2c030",
+   "#e04a2a",
+   "#d0d0ff",
+   "#40e0a0",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Fourrure"
+ },
+ "vampire": {
+  "skin": [
+   "#e8e0dc",
+   "#d8d0d8",
+   "#c8c8d8",
+   "#b8b0b0",
+   "#e0c8c0"
+  ],
+  "hair": [
+   "#1a1a1e",
+   "#e8e8f0",
+   "#6a1a1a",
+   "#3a2a3a",
+   "#8a8a94"
+  ],
+  "eye": [
+   "#d02020",
+   "#e05020",
+   "#c02090",
+   "#d0a020",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#f2d84a"
+  ],
+  "styles": [
+   "Cheveux courts",
+   "Cheveux longs",
+   "Crête"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "demon": {
+  "skin": [
+   "#b83a30",
+   "#8a2a3a",
+   "#6a3a7a",
+   "#3a3a4a",
+   "#c85a2a"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#ffd030",
+   "#ffffff",
+   "#ff7020",
+   "#60ffb0",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Cornes d'ivoire",
+   "Cornes noires",
+   "Cornes dorées"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "dragonoid": {
+  "skin": [
+   "#b8402a",
+   "#3a6ab0",
+   "#4a8a3a",
+   "#c8a02a",
+   "#4a3a5a"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#ffa020",
+   "#ffffff",
+   "#f0e030",
+   "#60e0ff",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Cornes d'ivoire",
+   "Cornes noires",
+   "Cornes dorées"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "fairy": {
+  "skin": [
+   "#f6d8d0",
+   "#d8f0e0",
+   "#e0d0f4",
+   "#f0e0b8",
+   "#c8e0f4"
+  ],
+  "hair": [
+   "#f49ac8",
+   "#7ae0b0",
+   "#f0d36a",
+   "#b08af0",
+   "#7ac8f4",
+   "#ffffff"
+  ],
+  "eye": [
+   "#2a7ad0",
+   "#d03a8a",
+   "#2aa060",
+   "#8a4ad0",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Cheveux courts",
+   "Cheveux longs",
+   "Crête"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux et ailes"
+ },
+ "slime": {
+  "skin": [
+   "#4ad06a",
+   "#4a9af0",
+   "#f070b0",
+   "#a070f0",
+   "#f0b040",
+   "#40d0c8"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#1a1a1a",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "dwarf": {
+  "skin": [
+   "#e8b090",
+   "#d89a78",
+   "#c4805a",
+   "#9a6440",
+   "#f0c8a8"
+  ],
+  "hair": [
+   "#a8432a",
+   "#6b4423",
+   "#d9b04a",
+   "#3a2a1e",
+   "#b8b8b8",
+   "#1e1a18"
+  ],
+  "eye": [
+   "#3a5a8a",
+   "#4a3a20",
+   "#3a6a3a",
+   "#2a5a8a",
+   "#5a3a20",
+   "#d02020",
+   "#f2d84a"
+  ],
+  "styles": [
+   "Cheveux courts",
+   "Cheveux longs",
+   "Cheveux courts (variante)"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "hobgoblin": {
+  "skin": [
+   "#6a9a5a",
+   "#7aaa6a",
+   "#5a8a6a",
+   "#8ab06a",
+   "#6a8a7a"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#a8432a",
+   "#b8b8b8"
+  ],
+  "eye": [
+   "#f2d84a",
+   "#e0902a",
+   "#c02a1c",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "ogre": {
+  "skin": [
+   "#b84a3a",
+   "#3a6a9a",
+   "#6a9a4a",
+   "#c8a06a",
+   "#8a5a8a"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#ff5030",
+   "#f0d030",
+   "#ffffff",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Une corne",
+   "Deux cornes",
+   "Trois cornes"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "kijin": {
+  "skin": [
+   "#f0d8c8",
+   "#e8c0b0",
+   "#d8a898",
+   "#f4e0d8",
+   "#c8b0d0"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#e8e8f0",
+   "#e07a9a",
+   "#3a5a8a",
+   "#8a2a2a"
+  ],
+  "eye": [
+   "#d02020",
+   "#e0a020",
+   "#7a5ad0",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#f2d84a"
+  ],
+  "styles": [
+   "Deux cornes, cheveux longs",
+   "Une corne",
+   "Deux cornes, cheveux courts"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "beastfolk": {
+  "skin": [
+   "#d8a86a",
+   "#8a8a8a",
+   "#e8e0d0",
+   "#6a4a34",
+   "#d88a3a"
+  ],
+  "hair": [
+   "#6a4a34",
+   "#e8e0d0",
+   "#3a3a3e",
+   "#d88a3a",
+   "#a8a8a8"
+  ],
+  "eye": [
+   "#f2c030",
+   "#40e0a0",
+   "#60a0f0",
+   "#d08a2a",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Chat",
+   "Loup",
+   "Renard"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "harpy": {
+  "skin": [
+   "#f0d8c0",
+   "#e0b890",
+   "#c89870",
+   "#b8d0e0",
+   "#d8c8f0"
+  ],
+  "hair": [
+   "#4a8ad0",
+   "#d04a4a",
+   "#f0d040",
+   "#6ac86a",
+   "#e8e8f0",
+   "#8a4ad0"
+  ],
+  "eye": [
+   "#f2d84a",
+   "#2a7ad0",
+   "#d08a2a",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Plumes"
+ },
+ "spirit": {
+  "skin": [
+   "#ff7a3a",
+   "#4a9af0",
+   "#a8e8c8",
+   "#9a6a4a",
+   "#f0e070"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#ffffff",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Feu",
+   "Eau",
+   "Vent",
+   "Terre",
+   "Lumière"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "angel": {
+  "skin": [
+   "#f6e4d0",
+   "#f0d8b8",
+   "#e8c8a0",
+   "#d8b890",
+   "#f4ecf0"
+  ],
+  "hair": [
+   "#f0d36a",
+   "#f8f8f8",
+   "#d0d8f0",
+   "#e8b0a0",
+   "#9a9ab0"
+  ],
+  "eye": [
+   "#60c0ff",
+   "#ffd050",
+   "#a0f0c0",
+   "#e0a0ff",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Ange blanc",
+   "Ange doré",
+   "Ange déchu"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "dryad": {
+  "skin": [
+   "#8a6a4a",
+   "#6a8a4a",
+   "#a8886a",
+   "#7a9a6a",
+   "#b08a6a"
+  ],
+  "hair": [
+   "#4aa84a",
+   "#d8a02a",
+   "#e07a9a",
+   "#7ad06a",
+   "#c86a3a"
+  ],
+  "eye": [
+   "#60ff80",
+   "#f0d040",
+   "#ff90c0",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Feuillage"
+ },
+ "insectoid": {
+  "skin": [
+   "#3a5a3a",
+   "#2a3a5a",
+   "#6a2a2a",
+   "#5a4a2a",
+   "#2a5a5a"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#ff4a4a",
+   "#60ff60",
+   "#ffe030",
+   "#ff60e0",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ },
+ "undead": {
+  "skin": [
+   "#e8e0c8",
+   "#d8d0b0",
+   "#c8c0a0",
+   "#b8b8b8",
+   "#a8b8a0"
+  ],
+  "hair": [
+   "#1e1a18",
+   "#3a2a1e",
+   "#6b4423",
+   "#a8432a",
+   "#d9b04a",
+   "#b8b8b8",
+   "#e8e8f0",
+   "#3a5a8a"
+  ],
+  "eye": [
+   "#60ffb0",
+   "#ff5030",
+   "#60a0ff",
+   "#d060ff",
+   "#2a5a8a",
+   "#3a6a3a",
+   "#5a3a20",
+   "#d02020"
+  ],
+  "styles": [
+   "Style 1",
+   "Style 2",
+   "Style 3"
+  ],
+  "beard": false,
+  "hair_label": "Cheveux"
+ }
+}

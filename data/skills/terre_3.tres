@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "terre_3"
+tier_names = PackedStringArray("Peau de pierre", "Corps de granit", "Colosse")
+category = "Terre"
+color = Color(0.690, 0.541, 0.353, 1)
+description = "Une peau de pierre te rend presque invincible."
+passive = {"def_flat": 3.0, "hp_pct": 0.05, "poise": 0.3}
+active = "barrier"
+active_params = {"dur": 5.0, "reduce": 0.5}
+cooldown = 18.0

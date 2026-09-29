@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "caserne"
+display_name = "Camp d'entraînement"
+description = "Les gardes s'y entraînent au combat."
+color = Color(0.816, 0.353, 0.290, 1)
+required = {"mannequin": 2, "ratelier": 1}
+min_cells = 8
+job_id = "garde"
+job_name = "Garde"
+job_slots = 3
+hero_bonus = {"attack": 2.0}
+effect_text = "Entraîne les gardes. Héros : +2 attaque."

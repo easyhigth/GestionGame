@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "esprit_libre"
+tier_names = PackedStringArray("Esprit libre", "Âme vagabonde", "Liberté Absolue")
+category = "Esprit"
+color = Color(0.627, 1.000, 0.878, 1)
+description = "Rien ne t'entrave : tu vas plus vite, tu frappes plus vite."
+passive = {"spd_pct": 0.1, "aspd_pct": 0.08, "cdr_pct": 0.08}
+active = "blink"
+active_params = {"dist": 6.0, "dmg": 0.8}
+cooldown = 5.0

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/furniture/porte.glb" id="m"]
+
+[resource]
+script = ExtResource("1")
+id = "porte"
+display_name = "Porte"
+description = "Ferme une pièce. Obligatoire pour qu'une pièce soit reconnue."
+max_stack = 20
+furniture_model = ExtResource("m")
+furniture_solid = false
+furniture_door = true

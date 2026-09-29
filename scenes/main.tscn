@@ -1,7 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scenes/world/world_generator.gd" id="1"]
-[ext_resource type="TileSet" path="res://assets/tiles/terrain_tileset.tres" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3"]
 [ext_resource type="Script" path="res://scenes/ui/hud.gd" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/props/hut.tscn" id="5"]
@@ -10,7 +9,6 @@
 [ext_resource type="PackedScene" path="res://scenes/props/crate.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/npc/villager.tscn" id="9"]
 [ext_resource type="Script" path="res://scripts/data/race_data.gd" id="10"]
-[ext_resource type="TileSet" path="res://assets/tiles/ground_dual.tres" id="11"]
 [ext_resource type="Resource" path="res://data/races/humain.tres" id="r0"]
 [ext_resource type="Resource" path="res://data/races/elfe.tres" id="r1"]
 [ext_resource type="Resource" path="res://data/races/nain.tres" id="r2"]
@@ -26,6 +24,66 @@
 [ext_resource type="Resource" path="res://data/races/dragonide.tres" id="r12"]
 [ext_resource type="Resource" path="res://data/races/slime.tres" id="r13"]
 [ext_resource type="Resource" path="res://data/races/fee.tres" id="r14"]
+[ext_resource type="Resource" path="res://data/races/hobgobelin.tres" id="r15"]
+[ext_resource type="Resource" path="res://data/races/ogre.tres" id="r16"]
+[ext_resource type="Resource" path="res://data/races/harpie.tres" id="r17"]
+[ext_resource type="Resource" path="res://data/races/esprit.tres" id="r18"]
+[ext_resource type="Resource" path="res://data/races/ange.tres" id="r19"]
+[ext_resource type="Resource" path="res://data/races/insectoide.tres" id="r20"]
+[ext_resource type="Resource" path="res://data/races/mort_vivant.tres" id="r21"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_1.glb" id="e_oak_1"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_2.glb" id="e_oak_2"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_3.glb" id="e_oak_3"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_autumn.glb" id="e_oak_autumn"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_1.glb" id="e_pine_1"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_2.glb" id="e_pine_2"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_3.glb" id="e_pine_3"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/bush_1.glb" id="e_bush_1"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/bush_2.glb" id="e_bush_2"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="e_rock_1"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="e_rock_2"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_big.glb" id="e_rock_big"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/flowers_1.glb" id="e_flowers_1"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/flowers_2.glb" id="e_flowers_2"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="e_grass_1"]
+[ext_resource type="Resource" path="res://data/items/sword_wood.tres" id="it_sword_wood"]
+[ext_resource type="Resource" path="res://data/items/shield_wood.tres" id="it_shield_wood"]
+[ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="it_leather_cap"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="it_leather_armor"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="it_wood"]
+[ext_resource type="Resource" path="res://data/items/leather_pants.tres" id="it_leather_pants"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+[ext_resource type="Resource" path="res://data/items/sword_iron.tres" id="it_sword_iron"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
+[ext_resource type="Resource" path="res://data/items/axe.tres" id="it_axe"]
+[ext_resource type="Resource" path="res://data/items/spear.tres" id="it_spear"]
+[ext_resource type="Resource" path="res://data/items/war_hammer.tres" id="it_war_hammer"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="it_staff"]
+[ext_resource type="Resource" path="res://data/items/shield_iron.tres" id="it_shield_iron"]
+[ext_resource type="Resource" path="res://data/items/iron_helmet.tres" id="it_iron_helmet"]
+[ext_resource type="Resource" path="res://data/items/horned_helmet.tres" id="it_horned_helmet"]
+[ext_resource type="Resource" path="res://data/items/mage_hat.tres" id="it_mage_hat"]
+[ext_resource type="Resource" path="res://data/items/iron_armor.tres" id="it_iron_armor"]
+[ext_resource type="Resource" path="res://data/items/mage_robe.tres" id="it_mage_robe"]
+[ext_resource type="Resource" path="res://data/items/iron_gauntlets.tres" id="it_iron_gauntlets"]
+[ext_resource type="Resource" path="res://data/items/iron_greaves.tres" id="it_iron_greaves"]
+[ext_resource type="Resource" path="res://data/items/cape_blue.tres" id="it_cape_blue"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="it_stone"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="it_iron_ore"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/items/item_pickup.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://scenes/props/workbench.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://scenes/props/weapon_rack.tscn" id="14"]
+[ext_resource type="Script" path="res://scenes/ui/inventory_ui.gd" id="15"]
+[ext_resource type="Resource" path="res://data/enemies/loup.tres" id="en_loup"]
+[ext_resource type="Resource" path="res://data/enemies/loup_alpha.tres" id="en_loup_alpha"]
+[ext_resource type="Resource" path="res://data/enemies/sanglier.tres" id="en_sanglier"]
+[ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="en_gobelin_pillard"]
+[ext_resource type="Resource" path="res://data/enemies/squelette.tres" id="en_squelette"]
+[ext_resource type="Resource" path="res://data/enemies/orc_brute.tres" id="en_orc_brute"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="16"]
+[ext_resource type="Script" path="res://scripts/build/build_grid.gd" id="bg"]
+[ext_resource type="Script" path="res://scripts/build/kingdom.gd" id="kg"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_height"]
 frequency = 0.025
@@ -35,57 +93,69 @@ fractal_octaves = 4
 frequency = 0.04
 fractal_octaves = 3
 
-[node name="Main" type="Node2D"]
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.53, 0.74, 0.9, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.74, 0.78, 0.95, 1)
+ambient_light_energy = 0.45
+tonemap_mode = 0
 
-[node name="Ambiance" type="CanvasModulate" parent="."]
-color = Color(0.74, 0.76, 0.92, 1)
+[node name="Main" type="Node3D"]
 
-[node name="World" type="Node2D" parent="." node_paths=PackedStringArray("player")]
-y_sort_enabled = true
+[node name="Ambiance" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Soleil" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.383, 0.3214, 0, 0.6428, 0.766, -0.5, -0.6634, 0.5567, 0, 20, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 0.95
+shadow_enabled = true
+directional_shadow_max_distance = 45.0
+
+[node name="World" type="Node3D" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("1")
 player = NodePath("Player")
 height_noise = SubResource("FastNoiseLite_height")
 moisture_noise = SubResource("FastNoiseLite_moisture")
+oak_models = Array[PackedScene]([ExtResource("e_oak_1"), ExtResource("e_oak_2"), ExtResource("e_oak_3"), ExtResource("e_oak_1"), ExtResource("e_oak_2"), ExtResource("e_oak_3"), ExtResource("e_oak_autumn")])
+pine_models = Array[PackedScene]([ExtResource("e_pine_1"), ExtResource("e_pine_2"), ExtResource("e_pine_3")])
+bush_models = Array[PackedScene]([ExtResource("e_bush_1"), ExtResource("e_bush_2")])
+rock_models = Array[PackedScene]([ExtResource("e_rock_1"), ExtResource("e_rock_2"), ExtResource("e_rock_big")])
+flower_models = Array[PackedScene]([ExtResource("e_flowers_1"), ExtResource("e_flowers_2")])
+grass_models = Array[PackedScene]([ExtResource("e_grass_1")])
 hut_scene = ExtResource("5")
 campfire_scene = ExtResource("6")
 barrel_scene = ExtResource("7")
 crate_scene = ExtResource("8")
 villager_scene = ExtResource("9")
-villager_races = Array[ExtResource("10")]([ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14")])
+workbench_scene = ExtResource("13")
+weapon_rack_scene = ExtResource("14")
+pickup_scene = ExtResource("12")
+forest_enemies = Array[ExtResource("16")]([ExtResource("en_loup"), ExtResource("en_loup"), ExtResource("en_sanglier")])
+plains_enemies = Array[ExtResource("16")]([ExtResource("en_gobelin_pillard"), ExtResource("en_sanglier"), ExtResource("en_gobelin_pillard")])
+rock_enemies = Array[ExtResource("16")]([ExtResource("en_squelette"), ExtResource("en_squelette"), ExtResource("en_gobelin_pillard")])
+danger_enemies = Array[ExtResource("16")]([ExtResource("en_orc_brute"), ExtResource("en_loup_alpha"), ExtResource("en_orc_brute")])
+starting_loot = Array[ExtResource("11")]([ExtResource("it_sword_wood"), ExtResource("it_shield_wood"), ExtResource("it_leather_cap"), ExtResource("it_leather_armor"), ExtResource("it_wood"), ExtResource("it_leather_pants"), ExtResource("it_fiber"), ExtResource("it_sword_iron"), ExtResource("it_leather"), ExtResource("it_wood")])
+wild_loot = Array[ExtResource("11")]([ExtResource("it_sword_iron"), ExtResource("it_axe"), ExtResource("it_spear"), ExtResource("it_war_hammer"), ExtResource("it_staff"), ExtResource("it_shield_iron"), ExtResource("it_iron_helmet"), ExtResource("it_horned_helmet"), ExtResource("it_mage_hat"), ExtResource("it_iron_armor"), ExtResource("it_mage_robe"), ExtResource("it_iron_gauntlets"), ExtResource("it_iron_greaves"), ExtResource("it_cape_blue")])
+wood_item = ExtResource("it_wood")
+stone_item = ExtResource("it_stone")
+iron_ore_item = ExtResource("it_iron_ore")
+leather_item = ExtResource("it_leather")
+fiber_item = ExtResource("it_fiber")
+villager_races = Array[ExtResource("10")]([ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14"), ExtResource("r15"), ExtResource("r16"), ExtResource("r17"), ExtResource("r18"), ExtResource("r19"), ExtResource("r20"), ExtResource("r21")])
 
-[node name="SolRendu" type="Node2D" parent="World"]
-z_index = -2
-position = Vector2(-16, -16)
+[node name="Terrain" type="Node3D" parent="World"]
 
-[node name="EauProfonde" type="TileMapLayer" parent="World/SolRendu"]
-tile_set = ExtResource("11")
+[node name="Decor" type="Node3D" parent="World"]
 
-[node name="Eau" type="TileMapLayer" parent="World/SolRendu"]
-tile_set = ExtResource("11")
+[node name="Build" type="Node3D" parent="World"]
+script = ExtResource("bg")
 
-[node name="Sable" type="TileMapLayer" parent="World/SolRendu"]
-tile_set = ExtResource("11")
+[node name="Royaume" type="Node" parent="World"]
+script = ExtResource("kg")
 
-[node name="Herbe" type="TileMapLayer" parent="World/SolRendu"]
-tile_set = ExtResource("11")
-
-[node name="Roche" type="TileMapLayer" parent="World/SolRendu"]
-tile_set = ExtResource("11")
-
-[node name="Pave" type="TileMapLayer" parent="World/SolRendu"]
-tile_set = ExtResource("11")
-
-[node name="Sol" type="TileMapLayer" parent="World"]
-self_modulate = Color(1, 1, 1, 0)
-z_index = -1
-tile_set = ExtResource("2")
-
-[node name="Decor" type="TileMapLayer" parent="World"]
-y_sort_enabled = true
-tile_set = ExtResource("2")
-
-[node name="Village" type="Node2D" parent="World"]
-y_sort_enabled = true
+[node name="Village" type="Node3D" parent="World"]
 
 [node name="Player" parent="World" instance=ExtResource("3")]
 
@@ -93,15 +163,25 @@ y_sort_enabled = true
 script = ExtResource("4")
 world = NodePath("../World")
 player = NodePath("../World/Player")
-races = Array[ExtResource("10")]([ExtResource("r0"), ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14")])
+races = Array[ExtResource("10")]([ExtResource("r0"), ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14"), ExtResource("r15"), ExtResource("r16"), ExtResource("r17"), ExtResource("r18"), ExtResource("r19"), ExtResource("r20"), ExtResource("r21")])
+
+[node name="Inventaire" type="Control" parent="HUD"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("15")
 
 [node name="Info" type="Label" parent="HUD"]
 offset_left = 10.0
 offset_top = 8.0
-offset_right = 700.0
-offset_bottom = 60.0
+offset_right = 950.0
+offset_bottom = 44.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.1, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "Chargement..."

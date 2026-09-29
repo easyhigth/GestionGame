@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/furniture/four_pain.glb" id="m"]
+
+[resource]
+script = ExtResource("1")
+id = "four_pain"
+display_name = "Four à pain"
+description = "Un four en briques pour le pain."
+max_stack = 20
+furniture_model = ExtResource("m")
+furniture_light = true

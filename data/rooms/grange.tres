@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="p"]
+
+[resource]
+script = ExtResource("1")
+id = "grange"
+display_name = "Grange"
+description = "Les bêtes de la ferme y sont nourries."
+color = Color(0.784, 0.627, 0.376, 1)
+required = {"auge": 1, "mangeoire": 1, "coffre": 1}
+min_cells = 8
+job_id = "fermier"
+job_name = "Fermier"
+job_slots = 2
+production = ExtResource("p")
+production_count = 1
+production_interval = 70.0
+effect_text = "Produit du cuir."

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "tenebres_3"
+tier_names = PackedStringArray("Sphère d'ombre", "Trou noir", "Singularité")
+category = "Ténèbres"
+color = Color(0.478, 0.227, 1.000, 1)
+description = "Une sphère d'ombre aspire tout."
+passive = {"lifesteal": 0.05}
+active = "vortex"
+active_params = {"radius": 5.5, "dmg": 1.4}
+cooldown = 14.0

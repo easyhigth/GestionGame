@@ -3,34 +3,57 @@
 [ext_resource type="Script" path="res://scenes/player/player.gd" id="1"]
 [ext_resource type="Resource" path="res://data/player/player_stats.tres" id="2"]
 [ext_resource type="Resource" path="res://data/races/humain.tres" id="3"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/races/humain_frames.tres" id="4"]
-[ext_resource type="Texture2D" path="res://assets/characters/shadow.png" id="5"]
+[ext_resource type="Script" path="res://scripts/voxel_character.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/items/character_equipment.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="6"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_feet"]
-radius = 7.0
+[ext_resource type="Resource" path="res://data/items/bloc_planches.tres" id="kit_bloc_planches"]
+[ext_resource type="Resource" path="res://data/items/bloc_rondins.tres" id="kit_bloc_rondins"]
+[ext_resource type="Resource" path="res://data/items/dalle_planches.tres" id="kit_dalle_planches"]
+[ext_resource type="Resource" path="res://data/items/bloc_chaume.tres" id="kit_bloc_chaume"]
+[ext_resource type="Resource" path="res://data/items/porte.tres" id="kit_porte"]
+[ext_resource type="Resource" path="res://data/items/etabli.tres" id="kit_etabli"]
+[ext_resource type="Resource" path="res://data/items/lit.tres" id="kit_lit"]
+[ext_resource type="Resource" path="res://data/items/coffre.tres" id="kit_coffre"]
+[ext_resource type="Resource" path="res://data/items/table.tres" id="kit_table"]
+[ext_resource type="Resource" path="res://data/items/chaise.tres" id="kit_chaise"]
+[ext_resource type="Resource" path="res://data/items/torche.tres" id="kit_torche"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="kit_wood"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="kit_stone"]
+[ext_resource type="Script" path="res://scripts/build/build_mode.gd" id="bm"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="itd"]
 
-[node name="Player" type="CharacterBody2D"]
+[sub_resource type="CapsuleShape3D" id="Shape_body"]
+radius = 0.3
+height = 1.6
+
+[node name="Player" type="CharacterBody3D"]
 motion_mode = 1
 script = ExtResource("1")
 stats = ExtResource("2")
 race = ExtResource("3")
+founder_kit = Array[ExtResource("itd")]([ExtResource("kit_bloc_planches"), ExtResource("kit_bloc_rondins"), ExtResource("kit_dalle_planches"), ExtResource("kit_bloc_chaume"), ExtResource("kit_porte"), ExtResource("kit_etabli"), ExtResource("kit_lit"), ExtResource("kit_coffre"), ExtResource("kit_table"), ExtResource("kit_chaise"), ExtResource("kit_torche"), ExtResource("kit_wood"), ExtResource("kit_stone")])
+founder_counts = PackedInt32Array(80, 20, 40, 40, 3, 1, 2, 2, 1, 2, 6, 20, 10)
 
-[node name="Shadow" type="Sprite2D" parent="."]
-position = Vector2(0, -2)
-texture = ExtResource("5")
+[node name="Visual" type="Node3D" parent="."]
+script = ExtResource("4")
 
-[node name="Sprite" type="AnimatedSprite2D" parent="."]
-scale = Vector2(2, 2)
-sprite_frames = ExtResource("4")
-animation = &"idle_down"
-autoplay = "idle_down"
-offset = Vector2(0, -17)
+[node name="Equipment" type="Node" parent="."]
+script = ExtResource("5")
 
-[node name="Collision" type="CollisionShape2D" parent="."]
-position = Vector2(0, -4)
-shape = SubResource("CircleShape2D_feet")
+[node name="Health" type="Node" parent="."]
+script = ExtResource("6")
+regen_per_second = 2.0
+regen_delay = 5.0
 
-[node name="Camera" type="Camera2D" parent="."]
-position = Vector2(0, -30)
-position_smoothing_enabled = true
-position_smoothing_speed = 8.0
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_body")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.633, 0.774, 0, -0.774, 0.633, 0, 11, 9)
+fov = 40.0
+far = 250.0
+
+[node name="BuildMode" type="Node3D" parent="."]
+script = ExtResource("bm")

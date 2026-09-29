@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "nature_2"
+tier_names = PackedStringArray("Racines", "Lianes", "Étreinte de la Forêt")
+category = "Nature"
+color = Color(0.353, 0.816, 0.290, 1)
+description = "Des racines immobilisent tes ennemis."
+passive = {"regen": 1.5}
+active = "stun"
+active_params = {"radius": 4.5, "dur": 2.5, "dmg": 0.5}
+cooldown = 13.0

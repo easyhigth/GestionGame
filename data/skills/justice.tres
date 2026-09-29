@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "justice"
+tier_names = PackedStringArray("Justice", "Jugement", "Arbitre Céleste")
+category = "Vertu"
+color = Color(1.000, 0.941, 0.541, 1)
+description = "Une lumière frappe les ennemis affaiblis et les achève."
+passive = {"execute": 0.4, "def_flat": 2.0}
+active = "execute"
+active_params = {"range": 8.0, "dmg": 2.5, "threshold": 0.35}
+cooldown = 10.0

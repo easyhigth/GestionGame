@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/creatures/boar.glb" id="model"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Sanglier"
+model = ExtResource("model")
+color = Color(0.878, 0.627, 0.376, 1)
+max_health = 65
+attack = 12
+defense = 5
+move_speed = 3.8
+aggro_range = 7
+leash_range = 16
+attack_range = 1.5
+attack_cooldown = 1.3
+knockback = 6.5
+body_radius = 0.55
+loot = Array[ExtResource("2")]([ExtResource("it_leather"), ExtResource("it_leather"), ExtResource("it_fiber")])
+loot_chances = PackedFloat32Array(0.9, 0.5, 0.4)
+attack_moves = PackedStringArray("charge_ram", "bite")
+attack_speed = 1.0
+poise = 30

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "son_1"
+tier_names = PackedStringArray("Écho", "Résonance", "Voix du Monde")
+category = "Son"
+color = Color(1.000, 0.816, 0.941, 1)
+description = "Ta voix devient une arme."
+passive = {"stun": 0.05}
+active = "nova"
+active_params = {"radius": 4.0, "dmg": 1.1, "stun": 0.8}
+cooldown = 10.0

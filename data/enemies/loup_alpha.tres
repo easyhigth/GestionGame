@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/creatures/wolf_alpha.glb" id="model"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
+[ext_resource type="Resource" path="res://data/items/cape_red.tres" id="it_cape_red"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Loup alpha"
+model = ExtResource("model")
+color = Color(1.000, 0.416, 0.290, 1)
+max_health = 95
+attack = 14
+defense = 4
+move_speed = 4.6
+aggro_range = 11
+leash_range = 22
+attack_range = 1.9
+attack_cooldown = 0.9
+knockback = 5.0
+body_radius = 0.6
+loot = Array[ExtResource("2")]([ExtResource("it_leather"), ExtResource("it_leather"), ExtResource("it_cape_red")])
+loot_chances = PackedFloat32Array(1.0, 0.8, 0.12)
+attack_moves = PackedStringArray("bite", "bite", "charge_ram")
+attack_speed = 1.0
+poise = 45

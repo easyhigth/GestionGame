@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "orgueil"
+tier_names = PackedStringArray("Orgueil", "Arrogance", "Souverain Absolu")
+category = "Péché"
+color = Color(0.941, 0.878, 1.000, 1)
+description = "Ta seule présence écrase les faibles : ils perdent l'équilibre et tremblent."
+passive = {"poise": 0.4, "crit_mult": 0.3}
+active = "fear"
+active_params = {"radius": 6.0, "dur": 4.0}
+cooldown = 18.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "temps_2"
+tier_names = PackedStringArray("Hâte", "Accélération", "Instant Éternel")
+category = "Temps"
+color = Color(0.941, 0.816, 0.627, 1)
+description = "Tu accélères ton propre temps."
+passive = {"cdr_pct": 0.1}
+active = "buff"
+active_params = {"aspd": 0.5, "spd": 0.3, "dur": 6.0}
+cooldown = 16.0

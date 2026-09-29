@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "colere"
+tier_names = PackedStringArray("Colère", "Fureur", "Courroux Divin")
+category = "Péché"
+color = Color(1.000, 0.227, 0.165, 1)
+description = "Plus tu es blessé, plus tu frappes fort. Libère ta rage en une explosion de flammes."
+passive = {"berserk": 0.35, "atk_pct": 0.05}
+active = "nova"
+active_params = {"radius": 3.5, "dmg": 1.8, "burn": 0.3}
+cooldown = 12.0

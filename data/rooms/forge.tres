@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="p"]
+
+[resource]
+script = ExtResource("1")
+id = "forge"
+display_name = "Forge"
+description = "On y fond le métal et on y forge les armes."
+color = Color(1.000, 0.541, 0.290, 1)
+required = {"enclume": 1, "foyer_forge": 1, "etabli": 1}
+min_cells = 6
+job_id = "forgeron"
+job_name = "Forgeron"
+job_slots = 2
+production = ExtResource("p")
+production_count = 1
+production_interval = 75.0
+effect_text = "Produit des lingots de fer."

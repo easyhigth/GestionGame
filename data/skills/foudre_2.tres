@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "foudre_2"
+tier_names = PackedStringArray("Éclair", "Foudre vivante", "Dieu du Tonnerre")
+category = "Foudre"
+color = Color(1.000, 0.910, 0.290, 1)
+description = "Tu deviens l'éclair et traverses tes ennemis."
+passive = {"stun": 0.08, "spd_pct": 0.05}
+active = "dash"
+active_params = {"dist": 8.0, "dmg": 1.6, "stun": 1.0}
+cooldown = 7.0

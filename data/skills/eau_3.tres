@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eau_3"
+tier_names = PackedStringArray("Lame d'eau", "Jet tranchant", "Coupe-Mers")
+category = "Eau"
+color = Color(0.227, 0.627, 1.000, 1)
+description = "Des lames d'eau tranchantes filent vers l'ennemi."
+passive = {"regen": 1.0, "crit": 0.05}
+active = "volley"
+active_params = {"count": 2.0, "dmg": 1.4, "spread": 0.2}
+cooldown = 6.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "avarice"
+tier_names = PackedStringArray("Avarice", "Cupidité", "Roi des Trésors")
+category = "Péché"
+color = Color(1.000, 0.824, 0.227, 1)
+description = "Rien ne t'échappe : les monstres lâchent bien plus de butin."
+passive = {"loot": 0.5, "xp": 0.1}
+active = "buff"
+active_params = {"crit": 0.3, "dur": 8.0}
+cooldown = 20.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "stratege"
+tier_names = PackedStringArray("Stratège", "Tacticien", "Maître de Guerre")
+category = "Sagesse"
+color = Color(0.753, 0.784, 1.000, 1)
+description = "Chaque ennemi a son point faible : tes coups critiques sont dévastateurs."
+passive = {"crit": 0.1, "crit_mult": 0.4}
+active = "buff"
+active_params = {"crit": 0.4, "dur": 6.0}
+cooldown = 16.0

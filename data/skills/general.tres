@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "general"
+tier_names = PackedStringArray("Capitaine", "Général", "Empereur")
+category = "Commandement"
+color = Color(0.878, 0.690, 0.376, 1)
+description = "Tu mènes au combat : tes coups et ceux de tes alliés redoublent."
+passive = {"atk_pct": 0.1, "def_flat": 2.0}
+active = "buff"
+active_params = {"atk": 0.3, "def": 4.0, "dur": 8.0}
+cooldown = 16.0

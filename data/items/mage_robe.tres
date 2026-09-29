@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mage_robe"
+display_name = "Robe de mage"
+description = "Une robe tissée de fils enchantés."
+slot = 4
+rarity = 1
+defense = 1
+magic = 6

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "spear"
+display_name = "Lance"
+description = "Longue portée, l'arme préférée des gardes."
+slot = 1
+rarity = 1
+attack = 9
+defense = 1
+reach = 2.5
+attack_speed = 0.9
+knockback = 1.0
+weapon_style = 1

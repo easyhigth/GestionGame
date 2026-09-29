@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="iron_ingot"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="iron_ore"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="wood"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("iron_ingot")
+ingredients = Array[ExtResource("2")]([ExtResource("iron_ore"), ExtResource("wood")])
+amounts = PackedInt32Array(2, 1)
+needs_workbench = true
+category = "Matériaux"

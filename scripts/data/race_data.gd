@@ -4,10 +4,17 @@ extends Resource
 ## Chaque race est un fichier .tres dans data/races/ : duplique-en un pour en créer une nouvelle.
 
 @export var display_name: String = "Race"
+## Nom du modèle dans les fichiers .glb (ex. « human », « kijin »).
+@export var model_id: String = ""
 @export_multiline var description: String = ""
-## Animations (idle_down, walk_down, idle_up, walk_up, idle_side, walk_side).
-## La vue « side » regarde vers la gauche ; elle est retournée automatiquement vers la droite.
-@export var sprite_frames: SpriteFrames
+## Modèle 3D voxel (.glb) du joueur quand il joue cette race (version nue, l'équipement s'ajoute par-dessus).
+## Les modèles sont dans assets/characters/models/base/ (race_base.glb, _v2 et _v3 = autres palettes).
+@export var model: PackedScene
+## Modèles possibles pour les habitants de cette race (un est tiré au hasard).
+## Laisser vide pour utiliser « model ».
+@export var villager_models: Array[PackedScene] = []
+## Équipements taillés pour cette race (fichier assets/equipment/<race>_equipment.glb).
+@export var equipment: PackedScene
 
 @export_group("Caractéristiques de base")
 @export var max_health: int = 100

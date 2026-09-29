@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/furniture/foyer_forge.glb" id="m"]
+
+[resource]
+script = ExtResource("1")
+id = "foyer_forge"
+display_name = "Foyer de forge"
+description = "Un foyer brûlant pour fondre le métal."
+max_stack = 20
+furniture_model = ExtResource("m")
+furniture_light = true

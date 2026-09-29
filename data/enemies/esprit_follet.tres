@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/spirit_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/spirit_equipment.glb" id="r3"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/mage_hat.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="r6"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Esprit follet"
+model = ExtResource("r2")
+equipment_library = ExtResource("r3")
+equipment = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5")])
+model_scale = 1.0
+color = Color(0.541, 0.941, 1.000, 1)
+max_health = 120
+attack = 20
+defense = 3
+move_speed = 4.2
+aggro_range = 10
+leash_range = 20
+attack_range = 1.8
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 1.1
+poise = 20
+attack_cooldown = 1.0
+knockback = 4.0
+body_radius = 0.35
+loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r6")])
+loot_chances = PackedFloat32Array(0.12, 0.1, 0.5)

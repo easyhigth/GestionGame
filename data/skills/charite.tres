@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "charite"
+tier_names = PackedStringArray("Charité", "Bienveillance", "Grâce Infinie")
+category = "Vertu"
+color = Color(1.000, 0.878, 0.627, 1)
+description = "Tu soignes tes blessures et celles des habitants proches."
+passive = {"regen": 1.5, "hp_pct": 0.05}
+active = "heal"
+active_params = {"pct": 0.35, "allies": 1.0}
+cooldown = 18.0

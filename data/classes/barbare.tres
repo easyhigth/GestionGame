@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/war_hammer.tres" id="it_war_hammer"]
+[ext_resource type="Resource" path="res://data/items/leather_bracers.tres" id="it_leather_bracers"]
+[ext_resource type="Resource" path="res://data/items/leather_pants.tres" id="it_leather_pants"]
+[ext_resource type="Resource" path="res://data/items/horned_helmet.tres" id="it_horned_helmet"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Barbare"
+description = "Force brute et armes lourdes. Chaque coup fait trembler le sol."
+color = Color(0.8, 0.45, 0.2, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_war_hammer"), ExtResource("it_leather_bracers"), ExtResource("it_leather_pants"), ExtResource("it_horned_helmet")])
+bonus_health = 25
+bonus_attack = 6
+bonus_defense = 0
+bonus_magic = -2
+health_per_level = 15
+attack_per_level = 1.6
+defense_per_level = 0.2
+magic_per_level = 0.1

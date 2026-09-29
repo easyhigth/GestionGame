@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "guetteur"
+tier_names = PackedStringArray("Guetteur", "Archer fantôme", "Pluie de Flèches")
+category = "Martiale"
+color = Color(0.816, 0.753, 0.502, 1)
+description = "Des traits magiques pleuvent sur l'ennemi."
+passive = {"crit": 0.06, "aspd_pct": 0.05}
+active = "volley"
+active_params = {"count": 8.0, "dmg": 0.5, "spread": 1.0}
+cooldown = 7.0

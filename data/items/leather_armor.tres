@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "leather_armor"
+display_name = "Armure de cuir"
+description = "Une veste renforcée, légère et solide."
+slot = 4
+defense = 3

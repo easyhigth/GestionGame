@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/spear.tres" id="it_spear"]
+[ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="it_leather_cap"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="it_leather_armor"]
+[ext_resource type="Resource" path="res://data/items/leather_pants.tres" id="it_leather_pants"]
+[ext_resource type="Resource" path="res://data/items/cape_red.tres" id="it_cape_red"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Rôdeur"
+description = "Chasseur des terres sauvages, à l'aise avec la lance et le mouvement."
+color = Color(0.4, 0.75, 0.35, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_spear"), ExtResource("it_leather_cap"), ExtResource("it_leather_armor"), ExtResource("it_leather_pants"), ExtResource("it_cape_red")])
+bonus_health = 10
+bonus_attack = 3
+bonus_defense = 1
+bonus_magic = 2
+health_per_level = 11
+attack_per_level = 1.2
+defense_per_level = 0.3
+magic_per_level = 0.6

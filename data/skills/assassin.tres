@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "assassin"
+tier_names = PackedStringArray("Coup fatal", "Assassinat", "Faucheuse")
+category = "Ombre"
+color = Color(0.416, 0.290, 0.541, 1)
+description = "Tes coups critiques sont mortels."
+passive = {"crit": 0.15, "crit_mult": 0.5}
+active = "execute"
+active_params = {"range": 6.0, "dmg": 3.0, "threshold": 0.4}
+cooldown = 10.0

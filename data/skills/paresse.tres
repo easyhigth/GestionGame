@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "paresse"
+tier_names = PackedStringArray("Paresse", "Torpeur", "Sommeil Éternel")
+category = "Péché"
+color = Color(0.541, 0.541, 1.000, 1)
+description = "Pourquoi se presser ? Tu ralentis tout ce qui t'entoure."
+passive = {"regen": 2.0, "slow": 0.2}
+active = "slow_field"
+active_params = {"radius": 5.0, "factor": 0.35, "dur": 5.0, "dps": 0.2}
+cooldown = 16.0

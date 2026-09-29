@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "feu_3"
+tier_names = PackedStringArray("Pluie de braises", "Météore", "Apocalypse")
+category = "Feu"
+color = Color(1.000, 0.416, 0.165, 1)
+description = "Tu fais pleuvoir le feu du ciel."
+passive = {"burn": 0.15}
+active = "meteor"
+active_params = {"radius": 3.0, "dmg": 2.2, "count": 1.0, "burn": 0.4}
+cooldown = 14.0

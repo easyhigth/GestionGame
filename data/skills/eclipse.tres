@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eclipse"
+tier_names = PackedStringArray("Éclipse", "Nuit éternelle", "Crépuscule des Dieux")
+category = "Ténèbres"
+color = Color(0.165, 0.102, 0.290, 1)
+description = "Les ténèbres étouffent la lumière et les ennemis."
+passive = {"lifesteal": 0.06, "mag_pct": 0.08}
+active = "slow_field"
+active_params = {"radius": 6.0, "factor": 0.4, "dur": 5.0, "dps": 0.35}
+cooldown = 16.0

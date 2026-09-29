@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "gravite"
+tier_names = PackedStringArray("Gravité", "Pesanteur", "Maître de la Gravité")
+category = "Espace"
+color = Color(0.604, 0.416, 1.000, 1)
+description = "Tu écrases tes ennemis sous leur propre poids."
+passive = {"slow": 0.15, "poise": 0.2}
+active = "vortex"
+active_params = {"radius": 5.0, "dmg": 1.6}
+cooldown = 13.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "glace_4"
+tier_names = PackedStringArray("Armure de givre", "Carapace polaire", "Glacier Vivant")
+category = "Glace"
+color = Color(0.627, 0.941, 1.000, 1)
+description = "Une armure de glace te protège."
+passive = {"slow": 0.2, "def_flat": 3.0}
+active = "barrier"
+active_params = {"dur": 4.0, "reduce": 0.6}
+cooldown = 16.0

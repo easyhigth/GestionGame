@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1")
-move_speed = 125.0
-acceleration = 1100.0
-friction = 1300.0
-dash_speed = 340.0
-dash_duration = 0.18
-dash_cooldown = 0.45
+move_speed = 4.5
+acceleration = 40.0
+friction = 48.0
+dash_speed = 10.0
+dash_duration = 0.3
+dash_cooldown = 0.5
 max_health = 100

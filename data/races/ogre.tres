@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="RaceData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/ogre_base.glb" id="m0"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/ogre_base_v2.glb" id="m1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/ogre_base_v3.glb" id="m2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/ogre_equipment.glb" id="eq"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Ogre"
+description = "Colosses cornus d'une force terrifiante, lents mais inarrêtables."
+model = ExtResource("m0")
+villager_models = Array[PackedScene]([ExtResource("m0"), ExtResource("m1"), ExtResource("m2")])
+equipment = ExtResource("eq")
+model_id = "ogre"
+max_health = 150
+strength = 18
+agility = 5
+magic = 4
+speed_multiplier = 0.88

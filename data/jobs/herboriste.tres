@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/job_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Herboriste"
+description = "Plantes et remèdes n'ont pas de secret pour lui. Il récupère ses forces bien plus vite."
+starting_items = Array[ExtResource("2")]([ExtResource("it_fiber")])
+starting_counts = PackedInt32Array(8)
+bonus_regen = 2.0
+bonus_magic = 2

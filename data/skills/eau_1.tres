@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eau_1"
+tier_names = PackedStringArray("Source", "Fontaine", "Océan de Vie")
+category = "Eau"
+color = Color(0.227, 0.627, 1.000, 1)
+description = "L'eau te soigne et emporte tes ennemis."
+passive = {"regen": 1.0, "hp_pct": 0.05}
+active = "heal"
+active_params = {"pct": 0.3}
+cooldown = 16.0

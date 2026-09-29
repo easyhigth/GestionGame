@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/furniture/lanterne.glb" id="m"]
+
+[resource]
+script = ExtResource("1")
+id = "lanterne"
+display_name = "Lanterne"
+description = "Une lanterne sur pied."
+max_stack = 20
+furniture_model = ExtResource("m")
+furniture_solid = false
+furniture_light = true

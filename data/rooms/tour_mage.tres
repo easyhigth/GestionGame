@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "tour_mage"
+display_name = "Tour de mage"
+description = "Un repaire de savants et de sorciers."
+color = Color(0.627, 0.376, 1.000, 1)
+required = {"chaudron": 1, "bibliotheque": 1, "pupitre": 1}
+min_cells = 6
+job_id = "mage"
+job_name = "Mage"
+job_slots = 2
+hero_bonus = {"magic": 0.1}
+effect_text = "Héros : +10 % de magie."

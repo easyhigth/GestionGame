@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/mannequin.tres" id="it_mannequin"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="it_wood"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("it_mannequin")
+ingredients = Array[ExtResource("2")]([ExtResource("it_wood"), ExtResource("it_fiber")])
+amounts = PackedInt32Array(2, 2)
+station = "etabli"
+category = "Mobilier"

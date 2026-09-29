@@ -1,55 +1,390 @@
 class_name Villager
-extends CharacterBody2D
-## Habitant du village : se promène autour de sa maison.
+extends Combatant
+## Habitant du village : se promène autour de sa maison, ramasse les armes et armures
+## qui traînent près de lui et les équipe si elles sont meilleures que les siennes.
+## Armé, il défend le village contre les monstres ; sans arme, il s'enfuit.
+## À 0 point de vie il tombe K.O. puis se relève un peu plus tard.
 ## La race se choisit dans l'Inspecteur (ou par le générateur de monde).
 
+const NAMES := ["Aldric", "Brunhild", "Cassian", "Dagna", "Elric", "Fenna", "Garrick", "Hilda",
+	"Ivar", "Jorun", "Kael", "Liora", "Magnus", "Nessa", "Orin", "Perrine", "Quentin", "Rowena",
+	"Sigrid", "Thorin", "Ulric", "Vesna", "Wendel", "Yselle", "Zora", "Anselme", "Bérénice", "Corentin"]
+
 @export var race: RaceData
-@export var walk_speed: float = 45.0
-## Distance max (en pixels) autour du point de départ.
-@export var wander_radius: float = 120.0
+## Nom affiché (tiré au hasard si vide).
+@export var villager_name: String = ""
+## Vitesse de marche, en mètres par seconde.
+@export var walk_speed: float = 1.4
+## Distance max (en mètres) autour du point de départ.
+@export var wander_radius: float = 4.0
 @export var min_pause: float = 1.0
 @export var max_pause: float = 3.5
+## Distance (en mètres) à laquelle l'habitant repère un équipement au sol.
+@export var loot_radius: float = 9.0
+## Distance à laquelle il repère un monstre.
+@export var alert_radius: float = 9.0
+## Il ne poursuit pas un monstre à plus de cette distance de sa maison.
+@export var defend_radius: float = 16.0
+## Durée du K.O. (secondes).
+@export var knockout_time: float = 20.0
 
-@onready var sprite: AnimatedSprite2D = $Sprite
+@onready var label: Label3D = $Label
 
-var home: Vector2
-var facing := Vector2.DOWN
-var _target := Vector2.ZERO
+var home: Vector3
+var _target := Vector3.ZERO
 var _pause := 0.0
+var _fetch: ItemPickup
+var _scan_timer := randf()
+var _threat: Combatant
+var _threat_timer := randf() * 0.5
+var _ko_left := 0.0
+var _combo := 0
+## Pièce où l'habitant travaille (voir Kingdom), ou null.
+var work_room = null
+## Talents personnels : métier -> bonus d'affinité.
+var talents := {}
+var _stuck := 0.0
+var _work_for = null
+var _work_spot := Vector3.INF
+var _work_face := Vector3.BACK
+var _path: Array[Vector3] = []
+var _repath := 0.0
+var _work_anim := randf() * 2.0
+var _at_work := false
+const JOBS := ["forgeron", "boulanger", "garde", "fermier", "bucheron", "macon", "verrier", "aubergiste",
+	"marchand", "erudit", "pretre", "mage", "tisserand"]
 
 
 func _ready() -> void:
+	super()
+	add_to_group("villagers")
+	# deux talents personnels au hasard
+	var pool := JOBS.duplicate()
+	pool.shuffle()
+	talents[pool[0]] = randf_range(0.2, 0.4)
+	talents[pool[1]] = randf_range(0.1, 0.25)
+	if villager_name.is_empty():
+		villager_name = NAMES.pick_random()
 	home = global_position
 	_target = home
 	_pause = randf_range(0.0, max_pause)
+	facing = Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
 	set_race(race)
 
 
 func set_race(new_race: RaceData) -> void:
 	race = new_race
-	var spr := get_node_or_null("Sprite") as AnimatedSprite2D
-	if race and race.sprite_frames and spr:
-		spr.sprite_frames = race.sprite_frames
-		spr.play("idle_down")
+	var vis := get_node_or_null("Visual") as VoxelCharacter
+	if race == null or vis == null:
+		return
+	vis.set_equipment_library(race.equipment)
+	if not race.villager_models.is_empty():
+		vis.set_model(race.villager_models.pick_random())
+	elif race.model:
+		vis.set_model(race.model)
+	var hp := get_node_or_null("Health") as Health
+	if hp:
+		hp.set_max(race.max_health, true)
+
+
+func base_attack() -> int:
+	return race.strength if race else 10
+
+
+func base_magic() -> int:
+	return race.magic if race else 10
+
+
+func can_be_targeted() -> bool:
+	return is_alive() and _ko_left <= 0.0
+
+
+func _on_died() -> void:
+	super()
+	_ko_left = knockout_time
+	_fetch = null
+	_threat = null
+
+
+func _on_hurt(_amount: int, source: Node) -> void:
+	# riposte si on a une arme
+	if source is Combatant and weapon() != null:
+		_threat = source
 
 
 func _physics_process(delta: float) -> void:
+	_combat_step(delta)
+	if not is_alive():
+		_ko_left -= delta
+		velocity = Vector3.ZERO
+		_move_on_ground(delta)
+		visual.animate(delta, Vector3.ZERO, facing)
+		label.visible = false
+		if _ko_left <= 0.0:
+			health.revive(0.5)
+			visual.set_downed(false)
+			_invulnerable_left = 2.0
+		return
+	_threat_timer -= delta
+	if _threat_timer <= 0.0:
+		_threat_timer = 0.4
+		_update_threat()
+	if _threat:
+		_fight_or_flee(delta)
+		return
+	if work_room != null and _work_step(delta):
+		_update_label()
+		return
+	_at_work = false
+	_scan_timer -= delta
+	if _scan_timer <= 0.0:
+		_scan_timer = 1.5
+		_look_for_loot()
+	var speed := walk_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier()
+	if _fetch and (not is_instance_valid(_fetch) or _fetch.is_taken()):
+		_fetch = null
+		_pause = randf_range(min_pause, max_pause)
+	if _fetch:
+		_target = _fetch.global_position
+		_pause = 0.0
+		speed *= 1.6
 	if _pause > 0.0:
 		_pause -= delta
-		velocity = Vector2.ZERO
+		velocity = Vector3.ZERO
 		if _pause <= 0.0:
-			_target = home + Vector2.from_angle(randf() * TAU) * randf_range(20.0, wander_radius)
+			var off := Vector2.from_angle(randf() * TAU) * randf_range(0.7, wander_radius)
+			_target = home + Vector3(off.x, 0, off.y)
 	else:
 		var to_target := _target - global_position
-		if to_target.length() < 4.0:
+		to_target.y = 0.0
+		if to_target.length() < 0.15:
 			_pause = randf_range(min_pause, max_pause)
-			velocity = Vector2.ZERO
+			velocity = Vector3.ZERO
 		else:
 			facing = to_target.normalized()
-			velocity = facing * walk_speed * (race.speed_multiplier if race else 1.0)
+			velocity = facing * speed
 	var before := global_position
-	move_and_slide()
+	_move_on_ground(delta)
 	# bloqué contre un obstacle : on s'arrête et on repart ailleurs
-	if _pause <= 0.0 and velocity.length() > 0.0 and global_position.distance_to(before) < 0.2:
+	if _pause <= 0.0 and velocity.length() > 0.0 and Vector2(global_position.x - before.x, global_position.z - before.z).length() < 0.005:
 		_pause = randf_range(min_pause, max_pause)
-	CharacterAnimator.update(sprite, facing, velocity)
+		_fetch = null
+	visual.animate(delta, velocity, facing)
+	_update_label()
+
+
+## Vrai quand l'habitant est à son poste (la pièce produit).
+func is_at_work() -> bool:
+	return work_room != null and _at_work
+
+
+## Va à son poste de travail (en passant par la porte) et y travaille. Renvoie faux s'il ne peut pas.
+func _work_step(delta: float) -> bool:
+	if _work_for != work_room:
+		_work_for = work_room
+		_choose_work_spot()
+		_path.clear()
+	if _work_spot == Vector3.INF:
+		return false
+	var to := _work_spot - global_position
+	to.y = 0.0
+	var speed := walk_speed * 1.3 * (race.speed_multiplier if race else 1.0)
+	if to.length() < 0.3:
+		_at_work = true
+		velocity = Vector3.ZERO
+		facing = _work_face
+		_work_anim -= delta
+		if _work_anim <= 0.0:
+			_work_anim = randf_range(1.6, 2.8)
+			var t: RoomTypeData = work_room.type
+			var move := "heavy_1" if t.job_id in ["forgeron", "bucheron", "macon"] else ("cast_1" if t.job_id in ["mage", "pretre", "erudit"] else "punch_1")
+			visual.play_move(move, 0.7)
+			if t.job_id == "forgeron":
+				VoxelBurst.spawn(self, global_position + _work_face * 0.8 + Vector3(0, 0.9, 0), Color(1.0, 0.7, 0.3), 8, 2.5, 0.05, 0.4)
+		_move_on_ground(delta)
+		visual.animate(delta, velocity, facing)
+		return true
+	_at_work = false
+	_repath -= delta
+	if _path.is_empty() and _repath <= 0.0:
+		_repath = 1.5
+		_path = _world.find_path(global_position, _work_spot) if _world else []
+	var goal := _work_spot
+	if not _path.is_empty():
+		goal = _path[0]
+		if Vector2(goal.x - global_position.x, goal.z - global_position.z).length() < 0.25:
+			_path.pop_front()
+			if not _path.is_empty():
+				goal = _path[0]
+	var dir := goal - global_position
+	dir.y = 0.0
+	if dir.length() > 0.01:
+		facing = dir.normalized()
+	velocity = facing * speed
+	var before := global_position
+	_move_on_ground(delta)
+	# coincé (un autre habitant, un objet) : on recalcule le chemin
+	if Vector2(global_position.x - before.x, global_position.z - before.z).length() < speed * delta * 0.2:
+		_stuck += delta
+		if _stuck > 0.6:
+			_stuck = 0.0
+			_path.clear()
+			_repath = 0.0
+			if _world:
+				global_position = _world.constrain_move(global_position, global_position + Vector3(randf_range(-0.2, 0.2), 0, randf_range(-0.2, 0.2)))
+	else:
+		_stuck = 0.0
+	visual.animate(delta, velocity, facing)
+	return true
+
+
+func _choose_work_spot() -> void:
+	_work_spot = Vector3.INF
+	if work_room == null or _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+		if work_room == null or _world == null:
+			return
+	var t: RoomTypeData = work_room.type
+	var grid := _world.build
+	var cells: Dictionary = work_room.cells
+	var floor_y: float = work_room.floor
+	var taken := []
+	for v in get_tree().get_nodes_in_group("villagers"):
+		if v != self and v.get("work_room") == work_room and v.get("_work_spot") != Vector3.INF:
+			taken.append(_world.cell_at(v.get("_work_spot")))
+	var dirs := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+	for c in cells:
+		for f in grid.furniture_in(c):
+			if not t.required.has(f.item.id):
+				continue
+			for d in dirs:
+				var n: Vector2i = c + d
+				if not cells.has(n) or taken.has(n) or grid.body_blocked(n, floor_y):
+					continue
+				_work_spot = Vector3(n.x + 0.5, floor_y, n.y + 0.5)
+				_work_face = Vector3(-d.x, 0, -d.y)
+				return
+	# à défaut : n'importe quelle case libre de la pièce
+	for c in cells:
+		if not grid.body_blocked(c, floor_y) and not taken.has(c):
+			_work_spot = Vector3(c.x + 0.5, floor_y, c.y + 0.5)
+			return
+
+
+## Choisit le monstre à combattre (ou à fuir).
+func _update_threat() -> void:
+	if _threat and (not is_instance_valid(_threat) or not _threat.is_alive() \
+			or _threat.global_position.distance_to(home) > defend_radius + 4.0):
+		_threat = null
+	if _threat == null:
+		var t := nearest_hostile(alert_radius)
+		if t and t.global_position.distance_to(home) <= defend_radius:
+			_threat = t
+			_fetch = null
+
+
+func _fight_or_flee(delta: float) -> void:
+	var to := _threat.global_position - global_position
+	to.y = 0.0
+	var dist := to.length()
+	var speed := walk_speed * 2.2 * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier()
+	var w := weapon()
+	if w == null:
+		# pas d'arme : on court se mettre à l'abri derrière sa maison
+		var away := (home - _threat.global_position)
+		away.y = 0.0
+		var goal := home + away.normalized() * 3.0
+		var dir := goal - global_position
+		dir.y = 0.0
+		velocity = dir.normalized() * speed if dir.length() > 0.4 else Vector3.ZERO
+		if velocity != Vector3.ZERO:
+			facing = velocity.normalized()
+		if dist > alert_radius + 3.0:
+			_threat = null
+	else:
+		if dist > 0.01:
+			facing = to / dist
+		var reach := attack_reach()
+		var wanted := minf(reach * 0.85, 6.0) if w.projectile else reach * 0.8
+		if dist > wanted:
+			velocity = facing * speed
+		else:
+			velocity = Vector3.ZERO
+			if can_attack():
+				var combo := MoveLibrary.combo_for(weapon_style())
+				perform(combo[_combo % combo.size()], attack_speed())
+				_combo += 1
+				_attack_cooldown = 0.15 if _combo % 3 != 0 else 0.9
+	if in_move() or not can_act():
+		velocity = Vector3.ZERO
+	_move_on_ground(delta)
+	visual.animate(delta, velocity, facing)
+	_update_label()
+
+
+## Cherche un équipement au sol meilleur que le sien.
+func _look_for_loot() -> void:
+	if _fetch:
+		return
+	var best: ItemPickup = null
+	var best_gain := 0.0
+	for p in get_tree().get_nodes_in_group("pickups"):
+		var pickup := p as ItemPickup
+		if pickup == null or pickup.is_taken() or pickup.item == null or not pickup.item.is_equipment():
+			continue
+		if pickup.global_position.distance_to(global_position) > loot_radius:
+			continue
+		if not equipment.is_upgrade(pickup.item):
+			continue
+		var cur := equipment.get_item(pickup.item.slot)
+		var gain := pickup.item.power() - (cur.power() if cur else 0.0)
+		if gain > best_gain:
+			best_gain = gain
+			best = pickup
+	_fetch = best
+
+
+## Appelé par un objet au sol quand l'habitant marche dessus.
+func try_pickup(pickup: ItemPickup) -> void:
+	var item := pickup.item
+	if item == null or pickup.is_taken() or not equipment.is_upgrade(item):
+		return
+	pickup.take()
+	# l'ancien objet est reposé au sol
+	for old in equipment.equip(item):
+		_drop(old)
+	_fetch = null
+	_pause = 0.6
+
+
+func _drop(item: ItemData) -> void:
+	if _world:
+		_world.spawn_pickup(item, global_position + Vector3(randf_range(-1, 1), 0, randf_range(-1, 1)).normalized() * 1.2)
+
+
+func _update_label() -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	var near := player != null and player.global_position.distance_to(global_position) < 2.4
+	label.visible = near
+	if near:
+		var job := ""
+		if work_room != null and work_room.type:
+			job = " · " + (work_room.type as RoomTypeData).job_name
+		label.text = "%s (%s)%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job]
+
+
+## Attaque, défense et magie totales (race + équipement).
+func total_stats() -> Dictionary:
+	var r := race if race else RaceData.new()
+	return {
+		"health": health.current,
+		"max_health": health.max_health,
+		"attack": attack_power(),
+		"defense": defense_power(),
+		"magic": magic_power(),
+		"speed": r.speed_multiplier * equipment.speed_multiplier(),
+	}
+
+
+func display_title() -> String:
+	return "%s (%s)" % [villager_name, race.display_name if race else "?"]

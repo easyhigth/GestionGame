@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "temple"
+display_name = "Temple"
+description = "Un lieu de prière et de guérison."
+color = Color(1.000, 0.941, 0.690, 1)
+required = {"autel": 1, "bougeoir": 2}
+min_cells = 9
+job_id = "pretre"
+job_name = "Prêtre"
+job_slots = 1
+hero_bonus = {"regen": 2.0, "defense": 2.0}
+effect_text = "Héros : +2 PV/s, +2 défense."

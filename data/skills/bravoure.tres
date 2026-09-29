@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "bravoure"
+tier_names = PackedStringArray("Bravoure", "Héroïsme", "Légende Vivante")
+category = "Vertu"
+color = Color(1.000, 0.604, 0.290, 1)
+description = "Face au danger, tu te dépasses. Un cri de guerre te galvanise."
+passive = {"last_stand": 1.0, "atk_pct": 0.05}
+active = "buff"
+active_params = {"atk": 0.3, "def": 5.0, "dur": 7.0}
+cooldown = 18.0

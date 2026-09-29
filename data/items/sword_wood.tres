@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sword_wood"
+display_name = "Épée en bois"
+description = "Une épée d'entraînement. Mieux que rien !"
+slot = 1
+attack = 3
+reach = 1.7
+attack_speed = 1.1

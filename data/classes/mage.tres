@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="it_staff"]
+[ext_resource type="Resource" path="res://data/items/mage_hat.tres" id="it_mage_hat"]
+[ext_resource type="Resource" path="res://data/items/mage_robe.tres" id="it_mage_robe"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Mage"
+description = "Lance des sorts à distance avec son bâton. Sa puissance dépend de sa magie."
+color = Color(0.45, 0.6, 1.0, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_staff"), ExtResource("it_mage_hat"), ExtResource("it_mage_robe")])
+bonus_health = 0
+bonus_attack = 0
+bonus_defense = 0
+bonus_magic = 8
+health_per_level = 8
+attack_per_level = 0.4
+defense_per_level = 0.2
+magic_per_level = 2.0

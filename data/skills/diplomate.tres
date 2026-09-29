@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "diplomate"
+tier_names = PackedStringArray("Diplomate", "Ambassadeur", "Voix des Peuples")
+category = "Commandement"
+color = Color(0.753, 0.878, 0.627, 1)
+description = "Tu obtiens toujours plus : butin et expérience."
+passive = {"loot": 0.3, "xp": 0.2}
+active = "stun"
+active_params = {"radius": 5.0, "dur": 2.0}
+cooldown = 14.0

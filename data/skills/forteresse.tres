@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "forteresse"
+tier_names = PackedStringArray("Rempart", "Forteresse", "Muraille Éternelle")
+category = "Martiale"
+color = Color(0.627, 0.659, 0.722, 1)
+description = "Tu es un mur que rien ne traverse."
+passive = {"def_flat": 5.0, "poise": 0.2, "parry": 0.05}
+active = "barrier"
+active_params = {"dur": 5.0, "reduce": 0.7}
+cooldown = 18.0

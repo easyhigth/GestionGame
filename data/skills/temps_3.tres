@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "temps_3"
+tier_names = PackedStringArray("Arrêt", "Stase", "Fin du Temps")
+category = "Temps"
+color = Color(0.941, 0.816, 0.627, 1)
+description = "Tu figes le temps un instant."
+passive = {"cdr_pct": 0.1}
+active = "stun"
+active_params = {"radius": 7.0, "dur": 3.0}
+cooldown = 20.0

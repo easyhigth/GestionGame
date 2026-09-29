@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "glace_3"
+tier_names = PackedStringArray("Pic de glace", "Lances de givre", "Forêt de cristal")
+category = "Glace"
+color = Color(0.627, 0.941, 1.000, 1)
+description = "Des pics de glace transpercent l'ennemi."
+passive = {"slow": 0.2}
+active = "volley"
+active_params = {"count": 4.0, "dmg": 0.9, "spread": 0.6}
+cooldown = 7.0

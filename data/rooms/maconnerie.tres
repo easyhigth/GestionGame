@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="p"]
+
+[resource]
+script = ExtResource("1")
+id = "maconnerie"
+display_name = "Maçonnerie"
+description = "Les maçons y taillent la pierre."
+color = Color(0.659, 0.659, 0.627, 1)
+required = {"table_tailleur": 1, "meule": 1}
+min_cells = 6
+job_id = "macon"
+job_name = "Maçon"
+job_slots = 2
+production = ExtResource("p")
+production_count = 3
+production_interval = 60.0
+effect_text = "Produit de la pierre."

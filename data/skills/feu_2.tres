@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "feu_2"
+tier_names = PackedStringArray("Boule de feu", "Salve ardente", "Tempête de feu")
+category = "Feu"
+color = Color(1.000, 0.416, 0.165, 1)
+description = "Des boules de feu jaillissent de tes mains."
+passive = {"burn": 0.15, "mag_pct": 0.05}
+active = "volley"
+active_params = {"count": 3.0, "dmg": 1.1, "spread": 0.5, "burn": 0.3}
+cooldown = 7.0

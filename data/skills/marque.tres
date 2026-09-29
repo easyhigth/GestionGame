@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "marque"
+tier_names = PackedStringArray("Marque", "Sceau de mort", "Condamnation")
+category = "Ombre"
+color = Color(0.667, 0.227, 0.416, 1)
+description = "Tu marques un ennemi : ses blessures s'aggravent."
+passive = {"execute": 0.25, "crit": 0.04}
+active = "dot"
+active_params = {"radius": 2.5, "dps": 0.6, "dur": 4.0}
+cooldown = 9.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "terre_4"
+tier_names = PackedStringArray("Chute de pierres", "Avalanche", "Pluie de Montagnes")
+category = "Terre"
+color = Color(0.690, 0.541, 0.353, 1)
+description = "Des rochers tombent sur tes ennemis."
+passive = {"def_flat": 3.0, "hp_pct": 0.05}
+active = "meteor"
+active_params = {"radius": 2.8, "dmg": 1.6, "count": 2.0}
+cooldown = 14.0

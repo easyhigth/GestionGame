@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "chaos"
+tier_names = PackedStringArray("Chaos", "Désordre", "Seigneur du Chaos")
+category = "Chaos"
+color = Color(1.000, 0.290, 1.000, 1)
+description = "Personne ne sait ce que tu vas faire, pas même toi : tout est possible."
+passive = {"crit": 0.08, "burn": 0.05, "stun": 0.05, "slow": 0.05}
+active = "random"
+active_params = {}
+cooldown = 8.0

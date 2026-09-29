@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "seconde_peau"
+tier_names = PackedStringArray("Seconde peau", "Mue", "Renaissance")
+category = "Survie"
+color = Color(0.627, 1.000, 0.753, 1)
+description = "Tu changes de peau et effaces tes blessures."
+passive = {"regen": 2.0}
+active = "heal"
+active_params = {"pct": 0.5}
+cooldown = 24.0

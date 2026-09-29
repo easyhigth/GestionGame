@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "double"
+tier_names = PackedStringArray("Double", "Reflet", "Légion d'Ombres")
+category = "Ombre"
+color = Color(0.478, 0.416, 1.000, 1)
+description = "Tu laisses derrière toi une image qui frappe à ta place."
+passive = {"dodge": 0.06, "aspd_pct": 0.05}
+active = "blink"
+active_params = {"dist": 5.0, "dmg": 1.8}
+cooldown = 7.0

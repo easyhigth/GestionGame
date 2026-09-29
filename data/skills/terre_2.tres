@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "terre_2"
+tier_names = PackedStringArray("Onde tellurique", "Faille", "Cœur de la Terre")
+category = "Terre"
+color = Color(0.690, 0.541, 0.353, 1)
+description = "Une faille s'ouvre devant toi et projette tes ennemis."
+passive = {"def_flat": 3.0, "hp_pct": 0.05}
+active = "cone"
+active_params = {"range": 6.0, "dmg": 1.5, "kb": 8.0, "angle": 60.0}
+cooldown = 9.0

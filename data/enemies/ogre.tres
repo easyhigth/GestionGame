@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/ogre_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/ogre_equipment.glb" id="r3"]
+[ext_resource type="Resource" path="res://data/items/war_hammer.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/iron_armor.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/iron_gauntlets.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="r7"]
+[ext_resource type="Resource" path="res://data/items/marbre_brut.tres" id="r8"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Ogre des cimes"
+model = ExtResource("r2")
+equipment_library = ExtResource("r3")
+equipment = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r6")])
+model_scale = 1.2
+color = Color(1.000, 0.416, 0.290, 1)
+max_health = 320
+attack = 26
+defense = 7
+move_speed = 3.0
+aggro_range = 10
+leash_range = 20
+attack_range = 2.3
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 0.7
+poise = 90
+attack_cooldown = 1.0
+knockback = 9.0
+body_radius = 0.7
+loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r7"), ExtResource("r8")])
+loot_chances = PackedFloat32Array(0.2, 0.1, 0.8, 0.5)

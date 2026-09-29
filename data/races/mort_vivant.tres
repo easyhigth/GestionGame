@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="RaceData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/undead_base.glb" id="m0"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/undead_base_v2.glb" id="m1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/undead_base_v3.glb" id="m2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/undead_equipment.glb" id="eq"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Mort-vivant"
+description = "Revenus d'entre les morts, infatigables et sans peur."
+model = ExtResource("m0")
+villager_models = Array[PackedScene]([ExtResource("m0"), ExtResource("m1"), ExtResource("m2")])
+equipment = ExtResource("eq")
+model_id = "undead"
+max_health = 120
+strength = 12
+agility = 7
+magic = 11
+speed_multiplier = 0.92

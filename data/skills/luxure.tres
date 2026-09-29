@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "luxure"
+tier_names = PackedStringArray("Charme", "Envoûtement", "Reine des Cœurs")
+category = "Péché"
+color = Color(1.000, 0.416, 0.784, 1)
+description = "Ton charme trouble l'esprit des ennemis, qui s'arrêtent, fascinés."
+passive = {"stun": 0.06, "mag_pct": 0.1}
+active = "stun"
+active_params = {"radius": 4.5, "dur": 2.5}
+cooldown = 15.0

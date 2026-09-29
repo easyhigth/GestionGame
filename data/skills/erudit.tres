@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "erudit"
+tier_names = PackedStringArray("Érudit", "Grand Érudit", "Oracle Absolu")
+category = "Sagesse"
+color = Color(0.478, 0.816, 1.000, 1)
+description = "Une voix intérieure analyse tout : tu repères les failles et tes esquives deviennent parfaites."
+passive = {"crit": 0.08, "dodge": 0.1, "xp": 0.1}
+active = "stun"
+active_params = {"radius": 5.0, "dur": 1.8}
+cooldown = 14.0

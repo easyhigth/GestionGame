@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/lingot_or.tres" id="it_lingot_or"]
+[ext_resource type="Resource" path="res://data/items/or_brut.tres" id="it_or_brut"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="it_wood"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("it_lingot_or")
+ingredients = Array[ExtResource("2")]([ExtResource("it_or_brut"), ExtResource("it_wood")])
+amounts = PackedInt32Array(2, 1)
+station = "foyer_forge"
+category = "Matériaux"

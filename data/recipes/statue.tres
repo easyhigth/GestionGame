@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/statue.tres" id="it_statue"]
+[ext_resource type="Resource" path="res://data/items/bloc_marbre.tres" id="it_bloc_marbre"]
+[ext_resource type="Resource" path="res://data/items/lingot_or.tres" id="it_lingot_or"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("it_statue")
+ingredients = Array[ExtResource("2")]([ExtResource("it_bloc_marbre"), ExtResource("it_lingot_or")])
+amounts = PackedInt32Array(4, 1)
+station = "table_tailleur"
+category = "Mobilier"
