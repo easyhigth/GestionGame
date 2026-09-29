@@ -1,6 +1,6 @@
 class_name BuildMode
 extends Node3D
-## Mode construction (touche B / Start) : le joueur récolte, terrasse le sol, pose des blocs et
+## Mode construction (touche B / croix bas) : le joueur récolte, terrasse le sol, pose des blocs et
 ## des meubles lui-même, comme dans Minecraft.
 ##   Molette ou 1-9 : choisir l'outil ou l'objet · Clic gauche : utiliser / poser · Clic droit : démolir
 ##   R : tourner le meuble · [ et ] (ou Maj + molette) : taille du pinceau de terrassement

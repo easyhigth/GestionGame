@@ -51,7 +51,7 @@ func _apply_data() -> void:
 	body_radius = data.body_radius
 	for it in data.equipment:
 		equipment.equip(it)
-	health.set_max(roundi(data.max_health * power), true)
+	health.set_max(roundi(data.max_health * power * SaveGame.enemy_hp_mult()), true)
 	name_label.text = "%s · Nv %d" % [data.display_name, level]
 	name_label.modulate = data.color
 	name_label.position.y = 2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale
@@ -59,7 +59,7 @@ func _apply_data() -> void:
 
 
 func base_attack() -> int:
-	return roundi((data.attack if data else 8) * power)
+	return roundi((data.attack if data else 8) * power * SaveGame.enemy_dmg_mult())
 
 
 func base_defense() -> int:

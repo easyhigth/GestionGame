@@ -73,7 +73,7 @@ func close() -> void:
 func _set_hud_info(on: bool) -> void:
 	var info := get_parent().get_node_or_null("Info") as CanvasItem
 	if info:
-		info.visible = on
+		info.visible = on and bool(SaveGame.options.show_help)
 
 
 func _unhandled_input(event: InputEvent) -> void:

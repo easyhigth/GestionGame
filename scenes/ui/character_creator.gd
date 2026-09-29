@@ -419,6 +419,10 @@ func _build_ui() -> void:
 	start.add_theme_stylebox_override("hover", _style(Color("a8702a"), Color("fff0b0"), 2, 4))
 	start.pressed.connect(_start)
 	right.add_child(start)
+	var back := Button.new()
+	back.text = "Retour au menu"
+	back.pressed.connect(func(): get_tree().change_scene_to_file(SaveGame.TITLE_SCENE))
+	right.add_child(back)
 
 
 func _scroll(content: Control, tab_name: String) -> ScrollContainer:
@@ -750,6 +754,14 @@ func _randomize() -> void:
 func _start() -> void:
 	profile.hero_name = _name_edit.text.strip_edges() if _name_edit.text.strip_edges() != "" else "Héros"
 	GameState.hero = profile
+	SaveGame.pending = {}
+	SaveGame.play_time = 0.0
+	# la nouvelle partie prend le premier emplacement libre
+	SaveGame.current_slot = "1"
+	for sl in SaveGame.SLOTS:
+		if not SaveGame.has_save(sl):
+			SaveGame.current_slot = sl
+			break
 	get_tree().change_scene_to_file(GAME_SCENE)
 
 

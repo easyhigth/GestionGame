@@ -42,7 +42,7 @@ var _raids_done := 0
 func _ready() -> void:
 	add_to_group("raids")
 	world = get_parent() as WorldGenerator
-	_timer = first_delay
+	_timer = first_delay * SaveGame.raid_delay_mult()
 
 
 func village_center() -> Vector3:
@@ -257,8 +257,17 @@ func _end(repelled: bool) -> void:
 	var done := raid
 	raid = {}
 	_raids_done += 1
-	_timer = randf_range(interval.x, interval.y)
+	_timer = randf_range(interval.x, interval.y) * SaveGame.raid_delay_mult()
 	raid_ended.emit(done, repelled, text)
+
+
+## Temps avant le prochain raid (pour la sauvegarde ; un raid en cours reprendra plus tard).
+func next_raid_in() -> float:
+	return _timer if raid.is_empty() else 90.0
+
+
+func set_next_raid(t: float) -> void:
+	_timer = maxf(t, 30.0)
 
 
 ## Texte d'état pour le HUD ("" s'il n'y a pas de raid).
