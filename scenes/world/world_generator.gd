@@ -281,6 +281,7 @@ func generate(seed_value: int) -> void:
 	_taken.clear()
 	_edits.clear()
 	_recruited.clear()
+	removed_props.clear()
 	_camp_cells.clear()
 	current_zone = -1
 	map_image = Image.create(world_size.x, world_size.y, false, Image.FORMAT_RGBA8)
@@ -1726,6 +1727,7 @@ func export_state() -> Dictionary:
 		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0])
 	return {
 		"seed": world_seed, "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
+		"removed_props": removed_props.keys(),
 		"revealed": Marshalls.raw_to_base64(_revealed.compress(FileAccess.COMPRESSION_ZSTD)),
 		"map": Marshalls.raw_to_base64(map_image.save_png_to_buffer()),
 	}
@@ -1746,6 +1748,12 @@ func import_state(d: Dictionary) -> void:
 		_taken[Vector2i(int(t[0]), int(t[1]))] = true
 	for k in d.get("recruited", []):
 		_recruited[k] = true
+	for id in d.get("removed_props", []):
+		var n := village_prop(str(id))
+		if n:
+			n.free()
+		_village_props.erase(str(id))
+		removed_props[str(id)] = true
 	var zs: Array = d.get("zones", [])
 	for i in mini(zs.size(), zones.size()):
 		zones[i].discovered = int(zs[i][0]) == 1
@@ -1902,6 +1910,92 @@ func _spawn(scene: PackedScene, offset: Vector2, extra := {}) -> Node3D:
 	return n
 
 
+# ---------------------------------------------------------------- décors démolissables du village
+
+## Ce que rend chaque décor démoli : [[identifiant d'objet, nombre], ...].
+const PROP_LOOT := {
+	"hut": [["bloc_planches", 12], ["bloc_rondins", 4], ["bloc_chaume", 8]],
+	"barrel": [["tonneau", 1]],
+	"crate": [["bloc_planches", 3]],
+	"workbench": [["etabli", 1]],
+	"rack": [["ratelier", 1]],
+}
+var _village_props := {}
+## Décors du village déjà démolis (sauvegardés).
+var removed_props := {}
+
+
+func _prop(id: String, n: Node3D) -> Node3D:
+	if n:
+		n.set_meta("prop_id", id)
+		_village_props[id] = n
+	return n
+
+
+func village_prop(id: String) -> Node3D:
+	var n: Node3D = _village_props.get(id)
+	return n if n and is_instance_valid(n) and not n.is_queued_for_deletion() else null
+
+
+## Boîte de collision d'un décor (repère local, sans rotation) : position = centre.
+static func prop_box(n: Node3D) -> AABB:
+	for c in n.get_children():
+		if c is CollisionShape3D and c.shape is BoxShape3D:
+			return AABB(c.position, (c.shape as BoxShape3D).size)
+	return AABB(Vector3(0, 0.5, 0), Vector3.ONE)
+
+
+## Décors du village dont l'emprise touche ce rectangle de cases.
+func village_props_in(r: Rect2i) -> Array:
+	var out := []
+	var area := Rect2(Vector2(r.position), Vector2(r.size))
+	for id in _village_props:
+		var n := village_prop(id)
+		if n == null:
+			continue
+		var box := prop_box(n)
+		var rot := Basis(Vector3.UP, n.rotation.y)
+		var lo := Vector2(INF, INF)
+		var hi := Vector2(-INF, -INF)
+		for sx in [-0.5, 0.5]:
+			for sz in [-0.5, 0.5]:
+				var q: Vector3 = n.global_position + rot * (box.position + Vector3(box.size.x * sx, 0, box.size.z * sz))
+				lo = Vector2(minf(lo.x, q.x), minf(lo.y, q.z))
+				hi = Vector2(maxf(hi.x, q.x), maxf(hi.y, q.z))
+		if area.grow(-0.1).intersects(Rect2(lo, hi - lo)):
+			out.append(n)
+	return out
+
+
+## Décor du village qui occupe cette case à cette hauteur (null s'il n'y en a pas).
+func village_prop_at(cell: Vector2i, y: float) -> Node3D:
+	for n in village_props_in(Rect2i(cell, Vector2i.ONE)):
+		var box := prop_box(n)
+		var bottom: float = n.global_position.y + box.position.y - box.size.y * 0.5
+		var top: float = bottom + box.size.y
+		if y < top - 0.05 and y + 1.0 > bottom + 0.05:
+			return n
+	return null
+
+
+## Démolit un décor ; renvoie ce qu'il rend.
+func remove_village_prop(id: String) -> Array:
+	var n := village_prop(id)
+	if n == null:
+		return []
+	var kind := id.get_slice("_", 0)
+	var out := []
+	for l in PROP_LOOT.get(kind, []):
+		var it := Items.get_item(l[0]) as ItemData
+		if it:
+			out.append([it, l[1]])
+	VoxelBurst.spawn(self, n.global_position + Vector3(0, 0.8, 0), Color(0.62, 0.45, 0.28), 24, 3.0, 0.1, 0.6, "up", 6.0, false)
+	n.queue_free()
+	_village_props.erase(id)
+	removed_props[id] = true
+	return out
+
+
 ## Tourne un objet pour que sa face avant (+Z) regarde le feu.
 func _face_center(n: Node3D) -> void:
 	if n == null:
@@ -1911,19 +2005,19 @@ func _face_center(n: Node3D) -> void:
 
 
 func _build_village() -> void:
+	_village_props.clear()
 	_spawn(campfire_scene, Vector2(0, 0))
-	_face_center(_spawn(hut_scene, Vector2(-7.0, -3.5)))
-	_face_center(_spawn(hut_scene, Vector2(7.0, -4.0)))
-	_face_center(_spawn(hut_scene, Vector2(0.5, -8.5)))
-	_spawn(barrel_scene, Vector2(-3.8, -5.8))
-	_spawn(barrel_scene, Vector2(-3.0, -6.3))
-	_spawn(barrel_scene, Vector2(-3.4, -5.1))
-	_spawn(crate_scene, Vector2(3.6, -6.4)).rotation.y = 0.3
-	_spawn(crate_scene, Vector2(9.8, -1.2))
-	_spawn(crate_scene, Vector2(4.4, -6.9)).rotation.y = -0.2
-	var bench := _spawn(workbench_scene, Vector2(-8.5, 3.5))
-	_face_center(bench)
-	_face_center(_spawn(weapon_rack_scene, Vector2(9.0, 2.5)))
+	_face_center(_prop("hut_1", _spawn(hut_scene, Vector2(-7.0, -3.5))))
+	_face_center(_prop("hut_2", _spawn(hut_scene, Vector2(7.0, -4.0))))
+	_face_center(_prop("hut_3", _spawn(hut_scene, Vector2(0.5, -8.5))))
+	_prop("barrel_1", _spawn(barrel_scene, Vector2(-3.8, -5.8)))
+	_prop("barrel_2", _spawn(barrel_scene, Vector2(-3.0, -6.3)))
+	_prop("barrel_3", _spawn(barrel_scene, Vector2(-3.4, -5.1)))
+	_prop("crate_1", _spawn(crate_scene, Vector2(3.6, -6.4))).rotation.y = 0.3
+	_prop("crate_2", _spawn(crate_scene, Vector2(9.8, -1.2)))
+	_prop("crate_3", _spawn(crate_scene, Vector2(4.4, -6.9))).rotation.y = -0.2
+	_face_center(_prop("workbench", _spawn(workbench_scene, Vector2(-8.5, 3.5))))
+	_face_center(_prop("rack", _spawn(weapon_rack_scene, Vector2(9.0, 2.5))))
 	# objets posés autour du feu
 	for i in starting_loot.size():
 		var a := PI * 0.15 + PI * 0.7 * float(i) / maxf(1.0, starting_loot.size() - 1.0)

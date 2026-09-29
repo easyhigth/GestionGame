@@ -40,6 +40,10 @@ var _ghost_mat_missing: StandardMaterial3D
 var _dug := {}
 
 
+## Plans refusés parce qu'un décor du village occupe la place (remis à zéro par le mode construction).
+var blocked_by_prop := 0
+
+
 func _ready() -> void:
 	add_to_group("build_orders")
 	var p := _player()
@@ -87,6 +91,8 @@ static func _ukey(o: Dictionary) -> String:
 		"furniture":
 			return "f%s" % o.key
 		"remove":
+			if o.get("what") == "prop":
+				return "rprop%s" % o.prop
 			return "r%s%s" % [o.get("what", "block"), o.key]
 		_:
 			return "t%s" % o.cell
@@ -106,6 +112,10 @@ func add(o: Dictionary) -> int:
 		var cur: ItemData = grid.block_at(o.key)
 		if cur != null and (not o.get("replace", false) or cur == o.item):
 			return 0
+	# un décor du village de départ (cabane, tonneau...) occupe la place : il faut d'abord le démolir
+	if (o.type == "block" or o.type == "furniture") and world.village_prop_at(o.cell, float(o.key.y) if o.type == "block" else float(o.base)) != null:
+		blocked_by_prop += 1
+		return 0
 	o.id = _next_id
 	_next_id += 1
 	o.progress = 0.0
@@ -150,6 +160,15 @@ func remove_furniture(key: Vector3i) -> int:
 	return add({"type": "remove", "what": "furniture", "key": key, "cell": Vector2i(key.x, key.z)})
 
 
+## Démolir un décor du village de départ (cabane, tonneau...).
+func remove_prop(prop: Node3D) -> int:
+	var id: String = prop.get_meta("prop_id", "")
+	if id == "":
+		return 0
+	var c := Vector2i(floori(prop.global_position.x), floori(prop.global_position.z))
+	return add({"type": "remove", "what": "prop", "prop": id, "key": Vector3i(c.x, floori(prop.global_position.y), c.y), "cell": c})
+
+
 func terrain(cell: Vector2i, target: float) -> int:
 	if absf(world.terrain_height(cell) - target) < 0.01:
 		return 0
@@ -179,10 +198,12 @@ func cancel(id: int) -> void:
 
 
 ## Annule tous les plans dans un rectangle de cases (niveaux entre y0 et y1).
-func cancel_rect(r: Rect2i, y0 := -1000.0, y1 := 1000.0) -> int:
+func cancel_rect(r: Rect2i, y0 := -1000.0, y1 := 1000.0, with_removals := true) -> int:
 	var n := 0
 	for id in orders.keys():
 		var o: Dictionary = orders[id]
+		if o.type == "remove" and not with_removals:
+			continue
 		var y := float(o.key.y) if o.has("key") and o.key is Vector3i else 0.0
 		if o.type == "furniture":
 			y = float(o.base)
@@ -220,6 +241,8 @@ func ready_to_build(o: Dictionary) -> bool:
 			if o.what == "block":
 				# on démolit de haut en bas
 				return grid.block_at(o.key) != null and not _index.has("rblock%s" % (o.key + Vector3i(0, 1, 0)))
+			if o.what == "prop":
+				return world.village_prop(o.prop) != null
 			return grid.furniture.has(o.key)
 		"terrain":
 			return grid.column(o.cell).is_empty() and grid.furniture_in(o.cell).is_empty()
@@ -286,9 +309,14 @@ func _complete(o: Dictionary) -> bool:
 				if not done:
 					p.inventory.add(o.item, 1)
 		"remove":
-			var got: ItemData = grid.remove_block(o.key) if o.what == "block" else grid.remove_furniture(o.key)
-			if got and p:
-				p.inventory.add(got, 1)
+			if o.what == "prop":
+				for it in world.remove_village_prop(o.prop):
+					if p:
+						p.inventory.add(it[0], it[1])
+			else:
+				var got: ItemData = grid.remove_block(o.key) if o.what == "block" else grid.remove_furniture(o.key)
+				if got and p:
+					p.inventory.add(got, 1)
 			done = true
 		"terrain":
 			if ready_to_build(o):
@@ -413,6 +441,8 @@ func order_position(o: Dictionary) -> Vector3:
 		"block":
 			return Vector3(o.key.x + 0.5, float(o.key.y), o.key.z + 0.5)
 		"remove":
+			if o.what == "prop":
+				return Vector3(o.key.x + 0.5, float(o.key.y), o.key.z + 0.5)
 			return Vector3(o.key.x + 0.5, float(o.key.y) if o.what == "block" else float(o.key.y) * 0.5, o.key.z + 0.5)
 		"furniture":
 			return Vector3(o.cell.x + 0.5, float(o.base), o.cell.y + 0.5)
@@ -441,6 +471,12 @@ func _process(_delta: float) -> void:
 			"remove":
 				if o.what == "block":
 					list.append([Transform3D(Basis.from_scale(Vector3.ONE * 1.06), Vector3(o.key.x + 0.5, o.key.y + 0.5, o.key.z + 0.5)), C_REMOVE])
+				elif o.what == "prop":
+					var pr := world.village_prop(o.prop)
+					if pr:
+						var box := WorldGenerator.prop_box(pr)
+						var rot := Basis(Vector3.UP, pr.rotation.y)
+						list.append([Transform3D(rot * Basis.from_scale(box.size * 1.05), pr.global_position + rot * box.position), C_REMOVE])
 				else:
 					list.append([Transform3D(Basis.from_scale(Vector3(0.9, 1.1, 0.9)), Vector3(o.cell.x + 0.5, o.key.y * 0.5 + 0.55, o.cell.y + 0.5)), C_REMOVE])
 			"terrain":
@@ -501,7 +537,7 @@ func export_state() -> Array:
 			d.k = [o.key.x, o.key.y, o.key.z]
 		if o.has("item"):
 			d.item = o.item.id
-		for f in ["rot", "base", "h", "what", "replace"]:
+		for f in ["rot", "base", "h", "what", "replace", "prop"]:
 			if o.has(f):
 				d[f] = o[f]
 		if o.has("upgrade"):
@@ -528,6 +564,8 @@ func import_state(list: Array) -> void:
 			o.rot = int(d.rot)
 		if d.has("what"):
 			o.what = str(d.what)
+		if d.has("prop"):
+			o.prop = str(d.prop)
 		if d.has("replace"):
 			o.replace = bool(d.replace)
 		if d.has("upgrade") and Items.get_item(d.upgrade):

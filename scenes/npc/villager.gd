@@ -371,7 +371,8 @@ func _build_step(delta: float) -> bool:
 	var target := bo.order_position(_order)
 	var to := _order_spot - global_position
 	to.y = 0.0
-	if to.length() < 0.35:
+	# presque arrivé mais bousculé (autre habitant, coin de mur) : on travaille d'ici
+	if to.length() < 0.35 or (to.length() < 1.2 and _order_stuck > 0.5):
 		velocity = Vector3.ZERO
 		var look := target - global_position
 		look.y = 0.0
@@ -400,7 +401,7 @@ func _build_step(delta: float) -> bool:
 		_order_stuck += delta
 		if _order_stuck > 3.0:
 			# impossible d'y arriver : on laisse ce plan de côté un moment
-			bo.release(_order, 20.0)
+			bo.release(_order, 8.0)
 			_order = null
 	else:
 		_order_stuck = 0.0
@@ -413,7 +414,15 @@ func _stand_spot(bo: BuildOrders, o: Dictionary) -> Vector3:
 	var cell: Vector2i = o.cell
 	var best := Vector3.INF
 	var best_d := INF
-	for r in [1, 2]:
+	# un décor du village (cabane...) est large : on se place autour, hors de son emprise
+	var is_prop: bool = o.type == "remove" and o.get("what") == "prop"
+	var props := {}
+	# cases déjà prises par les autres habitants au travail
+	var taken := {}
+	for v in get_tree().get_nodes_in_group("villagers"):
+		if v != self and v._order != null and v._order_spot != Vector3.INF:
+			taken[Vector2i(floori(v._order_spot.x), floori(v._order_spot.z))] = true
+	for r in ([2, 3, 4] if is_prop else [1, 2]):
 		for dz in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				if maxi(absi(dx), absi(dz)) != r:
@@ -423,6 +432,10 @@ func _stand_spot(bo: BuildOrders, o: Dictionary) -> Vector3:
 				var h := _world.ground_height_at(Vector3(c.x, _world.terrain_height(n) + 0.1, c.z))
 				c.y = h
 				if not _world.is_walkable(c) or _world.build.body_blocked(n, h):
+					continue
+				if is_prop and _world._prop_blocked(n, h, props):
+					continue
+				if taken.has(n):
 					continue
 				if not bo.order_at_cell(n).filter(func(q): return q.type == "block" and absf(q.key.y - h) < 1.5).is_empty():
 					continue
