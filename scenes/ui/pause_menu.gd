@@ -28,10 +28,12 @@ func open() -> void:
 	_info = MenuKit.label("", 12, MenuKit.C_DIM)
 	_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
-	_info.text = "%s · niveau %d\n%s\nTemps de jeu : %s · %s" % [player.profile.hero_name if player.profile else "Héros", player.level,
-		k.title() if k else "", MenuKit.format_time(int(SaveGame.play_time)), SaveGame.DIFFICULTY_NAMES[int(SaveGame.options.difficulty)]]
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+	_info.text = "%s · niveau %d\n%s\nTemps de jeu : %s · %s · graine du monde %d" % [player.profile.hero_name if player.profile else "Héros", player.level,
+		k.title() if k else "", MenuKit.format_time(int(SaveGame.play_time)), SaveGame.DIFFICULTY_NAMES[int(SaveGame.options.difficulty)],
+		w.world_seed if w else 0]
 	_box.add_child(_info)
-	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Charger", _load], ["Options", _options],
+	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Charger", _load], ["Commandes", _controls], ["Options", _options],
 		["Menu principal", _to_title], ["Quitter le jeu", _quit]]
 	var first: Button = null
 	for it in items:
@@ -63,7 +65,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
 		# un sous-menu ouvert se ferme lui-même
-		if get_children().any(func(c): return c is SaveSlotsPanel or c is OptionsPanel):
+		if get_children().any(func(c): return c is SaveSlotsPanel or c is OptionsPanel or c is ControlsPanel):
 			return
 		close()
 		get_viewport().set_input_as_handled()
@@ -85,6 +87,18 @@ func _save() -> void:
 func _load() -> void:
 	var panel := SaveSlotsPanel.new("load")
 	panel.chosen.connect(func(s): SaveGame.load_game(s))
+	add_child(panel)
+
+
+func _controls() -> void:
+	# le menu pause se cache derrière la fenêtre des commandes
+	var holder := _box.get_parent().get_parent() as Control
+	holder.hide()
+	var panel := ControlsPanel.new()
+	panel.closed.connect(func():
+		holder.show()
+		if visible:
+			(_box.get_child(5) as Button).grab_focus())
 	add_child(panel)
 
 

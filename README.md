@@ -6,6 +6,8 @@
 Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par l'écran titre (`scenes/ui/title_screen.tscn`) : Continuer, Nouvelle partie (création du héros), Charger, Options, Quitter. `scenes/main.tscn` se lance aussi seul (F6) avec un héros par défaut.
 
 ## Commandes
+Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écran titre → **Commandes** (4 onglets, clavier-souris et manette côte à côte). En jeu, seul un petit rappel s'affiche sous la mini-carte (désactivable dans les options).
+
 - ZQSD ou flèches (joystick gauche) : se déplacer, dans le sens de la caméra
 - Espace (A à la manette) : sauter (assez haut pour monter sur un bloc de 1 m)
 - Maj (B à la manette) : roulade (esquive : invulnérable pendant la roulade)
@@ -160,7 +162,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - **3 emplacements de sauvegarde** et une **sauvegarde automatique** toutes les 5 minutes (désactivable). Menu pause > Sauvegarder ; écran titre > Continuer (la plus récente) ou Charger. Chaque emplacement affiche le héros, son niveau, le rang du royaume, la zone, le temps de jeu et la date.
 - Ce qui est sauvegardé : le héros (apparence, classe, métier, compétence, niveau, expérience, vie, sac, équipement, âmes de boss), le monde (graine, terrassement, décors récoltés, carte dévoilée, zones découvertes, obélisques activés, donjons vaincus, objets ramassés, voyageurs recrutés), toutes les constructions (blocs et meubles : les pièces sont reconnues à nouveau), les habitants (race, nom, talents, niveau, équipement, poste de travail, compagnons) et le temps avant le prochain raid. Sauvegarder dans un donjon te fera reprendre devant son entrée.
 - Les fichiers sont dans le dossier utilisateur de Godot (`user://saves/partie_1.json`... ; sous Windows : `%APPDATA%\Godot\app_userdata\L'Éveil du Royaume\saves`).
-- **Options** (écran titre ou pause, enregistrées dans `user://options.cfg`) : difficulté, distance de la caméra, volume, plein écran, aide des touches à l'écran, sauvegarde automatique.
+- **Options** (écran titre ou pause, enregistrées dans `user://options.cfg`) : difficulté, distance de la caméra, volume, plein écran, rappel du menu des commandes à l'écran, sauvegarde automatique.
 - **Difficulté** : Facile (monstres −25 % de vie et −30 % de dégâts, raids 40 % plus espacés), Normal, Difficile (monstres +35 % de vie et de dégâts, raids 25 % plus fréquents). Les valeurs sont dans `scripts/save/save_game.gd` (ENEMY_HP, ENEMY_DMG, RAID_DELAY).
 - **Équilibrage** : à niveau égal avec l'équipement de sa tranche de niveau, un monstre normal tombe en 3 à 7 coups et le héros encaisse 12 à 25 coups ; un boss demande 35 à 75 coups et le héros tombe en 7 à 9 de ses coups (ils sont tous annoncés : esquive-les !).
 

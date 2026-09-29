@@ -57,7 +57,7 @@ func _build() -> void:
 	vol.value = float(o.volume)
 	vol.value_changed.connect(func(v): o.volume = v; _save())
 	_row("Volume", vol)
-	for pair in [["fullscreen", "Plein écran"], ["show_help", "Aide des touches à l'écran"], ["autosave", "Sauvegarde automatique (5 min)"]]:
+	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"]]:
 		var cb := CheckButton.new()
 		cb.button_pressed = bool(o[pair[0]])
 		var key: String = pair[0]

@@ -124,7 +124,7 @@ func _refresh_menu() -> void:
 		_menu.add_child(l)
 		first = b
 	var items := [["Nouvelle partie", func(): SaveGame.new_game()],
-		["Charger une partie", _load], ["Options", _options], ["Quitter", func(): get_tree().quit()]]
+		["Charger une partie", _load], ["Commandes", _controls], ["Options", _options], ["Quitter", func(): get_tree().quit()]]
 	for it in items:
 		var b := MenuKit.button(it[0], 320, 17)
 		b.pressed.connect(it[1])
@@ -140,6 +140,12 @@ func _load() -> void:
 	var panel := SaveSlotsPanel.new("load")
 	panel.chosen.connect(func(s): SaveGame.load_game(s))
 	panel.cancelled.connect(_refresh_menu)
+	_ui.add_child(panel)
+
+
+func _controls() -> void:
+	var panel := ControlsPanel.new()
+	panel.closed.connect(_refresh_menu)
 	_ui.add_child(panel)
 
 
