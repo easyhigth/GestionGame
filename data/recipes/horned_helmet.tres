@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/horned_helmet.tres" id="horned_helmet"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="iron_ingot"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="stone"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("horned_helmet")
+ingredients = Array[ExtResource("2")]([ExtResource("iron_ingot"), ExtResource("stone")])
+amounts = PackedInt32Array(3, 2)
+needs_workbench = true

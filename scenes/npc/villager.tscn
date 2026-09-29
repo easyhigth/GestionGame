@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scenes/npc/villager.gd" id="1"]
 [ext_resource type="Resource" path="res://data/races/humain.tres" id="2"]
 [ext_resource type="Script" path="res://scripts/voxel_character.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/items/character_equipment.gd" id="4"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_body"]
 radius = 0.3
@@ -15,6 +16,21 @@ race = ExtResource("2")
 
 [node name="Visual" type="Node3D" parent="."]
 script = ExtResource("3")
+
+[node name="Equipment" type="Node" parent="."]
+script = ExtResource("4")
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+visible = false
+billboard = 1
+no_depth_test = true
+modulate = Color(1, 0.96, 0.85, 1)
+outline_modulate = Color(0.08, 0.06, 0.05, 1)
+text = "Habitant"
+font_size = 40
+outline_size = 10
+pixel_size = 0.006
 
 [node name="Collision" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)

@@ -1,22 +1,15 @@
 [gd_resource type="Resource" script_class="RaceData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_garde.glb" id="m0"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_garde_v2.glb" id="m1"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_garde_v3.glb" id="m2"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_forgeron.glb" id="m3"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_forgeron_v2.glb" id="m4"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_forgeron_v3.glb" id="m5"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_marchand.glb" id="m6"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_marchand_v2.glb" id="m7"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_marchand_v3.glb" id="m8"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_mage.glb" id="m9"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_mage_v2.glb" id="m10"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/spirit_mage_v3.glb" id="m11"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/spirit_base.glb" id="m0"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/spirit_base_v2.glb" id="m1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/spirit_base_v3.glb" id="m2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/spirit_equipment.glb" id="eq"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Esprit"
 description = "Êtres élémentaires de feu, d'eau, de vent, de terre ou de lumière."
 model = ExtResource("m0")
-villager_models = Array[PackedScene]([ExtResource("m1"), ExtResource("m2"), ExtResource("m3"), ExtResource("m4"), ExtResource("m5"), ExtResource("m6"), ExtResource("m7"), ExtResource("m8"), ExtResource("m9"), ExtResource("m10"), ExtResource("m11")])
+villager_models = Array[PackedScene]([ExtResource("m0"), ExtResource("m1"), ExtResource("m2")])
+equipment = ExtResource("eq")

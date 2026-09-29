@@ -46,6 +46,35 @@
 [ext_resource type="PackedScene" path="res://assets/environment/models/flowers_1.glb" id="e_flowers_1"]
 [ext_resource type="PackedScene" path="res://assets/environment/models/flowers_2.glb" id="e_flowers_2"]
 [ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="e_grass_1"]
+[ext_resource type="Resource" path="res://data/items/sword_wood.tres" id="it_sword_wood"]
+[ext_resource type="Resource" path="res://data/items/shield_wood.tres" id="it_shield_wood"]
+[ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="it_leather_cap"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="it_leather_armor"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="it_wood"]
+[ext_resource type="Resource" path="res://data/items/leather_pants.tres" id="it_leather_pants"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+[ext_resource type="Resource" path="res://data/items/sword_iron.tres" id="it_sword_iron"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
+[ext_resource type="Resource" path="res://data/items/axe.tres" id="it_axe"]
+[ext_resource type="Resource" path="res://data/items/spear.tres" id="it_spear"]
+[ext_resource type="Resource" path="res://data/items/war_hammer.tres" id="it_war_hammer"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="it_staff"]
+[ext_resource type="Resource" path="res://data/items/shield_iron.tres" id="it_shield_iron"]
+[ext_resource type="Resource" path="res://data/items/iron_helmet.tres" id="it_iron_helmet"]
+[ext_resource type="Resource" path="res://data/items/horned_helmet.tres" id="it_horned_helmet"]
+[ext_resource type="Resource" path="res://data/items/mage_hat.tres" id="it_mage_hat"]
+[ext_resource type="Resource" path="res://data/items/iron_armor.tres" id="it_iron_armor"]
+[ext_resource type="Resource" path="res://data/items/mage_robe.tres" id="it_mage_robe"]
+[ext_resource type="Resource" path="res://data/items/iron_gauntlets.tres" id="it_iron_gauntlets"]
+[ext_resource type="Resource" path="res://data/items/iron_greaves.tres" id="it_iron_greaves"]
+[ext_resource type="Resource" path="res://data/items/cape_blue.tres" id="it_cape_blue"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="it_stone"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="it_iron_ore"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/items/item_pickup.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://scenes/props/workbench.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://scenes/props/weapon_rack.tscn" id="14"]
+[ext_resource type="Script" path="res://scenes/ui/inventory_ui.gd" id="15"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_height"]
 frequency = 0.025
@@ -91,6 +120,16 @@ campfire_scene = ExtResource("6")
 barrel_scene = ExtResource("7")
 crate_scene = ExtResource("8")
 villager_scene = ExtResource("9")
+workbench_scene = ExtResource("13")
+weapon_rack_scene = ExtResource("14")
+pickup_scene = ExtResource("12")
+starting_loot = Array[ExtResource("11")]([ExtResource("it_sword_wood"), ExtResource("it_shield_wood"), ExtResource("it_leather_cap"), ExtResource("it_leather_armor"), ExtResource("it_wood"), ExtResource("it_leather_pants"), ExtResource("it_fiber"), ExtResource("it_sword_iron"), ExtResource("it_leather"), ExtResource("it_wood")])
+wild_loot = Array[ExtResource("11")]([ExtResource("it_sword_iron"), ExtResource("it_axe"), ExtResource("it_spear"), ExtResource("it_war_hammer"), ExtResource("it_staff"), ExtResource("it_shield_iron"), ExtResource("it_iron_helmet"), ExtResource("it_horned_helmet"), ExtResource("it_mage_hat"), ExtResource("it_iron_armor"), ExtResource("it_mage_robe"), ExtResource("it_iron_gauntlets"), ExtResource("it_iron_greaves"), ExtResource("it_cape_blue")])
+wood_item = ExtResource("it_wood")
+stone_item = ExtResource("it_stone")
+iron_ore_item = ExtResource("it_iron_ore")
+leather_item = ExtResource("it_leather")
+fiber_item = ExtResource("it_fiber")
 villager_races = Array[ExtResource("10")]([ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14"), ExtResource("r15"), ExtResource("r16"), ExtResource("r17"), ExtResource("r18"), ExtResource("r19"), ExtResource("r20"), ExtResource("r21")])
 
 [node name="Terrain" type="Node3D" parent="World"]
@@ -107,13 +146,23 @@ world = NodePath("../World")
 player = NodePath("../World/Player")
 races = Array[ExtResource("10")]([ExtResource("r0"), ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r14"), ExtResource("r15"), ExtResource("r16"), ExtResource("r17"), ExtResource("r18"), ExtResource("r19"), ExtResource("r20"), ExtResource("r21")])
 
+[node name="Inventaire" type="Control" parent="HUD"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("15")
+
 [node name="Info" type="Label" parent="HUD"]
 offset_left = 10.0
 offset_top = 8.0
-offset_right = 700.0
+offset_right = 950.0
 offset_bottom = 60.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.1, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "Chargement..."

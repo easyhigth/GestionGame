@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "war_hammer"
+display_name = "Marteau de guerre"
+description = "Une masse de fer à deux mains, dévastatrice."
+slot = 1
+rarity = 2
+two_handed = true
+attack = 14
+speed_bonus = -0.08

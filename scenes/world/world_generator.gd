@@ -88,6 +88,31 @@ signal world_generated(seed_used: int)
 ## Races possibles pour les habitants de départ.
 @export var villager_races: Array[RaceData] = []
 @export var villager_count: int = 6
+## Établi (pour fabriquer les objets en fer) et râtelier d'armes du village.
+@export var workbench_scene: PackedScene
+@export var weapon_rack_scene: PackedScene
+## Chance qu'un habitant commence avec une partie de l'équipement d'un métier.
+@export_range(0.0, 1.0, 0.05) var villager_gear_chance: float = 0.85
+
+@export_group("Objets à ramasser")
+## Scène d'un objet posé au sol.
+@export var pickup_scene: PackedScene
+## Objets posés autour du feu au début de la partie.
+@export var starting_loot: Array[ItemData] = []
+## Équipements rares cachés dans la nature.
+@export var wild_loot: Array[ItemData] = []
+@export_range(0.0, 0.01, 0.0001) var wild_loot_chance: float = 0.0008
+@export var wood_item: ItemData
+@export var stone_item: ItemData
+@export var iron_ore_item: ItemData
+@export var leather_item: ItemData
+@export var fiber_item: ItemData
+## Chances par case (herbe près des forêts pour le bois, roche pour la pierre et le fer...).
+@export_range(0.0, 0.05, 0.001) var wood_chance: float = 0.008
+@export_range(0.0, 0.05, 0.001) var stone_chance: float = 0.012
+@export_range(0.0, 0.05, 0.001) var iron_chance: float = 0.008
+@export_range(0.0, 0.05, 0.001) var leather_chance: float = 0.003
+@export_range(0.0, 0.05, 0.001) var fiber_chance: float = 0.004
 
 # Types de sol
 const DEEP := 0
@@ -193,6 +218,7 @@ func generate(seed_value: int) -> void:
 	_place_player()
 	if not Engine.is_editor_hint():
 		_build_village()
+		_scatter_loot()
 	world_generated.emit(seed_value)
 
 
@@ -664,15 +690,107 @@ func _build_village() -> void:
 	_spawn(crate_scene, Vector2(3.6, -6.4)).rotation.y = 0.3
 	_spawn(crate_scene, Vector2(9.8, -1.2))
 	_spawn(crate_scene, Vector2(4.4, -6.9)).rotation.y = -0.2
+	var bench := _spawn(workbench_scene, Vector2(-8.5, 3.5))
+	_face_center(bench)
+	_face_center(_spawn(weapon_rack_scene, Vector2(9.0, 2.5)))
+	# objets posés autour du feu
+	for i in starting_loot.size():
+		var a := PI * 0.15 + PI * 0.7 * float(i) / maxf(1.0, starting_loot.size() - 1.0)
+		var off := Vector2.from_angle(a) * (2.6 + (i % 2) * 1.0)
+		var origin := cell_center(spawn_cell)
+		spawn_pickup(starting_loot[i], Vector3(origin.x + off.x, origin.y, origin.z + off.y))
 	if villager_scene == null or villager_races.is_empty():
 		return
 	var pool := villager_races.duplicate()
 	pool.shuffle()
+	var kits := VILLAGER_KITS.duplicate()
+	kits.shuffle()
 	for i in villager_count:
 		var race: RaceData = pool[i % pool.size()]
 		var angle := TAU * float(i) / float(villager_count) + _rng.randf() * 0.4
 		var off := Vector2.from_angle(angle) * _rng.randf_range(2.5, 5.5)
-		_spawn(villager_scene, off, {"race": race})
+		var v := _spawn(villager_scene, off, {"race": race})
+		if v and _rng.randf() < villager_gear_chance:
+			_give_kit(v, kits[i % kits.size()])
+
+
+## Tenues de départ des habitants (identifiants d'objets de data/items/).
+const VILLAGER_KITS := [
+	["spear", "iron_helmet", "shield_wood", "leather_armor", "leather_pants"],
+	["staff", "mage_hat", "mage_robe", "cape_blue"],
+	["axe", "horned_helmet", "leather_armor", "leather_bracers", "iron_greaves"],
+	["sword_iron", "shield_iron", "iron_armor", "iron_helmet", "iron_gauntlets", "iron_greaves", "cape_red"],
+	["dagger", "leather_cap", "leather_armor", "leather_pants", "leather_bracers", "cape_red"],
+	["war_hammer", "iron_armor", "iron_gauntlets", "leather_pants"],
+]
+
+
+## Équipe un habitant avec une partie (au moins la moitié) d'une tenue.
+func _give_kit(villager: Node, kit: Array) -> void:
+	var eq := villager.get_node_or_null("Equipment") as CharacterEquipment
+	if eq == null:
+		return
+	var n := _rng.randi_range(ceili(kit.size() / 2.0), kit.size())
+	for i in n:
+		var item := Items.get_item(kit[i]) as ItemData
+		if item:
+			eq.equip(item)
+
+
+## Pose un objet au sol (il flotte et se ramasse en marchant dessus).
+func spawn_pickup(item: ItemData, pos: Vector3, amount: int = 1) -> ItemPickup:
+	if pickup_scene == null or item == null:
+		return null
+	var p := pickup_scene.instantiate() as ItemPickup
+	p.item = item
+	p.count = amount
+	$Village.add_child(p)
+	p.global_position = Vector3(pos.x, ground_height_at(pos), pos.z)
+	return p
+
+
+## Répartit les matériaux et quelques équipements rares sur l'île.
+func _scatter_loot() -> void:
+	var lrng := RandomNumberGenerator.new()
+	lrng.seed = world_seed + 99
+	for y in world_size.y:
+		for x in world_size.x:
+			var cell := Vector2i(x, y)
+			var i := _idx(cell)
+			var d := _decor[i]
+			if d == D_OAK or d == D_PINE or d == D_BUSH or d == D_ROCK:
+				continue
+			if Vector2(cell - spawn_cell).length() < plaza_radius + 1:
+				continue
+			var t := _types[i]
+			var item: ItemData = null
+			var amount := 1
+			var r := lrng.randf()
+			match t:
+				GRASS:
+					var m := moisture_noise.get_noise_2d(x, y)
+					if m > forest_moisture and r < wood_chance:
+						item = wood_item
+						amount = lrng.randi_range(1, 3)
+					elif r < fiber_chance:
+						item = fiber_item
+						amount = lrng.randi_range(1, 3)
+					elif r < fiber_chance + leather_chance:
+						item = leather_item
+					elif r < fiber_chance + leather_chance + wild_loot_chance and not wild_loot.is_empty():
+						item = wild_loot[lrng.randi() % wild_loot.size()]
+				STONE:
+					if r < iron_chance:
+						item = iron_ore_item
+						amount = lrng.randi_range(1, 2)
+					elif r < iron_chance + stone_chance:
+						item = stone_item
+						amount = lrng.randi_range(1, 3)
+				SAND:
+					if r < stone_chance * 0.4:
+						item = stone_item
+			if item:
+				spawn_pickup(item, cell_center(cell), amount)
 
 
 func _ensure_noises() -> void:

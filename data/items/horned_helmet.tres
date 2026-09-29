@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "horned_helmet"
+display_name = "Casque à cornes"
+description = "Il impressionne autant qu'il protège."
+slot = 3
+rarity = 2
+attack = 1
+defense = 4

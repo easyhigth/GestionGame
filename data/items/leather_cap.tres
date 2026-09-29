@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "leather_cap"
+display_name = "Capuche de cuir"
+description = "Protège la tête sans gêner la vue."
+slot = 3
+defense = 1

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="leather_armor"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="leather"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="fiber"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("leather_armor")
+ingredients = Array[ExtResource("2")]([ExtResource("leather"), ExtResource("fiber")])
+amounts = PackedInt32Array(4, 1)

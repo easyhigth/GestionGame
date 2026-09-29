@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/cape_blue.tres" id="cape_blue"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="fiber"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("cape_blue")
+ingredients = Array[ExtResource("2")]([ExtResource("fiber")])
+amounts = PackedInt32Array(4)

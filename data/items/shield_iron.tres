@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "shield_iron"
+display_name = "Bouclier en fer"
+description = "Un grand écu aux couleurs du royaume."
+slot = 2
+rarity = 2
+defense = 7
+speed_bonus = -0.03

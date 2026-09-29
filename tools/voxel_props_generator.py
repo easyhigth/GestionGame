@@ -266,7 +266,57 @@ def crate(seed=1):
     return g
 
 
+def workbench(seed=1):
+    """Établi d'artisan : table, enclume, outils et petite forge."""
+    g = Node('Workbench')
+    # table
+    V(44, 4, 22, WOOD, 0, 18, 0, g)
+    V(46, 1.5, 24, shade(WOOD, 1.1), 0, 20.5, 0, g)
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            V(4, 16, 4, WOOD_D, sx * 19, 8, sz * 8, g)
+    V(40, 3, 3, WOOD_D, 0, 5, 8, g)
+    # outils posés
+    V(10, 1.5, 2, 0x8a8e96, -12, 22, 2, g)
+    V(3, 2, 4, 0x6e747e, -8, 22.2, 2, g)
+    V(1.5, 1.5, 12, WOOD_D, 6, 22, -3, g, ry=0.4)
+    V(4, 2.5, 3, 0x6e747e, 8, 22.5, 1, g)
+    V(12, 2, 8, 0x7a4a2a, 14, 22, -4, g)
+    # enclume
+    V(8, 8, 8, 0x5a5a60, 34, 4, 0, g)
+    V(6, 4, 5, 0x3e3e44, 34, 10, 0, g)
+    V(14, 4, 7, 0x4e4e56, 35, 14, 0, g)
+    V(5, 3, 4, 0x4e4e56, 43, 14.5, 0, g)
+    # petite forge
+    V(16, 12, 14, 0x7a7872, -34, 6, 0, g)
+    V(12, 2, 10, 0x2a2420, -34, 12.5, 0, g)
+    VG(8, 2, 6, 0xff7a20, -34, 13.2, 0, g)
+    VG(4, 2, 3, 0xffc040, -33, 14.4, 1, g)
+    V(6, 20, 6, 0x6a6862, -38, 22, -4, g)
+    # tonneau d'eau
+    V(9, 12, 9, WOOD, 26, 6, 13, g)
+    V(10, 1.5, 10, 0x4a4a50, 26, 3, 13, g)
+    V(10, 1.5, 10, 0x4a4a50, 26, 10, 13, g)
+    V(7, 1, 7, 0x3a6a9a, 26, 12.2, 13, g)
+    return g
+
+
+def weapon_rack(seed=1):
+    """Râtelier d'armes (décor)."""
+    g = Node('WeaponRack')
+    for sx in (-1, 1):
+        V(3, 30, 3, WOOD_D, sx * 16, 15, 0, g)
+        V(8, 2, 6, WOOD_D, sx * 16, 1, 0, g)
+    V(36, 3, 3, WOOD, 0, 26, 0, g)
+    V(36, 3, 3, WOOD, 0, 8, 2, g)
+    for i, x in enumerate((-10, -3, 4, 11)):
+        V(1, 28, 1, WOOD, x, 15, 1, g, rz=0.08)
+        V(2.4, 3, 1, 0xd9dde3, x + 1.1, 29, 1, g, rz=0.08)
+    return g
+
+
 PROPS = {
+    'workbench': workbench, 'weapon_rack': weapon_rack,
     'oak_1': lambda: oak(1), 'oak_2': lambda: oak(2), 'oak_3': lambda: oak(3), 'oak_autumn': lambda: oak(4, True),
     'pine_1': lambda: pine(1), 'pine_2': lambda: pine(2), 'pine_3': lambda: pine(3),
     'bush_1': lambda: bush(1), 'bush_2': lambda: bush(2),
