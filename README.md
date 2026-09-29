@@ -1,7 +1,7 @@
 # Jeu de gestion
 
 ## Ouvrir le projet
-Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer.
+Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par l'écran de création du héros (`scenes/ui/character_creator.tscn`) ; `scenes/main.tscn` se lance aussi seul (F6) avec un héros par défaut.
 
 ## Commandes
 - ZQSD ou flèches : se déplacer
@@ -27,6 +27,14 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer.
 - `scenes/main.tscn` > nœud **World** > groupe **Monstres** : nombre de camps, distance au village, monstres des forêts / plaines / roches et monstres dangereux (loin du village).
 - `scenes/player/player.tscn` > nœud **Health** : régénération de la vie ; propriété **Respawn Delay** du joueur. `scenes/npc/villager.tscn` : distance d'alerte, rayon de défense et durée du K.O. des habitants.
 - `scenes/main.tscn` > nœud **World** > groupe **Objets à ramasser** : objets posés autour du feu au départ, équipements rares dans la nature, fréquence des matériaux (bois, pierre, minerai de fer, cuir, fibre).
+
+## Création du héros
+- **Race** : 22 races, chacune avec ses caractéristiques (vie, force, agilité, magie, vitesse) dans `data/races/*.tres`. L'agilité accélère les coups.
+- **Apparence** : style propre à la race (coiffure, cornes, espèce de l'homme-bête, élément de l'esprit, type d'ange...), barbe (humain), couleurs de peau, de cheveux (ou plumes, fourrure, feuillage) et d'yeux (pastilles de la race ou couleur libre), taille et carrure.
+- **Classe** (`data/classes/`) : Guerrier, Paladin, Barbare, Rôdeur, Assassin, Mage. Donne l'équipement de départ, des bonus et le gain de caractéristiques à chaque niveau.
+- **Métier** (`data/jobs/`) : Forgeron, Chasseur, Bûcheron, Mineur, Herboriste, Marchand, Tisserand. Donne des matériaux de départ et un avantage (vie, défense, vitesse, régénération, butin...).
+- **Niveaux** : les monstres vaincus donnent de l'expérience ; chaque niveau augmente la vie, l'attaque, la défense et la magie selon la classe (barre bleue sous la vie).
+- Les modèles du héros sont dans `assets/characters/hero/` (outil `tools/voxel_hero_generator.py`) : la peau, les cheveux et les yeux y sont peints avec des couleurs repères, remplacées en jeu par les couleurs choisies (`VoxelCharacter.set_colors`).
 
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.
@@ -76,7 +84,7 @@ Choix de conception :
 
 Étapes :
 1. Combat à la Zelda : verrouillage de cible, combos, attaque chargée, esquive parfaite, parade et contre, animations et effets. **(fait)**
-2. Héros : création, classes, métiers, compétences uniques qui évoluent, niveaux. **(prochaine étape)**
+2. Héros : création et personnalisation, classes, métiers, niveaux **(fait)** ; compétences uniques qui évoluent **(prochaine étape)**.
 3. Construction du royaume : bâtiments sur grille, paliers, métiers et postes des habitants.
 4. Monde ouvert : régions, monde plus grand chargé par morceaux, carte.
 5. Donjons et boss.

@@ -971,7 +971,7 @@ def harpy(k, p):
     dress(b, k); return b
 
 def spirit(k, p):
-    S = p['skin']; el = SK['spirit'].index(S)
+    S = p['skin']; el = p['el'] if 'el' in p else SK['spirit'].index(S)
     p['cloth'] = S; p['pants'] = S
     o = dict(legH=13, lw=3.8, ld=4, gap=2.4,
              tiers=[[2.4, 7.4, 4.6], [3, 6.8, 4.4], [4.4, 9.2, 5], [2.4, 10, 4.8]],

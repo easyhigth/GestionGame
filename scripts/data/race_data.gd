@@ -4,6 +4,8 @@ extends Resource
 ## Chaque race est un fichier .tres dans data/races/ : duplique-en un pour en créer une nouvelle.
 
 @export var display_name: String = "Race"
+## Nom du modèle dans les fichiers .glb (ex. « human », « kijin »).
+@export var model_id: String = ""
 @export_multiline var description: String = ""
 ## Modèle 3D voxel (.glb) du joueur quand il joue cette race (version nue, l'équipement s'ajoute par-dessus).
 ## Les modèles sont dans assets/characters/models/base/ (race_base.glb, _v2 et _v3 = autres palettes).

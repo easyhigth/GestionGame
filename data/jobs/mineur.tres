@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/job_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="it_iron_ore"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="it_stone"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Mineur"
+description = "Il connaît la roche et ses filons. Commence avec du minerai et de la pierre."
+starting_items = Array[ExtResource("2")]([ExtResource("it_iron_ore"), ExtResource("it_stone")])
+starting_counts = PackedInt32Array(6, 6)
+bonus_defense = 1
+bonus_health = 15

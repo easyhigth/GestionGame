@@ -216,6 +216,9 @@ func _on_died() -> void:
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), c.darkened(0.2), 36, 5.0, 0.13, 0.9, "sphere", 12.0, false)
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color(1, 1, 0.9), 16, 6.0, 0.07, 0.4)
 	_drop_loot()
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("gain_xp") and data:
+		player.gain_xp(data.xp_reward if data.xp_reward > 0 else roundi(data.max_health / 4.0 + data.attack))
 	died_at.emit(global_position)
 
 
@@ -226,8 +229,10 @@ func _drop_loot() -> void:
 	if world == null:
 		return
 	var n := 0
+	var player := get_tree().get_first_node_in_group("player")
+	var mult: float = player.loot_multiplier() if player and player.has_method("loot_multiplier") else 1.0
 	for i in data.loot.size():
-		var chance := data.loot_chances[i] if i < data.loot_chances.size() else 0.5
+		var chance := minf(1.0, (data.loot_chances[i] if i < data.loot_chances.size() else 0.5) * mult)
 		if randf() < chance:
 			var a := TAU * n / 5.0 + randf() * 0.5
 			world.spawn_pickup(data.loot[i], global_position + Vector3(cos(a), 0, sin(a)) * 0.9)

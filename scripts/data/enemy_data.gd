@@ -41,6 +41,9 @@ extends Resource
 ## Rayon du corps.
 @export var body_radius: float = 0.4
 
+## Expérience donnée quand il est vaincu (0 = calculée d'après sa vie et son attaque).
+@export var xp_reward: int = 0
+
 @export_group("Butin")
 ## Objets qu'il peut laisser tomber ; loot_chances[i] = chance (0 à 1) de lâcher loot[i].
 @export var loot: Array[ItemData] = []

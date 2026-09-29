@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/dagger.tres" id="it_dagger"]
+[ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="it_leather_cap"]
+[ext_resource type="Resource" path="res://data/items/leather_bracers.tres" id="it_leather_bracers"]
+[ext_resource type="Resource" path="res://data/items/leather_pants.tres" id="it_leather_pants"]
+[ext_resource type="Resource" path="res://data/items/cape_blue.tres" id="it_cape_blue"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Assassin"
+description = "Frappe vite et disparaît. Fragile, mais ses combos sont redoutables."
+color = Color(0.55, 0.45, 0.75, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_dagger"), ExtResource("it_leather_cap"), ExtResource("it_leather_bracers"), ExtResource("it_leather_pants"), ExtResource("it_cape_blue")])
+bonus_health = 0
+bonus_attack = 5
+bonus_defense = 0
+bonus_magic = 1
+health_per_level = 9
+attack_per_level = 1.5
+defense_per_level = 0.2
+magic_per_level = 0.5

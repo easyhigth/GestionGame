@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/job_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Chasseur"
+description = "Il traque le gibier et en tire du cuir. Plus rapide, et les bêtes lui laissent plus de butin."
+starting_items = Array[ExtResource("2")]([ExtResource("it_leather")])
+starting_counts = PackedInt32Array(4)
+bonus_speed = 0.06
+loot_multiplier = 1.3

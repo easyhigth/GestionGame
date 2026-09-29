@@ -71,6 +71,10 @@ var _trail_prev: Array[Vector3] = []
 var _weapon_len := 0.0
 var _trail_col := Color.WHITE
 
+# couleurs personnalisées (héros) : rôle -> Couleur
+var _colors := {}
+static var _recolor_cache := {}
+
 # étourdissement et lueur de l'arme
 var _stars: Node3D
 var _glow_mat: StandardMaterial3D
@@ -117,7 +121,57 @@ func set_model(scene: PackedScene) -> void:
 			_rest[n] = (_bones[n] as Node3D).transform
 	# les créatures à quatre pattes n'ont pas de mains : elles mordent au lieu de frapper
 	_quadruped = not _bones.has("HandL")
+	if not _colors.is_empty():
+		_recolor()
 	_refresh_equipment()
+
+
+## Couleurs du héros. Les modèles de assets/characters/hero/ ont des couleurs repères
+## (peau (200,1,1), cheveux (1,200,1), yeux (1,1,200) et leurs nuances) remplacées ici.
+func set_colors(skin: Color, hair: Color, eye: Color) -> void:
+	_colors = {"skin": skin, "hair": hair, "eye": eye}
+	_recolor()
+
+
+func _recolor() -> void:
+	if _instance == null:
+		return
+	for node in _instance.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		for s in mi.mesh.get_surface_count():
+			var m := mi.mesh.surface_get_material(s) as StandardMaterial3D
+			if m == null:
+				continue
+			var key := VoxelCharacter.decode_key_color(m.albedo_color)
+			if key.is_empty():
+				continue
+			var c: Color = _colors.get(key[0], Color.WHITE)
+			var f: float = key[1]
+			var cache_key := "%d|%s|%s" % [m.get_instance_id(), c.to_html(), key[0]]
+			var mat: StandardMaterial3D = _recolor_cache.get(cache_key)
+			if mat == null:
+				mat = m.duplicate() as StandardMaterial3D
+				mat.albedo_color = Color(minf(c.r * f, 1.0), minf(c.g * f, 1.0), minf(c.b * f, 1.0), m.albedo_color.a)
+				if mat.emission_enabled:
+					mat.emission = Color(minf(c.r * f, 1.0), minf(c.g * f, 1.0), minf(c.b * f, 1.0))
+				_recolor_cache[cache_key] = mat
+			mi.set_surface_override_material(s, mat)
+
+
+## Reconnaît une couleur repère : renvoie [rôle, nuance] ou [] si c'est une couleur normale.
+static func decode_key_color(c: Color) -> Array:
+	var v := [c.r, c.g, c.b]
+	var roles := ["skin", "hair", "eye"]
+	for i in 3:
+		var others := 0.0
+		for j in 3:
+			if j != i:
+				others = maxf(others, v[j])
+		if v[i] > 0.12 and others < 0.02:
+			return [roles[i], v[i] * 255.0 / 200.0]
+	return []
 
 
 func is_quadruped() -> bool:

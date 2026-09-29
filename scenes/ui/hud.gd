@@ -23,6 +23,8 @@ var _target_name: Label
 var _target_fill: ColorRect
 var _slow_tint: ColorRect
 var _target: Combatant
+var _xp_fill: ColorRect
+var _xp_text: Label
 const HP_WIDTH := 220.0
 
 
@@ -48,6 +50,7 @@ func _ready() -> void:
 		player.health.changed.connect(func(_c, _m): _update_health())
 		player.defeated.connect(func(): _death.show())
 		player.equipment.changed.connect(_update_health)
+		player.xp_changed.connect(func(_x, _n, _l): _update_health())
 	_refresh()
 	_update_health()
 
@@ -81,6 +84,20 @@ func _build_health_bar() -> void:
 	_stats_text = _outlined("", 11)
 	_stats_text.position = Vector2(HP_WIDTH + 12, 0)
 	box.add_child(_stats_text)
+	# barre d'expérience
+	var xb := ColorRect.new()
+	xb.color = Color(0.05, 0.04, 0.04, 0.85)
+	xb.position = Vector2(0, 20)
+	xb.size = Vector2(HP_WIDTH + 4, 8)
+	box.add_child(xb)
+	_xp_fill = ColorRect.new()
+	_xp_fill.color = Color(0.45, 0.8, 1.0)
+	_xp_fill.position = Vector2(2, 22)
+	_xp_fill.size = Vector2(0, 4)
+	box.add_child(_xp_fill)
+	_xp_text = _outlined("", 10)
+	_xp_text.position = Vector2(HP_WIDTH + 12, 16)
+	box.add_child(_xp_text)
 
 
 func _build_death_screen() -> void:
@@ -169,6 +186,10 @@ func _update_health() -> void:
 	_hp_fill.size.x = HP_WIDTH * h.ratio()
 	_hp_text.text = "Vie %d / %d" % [h.current, h.max_health]
 	_stats_text.text = "Attaque %d   Défense %d   Magie %d" % [player.attack_power(), player.defense_power(), player.magic_power()]
+	_xp_fill.size.x = HP_WIDTH * float(player.xp) / float(player.xp_to_next())
+	var who := player.profile.hero_name if player.profile else ""
+	var cls := player.profile.hero_class.display_name if player.profile and player.profile.hero_class else ""
+	_xp_text.text = "%s  ·  %s niveau %d  ·  XP %d / %d" % [who, cls, player.level, player.xp, player.xp_to_next()]
 	if not h.is_dead():
 		_death.hide()
 
@@ -219,5 +240,6 @@ func show_message(text: String) -> void:
 
 func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
+	_update_health()
 	var seed_value: int = world.world_seed if world else 0
 	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]

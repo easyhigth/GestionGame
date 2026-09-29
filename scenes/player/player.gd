@@ -17,6 +17,8 @@ signal open_inventory(target: Node)
 signal feat(text: String, color: Color)
 ## La cible verrouillée a changé (null = aucune).
 signal lock_changed(target: Combatant)
+## L'expérience a changé.
+signal xp_changed(xp: int, needed: int, level: int)
 
 @export var stats: PlayerStats
 @export var race: RaceData
@@ -53,6 +55,10 @@ var inventory := Inventory.new()
 var ui_open := false
 ## Cible verrouillée.
 var lock_target: Combatant
+## Le héros (race, apparence, classe, métier).
+var profile: HeroProfile
+var level := 1
+var xp := 0
 
 var _dash_time := 0.0
 var _dash_elapsed := 99.0
@@ -80,29 +86,115 @@ func _ready() -> void:
 	if stats == null:
 		stats = PlayerStats.new()
 	camera.top_level = true
-	apply_race(race)
-	health.set_max(race.max_health if race else stats.max_health, true)
+	# le héros créé dans l'écran de création, sinon un héros par défaut de la race choisie
+	var hero: HeroProfile = GameState.hero
+	if hero == null:
+		hero = HeroProfile.new()
+		hero.race = race
+		hero.reset_colors()
+		hero.hero_class = load("res://data/classes/guerrier.tres")
+	apply_profile(hero, GameState.hero != null)
 	parried.connect(_on_parried)
 	_make_reticle()
 	snap_camera()
 
 
+## Applique le héros : modèle, couleurs, taille, caractéristiques ; `new_game` donne l'équipement de départ.
+func apply_profile(hero: HeroProfile, new_game := true) -> void:
+	profile = hero
+	race = hero.race
+	visual.set_equipment_library(race.equipment if race else null)
+	visual.set_colors(hero.skin_color, hero.hair_color, hero.eye_color)
+	visual.set_model(hero.model())
+	visual.scale = Vector3(hero.build, hero.height, hero.build)
+	if new_game:
+		if hero.hero_class:
+			for it in hero.hero_class.starting_equipment:
+				for old in equipment.equip(it):
+					inventory.add(old)
+		if hero.job:
+			for i in hero.job.starting_items.size():
+				var n := hero.job.starting_counts[i] if i < hero.job.starting_counts.size() else 1
+				inventory.add(hero.job.starting_items[i], n)
+	_update_max_health(true)
+
+
+## Change de race en gardant le reste du héros (touche R, pour tester).
 func apply_race(new_race: RaceData) -> void:
-	race = new_race
-	if race:
-		visual.set_equipment_library(race.equipment)
-		if race.model:
-			visual.set_model(race.model)
-		if is_node_ready():
-			health.set_max(race.max_health)
+	if profile == null:
+		race = new_race
+		return
+	profile.race = new_race
+	profile.reset_colors()
+	apply_profile(profile, false)
+
+
+func _update_max_health(refill := false) -> void:
+	var hp := (race.max_health if race else stats.max_health)
+	if profile:
+		if profile.hero_class:
+			hp += profile.hero_class.bonus_health + profile.hero_class.health_per_level * (level - 1)
+		if profile.job:
+			hp += profile.job.bonus_health
+	health.set_max(hp, refill)
+	var regen := 2.0 + (profile.job.bonus_regen if profile and profile.job else 0.0)
+	health.regen_per_second = regen
+
+
+func _class_bonus(field: String, per_level: String) -> float:
+	if profile == null or profile.hero_class == null:
+		return 0.0
+	return float(profile.hero_class.get(field)) + float(profile.hero_class.get(per_level)) * (level - 1)
+
+
+func _job_bonus(field: String) -> float:
+	return float(profile.job.get(field)) if profile and profile.job else 0.0
 
 
 func base_attack() -> int:
-	return race.strength if race else 10
+	return roundi((race.strength if race else 10) + _class_bonus("bonus_attack", "attack_per_level") + _job_bonus("bonus_attack"))
+
+
+func base_defense() -> int:
+	return roundi(_class_bonus("bonus_defense", "defense_per_level") + _job_bonus("bonus_defense"))
 
 
 func base_magic() -> int:
-	return race.magic if race else 10
+	return roundi((race.magic if race else 10) + _class_bonus("bonus_magic", "magic_per_level") + _job_bonus("bonus_magic"))
+
+
+## L'agilité de la race accélère les coups (+1,5 % par point au-dessus de 10).
+func attack_speed() -> float:
+	return super() * (1.0 + ((race.agility if race else 10) - 10) * 0.015)
+
+
+## Multiplicateur de butin (métier).
+func loot_multiplier() -> float:
+	return profile.job.loot_multiplier if profile and profile.job else 1.0
+
+
+# ---------------------------------------------------------------- niveaux
+
+## Expérience nécessaire pour passer au niveau suivant.
+func xp_to_next() -> int:
+	return 40 + (level - 1) * 35
+
+
+## Gagne de l'expérience (monstre vaincu...).
+func gain_xp(amount: int) -> void:
+	if amount <= 0 or not is_alive():
+		return
+	xp += amount
+	Combat.popup(self, global_position + Vector3(0, 2.3 * visual.scale.y, 0), "+%d XP" % amount, Color("9fe0ff"))
+	while xp >= xp_to_next():
+		xp -= xp_to_next()
+		level += 1
+		_update_max_health(true)
+		feat.emit("Niveau %d !" % level, Color("ffd24a"))
+		notify.emit("Niveau %d : vie, attaque et magie augmentent." % level)
+		VoxelBurst.spawn(self, global_position + Vector3(0, 0.2, 0), Color(1.0, 0.85, 0.3), 40, 3.5, 0.1, 1.2, "up", -1.5)
+		VoxelBurst.spawn(self, global_position + Vector3(0, 0.1, 0), Color(1.0, 0.95, 0.6), 30, 5.0, 0.08, 0.6, "ring", 0.0)
+	xp_changed.emit(xp, xp_to_next(), level)
 
 
 ## Secoue la caméra (coup reçu, coup porté).
@@ -143,7 +235,7 @@ func _physics_process(delta: float) -> void:
 	var input := Vector3(input2.x, 0, input2.y)
 	if input.length() > 1.0:
 		input = input.normalized()
-	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier()
+	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed"))
 
 	if can_input and can_act():
 		_handle_combat_input(input, delta)
@@ -581,4 +673,5 @@ func total_stats() -> Dictionary:
 
 
 func display_title() -> String:
-	return "Vous (%s)" % (race.display_name if race else "?")
+	var n := profile.hero_name if profile else "Vous"
+	return "%s (%s, niv. %d)" % [n, race.display_name if race else "?", level]

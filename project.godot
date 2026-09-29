@@ -7,13 +7,14 @@ config_version=5
 
 config/name="Jeu de gestion"
 config/description="Action-RPG 3D voxel en monde ouvert vu de dessus avec construction de royaume."
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/ui/character_creator.tscn"
 config/features=PackedStringArray("4.7")
 
 [autoload]
 
 Items="*res://scripts/items/item_database.gd"
 TimeFX="*res://scripts/combat/time_fx.gd"
+GameState="*res://scripts/hero/game_state.gd"
 
 [display]
 
