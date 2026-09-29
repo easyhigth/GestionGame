@@ -61,6 +61,7 @@ func _ready() -> void:
 	add_child(_messages)
 	if world:
 		world.world_generated.connect(func(_s): _refresh())
+	_place_help()
 	_build_health_bar()
 	_build_death_screen()
 	_build_combat_ui()
@@ -87,7 +88,7 @@ func _ready() -> void:
 
 func _build_health_bar() -> void:
 	var box := Control.new()
-	box.position = Vector2(10, 46)
+	box.position = Vector2(10, 12)
 	add_child(box)
 	var frame := ColorRect.new()
 	frame.color = Color(0.05, 0.04, 0.04, 0.85)
@@ -345,7 +346,7 @@ func _build_maps() -> void:
 	add_child(map_ui)
 	_build_boss_bar()
 	_raid_label = _outlined("", 14)
-	_raid_label.position = Vector2(14, 132)
+	_raid_label.position = Vector2(14, 98)
 	_raid_label.add_theme_color_override("font_color", Color("ff8a6a"))
 	add_child(_raid_label)
 	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
@@ -563,6 +564,20 @@ func set_help_visible(on: bool) -> void:
 		info.visible = on
 
 
+## Petit rappel discret sous la mini-carte (la liste complète des touches est dans le menu « Commandes »).
+func _place_help() -> void:
+	# sous la mini-carte, en haut à droite
+	info.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	info.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	info.offset_left = -300
+	info.offset_right = -12
+	info.offset_top = 244
+	info.offset_bottom = 260
+	info.add_theme_font_size_override("font_size", 10)
+	info.modulate = Color(1, 1, 1, 0.7)
+
+
 func show_message(text: String) -> void:
 	var l := Label.new()
 	l.text = text
@@ -580,7 +595,5 @@ func show_message(text: String) -> void:
 
 
 func _refresh() -> void:
-	var race_name: String = player.race.display_name if player and player.race else "?"
 	_update_health()
-	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace/A : sauter   Maj/B : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   F/L/LT (ou clic molette) : viser   Clic molette maintenu / joystick droit : tourner la caméra   Molette : zoom\nQ/RB : compétence   1-4 (R3, croix droite) : attaques/sorts   T (croix gauche) : talents   B : construire   M : carte   I : inventaire   E : parler / habitant   Échap : pause (options, sauvegarde)     Race : %s     Graine du monde : %d" % [race_name, seed_value]
+	info.text = "Échap / Start : menu et commandes"
