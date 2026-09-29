@@ -543,6 +543,21 @@ func _combat_step(delta: float) -> void:
 
 
 ## Déplace le personnage (avec le recul) et le garde sur le sol, hors de l'eau.
+## En l'air (saut ou chute) : vitesse verticale et gravité.
+var airborne := false
+var air_vy := 0.0
+const GRAVITY := 24.0
+
+
+## Saute (vitesse de départ en m/s). Faux si on est déjà en l'air.
+func jump(speed := 7.8) -> bool:
+	if airborne:
+		return false
+	airborne = true
+	air_vy = speed
+	return true
+
+
 func _move_on_ground(delta: float) -> void:
 	if _world == null:
 		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
@@ -554,7 +569,27 @@ func _move_on_ground(delta: float) -> void:
 	velocity = base
 	if _world:
 		global_position = _world.constrain_move(before, global_position)
-		global_position.y = lerpf(global_position.y, _world.ground_height_at(global_position), clampf(18.0 * delta, 0.0, 1.0))
+		var ground := _world.ground_height_at(global_position)
+		if airborne:
+			air_vy -= GRAVITY * delta
+			global_position.y += air_vy * delta
+			if air_vy <= 0.0 and global_position.y <= ground:
+				global_position.y = ground
+				airborne = false
+				air_vy = 0.0
+				_on_landed()
+		elif ground < global_position.y - 0.8:
+			# le sol se dérobe (bord d'un toit, d'une falaise) : on tombe
+			airborne = true
+			air_vy = 0.0
+		else:
+			global_position.y = lerpf(global_position.y, ground, clampf(18.0 * delta, 0.0, 1.0))
+		if visual:
+			visual.airborne = airborne
+
+
+func _on_landed() -> void:
+	pass
 
 
 ## Le combattant ennemi vivant le plus proche dans un rayon (ou null).

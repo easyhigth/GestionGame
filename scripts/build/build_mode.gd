@@ -1,71 +1,135 @@
 class_name BuildMode
 extends Node3D
-## Mode construction (touche B / croix bas) : le joueur récolte, terrasse le sol, pose des blocs et
-## des meubles lui-même, comme dans Minecraft.
-##   Molette ou 1-9 : choisir l'outil ou l'objet · Clic gauche : utiliser / poser · Clic droit : démolir
-##   R : tourner le meuble · [ et ] (ou Maj + molette) : taille du pinceau de terrassement
-##   C : vue en coupe · B : quitter.
-## Manette : LB/RB choisir · X utiliser · Y démolir · joystick droit : déplacer le curseur.
+## Mode construction (touche B / croix bas), inspiré de Going Medieval :
+## le héros reste sur place et une caméra libre survole le village. On choisit une catégorie
+## (terrain, murs, sols, toits, portes et fenêtres, mobilier, démolir), un outil et un matériau,
+## puis on clique-glisse pour tracer des plans (fantômes bleus). Les habitants libres viennent
+## les construire avec les matériaux du sac ; un plan rouge attend des matériaux.
+## On travaille sur un niveau (Page ↑ / Page ↓) : les murs partent de ce niveau, les sols
+## sont posés dessous, et tout ce qui est au-dessus peut être caché (C) pour voir l'intérieur.
+##   Caméra : ZQSD/flèches (Maj : vite) · molette : zoom · clic molette + glisser ou A/E : tourner
+##   Clic gauche (glisser) : tracer · Clic droit : annuler le tracé ou le plan visé · R : tourner le meuble
+##   1-7 : catégorie · [ ] : hauteur des murs · C : couper au-dessus du niveau · B / Échap : quitter
+## Manette : joystick gauche : déplacer · droit : tourner / zoom · A : tracer · B : annuler · Y : tourner
+##   LB/RB : catégorie · croix gauche/droite : outil · croix haut : matériau · gâchettes : niveau.
 
 signal toggled(on: bool)
 
-enum Tool { HARVEST, FLATTEN, DIG, RAISE, DEMOLISH }
-const TOOLS := [
-	{"id": Tool.HARVEST, "name": "Récolter", "desc": "Couper les arbres, casser les rochers, cueillir.", "color": Color("6aa84a"), "glyph": "⚒"},
-	{"id": Tool.FLATTEN, "name": "Aplanir", "desc": "Mettre le sol à plat (maintenir et glisser).", "color": Color("c8a060"), "glyph": "▭"},
-	{"id": Tool.DIG, "name": "Creuser", "desc": "Abaisser le sol de 50 cm (récolte terre, sable, pierre...).", "color": Color("8a6a4a"), "glyph": "▼"},
-	{"id": Tool.RAISE, "name": "Remblayer", "desc": "Monter le sol de 50 cm.", "color": Color("a08a60"), "glyph": "▲"},
-	{"id": Tool.DEMOLISH, "name": "Démolir", "desc": "Retirer un bloc ou un meuble (il revient dans le sac).", "color": Color("c05a4a"), "glyph": "✕"},
+const CATEGORIES := [
+	{"id": "terrain", "name": "Terrain", "glyph": "⛏", "tools": [
+		{"id": "harvest", "name": "Récolter", "desc": "Zone : les habitants coupent les arbres, cassent les rochers, cueillent."},
+		{"id": "flatten", "name": "Aplanir", "desc": "Zone : mettre le sol à la hauteur du niveau choisi (fondations)."},
+		{"id": "dig", "name": "Creuser", "desc": "Zone : abaisser le sol de 50 cm (terre, sable, pierre récoltés)."},
+		{"id": "raise", "name": "Remblayer", "desc": "Zone : monter le sol de 50 cm."}]},
+	{"id": "walls", "name": "Murs", "glyph": "▥", "material": "bloc_planches", "tools": [
+		{"id": "wall_room", "name": "Pièce", "desc": "Glisser : les quatre murs d'une pièce (rectangle)."},
+		{"id": "wall_line", "name": "Mur", "desc": "Glisser : un mur droit."}]},
+	{"id": "floors", "name": "Sols", "glyph": "▦", "material": "bloc_planches", "tools": [
+		{"id": "floor", "name": "Sol", "desc": "Glisser : un plancher au niveau choisi (dessus = niveau)."}]},
+	{"id": "roofs", "name": "Toits", "glyph": "⌂", "material": "bloc_chaume", "tools": [
+		{"id": "roof_gable", "name": "Toit à deux pans", "desc": "Glisser sur la pièce, au niveau du haut des murs : toit en pente avec débord."},
+		{"id": "roof_flat", "name": "Toit plat", "desc": "Glisser : toit plat (ou terrasse) au niveau choisi."}]},
+	{"id": "openings", "name": "Portes et fenêtres", "glyph": "◫", "tools": [
+		{"id": "door", "name": "Porte", "desc": "Clic sur un mur (au niveau choisi) : y percer une porte."},
+		{"id": "window", "name": "Fenêtre", "desc": "Clic sur un mur : une fenêtre en verre à hauteur des yeux."}]},
+	{"id": "furniture", "name": "Mobilier", "glyph": "♜", "tools": []},
+	{"id": "demolish", "name": "Démolir", "glyph": "✕", "tools": [
+		{"id": "demolish", "name": "Démolir", "desc": "Zone : démonter les blocs et meubles (à partir du niveau choisi) ; ils reviennent dans le sac."},
+		{"id": "cancel", "name": "Annuler les plans", "desc": "Zone : effacer les plans pas encore construits."}]},
 ]
-const REACH := 9.0
+## Meubles sans pièce précise, montrés en premier.
+const COMMON_FURNITURE := ["torche", "lanterne", "table", "chaise", "coffre", "lit", "tonneau", "bougeoir", "statue"]
+const MAX_FROM_HERO := 55.0
 
 var active := false
-var slot := 0
-var brush := 1
+var cat := 1
+var tool_index := 0
+var furniture_index := 0
+var wall_height := 3
+var layer := 0
 var rotation_step := 0
-var force_cut := false
+var cut_on := true
+var materials := {}           # catégorie -> id du matériau
+var force_cut := false        # (ancien réglage, gardé pour compatibilité)
 
 var player: Player
 var world: WorldGenerator
 var grid: BuildGrid
+var orders: BuildOrders
 
-var _slots: Array = []   # [{tool}, {item}]
-var _target := {}
+# caméra libre
+var _cam: Camera3D
+var _focus := Vector3.ZERO
+var _yaw := 0.0
+var _pitch := deg_to_rad(55.0)
+var _dist := 18.0
+var _orbiting := false
+
+# tracé
+var _cursor := Vector2i.ZERO
+var _cursor_ok := false
+var _dragging := false
+var _drag_from := Vector2i.ZERO
+var _pad_held := false
+var _trig := [false, false]
+var _selection: Array = []   # [[Vector3i ou Vector2i, type]]
+var _preview: MultiMeshInstance3D
+var _preview_mat: StandardMaterial3D
 var _ghost: Node3D
-var _ghost_mat_ok: StandardMaterial3D
-var _ghost_mat_bad: StandardMaterial3D
 var _ghost_key := ""
-var _repeat := 0.0
-var _flatten_level := NAN
-var _dug := {}           # matériau -> quantité de sol retiré (m³)
-var _gamepad_cursor := Vector3.ZERO
-var _use_gamepad := false
+var _furniture_items: Array[ItemData] = []
 
 # interface
 var _ui: CanvasLayer
-var _bar: HBoxContainer
-var _slot_name: Label
-var _slot_desc: Label
-var _banner: Label
+var _cat_bar: HBoxContainer
+var _tool_bar: HBoxContainer
+var _mat_bar: HBoxContainer
+var _tool_name: Label
+var _tool_desc: Label
+var _sel_info: Label
+var _layer_label: Label
+var _builders_label: Label
+var _instant_cb: CheckBox
 var _kpanel: RichTextLabel
+var _help: Label
 
 
 func _ready() -> void:
 	top_level = true
 	player = get_parent() as Player
-	_ghost_mat_ok = _ghost_material(Color(0.4, 1.0, 0.5, 0.45))
-	_ghost_mat_bad = _ghost_material(Color(1.0, 0.35, 0.3, 0.45))
+	_preview_mat = StandardMaterial3D.new()
+	_preview_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_preview_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_preview_mat.vertex_color_use_as_albedo = true
+	_preview = MultiMeshInstance3D.new()
+	_preview.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	var box := BoxMesh.new()
+	box.material = _preview_mat
+	mm.mesh = box
+	_preview.multimesh = mm
+	add_child(_preview)
+	_cam = Camera3D.new()
+	_cam.fov = 55.0
+	_cam.far = 400.0
+	add_child(_cam)
+	for c in CATEGORIES:
+		if c.has("material"):
+			materials[c.id] = c.material
 	_build_ui()
 	_ui.visible = false
+	_connect_player.call_deferred()
 
 
-func _ghost_material(c: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.albedo_color = c
-	m.no_depth_test = false
-	return m
+func _connect_player() -> void:
+	if player:
+		player.inventory.changed.connect(func(): if active: _refresh_ui())
+		player.health.damaged.connect(func(_a, _s):
+			if active:
+				toggle(false)
+				player.notify.emit("Tu es attaqué ! Retour au héros."))
 
 
 func _find_world() -> void:
@@ -73,11 +137,13 @@ func _find_world() -> void:
 		world = get_tree().get_first_node_in_group("world") as WorldGenerator
 	if world and grid == null:
 		grid = world.build
+	if world and orders == null:
+		orders = get_tree().get_first_node_in_group("build_orders") as BuildOrders
 
 
 func toggle(on: bool) -> void:
 	_find_world()
-	if grid == null:
+	if grid == null or orders == null:
 		return
 	if on and player.global_position.y < WorldGenerator.UNDERGROUND:
 		player.notify.emit("Impossible de construire dans un donjon.")
@@ -85,43 +151,129 @@ func toggle(on: bool) -> void:
 	active = on
 	_ui.visible = on
 	player.building = on
+	_dragging = false
+	_preview.visible = on
 	if _ghost:
 		_ghost.visible = false
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k:
 		k.set_show_hints(on)
 	if on:
-		_refresh_slots()
-		player.notify.emit("Mode construction : molette pour choisir, clic gauche pour poser, clic droit pour démolir.")
+		player.velocity = Vector3.ZERO
+		player.set_blocking(false)
+		_focus = player.global_position
+		_yaw = player.cam_yaw
+		layer = roundi(world.terrain_height(world.cell_at(_focus)))
+		_cam.make_current()
+		_update_camera(1.0)
+		_refresh_ui()
+		player.notify.emit("Mode construction : trace des plans, tes habitants libres viendront les bâtir.")
+	else:
+		player.camera.make_current()
+		world.stream_focus = Vector3.INF
+		orders.view_cut = INF
+		orders.refresh()
+		grid.set_cut(Vector3.ZERO, 10000.0, 0.0)
 	toggled.emit(on)
 
 
-# ---------------------------------------------------------------- barre d'objets
+# ---------------------------------------------------------------- outils
 
-func _refresh_slots() -> void:
-	_slots.clear()
-	for t in TOOLS:
-		_slots.append({"tool": t})
-	var seen := {}
-	for e in player.inventory.entries:
-		var it: ItemData = e.item
-		if it.is_placeable() and not seen.has(it):
-			seen[it] = true
-			_slots.append({"item": it})
-	slot = clampi(slot, 0, _slots.size() - 1)
-	_draw_bar()
+func _category() -> Dictionary:
+	return CATEGORIES[cat]
 
 
-func _selected() -> Dictionary:
-	return _slots[slot] if slot < _slots.size() else {}
+func _tool() -> Dictionary:
+	var c := _category()
+	if c.id == "furniture":
+		var it := _furniture_item()
+		return {"id": "furniture", "name": it.display_name if it else "Mobilier",
+			"desc": "Clic : poser le meuble au niveau choisi (R : tourner). %s" % _furniture_use(it)}
+	return c.tools[clampi(tool_index, 0, c.tools.size() - 1)]
 
 
-func _select(i: int) -> void:
-	if _slots.is_empty():
-		return
-	slot = posmod(i, _slots.size())
+func _material() -> ItemData:
+	var id: String = materials.get(_category().id, "")
+	return Items.get_item(id) if id != "" else null
+
+
+func _furniture_item() -> ItemData:
+	if _furniture_items.is_empty():
+		return null
+	return _furniture_items[clampi(furniture_index, 0, _furniture_items.size() - 1)]
+
+
+## À quelles pièces sert ce meuble.
+func _furniture_use(it: ItemData) -> String:
+	if it == null:
+		return ""
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	var names := []
+	if k:
+		for t in k.room_types:
+			if t.required.has(it.id):
+				names.append(t.display_name)
+	return ("Sert pour : " + ", ".join(PackedStringArray(names)) + ".") if not names.is_empty() else ""
+
+
+func _list_furniture() -> void:
+	_furniture_items.clear()
+	var ids: Array = COMMON_FURNITURE.duplicate()
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k:
+		for t in k.room_types:
+			for id in t.required:
+				if not ids.has(id):
+					ids.append(id)
+	for id in Items.items:
+		var it: ItemData = Items.get_item(id)
+		if it and it.is_furniture() and not it.furniture_door and not ids.has(id):
+			ids.append(id)
+	for id in ids:
+		var it: ItemData = Items.get_item(id)
+		if it and it.is_furniture() and not it.furniture_door:
+			_furniture_items.append(it)
+
+
+func _set_category(i: int) -> void:
+	cat = posmod(i, CATEGORIES.size())
+	tool_index = 0
+	_dragging = false
 	_ghost_key = ""
-	_draw_bar()
+	_refresh_ui()
+
+
+func _cycle_tool(step: int) -> void:
+	if _category().id == "furniture":
+		furniture_index = posmod(furniture_index + step, maxi(1, _furniture_items.size()))
+	else:
+		tool_index = posmod(tool_index + step, _category().tools.size())
+	_ghost_key = ""
+	_refresh_ui()
+
+
+func _cycle_material(step: int) -> void:
+	var list := _block_items()
+	if list.is_empty() or not materials.has(_category().id):
+		return
+	var cur := list.find(_material())
+	materials[_category().id] = (list[posmod(cur + step, list.size())] as ItemData).id
+	_refresh_ui()
+
+
+func _block_items() -> Array:
+	var out := []
+	for id in Items.items:
+		var it: ItemData = Items.get_item(id)
+		if it and it.is_block():
+			out.append(it)
+	out.sort_custom(func(a, b): return a.block_tier < b.block_tier or (a.block_tier == b.block_tier and a.id < b.id))
+	return out
+
+
+func _set_layer(v: int) -> void:
+	layer = clampi(v, -3, 40)
+	_refresh_ui()
 
 
 # ---------------------------------------------------------------- entrées
@@ -133,447 +285,466 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not active or player.ui_open:
 		return
-	if event is InputEventMouseButton and event.pressed:
+	if event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
+		if _dragging:
+			_dragging = false
+		else:
+			toggle(false)
+		get_viewport().set_input_as_handled()
+		return
+	var handled := true
+	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		_use_gamepad = false
-		if mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			var step := -1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1
-			if mb.shift_pressed:
-				_set_brush(brush + (2 if step < 0 else -2))
-			else:
-				_select(slot + step)
-			get_viewport().set_input_as_handled()
-		elif mb.button_index == MOUSE_BUTTON_LEFT:
-			_repeat = 0.0
-			_flatten_level = NAN
-			_use()
-			get_viewport().set_input_as_handled()
-		elif mb.button_index == MOUSE_BUTTON_RIGHT:
-			_demolish()
-			get_viewport().set_input_as_handled()
+		match mb.button_index:
+			MOUSE_BUTTON_MIDDLE:
+				_orbiting = mb.pressed
+			MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN:
+				if mb.pressed:
+					var up := mb.button_index == MOUSE_BUTTON_WHEEL_UP
+					if mb.ctrl_pressed:
+						_set_layer(layer + (1 if up else -1))
+					else:
+						_dist = clampf(_dist * (0.88 if up else 1.12), 5.0, 60.0)
+			MOUSE_BUTTON_LEFT:
+				if mb.pressed:
+					_press()
+			MOUSE_BUTTON_RIGHT:
+				if mb.pressed:
+					_cancel_action()
+			_:
+				handled = false
 	elif event is InputEventMouseMotion:
-		_use_gamepad = false
+		if _orbiting:
+			var mm := event as InputEventMouseMotion
+			_yaw -= mm.relative.x * 0.008
+			_pitch = clampf(_pitch + mm.relative.y * 0.006, deg_to_rad(25.0), deg_to_rad(85.0))
+		handled = _orbiting
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var k := event as InputEventKey
-		if k.physical_keycode >= KEY_1 and k.physical_keycode <= KEY_9:
-			_select(k.physical_keycode - KEY_1)
-			get_viewport().set_input_as_handled()
-		elif k.physical_keycode == KEY_0:
-			_select(9)
-			get_viewport().set_input_as_handled()
-		elif k.physical_keycode == KEY_R:
-			rotation_step = (rotation_step + 1) % 4
-			_ghost_key = ""
-			get_viewport().set_input_as_handled()
-		elif k.physical_keycode == KEY_BRACKETLEFT:
-			_set_brush(brush - 2)
-			get_viewport().set_input_as_handled()
-		elif k.physical_keycode == KEY_BRACKETRIGHT:
-			_set_brush(brush + 2)
-			get_viewport().set_input_as_handled()
-		elif k.physical_keycode == KEY_C:
-			force_cut = not force_cut
-			get_viewport().set_input_as_handled()
-	elif event is InputEventJoypadButton and event.pressed:
-		_use_gamepad = true
-		match (event as InputEventJoypadButton).button_index:
-			JOY_BUTTON_LEFT_SHOULDER:
-				_select(slot - 1)
-			JOY_BUTTON_RIGHT_SHOULDER:
-				_select(slot + 1)
-			JOY_BUTTON_X:
-				_repeat = 0.0
-				_flatten_level = NAN
-				_use()
-			JOY_BUTTON_Y:
-				_demolish()
-			JOY_BUTTON_DPAD_UP:
-				_set_brush(brush + 2)
-			JOY_BUTTON_DPAD_DOWN:
-				_set_brush(brush - 2)
-			JOY_BUTTON_DPAD_RIGHT:
+		match k.physical_keycode:
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7:
+				_set_category(k.physical_keycode - KEY_1)
+			KEY_PAGEUP:
+				_set_layer(layer + 1)
+			KEY_PAGEDOWN:
+				_set_layer(layer - 1)
+			KEY_R:
 				rotation_step = (rotation_step + 1) % 4
 				_ghost_key = ""
+			KEY_BRACKETLEFT:
+				wall_height = clampi(wall_height - 1, 1, 6)
+				_refresh_ui()
+			KEY_BRACKETRIGHT:
+				wall_height = clampi(wall_height + 1, 1, 6)
+				_refresh_ui()
+			KEY_C:
+				cut_on = not cut_on
+				_refresh_ui()
+			KEY_TAB:
+				_cycle_tool(-1 if k.shift_pressed else 1)
+			KEY_V:
+				_cycle_material(-1 if k.shift_pressed else 1)
 			_:
-				return
+				handled = false
+	elif event is InputEventJoypadButton and event.pressed:
+		match (event as InputEventJoypadButton).button_index:
+			JOY_BUTTON_A:
+				_press()
+				_pad_held = true
+			JOY_BUTTON_B:
+				_cancel_action()
+			JOY_BUTTON_Y:
+				rotation_step = (rotation_step + 1) % 4
+				_ghost_key = ""
+			JOY_BUTTON_LEFT_SHOULDER:
+				_set_category(cat - 1)
+			JOY_BUTTON_RIGHT_SHOULDER:
+				_set_category(cat + 1)
+			JOY_BUTTON_DPAD_LEFT:
+				_cycle_tool(-1)
+			JOY_BUTTON_DPAD_RIGHT:
+				_cycle_tool(1)
+			JOY_BUTTON_DPAD_UP:
+				_cycle_material(1)
+			_:
+				handled = false
+	else:
+		handled = false
+	if handled:
 		get_viewport().set_input_as_handled()
-
-
-func _set_brush(n: int) -> void:
-	brush = clampi(n, 1, 7)
-	if brush % 2 == 0:
-		brush += 1
-	_ghost_key = ""
-	_draw_bar()
 
 
 func _process(delta: float) -> void:
 	_find_world()
-	_update_cut()
 	if not active or grid == null:
+		_update_cut()
 		return
-	_target = _compute_target()
-	_update_ghost()
-	# maintenir le bouton : on continue (aplanir en glissant, poser en ligne)
-	var held := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_joy_button_pressed(0, JOY_BUTTON_X)
-	if held and not player.ui_open:
-		_repeat -= delta
-		if _repeat <= 0.0:
-			_use(true)
-	else:
-		_flatten_level = NAN
+	if player.ui_open:
+		_preview.visible = false
+		return
+	_preview.visible = true
+	_update_camera(delta)
+	# gâchettes de la manette : niveau
+	for i in 2:
+		var v := Input.get_joy_axis(0, JOY_AXIS_TRIGGER_LEFT if i == 0 else JOY_AXIS_TRIGGER_RIGHT)
+		if v > 0.6 and not _trig[i]:
+			_trig[i] = true
+			_set_layer(layer + (-1 if i == 0 else 1))
+		elif v < 0.3:
+			_trig[i] = false
+	_update_cursor()
+	# fin du tracé : bouton relâché (même au-dessus de l'interface)
+	if _dragging:
+		var held := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or (_pad_held and Input.is_joy_button_pressed(0, JOY_BUTTON_A))
+		if not held:
+			_commit()
+	if not Input.is_joy_button_pressed(0, JOY_BUTTON_A):
+		_pad_held = false
+	_update_selection()
+	_update_preview()
+	var cut_y := (layer + wall_height + 0.02) if cut_on else INF
+	grid.set_cut(_focus, cut_y if cut_on else 10000.0, 400.0 if cut_on else 0.0)
+	if orders.view_cut != cut_y:
+		orders.view_cut = cut_y
+		orders.refresh()
+	_builders_label.text = _builders_text()
 	_update_kingdom_panel()
 
 
-# ---------------------------------------------------------------- visée
+# ---------------------------------------------------------------- caméra libre
 
-func _compute_target() -> Dictionary:
-	var cam := player.camera
-	var origin: Vector3
-	var dir: Vector3
-	if _use_gamepad:
-		var stick := Vector2(Input.get_joy_axis(0, JOY_AXIS_RIGHT_X), Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y))
-		if stick.length() > 0.2:
-			_gamepad_cursor += Vector3(stick.x, 0, stick.y) * get_process_delta_time() * 6.0
-		_gamepad_cursor = _gamepad_cursor.limit_length(REACH - 1.0)
-		if _gamepad_cursor.length() < 0.5:
-			_gamepad_cursor = Vector3(player.facing.x, 0, player.facing.z) * 2.0
-		var aim := player.global_position + _gamepad_cursor
-		origin = aim + Vector3(0, 6, 0)
-		dir = Vector3.DOWN
-	else:
-		var mp := get_viewport().get_mouse_position()
-		origin = cam.project_ray_origin(mp)
-		dir = cam.project_ray_normal(mp)
-	var prev := origin
-	var t := 0.0
-	while t < 80.0:
-		var p := origin + dir * t
-		var cell := world.cell_at(p)
-		if not world._inside(cell):
-			prev = p
-			t += 0.04
-			continue
-		# bloc ?
-		var key := Vector3i(cell.x, floori(p.y), cell.y)
-		var b := grid.block_at(key)
-		if b and p.y < key.y + BuildGrid.block_height(b):
-			return _hit("block", cell, p, prev, key)
-		# meuble ?
-		for f in grid.furniture_in(cell):
-			if p.y >= f.base and p.y <= f.base + 1.1:
-				return _hit("furniture", cell, p, prev, grid.furniture_key(cell, f.base))
-		# sol ?
-		var ground := world.terrain_height(cell)
-		var tt := world.terrain_type(cell)
-		if tt == WorldGenerator.WATER or tt == WorldGenerator.DEEP:
-			ground = maxf(ground, world.water_surface)
-		if p.y <= ground:
-			return _hit("terrain", cell, p, prev, Vector3i(cell.x, floori(ground), cell.y))
-		prev = p
-		t += 0.04
-	return {}
+func _update_camera(delta: float) -> void:
+	var pan := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var fast := Input.is_key_pressed(KEY_SHIFT)
+	if pan.length() > 0.05:
+		var move := Vector3(pan.x, 0, pan.y).rotated(Vector3.UP, _yaw) * (_dist * 0.9 + 6.0) * delta * (2.2 if fast else 1.0)
+		_focus += move
+	# rotation clavier (touches A/E en AZERTY, Q/E en QWERTY)
+	if Input.is_physical_key_pressed(KEY_Q):
+		_yaw += delta * 1.8
+	if Input.is_physical_key_pressed(KEY_E):
+		_yaw -= delta * 1.8
+	var rx := Input.get_joy_axis(0, JOY_AXIS_RIGHT_X)
+	var ry := Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y)
+	if absf(rx) > 0.2:
+		_yaw -= rx * delta * 2.2
+	if absf(ry) > 0.2:
+		_dist = clampf(_dist * (1.0 + ry * delta * 1.5), 5.0, 60.0)
+	# on reste près du héros (le monde n'est affiché qu'autour de lui)
+	var off := _focus - player.global_position
+	off.y = 0.0
+	if off.length() > MAX_FROM_HERO:
+		_focus = player.global_position + off.normalized() * MAX_FROM_HERO
+	_focus.y = lerpf(_focus.y, float(layer), clampf(delta * 6.0, 0.0, 1.0))
+	world.stream_focus = _focus
+	var dir := Vector3(sin(_yaw) * cos(_pitch), sin(_pitch), cos(_yaw) * cos(_pitch))
+	_cam.global_position = _focus + dir * _dist
+	_cam.look_at(_focus)
 
 
-func _hit(kind: String, cell: Vector2i, p: Vector3, prev: Vector3, key: Vector3i) -> Dictionary:
-	var in_reach := Vector2(p.x - player.global_position.x, p.z - player.global_position.z).length() <= REACH
-	return {"kind": kind, "cell": cell, "point": p, "prev": prev, "key": key, "reach": in_reach}
+## Case visée : rayon de la caméra jusqu'au plan horizontal du niveau choisi.
+func _update_cursor() -> void:
+	var mp := get_viewport().get_mouse_position()
+	if Input.get_connected_joypads().size() > 0 and _pad_recent():
+		mp = get_viewport().get_visible_rect().size / 2.0
+	var origin := _cam.project_ray_origin(mp)
+	var dir := _cam.project_ray_normal(mp)
+	_cursor_ok = false
+	if absf(dir.y) < 0.001:
+		return
+	var t := (float(layer) - origin.y) / dir.y
+	if t <= 0.0:
+		return
+	var p := origin + dir * t
+	_cursor = world.cell_at(p)
+	_cursor_ok = world._inside(_cursor)
 
 
-## Où irait un bloc posé maintenant.
-func _block_key() -> Vector3i:
-	var prev: Vector3 = _target.prev
-	var c := world.cell_at(prev)
-	var y := floori(prev.y + 0.001)
-	if _target.kind == "terrain":
-		y = floori(world.terrain_height(c) + 0.3)
-		c = _target.cell
-		# on pose au-dessus de ce qui existe déjà dans la colonne
-		while grid.block_at(Vector3i(c.x, y, c.y)) != null:
-			y += 1
-	return Vector3i(c.x, y, c.y)
+var _last_pad := -100000
+func _pad_recent() -> bool:
+	var moving := Input.get_joy_axis(0, JOY_AXIS_LEFT_X) != 0.0 or Input.get_joy_axis(0, JOY_AXIS_RIGHT_X) != 0.0
+	if moving:
+		_last_pad = Time.get_ticks_msec()
+	var mouse_moved := Input.get_last_mouse_velocity().length() > 5.0
+	if mouse_moved:
+		_last_pad = -100000
+	return Time.get_ticks_msec() - _last_pad < 4000
 
 
-func _furniture_spot() -> Array:
-	var prev: Vector3 = _target.prev
-	var c: Vector2i = world.cell_at(prev) if _target.kind != "terrain" else _target.cell
-	var base := world.support_height(Vector3(c.x + 0.5, 0, c.y + 0.5), prev.y)
-	if _target.kind == "terrain":
-		base = world.support_height(Vector3(c.x + 0.5, 0, c.y + 0.5), world.terrain_height(c) + 0.1)
-	return [c, base]
+# ---------------------------------------------------------------- tracé
+
+func _is_single() -> bool:
+	return _tool().id in ["door", "window", "furniture"]
 
 
-func _overlaps_player(col: Vector2i, bottom: float, top: float) -> bool:
-	for n in get_tree().get_nodes_in_group("combatants"):
-		var cb := n as Node3D
-		if world.cell_at(cb.global_position) == col and bottom < cb.global_position.y + 1.6 and top > cb.global_position.y + 0.05:
-			return true
-	return false
+func _press() -> void:
+	if not _cursor_ok:
+		return
+	if _is_single():
+		_selection_from(_cursor, _cursor)
+		_commit_selection()
+		return
+	_dragging = true
+	_drag_from = _cursor
 
 
-func _brush_cells(center: Vector2i) -> Array:
-	var out := []
-	var r := brush / 2
-	for dx in range(-r, r + 1):
-		for dz in range(-r, r + 1):
-			out.append(center + Vector2i(dx, dz))
-	return out
+func _commit() -> void:
+	_dragging = false
+	_commit_selection()
+
+
+## Clic droit : annule le tracé en cours, sinon efface le plan visé.
+func _cancel_action() -> void:
+	if _dragging:
+		_dragging = false
+		return
+	if _cursor_ok and orders.cancel_rect(Rect2i(_cursor, Vector2i.ONE), layer - 1.0, layer + wall_height + 6.0) > 0:
+		player.notify.emit("Plan annulé.")
+
+
+static func _rect(a: Vector2i, b: Vector2i) -> Rect2i:
+	var p := Vector2i(mini(a.x, b.x), mini(a.y, b.y))
+	return Rect2i(p, Vector2i(absi(a.x - b.x) + 1, absi(a.y - b.y) + 1))
+
+
+func _update_selection() -> void:
+	if not _cursor_ok:
+		_selection = []
+		return
+	_selection_from(_drag_from if _dragging else _cursor, _cursor)
+
+
+## Calcule ce que l'outil ferait entre deux cases : [[position, sorte], ...].
+func _selection_from(a: Vector2i, b: Vector2i) -> void:
+	_selection = []
+	var t: String = _tool().id
+	var r := _rect(a, b)
+	match t:
+		"wall_line", "wall_room":
+			var cells := []
+			if t == "wall_line":
+				if absi(b.x - a.x) >= absi(b.y - a.y):
+					for x in range(r.position.x, r.end.x):
+						cells.append(Vector2i(x, a.y))
+				else:
+					for z in range(r.position.y, r.end.y):
+						cells.append(Vector2i(a.x, z))
+			else:
+				for x in range(r.position.x, r.end.x):
+					for z in range(r.position.y, r.end.y):
+						if x == r.position.x or x == r.end.x - 1 or z == r.position.y or z == r.end.y - 1:
+							cells.append(Vector2i(x, z))
+			for c in cells:
+				for y in range(layer, layer + wall_height):
+					if y + 1 <= world.terrain_height(c) - 0.3:
+						continue
+					_selection.append([Vector3i(c.x, y, c.y), "block"])
+		"floor", "roof_flat":
+			var y := layer - 1 if t == "floor" else layer
+			for x in range(r.position.x, r.end.x):
+				for z in range(r.position.y, r.end.y):
+					var c := Vector2i(x, z)
+					if t == "floor" and world.terrain_height(c) > y + 1.3:
+						continue
+					_selection.append([Vector3i(x, y, z), "block"])
+		"roof_gable":
+			# faîtage dans le sens de la longueur, un rang plus haut à chaque pas vers le milieu, avec débord
+			var along_x := r.size.x >= r.size.y
+			var span := r.size.y if along_x else r.size.x
+			var rr := r.grow(1)
+			for x in range(rr.position.x, rr.end.x):
+				for z in range(rr.position.y, rr.end.y):
+					var i := (z - rr.position.y) if along_x else (x - rr.position.x)
+					var n := (span + 2)
+					var step := mini(i, n - 1 - i)
+					_selection.append([Vector3i(x, layer + step, z), "block"])
+					# on remplit sous le toit sur les pignons (fermer les triangles)
+					var on_gable := (x == r.position.x or x == r.end.x - 1) if along_x else (z == r.position.y or z == r.end.y - 1)
+					if on_gable and step > 0:
+						for yy in range(layer, layer + step):
+							_selection.append([Vector3i(x, yy, z), "gable"])
+		"door":
+			_selection.append([Vector3i(a.x, layer, a.y), "door"])
+		"window":
+			_selection.append([Vector3i(a.x, layer + 1, a.y), "window"])
+		"furniture":
+			_selection.append([Vector3i(a.x, layer, a.y), "furniture"])
+		"harvest", "flatten", "dig", "raise", "cancel", "demolish":
+			for x in range(r.position.x, r.end.x):
+				for z in range(r.position.y, r.end.y):
+					_selection.append([Vector2i(x, z), t])
+
+
+func _commit_selection() -> void:
+	if _selection.is_empty():
+		return
+	var mat := _material()
+	var n := 0
+	var t: String = _tool().id
+	match t:
+		"wall_line", "wall_room", "floor", "roof_flat", "roof_gable":
+			# du bas vers le haut
+			var list := _selection.duplicate()
+			list.sort_custom(func(p, q): return p[0].y < q[0].y)
+			var wall_mat: ItemData = Items.get_item(materials.get("walls", "bloc_planches"))
+			for s in list:
+				var m: ItemData = wall_mat if s[1] == "gable" else mat
+				if m and orders.block(s[0], m) > 0:
+					n += 1
+		"door":
+			n += _plan_door(Vector2i(_selection[0][0].x, _selection[0][0].z))
+		"window":
+			var k: Vector3i = _selection[0][0]
+			var glass := Items.get_item("bloc_verre")
+			# un mur encore en plan : on change simplement le plan ; un mur construit : il sera remplacé
+			var planned := orders.order_at_cell(Vector2i(k.x, k.z)).filter(func(o): return o.type == "block" and o.key == k)
+			if not planned.is_empty():
+				planned[0].upgrade = glass
+				orders.refresh()
+				n += 1
+			elif orders.add({"type": "block", "key": k, "cell": Vector2i(k.x, k.z), "item": glass, "replace": true}) > 0:
+				n += 1
+		"furniture":
+			var it := _furniture_item()
+			var k: Vector3i = _selection[0][0]
+			var col := Vector2i(k.x, k.z)
+			var base := world.support_height(Vector3(col.x + 0.5, 0, col.y + 0.5), layer + 0.3)
+			for o in orders.order_at_cell(col):
+				if o.type == "block" and absf(o.key.y + 1 - base) < 0.3:
+					base = o.key.y + 1.0
+			if it and orders.furniture(col, base, it, rotation_step) > 0:
+				n += 1
+		"harvest":
+			for s in _selection:
+				n += 1 if orders.harvest(s[0]) > 0 else 0
+		"flatten", "dig", "raise":
+			for s in _selection:
+				var c: Vector2i = s[0]
+				if not grid.column(c).is_empty():
+					continue
+				var h := world.terrain_height(c)
+				var target := float(layer) if t == "flatten" else (h - 0.5 if t == "dig" else h + 0.5)
+				n += 1 if orders.terrain(c, target) > 0 else 0
+		"cancel":
+			n = orders.cancel_rect(_rect(_selection[0][0], _selection[_selection.size() - 1][0]))
+		"demolish":
+			for s in _selection:
+				var c: Vector2i = s[0]
+				for b in grid.column(c):
+					if b[0] >= layer - 1:
+						n += 1 if orders.remove_block(Vector3i(c.x, b[0], c.y)) > 0 else 0
+				for f in grid.furniture_in(c):
+					if f.base >= layer - 1.0:
+						n += 1 if orders.remove_furniture(grid.furniture_key(c, f.base)) > 0 else 0
+			orders.cancel_rect(_rect(_selection[0][0], _selection[_selection.size() - 1][0]), layer - 1.0)
+	if orders.instant:
+		orders.flush()
+	if n > 0:
+		var msg := "%d plan%s" % [n, "s" if n > 1 else ""]
+		if t == "cancel":
+			msg = "%d plan%s annulé%s" % [n, "s" if n > 1 else "", "s" if n > 1 else ""]
+		elif orders.instant:
+			msg += " réalisé%s" % ("s" if n > 1 else "")
+		player.notify.emit(msg + ".")
+	_selection = []
+
+
+## Porte : on ouvre le mur sur deux blocs de haut et on pose la porte dans l'axe du mur.
+func _plan_door(c: Vector2i) -> int:
+	var along_x := grid.block_at(Vector3i(c.x + 1, layer, c.y)) != null or grid.block_at(Vector3i(c.x - 1, layer, c.y)) != null \
+		or not orders.order_at_cell(c + Vector2i(1, 0)).is_empty() or not orders.order_at_cell(c + Vector2i(-1, 0)).is_empty()
+	for y in [layer, layer + 1]:
+		orders.remove_block(Vector3i(c.x, y, c.y))
+	var base := float(layer)
+	return 1 if orders.furniture(c, base, Items.get_item("porte"), 0 if along_x else 1) > 0 else 0
 
 
 # ---------------------------------------------------------------- aperçu
 
-func _update_ghost() -> void:
-	if _target.is_empty():
-		if _ghost:
-			_ghost.visible = false
-		return
-	var s := _selected()
-	var key := ""
-	var xf := Transform3D.IDENTITY
-	var ok: bool = _target.reach
-	var size := Vector3.ONE
+func _update_preview() -> void:
+	var t: String = _tool().id
+	var list := []
+	var col := Color(0.4, 1.0, 0.55, 0.42)
+	match t:
+		"demolish", "cancel":
+			col = Color(1.0, 0.4, 0.3, 0.4)
+		"harvest":
+			col = Color(0.5, 1.0, 0.4, 0.45)
+		"flatten", "dig", "raise":
+			col = Color(1.0, 0.85, 0.35, 0.45)
+	var mat := _material()
+	var enough := true
+	if mat and _selection.size() > 0 and t in ["wall_line", "wall_room", "floor", "roof_flat", "roof_gable"]:
+		enough = player.inventory.count(mat) >= _selection.size()
+		if not enough:
+			col = Color(1.0, 0.75, 0.3, 0.42)
+	for s in _selection:
+		var p = s[0]
+		if p is Vector3i:
+			if s[1] == "furniture":
+				continue
+			var h := 1.0
+			if mat and s[1] in ["block", "gable"]:
+				h = BuildGrid.block_height(mat)
+			list.append(Transform3D(Basis.from_scale(Vector3(1.02, h + 0.02, 1.02)), Vector3(p.x + 0.5, p.y + h * 0.5, p.z + 0.5)))
+		else:
+			var c: Vector2i = p
+			var y := world.terrain_height(c)
+			if t == "flatten":
+				var lo := minf(y, float(layer))
+				var hi := maxf(y, float(layer))
+				list.append(Transform3D(Basis.from_scale(Vector3(0.98, maxf(hi - lo, 0.05), 0.98)), Vector3(c.x + 0.5, (lo + hi) * 0.5, c.y + 0.5)))
+			else:
+				var top := float(layer) if t in ["demolish", "cancel"] else y
+				list.append(Transform3D(Basis.from_scale(Vector3(0.98, 0.08, 0.98)), Vector3(c.x + 0.5, top + 0.05, c.y + 0.5)))
+	var m := _preview.multimesh
+	m.instance_count = list.size()
+	for i in list.size():
+		m.set_instance_transform(i, list[i])
+		m.set_instance_color(i, col)
+	# meuble ou porte : aperçu du modèle
 	var model: PackedScene = null
-	if s.has("tool"):
-		var tid: int = s.tool.id
-		if tid == Tool.DEMOLISH or tid == Tool.HARVEST:
-			key = "box1"
-			var c: Vector2i = _target.cell
-			if _target.kind == "block":
-				var k: Vector3i = _target.key
-				xf.origin = Vector3(k.x + 0.5, k.y + 0.5, k.z + 0.5)
-			elif _target.kind == "furniture":
-				xf.origin = Vector3(c.x + 0.5, _target.point.y, c.y + 0.5)
-			else:
-				xf.origin = Vector3(c.x + 0.5, world.terrain_height(c) + 0.5, c.y + 0.5)
-			size = Vector3(1.04, 1.04, 1.04)
-			if tid == Tool.HARVEST:
-				ok = ok and world.decor_at(c) != WorldGenerator.D_NONE
-				if _target.kind != "terrain":
-					ok = false
-			else:
-				ok = ok and _target.kind != "terrain"
-		else:
-			key = "brush%d" % brush
-			var c2: Vector2i = _target.cell
-			var lvl := world.terrain_height(c2)
-			if tid == Tool.FLATTEN and not is_nan(_flatten_level):
-				lvl = _flatten_level
-			xf.origin = Vector3(c2.x + 0.5, lvl + 0.06, c2.y + 0.5)
-			size = Vector3(brush, 0.12, brush)
-	elif s.has("item"):
-		var it: ItemData = s.item
-		if it.is_block():
-			var k := _block_key()
-			var h := BuildGrid.block_height(it)
-			key = "block%s" % h
-			size = Vector3(1.02, h + 0.02, 1.02)
-			xf.origin = Vector3(k.x + 0.5, k.y + h * 0.5, k.z + 0.5)
-			ok = ok and grid.can_place_block(k, it) and not _overlaps_player(Vector2i(k.x, k.z), k.y, k.y + h)
-		else:
-			var spot := _furniture_spot()
-			key = "furn_%s_%d" % [it.id, rotation_step]
+	var xf := Transform3D.IDENTITY
+	if _cursor_ok and (t == "furniture" or t == "door"):
+		var it := _furniture_item() if t == "furniture" else Items.get_item("porte")
+		if it:
 			model = it.furniture_model
-			xf = Transform3D(Basis(Vector3.UP, rotation_step * PI * 0.5), Vector3(spot[0].x + 0.5, spot[1], spot[0].y + 0.5))
-			ok = ok and grid.can_place_furniture(spot[0], spot[1]) and world.is_walkable(Vector3(spot[0].x + 0.5, 0, spot[0].y + 0.5))
+			var base := world.support_height(Vector3(_cursor.x + 0.5, 0, _cursor.y + 0.5), layer + 0.3) if t == "furniture" else float(layer)
+			xf = Transform3D(Basis(Vector3.UP, rotation_step * PI * 0.5), Vector3(_cursor.x + 0.5, base, _cursor.y + 0.5))
+	var key := "%s_%d" % [model.resource_path if model else "", rotation_step]
 	if key != _ghost_key:
 		_ghost_key = key
 		if _ghost:
 			_ghost.queue_free()
+			_ghost = null
 		if model:
 			_ghost = model.instantiate() as Node3D
-		else:
-			var mi := MeshInstance3D.new()
-			var bm := BoxMesh.new()
-			bm.size = size
-			mi.mesh = bm
-			_ghost = mi
-		add_child(_ghost)
-	_ghost.visible = true
-	_ghost.global_transform = xf
-	var mat := _ghost_mat_ok if ok else _ghost_mat_bad
-	for mi in ([_ghost] + _ghost.find_children("*", "MeshInstance3D", true, false)):
-		if mi is MeshInstance3D:
-			(mi as MeshInstance3D).material_override = mat
-			(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			add_child(_ghost)
+			for mi in _ghost.find_children("*", "MeshInstance3D", true, false):
+				(mi as MeshInstance3D).material_override = BuildOrders._ghost_material(Color(0.4, 1.0, 0.55, 0.5))
+				(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if _ghost:
+		_ghost.visible = model != null
+		_ghost.global_transform = xf
+	# informations sur le tracé
+	var info := ""
+	if _selection.size() > 0:
+		match t:
+			"wall_line", "wall_room", "floor", "roof_flat", "roof_gable":
+				info = "%d blocs de %s (tu en as %d)%s" % [_selection.size(), mat.display_name if mat else "?", player.inventory.count(mat) if mat else 0,
+					"" if enough else " — les plans en trop attendront des matériaux"]
+			"furniture":
+				var it := _furniture_item()
+				info = "%s (tu en as %d)" % [it.display_name, player.inventory.count(it)] if it else ""
+			"door":
+				info = "Porte (tu en as %d)" % player.inventory.count(Items.get_item("porte"))
+			_:
+				var r := _rect(_drag_from if _dragging else _cursor, _cursor)
+				info = "Zone %d × %d" % [r.size.x, r.size.y]
+	_sel_info.text = info
 
 
-# ---------------------------------------------------------------- actions
-
-func _use(repeat := false) -> void:
-	if _target.is_empty() or not _target.reach:
-		return
-	var s := _selected()
-	if s.has("tool"):
-		match int(s.tool.id):
-			Tool.HARVEST:
-				if not repeat:
-					_harvest(_target.cell)
-				_repeat = 0.35
-			Tool.FLATTEN:
-				if is_nan(_flatten_level):
-					_flatten_level = roundf(world.terrain_height(_target.cell))
-				_terraform(_brush_cells(_target.cell), func(_h): return _flatten_level)
-				_repeat = 0.08
-			Tool.DIG:
-				_terraform(_brush_cells(_target.cell), func(h): return h - 0.5)
-				_repeat = 0.3
-			Tool.RAISE:
-				_terraform(_brush_cells(_target.cell), func(h): return h + 0.5)
-				_repeat = 0.3
-			Tool.DEMOLISH:
-				if not repeat:
-					_demolish()
-				_repeat = 0.25
-	elif s.has("item"):
-		_place(s.item)
-		_repeat = 0.18
-
-
-func _place(it: ItemData) -> void:
-	if player.inventory.count(it) <= 0:
-		_refresh_slots()
-		return
-	var ok := false
-	if it.is_block():
-		var k := _block_key()
-		var h := BuildGrid.block_height(it)
-		if _overlaps_player(Vector2i(k.x, k.z), k.y, k.y + h):
-			return
-		ok = grid.place_block(k, it)
-		if ok:
-			VoxelBurst.spawn(self, Vector3(k.x + 0.5, k.y + h, k.z + 0.5), it_color(it), 6, 1.5, 0.08, 0.3, "up", 6.0, false)
-	else:
-		var spot := _furniture_spot()
-		if not world.is_walkable(Vector3(spot[0].x + 0.5, 0, spot[0].y + 0.5)):
-			return
-		ok = grid.place_furniture(spot[0], spot[1], it, rotation_step)
-		if ok:
-			VoxelBurst.spawn(self, Vector3(spot[0].x + 0.5, spot[1] + 0.2, spot[0].y + 0.5), Color(1, 0.95, 0.8), 12, 2.0, 0.07, 0.4, "ring", 0.0)
-	if ok:
-		player.inventory.remove(it, 1)
-		if player.inventory.count(it) == 0:
-			_refresh_slots()
-		else:
-			_draw_bar()
-
-
-static func it_color(it: ItemData) -> Color:
-	if it.block_texture:
-		var img := it.block_texture.get_image()
-		if img:
-			if img.is_compressed():
-				img.decompress()
-			return img.get_pixel(8, 8)
-	return Color(0.8, 0.7, 0.5)
-
-
-func _demolish() -> void:
-	if _target.is_empty() or not _target.reach:
-		return
-	var got: ItemData = null
-	if _target.kind == "block":
-		got = grid.remove_block(_target.key)
-	elif _target.kind == "furniture":
-		got = grid.remove_furniture(_target.key)
-	if got:
-		player.inventory.add(got, 1)
-		VoxelBurst.spawn(self, _target.point, it_color(got), 14, 3.0, 0.09, 0.5, "sphere", 10.0, false)
-		player.visual.play_move("punch_1", 1.3)
-		_refresh_slots()
-
-
-const HARVEST_LOOT := {
-	WorldGenerator.D_OAK: [["wood", 3, 4]], WorldGenerator.D_PINE: [["wood", 3, 5]],
-	WorldGenerator.D_BUSH: [["fiber", 2, 3]], WorldGenerator.D_FLOWERS: [["fiber", 1, 1]], WorldGenerator.D_GRASS: [["fiber", 1, 1]],
-	WorldGenerator.D_ROCK: [["stone", 2, 4]],
-}
-
-
-func _harvest(cell: Vector2i) -> void:
-	var kind := world.decor_at(cell)
-	if kind == WorldGenerator.D_NONE:
-		return
-	# regarder la cible et frapper
-	var to := Vector3(cell.x + 0.5, 0, cell.y + 0.5) - player.global_position
-	to.y = 0.0
-	if to.length() > 0.1:
-		player.facing = to.normalized()
-	player.visual.play_move("heavy_1" if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE, WorldGenerator.D_ROCK] else "punch_1", 1.6)
-	world.remove_decor(cell)
-	var col := Color(0.45, 0.7, 0.3) if kind != WorldGenerator.D_ROCK else Color(0.6, 0.6, 0.58)
-	VoxelBurst.spawn(self, Vector3(cell.x + 0.5, world.terrain_height(cell) + 1.0, cell.y + 0.5), col, 26, 4.0, 0.14, 0.8, "sphere", 10.0, false)
-	for l in HARVEST_LOOT.get(kind, []):
-		_give(l[0], randi_range(l[1], l[2]))
-	if kind == WorldGenerator.D_ROCK:
-		if randf() < 0.3:
-			_give("iron_ore", 1)
-		if randf() < 0.1:
-			_give("marbre_brut", 1)
-		if randf() < 0.05:
-			_give("or_brut", 1)
-	if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE] and randf() < 0.3:
-		_give("fiber", 1)
-
-
-func _give(id: String, n: int) -> void:
-	var it: ItemData = Items.get_item(id)
-	if it == null or n <= 0:
-		return
-	player.inventory.add(it, n)
-	Combat.popup(player, player.global_position + Vector3(0, 2.2, 0), "+%d %s" % [n, it.display_name], Color("e8f0c0"))
-	if it.is_placeable():
-		_refresh_slots()
-
-
-## Applique `new_height(h)` à chaque case ; le sol retiré donne de la terre, du sable ou de la pierre.
-func _terraform(cells: Array, new_height: Callable) -> void:
-	var changed := []
-	for c in cells:
-		if not world._inside(c) or grid.column(c).size() > 0 or not grid.furniture_in(c).is_empty():
-			continue
-		var h := world.terrain_height(c)
-		var t := world.terrain_type(c)
-		var nh: float = clampf(new_height.call(h), -3.0, 12.0)
-		if absf(nh - h) < 0.01:
-			continue
-		# on ne s'enterre pas soi-même
-		if nh > h and _overlaps_player(c, h, nh):
-			continue
-		if nh < h:
-			var mat := "bloc_terre"
-			if t == WorldGenerator.SAND:
-				mat = "bloc_sable"
-			elif t == WorldGenerator.STONE:
-				mat = "stone"
-			_dug[mat] = float(_dug.get(mat, 0.0)) + (h - nh)
-			if t == WorldGenerator.STONE:
-				if randf() < 0.1 * (h - nh):
-					_give("iron_ore", 1)
-				if h > 1.5 and randf() < 0.12 * (h - nh):
-					_give("marbre_brut", 1)
-				if h > 2.5 and randf() < 0.05 * (h - nh):
-					_give("or_brut", 1)
-		var kind := world.decor_at(c)
-		if kind != WorldGenerator.D_NONE:
-			for l in HARVEST_LOOT.get(kind, []):
-				_give(l[0], l[1])
-		world.set_terrain_height(c, nh)
-		changed.append(c)
-	if changed.is_empty():
-		return
-	world.refresh_cells(changed)
-	for m in _dug:
-		var n := floori(_dug[m])
-		if n > 0:
-			_dug[m] -= n
-			_give(m, n)
-	var c0: Vector2i = changed[0]
-	VoxelBurst.spawn(self, Vector3(c0.x + 0.5, world.terrain_height(c0) + 0.2, c0.y + 0.5), Color(0.55, 0.42, 0.28), 10, 2.5, 0.1, 0.5, "up", 9.0, false)
-	if not player.visual.is_attacking():
-		player.visual.play_move("heavy_2", 2.0)
-
-
-# ---------------------------------------------------------------- vue en coupe
+# ---------------------------------------------------------------- vue en coupe (hors mode construction)
 
 func _update_cut() -> void:
 	if grid == null or player == null:
@@ -586,73 +757,155 @@ func _update_cut() -> void:
 			ceiling = minf(ceiling, b[1])
 	if ceiling < INF:
 		grid.set_cut(player.global_position, ceiling - 0.05, 12.0)
-	elif active and force_cut:
-		grid.set_cut(player.global_position, feet + 2.05, 12.0)
 	else:
 		grid.set_cut(Vector3.ZERO, 10000.0, 0.0)
 
 
+static func it_color(it: ItemData) -> Color:
+	if it.block_texture:
+		var img := it.block_texture.get_image()
+		if img:
+			if img.is_compressed():
+				img.decompress()
+			return img.get_pixel(8, 8)
+	return Color(0.8, 0.7, 0.5)
+
+
 # ---------------------------------------------------------------- interface
+
+func _style(bg: Color, border: Color, width := 2) -> StyleBoxFlat:
+	var st := StyleBoxFlat.new()
+	st.bg_color = bg
+	st.border_color = border
+	st.set_border_width_all(width)
+	st.set_corner_radius_all(4)
+	st.set_content_margin_all(5)
+	return st
+
+
+func _lbl(text: String, size := 11, color := Color("f0e6d2")) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
+	l.add_theme_constant_override("outline_size", 4)
+	return l
+
 
 func _build_ui() -> void:
 	_ui = CanvasLayer.new()
 	_ui.layer = 2
 	add_child(_ui)
-	_banner = Label.new()
-	_banner.text = "MODE CONSTRUCTION"
-	_banner.add_theme_font_size_override("font_size", 16)
-	_banner.add_theme_color_override("font_color", Color("f2c86a"))
-	_banner.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
-	_banner.add_theme_constant_override("outline_size", 6)
-	_banner.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_banner.position = Vector2(-90, 96)
-	_ui.add_child(_banner)
-	var help := Label.new()
-	help.text = "Molette/1-9/LB-RB : choisir   Clic gauche/X : utiliser   Clic droit/Y : démolir   R : tourner   [ ] : pinceau   C : coupe   B : quitter"
-	help.add_theme_font_size_override("font_size", 10)
-	help.add_theme_color_override("font_color", Color("f0e6d2"))
-	help.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
-	help.add_theme_constant_override("outline_size", 4)
-	help.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	help.position = Vector2(-330, -18)
-	_ui.add_child(help)
-	var panel := PanelContainer.new()
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.08, 0.06, 0.05, 0.86)
-	st.border_color = Color("8a6a3a")
-	st.set_border_width_all(2)
-	st.set_corner_radius_all(4)
-	st.set_content_margin_all(5)
-	panel.add_theme_stylebox_override("panel", st)
-	panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	panel.position = Vector2(-330, -104)
-	panel.custom_minimum_size = Vector2(660, 82)
-	_ui.add_child(panel)
+	var panel_st := _style(Color(0.08, 0.06, 0.05, 0.9), Color("8a6a3a"))
+	# haut : niveau, bâtisseurs, options
+	var top := PanelContainer.new()
+	top.add_theme_stylebox_override("panel", panel_st)
+	_ui.add_child(top)
+	top.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	top.offset_left = -330
+	top.offset_right = 330
+	top.offset_top = 8
+	var th := HBoxContainer.new()
+	th.add_theme_constant_override("separation", 10)
+	top.add_child(th)
+	var title := _lbl("CONSTRUCTION", 14, Color("f2c86a"))
+	th.add_child(title)
+	var down := Button.new()
+	down.text = "▼"
+	down.tooltip_text = "Niveau inférieur (Page ↓ ou Ctrl + molette)"
+	down.pressed.connect(func(): _set_layer(layer - 1))
+	th.add_child(down)
+	_layer_label = _lbl("", 12)
+	th.add_child(_layer_label)
+	var up := Button.new()
+	up.text = "▲"
+	up.tooltip_text = "Niveau supérieur (Page ↑ ou Ctrl + molette)"
+	up.pressed.connect(func(): _set_layer(layer + 1))
+	th.add_child(up)
+	var cut := CheckBox.new()
+	cut.text = "Couper au-dessus (C)"
+	cut.button_pressed = cut_on
+	cut.add_theme_font_size_override("font_size", 10)
+	cut.toggled.connect(func(on): cut_on = on)
+	cut.focus_mode = Control.FOCUS_NONE
+	th.add_child(cut)
+	_instant_cb = CheckBox.new()
+	_instant_cb.text = "Construction instantanée"
+	_instant_cb.tooltip_text = "Les plans sont réalisés tout de suite (sans attendre les habitants)."
+	_instant_cb.add_theme_font_size_override("font_size", 10)
+	_instant_cb.focus_mode = Control.FOCUS_NONE
+	_instant_cb.toggled.connect(func(on):
+		orders.instant = on
+		if on:
+			# on réalise tout de suite ce qui attendait
+			orders.flush())
+	th.add_child(_instant_cb)
+	_builders_label = _lbl("", 10, Color("c8b89a"))
+	_ui.add_child(_builders_label)
+	_builders_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_builders_label.offset_left = -330
+	_builders_label.offset_right = 330
+	_builders_label.offset_top = 48
+	_builders_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# bas : outils
+	var bottom := PanelContainer.new()
+	bottom.add_theme_stylebox_override("panel", panel_st)
+	_ui.add_child(bottom)
+	bottom.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	bottom.offset_left = -390
+	bottom.offset_right = 390
+	bottom.offset_top = -196
+	bottom.offset_bottom = -26
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 2)
-	panel.add_child(v)
+	v.add_theme_constant_override("separation", 4)
+	bottom.add_child(v)
 	var head := HBoxContainer.new()
 	v.add_child(head)
-	_slot_name = Label.new()
-	_slot_name.add_theme_font_size_override("font_size", 13)
-	_slot_name.add_theme_color_override("font_color", Color("f2c86a"))
-	head.add_child(_slot_name)
-	_slot_desc = Label.new()
-	_slot_desc.add_theme_font_size_override("font_size", 10)
-	_slot_desc.add_theme_color_override("font_color", Color("c8b89a"))
-	_slot_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_slot_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	head.add_child(_slot_desc)
-	_bar = HBoxContainer.new()
-	_bar.add_theme_constant_override("separation", 3)
-	v.add_child(_bar)
-	# panneau du royaume (à droite)
+	_tool_name = _lbl("", 14, Color("f2c86a"))
+	head.add_child(_tool_name)
+	_sel_info = _lbl("", 11, Color("8ad66a"))
+	_sel_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sel_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	head.add_child(_sel_info)
+	_tool_desc = _lbl("", 10, Color("c8b89a"))
+	v.add_child(_tool_desc)
+	_tool_bar = HBoxContainer.new()
+	_tool_bar.add_theme_constant_override("separation", 4)
+	v.add_child(_tool_bar)
+	var sc := ScrollContainer.new()
+	sc.custom_minimum_size = Vector2(760, 52)
+	sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	v.add_child(sc)
+	_mat_bar = HBoxContainer.new()
+	_mat_bar.add_theme_constant_override("separation", 3)
+	sc.add_child(_mat_bar)
+	_cat_bar = HBoxContainer.new()
+	_cat_bar.add_theme_constant_override("separation", 4)
+	v.add_child(_cat_bar)
+	_help = _lbl("", 10)
+	_ui.add_child(_help)
+	_help.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_help.offset_left = -520
+	_help.offset_right = 520
+	_help.offset_top = -22
+	_help.offset_bottom = -4
+	_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var rot_keys := "%s/%s" % [OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_Q)),
+		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_E))]
+	var move_keys := "%s%s%s%s" % [OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_W)),
+		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_A)),
+		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_S)),
+		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_D))]
+	_help.text = "%s : déplacer (Maj : vite)   %s ou clic molette : tourner   Molette : zoom   Clic gauche (glisser) : tracer   Clic droit : annuler   R : tourner le meuble   [ ] : hauteur des murs   Tab : outil   V : matériau   1-7 : catégorie   B / Échap : quitter" % [move_keys, rot_keys]
+	# droite : royaume
 	var kp := PanelContainer.new()
-	kp.add_theme_stylebox_override("panel", st)
-	kp.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	kp.position = Vector2(-262, 90)
-	kp.custom_minimum_size = Vector2(252, 0)
+	kp.add_theme_stylebox_override("panel", panel_st)
 	_ui.add_child(kp)
+	kp.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	kp.offset_left = -262
+	kp.offset_right = -10
+	kp.offset_top = 250
 	_kpanel = RichTextLabel.new()
 	_kpanel.bbcode_enabled = true
 	_kpanel.fit_content = true
@@ -663,67 +916,84 @@ func _build_ui() -> void:
 	kp.add_child(_kpanel)
 
 
-func _draw_bar() -> void:
-	if _bar == null:
+func _button(text: String, selected: bool, cb: Callable, width := 0.0) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 11)
+	b.add_theme_color_override("font_color", Color("f2c86a") if selected else Color("f0e6d2"))
+	b.add_theme_stylebox_override("normal", _style(Color("4a3a2c") if selected else Color("2a211c"), Color("f2c86a") if selected else Color("5a4632"), 2 if selected else 1))
+	b.add_theme_stylebox_override("hover", _style(Color("4a3a2c"), Color("f2c86a"), 1))
+	b.add_theme_stylebox_override("pressed", _style(Color("5a4636"), Color("f2c86a"), 2))
+	if width > 0:
+		b.custom_minimum_size = Vector2(width, 0)
+	b.pressed.connect(cb)
+	return b
+
+
+func _icon_button(it: ItemData, selected: bool, cb: Callable, tip: String) -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(48, 48)
+	b.icon = Items.get_icon(it)
+	b.expand_icon = true
+	b.tooltip_text = tip
+	var have := player.inventory.count(it)
+	b.add_theme_stylebox_override("normal", _style(Color("2a211c"), Color("f2c86a") if selected else (Color("5a4632") if have > 0 else Color("6a2a22")), 2 if selected else 1))
+	b.add_theme_stylebox_override("hover", _style(Color("3a2e26"), Color("f2c86a"), 1))
+	b.pressed.connect(cb)
+	var n := _lbl(str(have), 9, Color("f0e6d2") if have > 0 else Color("e0705a"))
+	n.position = Vector2(30, 32)
+	b.add_child(n)
+	return b
+
+
+func _refresh_ui() -> void:
+	if _cat_bar == null or player == null:
 		return
-	for c in _bar.get_children():
-		c.queue_free()
-	var first := clampi(slot - 5, 0, maxi(0, _slots.size() - 12))
-	for i in range(first, mini(first + 12, _slots.size())):
-		var s: Dictionary = _slots[i]
-		var box := PanelContainer.new()
-		var st := StyleBoxFlat.new()
-		st.bg_color = Color(0.12, 0.09, 0.07)
-		st.border_color = Color("f2c86a") if i == slot else Color("4a3a2a")
-		st.set_border_width_all(2 if i == slot else 1)
-		st.set_corner_radius_all(3)
-		st.set_content_margin_all(1)
-		box.add_theme_stylebox_override("panel", st)
-		box.custom_minimum_size = Vector2(50, 50)
-		var holder := Control.new()
-		holder.custom_minimum_size = Vector2(46, 46)
-		box.add_child(holder)
-		if s.has("tool"):
-			var bg := ColorRect.new()
-			bg.color = (s.tool.color as Color).darkened(0.35)
-			bg.position = Vector2(4, 4)
-			bg.size = Vector2(38, 38)
-			holder.add_child(bg)
-			var g := Label.new()
-			g.text = s.tool.glyph
-			g.add_theme_font_size_override("font_size", 20)
-			g.position = Vector2(13, 8)
-			holder.add_child(g)
-		else:
-			var tr := TextureRect.new()
-			tr.texture = Items.get_icon(s.item)
-			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			tr.size = Vector2(46, 46)
-			holder.add_child(tr)
-			var n := Label.new()
-			n.text = str(player.inventory.count(s.item))
-			n.add_theme_font_size_override("font_size", 10)
-			n.add_theme_color_override("font_outline_color", Color.BLACK)
-			n.add_theme_constant_override("outline_size", 3)
-			n.position = Vector2(30, 30)
-			holder.add_child(n)
-		if i < 9:
-			var key := Label.new()
-			key.text = str(i + 1)
-			key.add_theme_font_size_override("font_size", 9)
-			key.add_theme_color_override("font_color", Color("c8b89a"))
-			key.position = Vector2(2, 0)
-			holder.add_child(key)
-		_bar.add_child(box)
-	var sel := _selected()
-	if sel.has("tool"):
-		_slot_name.text = sel.tool.name + ("  (pinceau %d×%d)" % [brush, brush] if sel.tool.id in [Tool.FLATTEN, Tool.DIG, Tool.RAISE] else "")
-		_slot_desc.text = sel.tool.desc
-	elif sel.has("item"):
-		var it: ItemData = sel.item
-		_slot_name.text = it.display_name
-		_slot_desc.text = ("Bloc · %s" % ItemData.TIER_NAMES[it.block_tier]) if it.is_block() else "Meuble · R pour tourner"
+	if _furniture_items.is_empty():
+		_list_furniture()
+	for bar in [_cat_bar, _tool_bar, _mat_bar]:
+		for c in bar.get_children():
+			c.queue_free()
+	for i in CATEGORIES.size():
+		var c: Dictionary = CATEGORIES[i]
+		_cat_bar.add_child(_button("%d %s %s" % [i + 1, c.glyph, c.name], i == cat, _set_category.bind(i)))
+	var category := _category()
+	if category.id == "furniture":
+		for i in _furniture_items.size():
+			var it: ItemData = _furniture_items[i]
+			_mat_bar.add_child(_icon_button(it, i == furniture_index, func(): furniture_index = i; _ghost_key = ""; _refresh_ui(),
+				"%s\n%s" % [it.display_name, _furniture_use(it)]))
+	else:
+		for i in category.tools.size():
+			_tool_bar.add_child(_button(category.tools[i].name, i == tool_index, func(): tool_index = i; _ghost_key = ""; _refresh_ui()))
+		if category.id == "walls":
+			_tool_bar.add_child(_lbl("   Hauteur : %d  " % wall_height, 11))
+			_tool_bar.add_child(_button("−", false, func(): wall_height = clampi(wall_height - 1, 1, 6); _refresh_ui(), 26))
+			_tool_bar.add_child(_button("+", false, func(): wall_height = clampi(wall_height + 1, 1, 6); _refresh_ui(), 26))
+		if materials.has(category.id):
+			var cur := _material()
+			for it in _block_items():
+				_mat_bar.add_child(_icon_button(it, it == cur, func(): materials[category.id] = it.id; _refresh_ui(),
+					"%s · %s" % [it.display_name, ItemData.TIER_NAMES[it.block_tier]]))
+	var tl := _tool()
+	var mat := _material()
+	_tool_name.text = tl.name + (("  ·  " + mat.display_name) if mat and materials.has(category.id) else "")
+	_tool_desc.text = tl.desc
+	if category.id == "roofs":
+		_tool_desc.text += "  Astuce : monte au niveau du haut des murs (Page ↑)."
+	_layer_label.text = "Niveau %d" % layer
+
+
+func _builders_text() -> String:
+	var b := orders.builders().size()
+	var n := orders.orders.size()
+	var waiting := orders.orders.values().filter(func(o): return not orders._has_material(o)).size()
+	var txt := "Plans : %d%s   ·   Bâtisseurs libres : %d" % [n, (" (%d sans matériaux)" % waiting) if waiting > 0 else "", b]
+	if n > 0 and b == 0 and not orders.instant:
+		txt += "   —   aucun habitant libre : retire-en un de son poste, ou coche « Construction instantanée »"
+	return txt
 
 
 func _update_kingdom_panel() -> void:

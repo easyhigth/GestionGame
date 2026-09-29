@@ -51,6 +51,11 @@ var _path: Array[Vector3] = []
 var _repath := 0.0
 var _work_anim := randf() * 2.0
 var _at_work := false
+## Chantier en cours (voir BuildOrders) : les habitants libres construisent les plans du joueur.
+var _order = null
+var _order_spot := Vector3.INF
+var _order_timer := randf()
+var _order_stuck := 0.0
 ## Voyageur rencontré dans le monde (pas encore habitant) : il attend qu'on lui parle.
 var stranger := false
 ## Ce qu'il demande pour rejoindre le village : {"item": ItemData, "count": int, "text": String}.
@@ -229,6 +234,9 @@ func _physics_process(delta: float) -> void:
 	if work_room != null and _work_step(delta):
 		_update_label()
 		return
+	if work_room == null and not stranger and _build_step(delta):
+		_update_label()
+		return
 	_at_work = false
 	_scan_timer -= delta
 	if _scan_timer <= 0.0:
@@ -330,6 +338,125 @@ func _work_step(delta: float) -> bool:
 		_stuck = 0.0
 	visual.animate(delta, velocity, facing)
 	return true
+
+
+## Bâtisseur : prend le plan le plus utile, va à côté et le réalise. Faux s'il n'a rien à faire.
+func _build_step(delta: float) -> bool:
+	var bo := get_tree().get_first_node_in_group("build_orders") as BuildOrders
+	if bo == null or bo.orders.is_empty():
+		_order = null
+		return false
+	if _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+		if _world == null:
+			return false
+	if _order != null and (not bo.orders.has(_order.id) or _order.builder != self):
+		_order = null
+	if _order == null:
+		_order_timer -= delta
+		if _order_timer > 0.0:
+			return false
+		_order_timer = 0.7
+		_order = bo.claim(self)
+		if _order == null:
+			return false
+		_order_spot = _stand_spot(bo, _order)
+		_path.clear()
+		_repath = 0.0
+		_order_stuck = 0.0
+		if _order_spot == Vector3.INF:
+			bo.release(_order, 15.0)
+			_order = null
+			return false
+	var target := bo.order_position(_order)
+	var to := _order_spot - global_position
+	to.y = 0.0
+	if to.length() < 0.35:
+		velocity = Vector3.ZERO
+		var look := target - global_position
+		look.y = 0.0
+		if look.length() > 0.05:
+			facing = look.normalized()
+		if not bo.ready_to_build(_order):
+			bo.release(_order, 4.0)
+			_order = null
+			return true
+		_work_anim -= delta
+		if _work_anim <= 0.0:
+			_work_anim = 0.8
+			visual.play_move("heavy_1" if _order.type != "furniture" else "punch_1", 1.3)
+			VoxelBurst.spawn(self, target + Vector3(0, 0.6, 0), Color(0.85, 0.75, 0.6), 6, 1.8, 0.06, 0.35, "up", 6.0, false)
+		if bo.work(_order, delta * Kingdom.affinity(self, "macon")):
+			_order = null
+			_order_timer = 0.0
+		_move_on_ground(delta)
+		visual.animate(delta, velocity, facing)
+		return true
+	# en route vers le chantier
+	var speed := walk_speed * 2.2 * (race.speed_multiplier if race else 1.0)
+	var before := global_position
+	_path_move(_order_spot, delta, speed)
+	if before.distance_to(global_position) < speed * delta * 0.2:
+		_order_stuck += delta
+		if _order_stuck > 3.0:
+			# impossible d'y arriver : on laisse ce plan de côté un moment
+			bo.release(_order, 20.0)
+			_order = null
+	else:
+		_order_stuck = 0.0
+	return true
+
+
+## Case d'où travailler sur un plan : libre, praticable, à portée de main.
+func _stand_spot(bo: BuildOrders, o: Dictionary) -> Vector3:
+	var target := bo.order_position(o)
+	var cell: Vector2i = o.cell
+	var best := Vector3.INF
+	var best_d := INF
+	for r in [1, 2]:
+		for dz in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				if maxi(absi(dx), absi(dz)) != r:
+					continue
+				var n := cell + Vector2i(dx, dz)
+				var c := Vector3(n.x + 0.5, 0, n.y + 0.5)
+				var h := _world.ground_height_at(Vector3(c.x, _world.terrain_height(n) + 0.1, c.z))
+				c.y = h
+				if not _world.is_walkable(c) or _world.build.body_blocked(n, h):
+					continue
+				if not bo.order_at_cell(n).filter(func(q): return q.type == "block" and absf(q.key.y - h) < 1.5).is_empty():
+					continue
+				if target.y - h > 6.0 or h - target.y > 3.0:
+					continue
+				var d := c.distance_to(global_position)
+				if d < best_d:
+					best_d = d
+					best = c
+		if best != Vector3.INF:
+			return best
+	return best
+
+
+## Avance vers `dest` en suivant un chemin (portes, obstacles).
+func _path_move(dest: Vector3, delta: float, speed: float) -> void:
+	_repath -= delta
+	if _path.is_empty() and _repath <= 0.0:
+		_repath = 1.5
+		_path = _world.find_path(global_position, dest) if _world else []
+	var goal := dest
+	if not _path.is_empty():
+		goal = _path[0]
+		if Vector2(goal.x - global_position.x, goal.z - global_position.z).length() < 0.25:
+			_path.pop_front()
+			if not _path.is_empty():
+				goal = _path[0]
+	var dir := goal - global_position
+	dir.y = 0.0
+	if dir.length() > 0.01:
+		facing = dir.normalized()
+	velocity = facing * speed
+	_move_on_ground(delta)
+	visual.animate(delta, velocity, facing)
 
 
 func _choose_work_spot() -> void:
