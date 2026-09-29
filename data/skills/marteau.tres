@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "marteau"
+tier_names = PackedStringArray("Frappe sismique", "Marteau des Dieux", "Colère de la Forge")
+category = "Martiale"
+color = Color(1.000, 0.690, 0.376, 1)
+description = "Tu frappes le sol si fort que tout vacille."
+passive = {"poise": 0.4, "stun": 0.04}
+active = "nova"
+active_params = {"radius": 3.8, "dmg": 1.7, "stun": 1.0}
+cooldown = 11.0

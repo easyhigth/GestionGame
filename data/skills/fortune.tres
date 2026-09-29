@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "fortune"
+tier_names = PackedStringArray("Chance", "Fortune", "Bénédiction du Destin")
+category = "Chaos"
+color = Color(1.000, 0.910, 0.376, 1)
+description = "La chance te sourit toujours."
+passive = {"crit": 0.1, "loot": 0.25, "dodge": 0.05}
+active = "buff"
+active_params = {"crit": 0.5, "dur": 6.0}
+cooldown = 16.0

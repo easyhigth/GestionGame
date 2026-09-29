@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lune"
+tier_names = PackedStringArray("Clair de lune", "Lune sanglante", "Éclipse")
+category = "Ténèbres"
+color = Color(0.753, 0.753, 1.000, 1)
+description = "La lune renforce tes coups et ta magie."
+passive = {"atk_pct": 0.06, "mag_pct": 0.06, "crit": 0.04}
+active = "volley"
+active_params = {"count": 3.0, "dmg": 1.2, "spread": 0.5}
+cooldown = 8.0

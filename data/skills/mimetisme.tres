@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mimetisme"
+tier_names = PackedStringArray("Mimétisme", "Imitation", "Copie Parfaite")
+category = "Chaos"
+color = Color(0.816, 0.627, 1.000, 1)
+description = "Tu copies la force de tes ennemis."
+passive = {"absorb": 0.15, "xp": 0.1}
+active = "drain"
+active_params = {"radius": 4.0, "dmg": 0.8, "ratio": 0.4}
+cooldown = 10.0

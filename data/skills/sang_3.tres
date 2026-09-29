@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sang_3"
+tier_names = PackedStringArray("Hémorragie", "Fleur de sang", "Marée Rouge")
+category = "Sang"
+color = Color(0.816, 0.125, 0.227, 1)
+description = "Une explosion de sang draine tout autour de toi."
+passive = {"lifesteal": 0.1}
+active = "nova"
+active_params = {"radius": 3.5, "dmg": 1.6, "burn": 0.5}
+cooldown = 11.0

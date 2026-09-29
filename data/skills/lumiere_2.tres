@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lumiere_2"
+tier_names = PackedStringArray("Éclat", "Aveuglement", "Aurore")
+category = "Lumière"
+color = Color(1.000, 0.965, 0.753, 1)
+description = "Un éclat aveuglant étourdit tes ennemis."
+passive = {"regen": 1.0, "mag_pct": 0.05}
+active = "stun"
+active_params = {"radius": 5.0, "dur": 2.0}
+cooldown = 14.0

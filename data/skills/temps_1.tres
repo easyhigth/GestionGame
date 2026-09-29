@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "temps_1"
+tier_names = PackedStringArray("Lenteur", "Temps figé", "Horloge Brisée")
+category = "Temps"
+color = Color(0.941, 0.816, 0.627, 1)
+description = "Le temps ralentit autour de toi."
+passive = {"cdr_pct": 0.1}
+active = "slow_field"
+active_params = {"radius": 6.0, "factor": 0.25, "dur": 5.0}
+cooldown = 16.0

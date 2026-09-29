@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ame_errante"
+tier_names = PackedStringArray("Âme errante", "Spectre", "Seigneur des Morts")
+category = "Esprit"
+color = Color(0.604, 1.000, 0.784, 1)
+description = "Tu aspires l'âme de tes ennemis vaincus."
+passive = {"kill_heal": 6.0, "absorb": 0.1}
+active = "drain"
+active_params = {"radius": 5.0, "dmg": 0.9, "ratio": 0.5}
+cooldown = 12.0

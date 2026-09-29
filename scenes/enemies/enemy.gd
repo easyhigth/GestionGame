@@ -20,6 +20,7 @@ var _dead_time := 0.0
 var _orbit_dir := 1.0 if randf() < 0.5 else -1.0
 var _orbit_timer := 0.0
 var _has_token := false
+var _fear_left := 0.0
 
 @onready var name_label: Label3D = $Name
 @onready var bar: HealthBar3D = $HealthBar
@@ -121,8 +122,18 @@ func _physics_process(delta: float) -> void:
 	if _think <= 0.0:
 		_think = 0.3
 		_choose_target()
-	var speed := data.move_speed if data else 3.5
+	var speed := (data.move_speed if data else 3.5) * speed_factor()
 	velocity = Vector3.ZERO
+	if _fear_left > 0.0:
+		_fear_left -= delta
+		var away := global_position - (player.global_position if player else home)
+		away.y = 0.0
+		facing = away.normalized() if away.length() > 0.01 else facing
+		velocity = facing * speed * 1.1
+		cancel_move()
+		_move_on_ground(delta)
+		visual.animate(delta, velocity, facing)
+		return
 	if not can_act() or in_move():
 		pass
 	elif _target:
@@ -197,6 +208,13 @@ func _choose_target() -> void:
 		_target = t
 
 
+## Terrorisé : fuit le héros pendant `time` secondes.
+func frighten(time: float) -> void:
+	_fear_left = time
+	_release_token()
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.2, 0), "Terrorisé", Color("c0a0ff"))
+
+
 func _on_hurt(_amount: int, source: Node) -> void:
 	# riposte contre celui qui l'a frappé (même un sort lancé de loin)
 	var src := _attacker_of(source)
@@ -217,6 +235,8 @@ func _on_died() -> void:
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color(1, 1, 0.9), 16, 6.0, 0.07, 0.4)
 	_drop_loot()
 	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("on_enemy_killed"):
+		player.on_enemy_killed(self)
 	if player and player.has_method("gain_xp") and data:
 		player.gain_xp(data.xp_reward if data.xp_reward > 0 else roundi(data.max_health / 4.0 + data.attack))
 	died_at.emit(global_position)

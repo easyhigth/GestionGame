@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "faucon"
+tier_names = PackedStringArray("Œil de faucon", "Vol du faucon", "Roi du Ciel")
+category = "Bête"
+color = Color(0.878, 0.753, 0.502, 1)
+description = "Rapide et précis comme un rapace."
+passive = {"crit": 0.1, "spd_pct": 0.06}
+active = "dash"
+active_params = {"dist": 7.0, "dmg": 1.4}
+cooldown = 6.0

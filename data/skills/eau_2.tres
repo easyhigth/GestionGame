@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eau_2"
+tier_names = PackedStringArray("Vague", "Raz-de-marée", "Déluge")
+category = "Eau"
+color = Color(0.227, 0.627, 1.000, 1)
+description = "Une vague repousse tout devant toi."
+passive = {"regen": 1.0}
+active = "cone"
+active_params = {"range": 5.0, "dmg": 1.2, "kb": 12.0, "angle": 100.0}
+cooldown = 9.0

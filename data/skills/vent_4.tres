@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "vent_4"
+tier_names = PackedStringArray("Lame de vent", "Croissants d'air", "Tempête de lames")
+category = "Vent"
+color = Color(0.690, 1.000, 0.816, 1)
+description = "Des lames de vent filent en éventail."
+passive = {"spd_pct": 0.08, "aspd_pct": 0.05}
+active = "volley"
+active_params = {"count": 5.0, "dmg": 0.8, "spread": 1.1}
+cooldown = 7.0

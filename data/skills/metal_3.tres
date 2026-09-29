@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "metal_3"
+tier_names = PackedStringArray("Pluie de lames", "Averse d'acier", "Arsenal Infini")
+category = "Métal"
+color = Color(0.784, 0.808, 0.839, 1)
+description = "Une pluie de lames tombe sur tes ennemis."
+passive = {"def_flat": 4.0}
+active = "meteor"
+active_params = {"radius": 2.2, "dmg": 1.2, "count": 4.0}
+cooldown = 14.0

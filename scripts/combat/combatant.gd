@@ -318,15 +318,26 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 			return false
 		_on_blocked(attack, source, knockback)
 		return false
+	# bonus de l'attaquant (critique, rage, exécution...)
+	var crit := false
+	if attacker:
+		crit = attacker.roll_crit()
+		var mult := attacker.outgoing_multiplier(self) * (attacker.crit_multiplier() if crit else 1.0)
+		attack = roundi(attack * mult)
 	var dmg := Combat.compute_damage(attack, defense_power())
 	if is_dizzy():
 		dmg = roundi(dmg * 1.5)
+	dmg = maxi(0, roundi(dmg * incoming_multiplier()))
 	health.take_damage(dmg, source)
 	_invulnerable_left = hit_invulnerability
 	visual.flash()
 	var color := Color("ffe070") if team == Team.ENEMIES else Color("ff5a4a")
+	if crit:
+		color = Color("ff9a2a")
 	var top := global_position + Vector3(0, 1.9 * visual.scale.y, 0)
-	Combat.popup(self, top, str(dmg), color, dmg >= 15)
+	Combat.popup(self, top, str(dmg) + ("!" if crit else ""), color, dmg >= 15 or crit)
+	if attacker:
+		attacker._on_damage_dealt(self, dmg)
 	VoxelBurst.spawn(self, global_position + Vector3(0, 1.0 * visual.scale.y, 0), Color(1.0, 0.95, 0.7), 10, 4.5, 0.07, 0.3)
 	if source:
 		var away := global_position - source.global_position
@@ -339,7 +350,7 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 	if is_alive():
 		_poise_timer = 3.0
 		if _stagger_left <= 0.0:
-			poise -= dmg * poise_damage
+			poise -= dmg * poise_damage * (attacker.poise_multiplier() if attacker else 1.0)
 			if poise <= 0.0:
 				break_poise()
 			elif poise_max < 20.0:
@@ -408,7 +419,7 @@ func stagger(time: float, dizzy := false) -> void:
 ## Équilibre brisé : étourdi, et les coups reçus font 50 % de dégâts en plus.
 func break_poise() -> void:
 	stagger(2.0, true)
-	Combat.popup(self, global_position + Vector3(0, 2.2 * visual.scale.y, 0), "Étourdi !", Color("ffd24a"), true)
+	Combat.popup(self, global_position + Vector3(0, 2.4 * visual.scale.y, 0), "Étourdi", Color("ffd24a"))
 
 
 ## Petit sursaut qui interrompt le coup en cours (monstres légers).
@@ -421,6 +432,82 @@ func flinch() -> void:
 
 func _on_hurt(_amount: int, _source: Node) -> void:
 	pass
+
+
+# ---------------------------------------------------------------- modificateurs (compétences)
+
+## Multiplicateur de dégâts contre une cible (redéfini par le joueur : rage, exécution...).
+func outgoing_multiplier(_target: Combatant) -> float:
+	return 1.0
+
+
+func roll_crit() -> bool:
+	return false
+
+
+func crit_multiplier() -> float:
+	return 1.5
+
+
+## Multiplicateur des dégâts reçus (barrière...).
+func incoming_multiplier() -> float:
+	return 1.0
+
+
+func poise_multiplier() -> float:
+	return 1.0
+
+
+## Appelé quand ce combattant vient d'infliger des dégâts.
+func _on_damage_dealt(_target: Combatant, _dmg: int) -> void:
+	pass
+
+
+# ---------------------------------------------------------------- états (brûlure, poison, ralentissement)
+
+var _dots: Array = []   # [dps, temps restant, source, couleur, accumulé]
+var _slow_left := 0.0
+var _slow_factor := 1.0
+
+
+## Dégâts continus (brûlure, poison) : `dps` dégâts par seconde pendant `time` secondes.
+func apply_dot(dps: float, time: float, source: Node, color: Color = Color(1, 0.5, 0.2)) -> void:
+	if not is_alive():
+		return
+	_dots.append([dps, time, source, color, 0.0])
+
+
+## Ralentit (factor = 0.4 : 40 % de la vitesse) pendant `time` secondes.
+func apply_slow(factor: float, time: float) -> void:
+	_slow_factor = minf(factor, _slow_factor) if _slow_left > 0.0 else factor
+	_slow_left = maxf(_slow_left, time)
+
+
+func speed_factor() -> float:
+	return _slow_factor if _slow_left > 0.0 else 1.0
+
+
+func _update_states(delta: float) -> void:
+	if _slow_left > 0.0:
+		_slow_left -= delta
+		if _slow_left <= 0.0:
+			_slow_factor = 1.0
+	var i := 0
+	while i < _dots.size():
+		var d: Array = _dots[i]
+		d[1] -= delta
+		d[4] += d[0] * delta
+		if d[4] >= 1.0 and is_alive():
+			var n := floori(d[4])
+			d[4] -= n
+			health.take_damage(n, d[2] if is_instance_valid(d[2]) else null)
+			if randf() < 0.35:
+				Combat.popup(self, global_position + Vector3(0, 1.7 * visual.scale.y, 0), str(n), (d[3] as Color).lightened(0.3))
+				VoxelBurst.spawn(self, global_position + Vector3(0, 1.0, 0), d[3], 4, 1.5, 0.08, 0.5, "up", -3.0)
+		if d[1] <= 0.0:
+			_dots.remove_at(i)
+		else:
+			i += 1
 
 
 func _on_died() -> void:
@@ -451,6 +538,7 @@ func _combat_step(delta: float) -> void:
 	if _poise_timer <= 0.0 and _stagger_left <= 0.0:
 		poise = minf(poise_max, poise + poise_max * delta * 0.5)
 	_update_move(delta)
+	_update_states(delta)
 	_knockback = _knockback.move_toward(Vector3.ZERO, 18.0 * delta)
 
 

@@ -19,6 +19,8 @@ signal feat(text: String, color: Color)
 signal lock_changed(target: Combatant)
 ## L'expérience a changé.
 signal xp_changed(xp: int, needed: int, level: int)
+## La compétence unique a changé (nouvelle compétence ou évolution).
+signal skill_changed(skill: HeroSkill)
 
 @export var stats: PlayerStats
 @export var race: RaceData
@@ -59,6 +61,9 @@ var lock_target: Combatant
 var profile: HeroProfile
 var level := 1
 var xp := 0
+## Compétence unique (peut être null).
+var skill: HeroSkill
+var _base_parry_window := 0.22
 
 var _dash_time := 0.0
 var _dash_elapsed := 99.0
@@ -93,6 +98,7 @@ func _ready() -> void:
 		hero.race = race
 		hero.reset_colors()
 		hero.hero_class = load("res://data/classes/guerrier.tres")
+		hero.skill = load("res://data/skills/vorace.tres")
 	apply_profile(hero, GameState.hero != null)
 	parried.connect(_on_parried)
 	_make_reticle()
@@ -107,6 +113,11 @@ func apply_profile(hero: HeroProfile, new_game := true) -> void:
 	visual.set_colors(hero.skin_color, hero.hair_color, hero.eye_color)
 	visual.set_model(hero.model())
 	visual.scale = Vector3(hero.build, hero.height, hero.build)
+	if hero.skill and (skill == null or skill.data != hero.skill):
+		skill = HeroSkill.new(hero.skill, self)
+		skill.set_level(level)
+		skill.evolved.connect(_on_skill_evolved)
+		skill_changed.emit(skill)
 	if new_game:
 		if hero.hero_class:
 			for it in hero.hero_class.starting_equipment:
@@ -136,9 +147,86 @@ func _update_max_health(refill := false) -> void:
 			hp += profile.hero_class.bonus_health + profile.hero_class.health_per_level * (level - 1)
 		if profile.job:
 			hp += profile.job.bonus_health
+	if skill:
+		hp = roundi(hp * skill.hp_mult()) + skill.absorbed["health"]
 	health.set_max(hp, refill)
 	var regen := 2.0 + (profile.job.bonus_regen if profile and profile.job else 0.0)
+	if skill:
+		regen += skill.p("regen")
+		parry_window = _base_parry_window + skill.p("parry")
 	health.regen_per_second = regen
+
+
+## Recalcule les caractéristiques (après une absorption, un renforcement...).
+func refresh_stats() -> void:
+	_update_max_health(false)
+	xp_changed.emit(xp, xp_to_next(), level)
+
+
+# ---------------------------------------------------------------- compétence unique
+
+func attack_power() -> int:
+	var v := super()
+	if skill:
+		v = roundi(v * skill.atk_mult()) + skill.absorbed["attack"]
+	return v
+
+
+func defense_power() -> int:
+	return super() + (skill.def_bonus() if skill else 0)
+
+
+func magic_power() -> int:
+	var v := super()
+	if skill:
+		v = roundi(v * skill.mag_mult()) + skill.absorbed["magic"]
+	return v
+
+
+func outgoing_multiplier(target: Combatant) -> float:
+	return skill.outgoing_multiplier(target) if skill else 1.0
+
+
+func roll_crit() -> bool:
+	return skill != null and randf() < skill.crit_chance()
+
+
+func crit_multiplier() -> float:
+	return 1.5 + (skill.p("crit_mult") if skill else 0.0)
+
+
+func incoming_multiplier() -> float:
+	return skill.incoming_multiplier() if skill else 1.0
+
+
+func poise_multiplier() -> float:
+	return 1.0 + (skill.p("poise") if skill else 0.0)
+
+
+func _on_damage_dealt(target: Combatant, dmg: int) -> void:
+	if skill:
+		skill.on_damage_dealt(target, dmg)
+
+
+## Appelé par un monstre quand il est vaincu.
+func on_enemy_killed(enemy: Combatant) -> void:
+	if skill:
+		skill.on_kill(enemy)
+
+
+func use_skill() -> void:
+	if skill and can_act() and not ui_open:
+		skill.activate()
+
+
+func _on_skill_evolved(old_name: String, new_name: String, tier: int) -> void:
+	feat.emit("Évolution ! %s → %s" % [old_name, new_name], skill.data.color.lightened(0.3))
+	notify.emit("%s évolue en %s (%s)." % [old_name, new_name, SkillData.TIER_LABELS[tier]])
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.2, 0), skill.data.color, 60, 5.0, 0.13, 1.4, "up", -1.0)
+	SkillFX.ring(self, global_position, 5.0, skill.data.color, 0.8)
+	TimeFX.slow_motion(0.4, 0.8)
+	_update_max_health(true)
+	skill_changed.emit(skill)
 
 
 func _class_bonus(field: String, per_level: String) -> float:
@@ -165,12 +253,12 @@ func base_magic() -> int:
 
 ## L'agilité de la race accélère les coups (+1,5 % par point au-dessus de 10).
 func attack_speed() -> float:
-	return super() * (1.0 + ((race.agility if race else 10) - 10) * 0.015)
+	return super() * (1.0 + ((race.agility if race else 10) - 10) * 0.015) * (skill.aspd_mult() if skill else 1.0)
 
 
 ## Multiplicateur de butin (métier).
 func loot_multiplier() -> float:
-	return profile.job.loot_multiplier if profile and profile.job else 1.0
+	return (profile.job.loot_multiplier if profile and profile.job else 1.0) * (1.0 + (skill.p("loot") if skill else 0.0))
 
 
 # ---------------------------------------------------------------- niveaux
@@ -184,12 +272,15 @@ func xp_to_next() -> int:
 func gain_xp(amount: int) -> void:
 	if amount <= 0 or not is_alive():
 		return
+	amount = roundi(amount * (1.0 + (skill.p("xp") if skill else 0.0)))
 	xp += amount
 	Combat.popup(self, global_position + Vector3(0, 2.3 * visual.scale.y, 0), "+%d XP" % amount, Color("9fe0ff"))
 	while xp >= xp_to_next():
 		xp -= xp_to_next()
 		level += 1
 		_update_max_health(true)
+		if skill:
+			skill.set_level(level)
 		feat.emit("Niveau %d !" % level, Color("ffd24a"))
 		notify.emit("Niveau %d : vie, attaque et magie augmentent." % level)
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.2, 0), Color(1.0, 0.85, 0.3), 40, 3.5, 0.1, 1.2, "up", -1.5)
@@ -212,6 +303,8 @@ func snap_camera() -> void:
 
 func _physics_process(delta: float) -> void:
 	_combat_step(delta)
+	if skill:
+		skill.process(delta)
 	_dash_cooldown_left = maxf(_dash_cooldown_left - delta, 0.0)
 	_dash_elapsed += delta
 	_counter_ready = maxf(_counter_ready - delta, 0.0)
@@ -235,7 +328,7 @@ func _physics_process(delta: float) -> void:
 	var input := Vector3(input2.x, 0, input2.y)
 	if input.length() > 1.0:
 		input = input.normalized()
-	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed"))
+	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0)
 
 	if can_input and can_act():
 		_handle_combat_input(input, delta)
@@ -404,7 +497,9 @@ func _on_attack_landed(hits: int, hit: Dictionary) -> void:
 
 # ---------------------------------------------------------------- défense
 
-func _on_hurt(amount: int, _source: Node) -> void:
+func _on_hurt(amount: int, source: Node) -> void:
+	if skill:
+		skill.on_hurt(amount, source)
 	shake(0.8 + amount * 0.04)
 	_stop_charge()
 	cancel_move()
@@ -412,7 +507,7 @@ func _on_hurt(amount: int, _source: Node) -> void:
 
 ## Un coup vient d'être esquivé pendant la roulade : si c'est au dernier moment, esquive parfaite.
 func _on_evaded(attacker: Combatant) -> void:
-	if not is_dashing() or _dash_elapsed > perfect_dodge_window or _perfect_cd > 0.0 or attacker == null:
+	if not is_dashing() or _dash_elapsed > perfect_dodge_window + (skill.p("dodge") if skill else 0.0) or _perfect_cd > 0.0 or attacker == null:
 		return
 	_perfect_cd = 2.0
 	_flurry_target = attacker
@@ -456,6 +551,14 @@ func _spawn_ghosts(delta: float) -> void:
 
 
 func _on_died() -> void:
+	# certaines compétences sauvent d'un coup mortel
+	if skill and skill.try_last_stand():
+		health.revive(0.3)
+		_invulnerable_left = 2.0
+		feat.emit("%s : vous refusez de tomber !" % skill.current_name(), skill.data.color.lightened(0.3))
+		VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), skill.data.color, 50, 5.0, 0.12, 1.0, "up", -1.0)
+		SkillFX.shell(self, skill.data.color, 2.0, 1.2)
+		return
 	super()
 	_respawn_left = respawn_delay
 	_dash_time = 0.0
@@ -507,6 +610,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("inventory"):
 		open_inventory.emit(self)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("skill"):
+		use_skill()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("lock_on"):
 		if lock_target:

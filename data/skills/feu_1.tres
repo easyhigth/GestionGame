@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "feu_1"
+tier_names = PackedStringArray("Étincelle", "Brasier", "Seigneur des Flammes")
+category = "Feu"
+color = Color(1.000, 0.416, 0.165, 1)
+description = "Une explosion de flammes jaillit autour de toi, et tes coups brûlent."
+passive = {"burn": 0.15}
+active = "nova"
+active_params = {"radius": 3.2, "dmg": 1.4, "burn": 0.4}
+cooldown = 10.0

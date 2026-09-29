@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "miroir"
+tier_names = PackedStringArray("Miroir", "Réflexion", "Miroir Absolu")
+category = "Sagesse"
+color = Color(0.910, 0.941, 1.000, 1)
+description = "Tu renvoies les attaques à leur lanceur."
+passive = {"thorns": 0.3}
+active = "barrier"
+active_params = {"dur": 3.0, "reduce": 0.8, "reflect": 1.0}
+cooldown = 14.0

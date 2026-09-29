@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "feu_4"
+tier_names = PackedStringArray("Peau ardente", "Manteau de feu", "Corps de lave")
+category = "Feu"
+color = Color(1.000, 0.416, 0.165, 1)
+description = "Une aura de flammes brûle tout ce qui t'approche."
+passive = {"burn": 0.15, "thorns": 0.1}
+active = "aura"
+active_params = {"radius": 2.4, "dps": 0.35, "dur": 6.0}
+cooldown = 16.0

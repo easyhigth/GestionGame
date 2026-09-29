@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "necromancie"
+tier_names = PackedStringArray("Nécromancie", "Maître des morts", "Roi Liche")
+category = "Ténèbres"
+color = Color(0.416, 1.000, 0.604, 1)
+description = "Tu tires ta force de la mort qui t'entoure."
+passive = {"kill_heal": 5.0, "mag_pct": 0.1}
+active = "drain"
+active_params = {"radius": 5.0, "dmg": 1.1, "ratio": 0.5}
+cooldown = 12.0

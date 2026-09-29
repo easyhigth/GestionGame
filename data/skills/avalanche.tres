@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "avalanche"
+tier_names = PackedStringArray("Froid mordant", "Avalanche", "Ère Glaciaire")
+category = "Glace"
+color = Color(0.816, 0.973, 1.000, 1)
+description = "Une vague de froid gèle tout sur son passage."
+passive = {"slow": 0.15, "def_flat": 2.0}
+active = "cone"
+active_params = {"range": 7.0, "dmg": 1.2, "kb": 6.0, "angle": 90.0, "slow": 1.0}
+cooldown = 10.0

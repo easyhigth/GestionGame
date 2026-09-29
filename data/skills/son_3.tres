@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "son_3"
+tier_names = PackedStringArray("Onde de choc", "Mur de son", "Fracas")
+category = "Son"
+color = Color(1.000, 0.816, 0.941, 1)
+description = "Une onde sonore repousse tes ennemis."
+passive = {"stun": 0.05}
+active = "cone"
+active_params = {"range": 6.0, "dmg": 1.2, "kb": 14.0, "angle": 90.0}
+cooldown = 8.0

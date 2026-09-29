@@ -36,6 +36,13 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - **Niveaux** : les monstres vaincus donnent de l'expérience ; chaque niveau augmente la vie, l'attaque, la défense et la magie selon la classe (barre bleue sous la vie).
 - Les modèles du héros sont dans `assets/characters/hero/` (outil `tools/voxel_hero_generator.py`) : la peau, les cheveux et les yeux y sont peints avec des couleurs repères, remplacées en jeu par les couleurs choisies (`VoxelCharacter.set_colors`).
 
+## Compétences uniques
+- **151 compétences** réparties en 26 catégories (Péchés, Vertus, Sagesse, Feu, Eau, Glace, Vent, Foudre, Terre, Lumière, Ténèbres, Poison, Sang, Espace, Temps, Son, Métal, Nature, Cristal, Martiale, Bête, Survie, Ombre, Esprit, Chaos, Commandement). On en choisit une à la création (onglet « Compétence », avec filtre, recherche et tirage au hasard).
+- Chaque compétence **évolue** et change de nom : Rang I (compétence unique) au niveau 1, Rang II (supérieure) au niveau 6, Rang III (ultime) au niveau 12. Ex. : Vorace → Dévoreur → Seigneur de la Faim ; Éclair → Foudre vivante → Dieu du Tonnerre.
+- **Passif** permanent (attaque, magie, vie, critiques, vol de vie, brûlure, étourdissement, ralentissement, absorption de force sur les ennemis vaincus, survie à un coup mortel, parade et esquive facilitées...), renforcé à chaque rang.
+- **Actif** (Q / RB), avec recharge (compteur en bas de l'écran) : explosion, salve de projectiles, ruée, météores, tourbillon, souffle, drain de vie, zones de poison ou de gel, aura, barrière, soin (aussi des habitants), terreur, exécution, téléportation...
+- Les compétences sont décrites dans `tools/skills_database.py` (qui génère `data/skills/*.tres`) : pour en ajouter une, écris une ligne `S(...)` et relance le script. Leur fonctionnement est dans `scripts/hero/hero_skill.gd`.
+
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.
 - 7 emplacements : tête, torse, bras, jambes, arme, bouclier, dos. Une arme à deux mains retire le bouclier.
@@ -84,8 +91,8 @@ Choix de conception :
 
 Étapes :
 1. Combat à la Zelda : verrouillage de cible, combos, attaque chargée, esquive parfaite, parade et contre, animations et effets. **(fait)**
-2. Héros : création et personnalisation, classes, métiers, niveaux **(fait)** ; compétences uniques qui évoluent **(prochaine étape)**.
-3. Construction du royaume : bâtiments sur grille, paliers, métiers et postes des habitants.
+2. Héros : création et personnalisation, classes, métiers, niveaux **(fait)**  ; 151 compétences uniques qui évoluent **(fait)**.
+3. Construction du royaume : bâtiments sur grille, paliers, métiers et postes des habitants. **(prochaine étape)**
 4. Monde ouvert : régions, monde plus grand chargé par morceaux, carte.
 5. Donjons et boss.
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville.

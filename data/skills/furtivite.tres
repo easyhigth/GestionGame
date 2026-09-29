@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "furtivite"
+tier_names = PackedStringArray("Furtivité", "Invisibilité", "Fantôme")
+category = "Ombre"
+color = Color(0.541, 0.541, 0.667, 1)
+description = "Tu te fonds dans l'ombre et deviens intouchable un instant."
+passive = {"dodge": 0.1, "spd_pct": 0.05}
+active = "barrier"
+active_params = {"dur": 2.5, "reduce": 1.0}
+cooldown = 12.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "regeneration"
+tier_names = PackedStringArray("Régénération", "Régénération rapide", "Immortalité")
+category = "Bête"
+color = Color(0.416, 1.000, 0.541, 1)
+description = "Tes blessures se referment d'elles-mêmes."
+passive = {"regen": 4.0, "hp_pct": 0.05}
+active = "heal"
+active_params = {"pct": 0.3}
+cooldown = 16.0

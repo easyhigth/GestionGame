@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "poison_3"
+tier_names = PackedStringArray("Dard", "Aiguillons", "Essaim de dards")
+category = "Poison"
+color = Color(0.541, 1.000, 0.227, 1)
+description = "Des dards venimeux filent vers l'ennemi."
+passive = {"burn": 0.12}
+active = "volley"
+active_params = {"count": 5.0, "dmg": 0.6, "spread": 0.8, "burn": 0.6}
+cooldown = 7.0

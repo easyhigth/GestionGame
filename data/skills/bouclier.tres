@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "bouclier"
+tier_names = PackedStringArray("Contre-attaque", "Riposte", "Bouclier Vengeur")
+category = "Martiale"
+color = Color(0.627, 0.753, 1.000, 1)
+description = "Chaque coup reçu est rendu au centuple."
+passive = {"thorns": 0.25, "parry": 0.05}
+active = "barrier"
+active_params = {"dur": 3.0, "reduce": 0.9}
+cooldown = 14.0

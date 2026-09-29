@@ -17,6 +17,8 @@ const HERO_DIR := "res://assets/characters/hero/"
 @export_range(0.85, 1.2, 0.01) var build: float = 1.0
 @export var hero_class: ClassData
 @export var job: JobData
+## Compétence unique (data/skills/).
+@export var skill: SkillData
 
 
 ## Modèle 3D du héros (race + style + barbe).

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dague_fantome"
+tier_names = PackedStringArray("Dagues fantômes", "Lames spectrales", "Nuée de Lames")
+category = "Ombre"
+color = Color(0.627, 0.541, 1.000, 1)
+description = "Des dagues d'ombre filent vers tes ennemis."
+passive = {"crit": 0.06}
+active = "volley"
+active_params = {"count": 6.0, "dmg": 0.7, "spread": 0.7}
+cooldown = 6.0

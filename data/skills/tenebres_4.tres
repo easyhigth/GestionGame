@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "tenebres_4"
+tier_names = PackedStringArray("Terreur", "Cauchemar", "Roi de la Nuit")
+category = "Ténèbres"
+color = Color(0.478, 0.227, 1.000, 1)
+description = "Les ténèbres terrorisent ceux qui les voient."
+passive = {"lifesteal": 0.05}
+active = "fear"
+active_params = {"radius": 6.5, "dur": 4.0, "dmg": 0.6}
+cooldown = 16.0

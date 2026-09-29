@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "survivant"
+tier_names = PackedStringArray("Survivant", "Increvable", "Immortel")
+category = "Survie"
+color = Color(1.000, 0.753, 0.627, 1)
+description = "Tu refuses de mourir : tu survis à un coup mortel."
+passive = {"last_stand": 1.0, "hp_pct": 0.1}
+active = "heal"
+active_params = {"pct": 0.3}
+cooldown = 18.0

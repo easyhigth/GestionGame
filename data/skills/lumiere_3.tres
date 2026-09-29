@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lumiere_3"
+tier_names = PackedStringArray("Rayon", "Lances sacrées", "Jugement Céleste")
+category = "Lumière"
+color = Color(1.000, 0.965, 0.753, 1)
+description = "Des rayons sacrés frappent le mal."
+passive = {"regen": 1.0, "mag_pct": 0.05}
+active = "volley"
+active_params = {"count": 3.0, "dmg": 1.3, "spread": 0.3}
+cooldown = 8.0

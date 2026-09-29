@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "poison_1"
+tier_names = PackedStringArray("Venin", "Toxine", "Peste")
+category = "Poison"
+color = Color(0.541, 1.000, 0.227, 1)
+description = "Tes coups empoisonnent."
+passive = {"burn": 0.12}
+active = "buff"
+active_params = {"burn": 0.6, "dur": 8.0}
+cooldown = 16.0

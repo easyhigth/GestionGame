@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "diligence"
+tier_names = PackedStringArray("Diligence", "Zèle", "Infatigable")
+category = "Vertu"
+color = Color(1.000, 0.753, 0.439, 1)
+description = "Tu ne t'arrêtes jamais : coups et déplacements plus rapides."
+passive = {"aspd_pct": 0.1, "spd_pct": 0.05}
+active = "buff"
+active_params = {"aspd": 0.35, "spd": 0.2, "dur": 6.0}
+cooldown = 14.0

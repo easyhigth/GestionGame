@@ -9,6 +9,8 @@ var damage := 10
 var knockback := 3.0
 var shooter: Combatant
 var color := Color(0.5, 0.9, 1.0)
+## Appelé avec la cible touchée (effets des compétences).
+var on_hit: Callable
 var _t := 0.0
 var _core: MeshInstance3D
 
@@ -56,7 +58,8 @@ func _physics_process(delta: float) -> void:
 			var tp := target.global_position + Vector3(0, 0.9, 0)
 			if Vector2(tp.x - global_position.x, tp.z - global_position.z).length() < target.body_radius + 0.25 \
 					and absf(tp.y - global_position.y) < 1.2:
-				target.receive_hit(damage, self, knockback)
+				if target.receive_hit(damage, self, knockback) and on_hit.is_valid():
+					on_hit.call(target)
 				_burst()
 				return
 	if range_left <= 0.0:

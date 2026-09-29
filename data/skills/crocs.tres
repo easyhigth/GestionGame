@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "crocs"
+tier_names = PackedStringArray("Crocs", "Mâchoires", "Dévoreur d'Âmes")
+category = "Bête"
+color = Color(1.000, 0.353, 0.353, 1)
+description = "Tu mords et déchires : chaque coup te soigne."
+passive = {"lifesteal": 0.1, "crit": 0.04}
+active = "cone"
+active_params = {"range": 3.5, "dmg": 1.7, "kb": 4.0, "angle": 90.0}
+cooldown = 7.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "glace_1"
+tier_names = PackedStringArray("Givre", "Blizzard", "Hiver Éternel")
+category = "Glace"
+color = Color(0.627, 0.941, 1.000, 1)
+description = "Le froid te suit : tes coups ralentissent."
+passive = {"slow": 0.2}
+active = "slow_field"
+active_params = {"radius": 5.0, "factor": 0.3, "dur": 5.0, "dps": 0.3}
+cooldown = 14.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "aurore"
+tier_names = PackedStringArray("Aube", "Aurore", "Lumière Éternelle")
+category = "Lumière"
+color = Color(1.000, 0.816, 0.627, 1)
+description = "Une lumière douce soigne et protège."
+passive = {"regen": 1.2, "def_flat": 2.0}
+active = "barrier"
+active_params = {"dur": 4.0, "reduce": 0.5, "heal": 0.15}
+cooldown = 16.0

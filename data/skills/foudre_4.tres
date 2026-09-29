@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "foudre_4"
+tier_names = PackedStringArray("Frappe du ciel", "Colonne de foudre", "Colère des Cieux")
+category = "Foudre"
+color = Color(1.000, 0.910, 0.290, 1)
+description = "Des colonnes de foudre s'abattent du ciel."
+passive = {"stun": 0.08}
+active = "meteor"
+active_params = {"radius": 2.6, "dmg": 1.8, "count": 3.0}
+cooldown = 15.0

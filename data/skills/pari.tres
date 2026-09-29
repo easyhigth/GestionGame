@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "pari"
+tier_names = PackedStringArray("Pari", "Quitte ou double", "Main du Destin")
+category = "Chaos"
+color = Color(1.000, 0.753, 1.000, 1)
+description = "Tu mises ta vie : dégâts énormes, mais tu t'affaiblis."
+passive = {"crit_mult": 0.6, "berserk": 0.2}
+active = "buff"
+active_params = {"atk": 0.8, "crit": 0.3, "dur": 5.0, "cost": 0.25}
+cooldown = 16.0

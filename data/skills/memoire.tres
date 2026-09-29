@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "memoire"
+tier_names = PackedStringArray("Mémoire", "Archives", "Bibliothèque Infinie")
+category = "Sagesse"
+color = Color(0.690, 0.690, 1.000, 1)
+description = "Tu retiens tout : expérience accrue et magie renforcée."
+passive = {"xp": 0.25, "mag_pct": 0.1}
+active = "nova"
+active_params = {"radius": 3.0, "dmg": 1.2}
+cooldown = 10.0

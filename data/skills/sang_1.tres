@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sang_1"
+tier_names = PackedStringArray("Soif", "Soif de sang", "Seigneur Vampire")
+category = "Sang"
+color = Color(0.816, 0.125, 0.227, 1)
+description = "Le sang des ennemis nourrit le tien."
+passive = {"lifesteal": 0.1}
+active = "drain"
+active_params = {"radius": 3.5, "dmg": 1.0, "ratio": 0.8}
+cooldown = 12.0

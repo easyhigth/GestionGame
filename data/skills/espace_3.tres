@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "espace_3"
+tier_names = PackedStringArray("Portail", "Faille dimensionnelle", "Horizon des Événements")
+category = "Espace"
+color = Color(0.753, 0.541, 1.000, 1)
+description = "Une porte dimensionnelle aspire tout."
+passive = {"dodge": 0.08}
+active = "vortex"
+active_params = {"radius": 6.0, "dmg": 1.2}
+cooldown = 14.0

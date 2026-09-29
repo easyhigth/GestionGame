@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "metal_2"
+tier_names = PackedStringArray("Lames tournoyantes", "Tourbillon d'acier", "Mille Lames")
+category = "Métal"
+color = Color(0.784, 0.808, 0.839, 1)
+description = "Des lames d'acier jaillissent autour de toi."
+passive = {"def_flat": 4.0}
+active = "aura"
+active_params = {"radius": 2.5, "dps": 0.5, "dur": 5.0}
+cooldown = 14.0

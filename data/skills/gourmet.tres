@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "gourmet"
+tier_names = PackedStringArray("Gourmet", "Gastronome", "Festin Éternel")
+category = "Péché"
+color = Color(1.000, 0.627, 0.753, 1)
+description = "Tu te nourris de tout : chaque ennemi vaincu te soigne beaucoup."
+passive = {"kill_heal": 10.0, "hp_pct": 0.05}
+active = "drain"
+active_params = {"radius": 3.0, "dmg": 1.1, "ratio": 1.0}
+cooldown = 12.0

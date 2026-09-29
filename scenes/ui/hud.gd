@@ -25,6 +25,12 @@ var _slow_tint: ColorRect
 var _target: Combatant
 var _xp_fill: ColorRect
 var _xp_text: Label
+var _skill_box: PanelContainer
+var _skill_icon: ColorRect
+var _skill_cd: ColorRect
+var _skill_name: Label
+var _skill_rank: Label
+var _skill_key: Label
 const HP_WIDTH := 220.0
 
 
@@ -43,6 +49,7 @@ func _ready() -> void:
 	_build_health_bar()
 	_build_death_screen()
 	_build_combat_ui()
+	_build_skill_slot()
 	if player:
 		player.feat.connect(show_feat)
 		player.lock_changed.connect(func(t): _target = t)
@@ -51,6 +58,7 @@ func _ready() -> void:
 		player.defeated.connect(func(): _death.show())
 		player.equipment.changed.connect(_update_health)
 		player.xp_changed.connect(func(_x, _n, _l): _update_health())
+		player.skill_changed.connect(func(_s): _update_skill())
 	_refresh()
 	_update_health()
 
@@ -156,6 +164,65 @@ func _build_combat_ui() -> void:
 	_target_box.hide()
 
 
+func _build_skill_slot() -> void:
+	_skill_box = PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0.08, 0.06, 0.05, 0.85)
+	st.border_color = Color("8a6a3a")
+	st.set_border_width_all(2)
+	st.set_corner_radius_all(4)
+	st.set_content_margin_all(5)
+	_skill_box.add_theme_stylebox_override("panel", st)
+	_skill_box.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_skill_box.position = Vector2(-130, -58)
+	_skill_box.custom_minimum_size = Vector2(260, 46)
+	add_child(_skill_box)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	_skill_box.add_child(row)
+	var icon_holder := Control.new()
+	icon_holder.custom_minimum_size = Vector2(36, 36)
+	row.add_child(icon_holder)
+	_skill_icon = ColorRect.new()
+	_skill_icon.size = Vector2(36, 36)
+	icon_holder.add_child(_skill_icon)
+	var inner := ColorRect.new()
+	inner.color = Color(1, 1, 1, 0.35)
+	inner.position = Vector2(10, 10)
+	inner.size = Vector2(16, 16)
+	inner.rotation = 0.0
+	icon_holder.add_child(inner)
+	_skill_cd = ColorRect.new()
+	_skill_cd.color = Color(0, 0, 0, 0.7)
+	_skill_cd.size = Vector2(36, 0)
+	icon_holder.add_child(_skill_cd)
+	_skill_key = _outlined("Q", 10)
+	_skill_key.position = Vector2(2, 20)
+	icon_holder.add_child(_skill_key)
+	var txt := VBoxContainer.new()
+	txt.add_theme_constant_override("separation", -2)
+	row.add_child(txt)
+	_skill_name = _outlined("", 14)
+	txt.add_child(_skill_name)
+	_skill_rank = _outlined("", 9)
+	_skill_rank.add_theme_color_override("font_color", Color("c8b89a"))
+	txt.add_child(_skill_rank)
+	_update_skill()
+
+
+func _update_skill() -> void:
+	if _skill_box == null:
+		return
+	var s: HeroSkill = player.skill if player else null
+	_skill_box.visible = s != null
+	if s == null:
+		return
+	_skill_icon.color = s.data.color.darkened(0.15)
+	_skill_name.text = s.current_name()
+	_skill_name.add_theme_color_override("font_color", s.data.color.lightened(0.35))
+	_skill_rank.text = "%s  ·  Q / RB" % SkillData.TIER_LABELS[s.tier]
+
+
 ## Grand message au centre de l'écran (« Parade ! », « Esquive parfaite ! »...).
 func show_feat(text: String, color: Color) -> void:
 	_feat.text = text
@@ -195,6 +262,11 @@ func _update_health() -> void:
 
 
 func _process(delta: float) -> void:
+	if player and player.skill and _skill_cd:
+		var r := player.skill.cooldown_ratio()
+		_skill_cd.size.y = 36.0 * r
+		_skill_cd.position.y = 36.0 * (1.0 - r)
+		_skill_key.text = "%d" % ceili(player.skill.cooldown_left) if r > 0.0 else "Q"
 	_slow_tint.color.a = move_toward(_slow_tint.color.a, 0.14 if TimeFX.is_slowed() else 0.0, 0.02)
 	if _target and is_instance_valid(_target) and _target.is_alive():
 		_target_box.show()
@@ -242,4 +314,4 @@ func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	_update_health()
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]

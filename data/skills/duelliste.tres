@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "duelliste"
+tier_names = PackedStringArray("Duelliste", "Fine lame", "Maître Duelliste")
+category = "Martiale"
+color = Color(1.000, 0.878, 0.753, 1)
+description = "Face à un seul adversaire, tu es imbattable."
+passive = {"crit": 0.12, "parry": 0.06}
+active = "execute"
+active_params = {"range": 5.0, "dmg": 2.0, "threshold": 0.5}
+cooldown = 9.0

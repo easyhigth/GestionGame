@@ -6,6 +6,7 @@ extends Control
 const RACES_DIR := "res://data/races/"
 const CLASSES_DIR := "res://data/classes/"
 const JOBS_DIR := "res://data/jobs/"
+const SKILLS_DIR := "res://data/skills/"
 const GAME_SCENE := "res://scenes/main.tscn"
 const NAMES := ["Aldric", "Kaelen", "Sylvane", "Brannoc", "Ysolde", "Thorvald", "Mirelle", "Garrik", "Liora",
 	"Oren", "Vaelis", "Rurik", "Selka", "Darion", "Nyssa", "Torben", "Elowen", "Kazimir", "Aurore", "Faelan"]
@@ -51,6 +52,13 @@ var _class_buttons := {}
 var _class_info: RichTextLabel
 var _job_buttons := {}
 var _job_info: RichTextLabel
+var skills: Array[SkillData] = []
+var _skill_filter: OptionButton
+var _skill_search: LineEdit
+var _skill_list: VBoxContainer
+var _skill_info: RichTextLabel
+var _skill_buttons := {}
+var _aura: MeshInstance3D
 var _name_edit: LineEdit
 var _summary: RichTextLabel
 var _stat_bars := {}
@@ -61,6 +69,8 @@ func _ready() -> void:
 	races.sort_custom(func(a, b): return a.display_name < b.display_name)
 	classes.assign(_load_all(CLASSES_DIR))
 	jobs.assign(_load_all(JOBS_DIR))
+	skills.assign(_load_all(SKILLS_DIR))
+	skills.sort_custom(func(a, b): return a.category + a.tier_names[0] < b.category + b.tier_names[0])
 	var order := ["Guerrier", "Paladin", "Barbare", "Rôdeur", "Assassin", "Mage"]
 	classes.sort_custom(func(a, b): return order.find(a.display_name) < order.find(b.display_name))
 	jobs.sort_custom(func(a, b): return a.display_name < b.display_name)
@@ -72,6 +82,7 @@ func _ready() -> void:
 	profile.reset_colors()
 	profile.hero_class = classes[0]
 	profile.job = jobs[0]
+	profile.skill = skills.pick_random()
 	profile.hero_name = NAMES.pick_random()
 	_name_edit.text = profile.hero_name
 	_refresh_all()
@@ -282,7 +293,7 @@ func _make_theme() -> Theme:
 	th.set_stylebox("tab_hovered", "TabContainer", _style(Color("4a3624"), Color("d8a84a"), 1, 3))
 	th.set_color("font_selected_color", "TabContainer", Color("fff4d8"))
 	th.set_color("font_unselected_color", "TabContainer", C_DIM)
-	th.set_font_size("font_size", "TabContainer", 12)
+	th.set_font_size("font_size", "TabContainer", 10)
 	th.set_stylebox("normal", "LineEdit", _style(Color("1c1614"), Color("8a6a3a"), 1, 3))
 	th.set_stylebox("focus", "LineEdit", _style(Color("1c1614"), Color("f2c86a"), 1, 3))
 	th.set_color("font_color", "LineEdit", Color("fff4d8"))
@@ -352,6 +363,7 @@ func _build_ui() -> void:
 	_tabs.add_child(_build_look_tab())
 	_tabs.add_child(_build_class_tab())
 	_tabs.add_child(_build_job_tab())
+	_tabs.add_child(_build_skill_tab())
 
 	# panneau de droite : nom, résumé, caractéristiques, boutons
 	var right := _panel(Vector2(700, 10), Vector2(250, 520))
@@ -600,6 +612,122 @@ func _change_style(step: int) -> void:
 	_refresh_all()
 
 
+func _build_skill_tab() -> Control:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 5)
+	v.add_child(_title("Compétence unique (%d)" % skills.size()))
+	var row := HBoxContainer.new()
+	_skill_filter = OptionButton.new()
+	_skill_filter.add_theme_font_size_override("font_size", 10)
+	_skill_filter.add_item("Toutes les catégories")
+	var cats := []
+	for s in skills:
+		if not cats.has(s.category):
+			cats.append(s.category)
+	cats.sort()
+	for c in cats:
+		_skill_filter.add_item(c)
+	_skill_filter.item_selected.connect(func(_i): _fill_skill_list())
+	_skill_filter.custom_minimum_size = Vector2(150, 0)
+	row.add_child(_skill_filter)
+	var dice := Button.new()
+	dice.text = "Au hasard"
+	dice.add_theme_font_size_override("font_size", 10)
+	dice.pressed.connect(func(): _pick_skill(skills.pick_random()))
+	row.add_child(dice)
+	v.add_child(row)
+	_skill_search = LineEdit.new()
+	_skill_search.placeholder_text = "Rechercher..."
+	_skill_search.add_theme_font_size_override("font_size", 10)
+	_skill_search.text_changed.connect(func(_t): _fill_skill_list())
+	v.add_child(_skill_search)
+	var sc := ScrollContainer.new()
+	sc.custom_minimum_size = Vector2(300, 170)
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_skill_list = VBoxContainer.new()
+	_skill_list.add_theme_constant_override("separation", 2)
+	_skill_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.add_child(_skill_list)
+	v.add_child(sc)
+	_skill_info = _rich()
+	v.add_child(_skill_info)
+	_fill_skill_list()
+	var outer := ScrollContainer.new()
+	outer.name = "Compétence"
+	outer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	outer.add_child(v)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return outer
+
+
+func _fill_skill_list() -> void:
+	for c in _skill_list.get_children():
+		c.queue_free()
+	_skill_buttons.clear()
+	var cat := _skill_filter.get_item_text(_skill_filter.selected) if _skill_filter.selected > 0 else ""
+	var q := _skill_search.text.strip_edges().to_lower() if _skill_search else ""
+	var group := ButtonGroup.new()
+	for s in skills:
+		if cat != "" and s.category != cat:
+			continue
+		if q != "" and not ("".join(s.tier_names) + s.category + s.description).to_lower().contains(q):
+			continue
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_group = group
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.text = "  %s  ·  %s" % [s.tier_names[0], s.category]
+		b.add_theme_font_size_override("font_size", 10)
+		b.add_theme_color_override("font_color", s.color.lightened(0.3))
+		b.custom_minimum_size = Vector2(0, 20)
+		b.set_pressed_no_signal(s == profile.skill)
+		b.pressed.connect(_pick_skill.bind(s))
+		_skill_list.add_child(b)
+		_skill_buttons[s] = b
+
+
+func _pick_skill(s: SkillData) -> void:
+	profile.skill = s
+	for k in _skill_buttons:
+		_skill_buttons[k].set_pressed_no_signal(k == s)
+	_refresh_texts()
+	_refresh_aura()
+
+
+## Anneau de la couleur de la compétence sous le héros, avec une gerbe de cubes.
+func _refresh_aura() -> void:
+	if profile.skill == null:
+		return
+	if _aura == null:
+		_aura = MeshInstance3D.new()
+		var c := CylinderMesh.new()
+		c.top_radius = 0.9
+		c.bottom_radius = 0.9
+		c.height = 0.04
+		c.radial_segments = 12
+		c.rings = 1
+		_aura.mesh = c
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_aura.material_override = m
+		_aura.position = Vector3(0, 0.29, 0)
+		_viewport.add_child(_aura)
+	(_aura.material_override as StandardMaterial3D).albedo_color = Color(profile.skill.color, 0.45)
+	var b := VoxelBurst.new()
+	b.color = profile.skill.color
+	b.gravity = -2.0
+	for i in 26:
+		var a := randf() * TAU
+		b._pos.append(Vector3(cos(a) * 0.8, 0.35, sin(a) * 0.8))
+		b._vel.append(Vector3(cos(a) * 0.4, randf_range(1.5, 3.0), sin(a) * 0.4))
+		b._age.append(0.0)
+		b._life.append(randf_range(0.6, 1.1))
+		b._size.append(randf_range(0.06, 0.12))
+		b._rot.append(Vector3(randf(), randf(), 0))
+	_viewport.add_child(b)
+
+
 func _randomize() -> void:
 	profile.race = races.pick_random()
 	var pal := HeroProfile.palette(profile.race)
@@ -612,6 +740,7 @@ func _randomize() -> void:
 	profile.build = randf_range(0.92, 1.12)
 	profile.hero_class = classes.pick_random()
 	profile.job = jobs.pick_random()
+	profile.skill = skills.pick_random()
 	profile.hero_name = NAMES.pick_random()
 	_name_edit.text = profile.hero_name
 	_refresh_all()
@@ -646,6 +775,7 @@ func _refresh_all() -> void:
 	_build.set_value_no_signal(profile.build)
 	_refresh_texts()
 	_refresh_model()
+	_refresh_aura()
 
 
 func _refresh_colors() -> void:
@@ -687,6 +817,17 @@ func _frame_camera() -> void:
 	_cam_target = Vector3(-0.28 * _cam_dist / 8.0, _hero.global_position.y + h * 0.5, 0)
 
 
+func _skill_text() -> String:
+	var s := profile.skill
+	if s == null:
+		return ""
+	var lines := ["[font_size=13][color=#%s]%s[/color][/font_size]  [color=#a8997f]%s[/color]\n%s" % [s.color.lightened(0.3).to_html(false), s.tier_names[0], s.category, s.description]]
+	for tier in 3:
+		lines.append("\n[color=#f2c86a]%s — %s[/color] [color=#a8997f](niveau %d)[/color]\n[color=#9fe0a0]Passif :[/color] %s\n[color=#7fd8ff]Actif :[/color] %s" % [
+			s.tier_names[tier], SkillData.TIER_LABELS[tier].get_slice(" · ", 0), SkillData.TIER_LEVELS[tier], s.passive_text(tier), s.active_text(tier)])
+	return "\n".join(lines)
+
+
 func _refresh_texts() -> void:
 	var r := profile.race
 	_race_info.text = "[font_size=13][color=#f2c86a]%s[/color][/font_size]\n%s\n\n[color=#a8997f]Vie %d · Force %d · Agilité %d · Magie %d · Vitesse %d %%[/color]" % [
@@ -709,6 +850,8 @@ func _refresh_texts() -> void:
 			items.append("%d %s" % [j.starting_counts[i] if i < j.starting_counts.size() else 1, j.starting_items[i].display_name])
 		_job_info.text = "[font_size=13][color=#f2c86a]%s[/color][/font_size]\n%s\n\n[color=#f2c86a]Au départ :[/color] %s\n[color=#f2c86a]Avantage :[/color] %s" % [
 			j.display_name, j.description, ", ".join(items), j.perks_text()]
+	if _skill_info:
+		_skill_info.text = _skill_text()
 	_refresh_summary()
 
 
@@ -718,6 +861,8 @@ func _refresh_summary() -> void:
 	var j := profile.job
 	_summary.text = "[font_size=14]%s[/font_size]\n%s · [color=#%s]%s[/color] · %s" % [profile.hero_name, r.display_name,
 		c.color.lightened(0.2).to_html(false) if c else "ffffff", c.display_name if c else "?", j.display_name if j else "?"]
+	if profile.skill:
+		_summary.text += "\n[color=#%s]✦ %s[/color]" % [profile.skill.color.lightened(0.3).to_html(false), profile.skill.tier_names[0]]
 	# caractéristiques de départ (race + classe + métier + équipement)
 	var hp := r.max_health + (c.bonus_health if c else 0) + (j.bonus_health if j else 0)
 	var atk := r.strength + (c.bonus_attack if c else 0) + (j.bonus_attack if j else 0)

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "abysse"
+tier_names = PackedStringArray("Abysse", "Profondeurs", "Seigneur des Abysses")
+category = "Ténèbres"
+color = Color(0.227, 0.290, 0.667, 1)
+description = "Les profondeurs t'obéissent et engloutissent tes ennemis."
+passive = {"lifesteal": 0.04, "slow": 0.1}
+active = "vortex"
+active_params = {"radius": 6.0, "dmg": 1.3}
+cooldown = 14.0

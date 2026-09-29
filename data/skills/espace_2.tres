@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "espace_2"
+tier_names = PackedStringArray("Fracture", "Déchirure", "Effondrement du Vide")
+category = "Espace"
+color = Color(0.753, 0.541, 1.000, 1)
+description = "L'espace se déchire et broie tes ennemis."
+passive = {"dodge": 0.08}
+active = "nova"
+active_params = {"radius": 4.0, "dmg": 1.7}
+cooldown = 12.0

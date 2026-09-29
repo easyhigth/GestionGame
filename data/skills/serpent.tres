@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "serpent"
+tier_names = PackedStringArray("Serpent", "Hydre", "Ouroboros")
+category = "Bête"
+color = Color(0.416, 0.753, 0.416, 1)
+description = "Souple et venimeux, tu te régénères comme l'hydre."
+passive = {"burn": 0.12, "regen": 1.5}
+active = "dot"
+active_params = {"radius": 3.5, "dps": 0.45, "dur": 5.0}
+cooldown = 11.0

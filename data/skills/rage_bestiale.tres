@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "rage_bestiale"
+tier_names = PackedStringArray("Rage bestiale", "Frénésie", "Berserker")
+category = "Bête"
+color = Color(1.000, 0.227, 0.227, 1)
+description = "Tu entres dans une frénésie sanglante."
+passive = {"berserk": 0.3, "lifesteal": 0.04}
+active = "buff"
+active_params = {"atk": 0.4, "aspd": 0.3, "lifesteal": 0.1, "dur": 7.0}
+cooldown = 16.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "glace_2"
+tier_names = PackedStringArray("Gel", "Prison de glace", "Zéro Absolu")
+category = "Glace"
+color = Color(0.627, 0.941, 1.000, 1)
+description = "Une explosion de givre fige les ennemis."
+passive = {"slow": 0.2}
+active = "stun"
+active_params = {"radius": 4.0, "dur": 2.5, "dmg": 0.8}
+cooldown = 14.0

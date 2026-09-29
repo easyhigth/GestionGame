@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ecailles_dragon"
+tier_names = PackedStringArray("Sang de dragon", "Âme de dragon", "Dragon Véritable")
+category = "Bête"
+color = Color(0.816, 0.416, 0.165, 1)
+description = "Le sang des dragons coule dans tes veines."
+passive = {"hp_pct": 0.1, "atk_pct": 0.06, "mag_pct": 0.06}
+active = "cone"
+active_params = {"range": 6.5, "dmg": 1.8, "kb": 5.0, "angle": 60.0, "burn": 0.5}
+cooldown = 10.0

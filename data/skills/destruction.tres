@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "destruction"
+tier_names = PackedStringArray("Destruction", "Annihilation", "Fin du Monde")
+category = "Chaos"
+color = Color(1.000, 0.165, 0.165, 1)
+description = "Tu libères une puissance qui rase tout."
+passive = {"atk_pct": 0.08, "mag_pct": 0.08}
+active = "meteor"
+active_params = {"radius": 3.5, "dmg": 2.4, "count": 2.0}
+cooldown = 18.0

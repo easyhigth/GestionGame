@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ecorche"
+tier_names = PackedStringArray("Écorcheur", "Boucher", "Carnage")
+category = "Martiale"
+color = Color(0.753, 0.290, 0.290, 1)
+description = "Chaque ennemi vaincu te pousse à frapper plus fort."
+passive = {"atk_pct": 0.06, "kill_heal": 3.0}
+active = "aura"
+active_params = {"radius": 2.4, "dps": 0.6, "dur": 4.0}
+cooldown = 13.0

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "phenix"
+tier_names = PackedStringArray("Flamme renaissante", "Phénix", "Oiseau Immortel")
+category = "Feu"
+color = Color(1.000, 0.690, 0.251, 1)
+description = "Tu renais de tes cendres."
+passive = {"last_stand": 1.0, "burn": 0.08}
+active = "nova"
+active_params = {"radius": 4.0, "dmg": 1.6, "burn": 0.5, "heal": 0.2}
+cooldown = 16.0

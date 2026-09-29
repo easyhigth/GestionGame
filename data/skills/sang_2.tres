@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sang_2"
+tier_names = PackedStringArray("Sacrifice", "Pacte de sang", "Rituel Écarlate")
+category = "Sang"
+color = Color(0.816, 0.125, 0.227, 1)
+description = "Tu sacrifies de ta vie pour frapper plus fort."
+passive = {"lifesteal": 0.1}
+active = "buff"
+active_params = {"atk": 0.5, "lifesteal": 0.2, "dur": 6.0, "cost": 0.15}
+cooldown = 14.0

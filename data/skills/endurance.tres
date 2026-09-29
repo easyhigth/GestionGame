@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "endurance"
+tier_names = PackedStringArray("Endurance", "Ténacité", "Corps Indestructible")
+category = "Survie"
+color = Color(0.816, 0.816, 0.627, 1)
+description = "Tu encaisses plus que n'importe qui."
+passive = {"hp_pct": 0.2, "def_flat": 2.0}
+active = "barrier"
+active_params = {"dur": 4.0, "reduce": 0.4}
+cooldown = 15.0

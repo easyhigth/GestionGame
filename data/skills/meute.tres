@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "meute"
+tier_names = PackedStringArray("Appel de la meute", "Chef de meute", "Roi des Loups")
+category = "Bête"
+color = Color(0.690, 0.690, 0.690, 1)
+description = "Ton hurlement galvanise tes alliés et terrifie tes ennemis."
+passive = {"atk_pct": 0.06, "regen": 0.5}
+active = "fear"
+active_params = {"radius": 7.0, "dur": 3.0}
+cooldown = 15.0
