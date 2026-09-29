@@ -56,6 +56,8 @@ func open(who: Node) -> void:
 		eq.changed.connect(_refresh)
 	player.ui_open = true
 	_set_hud_info(false)
+	# au-dessus des bandeaux et messages du HUD
+	get_parent().move_child(self, get_parent().get_child_count() - 1)
 	show()
 	_refresh()
 
@@ -328,6 +330,23 @@ func _refresh_job() -> void:
 		return
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k == null:
+		return
+	# compagnon d'expédition (2 au plus)
+	var n_comp := get_tree().get_nodes_in_group("villagers").filter(func(v): return v.get("companion")).size()
+	var comp := CheckButton.new()
+	comp.text = "Compagnon d'expédition (%d/2)" % n_comp
+	comp.add_theme_font_size_override("font_size", 11)
+	comp.button_pressed = target.get("companion")
+	comp.disabled = not target.get("companion") and n_comp >= 2
+	comp.toggled.connect(func(on):
+		if on:
+			k.assign(target, null)
+		target.set_companion(on)
+		player.notify.emit(("%s t'accompagne : il te suit partout et combat à tes côtés." if on else "%s retourne au village.") % target.villager_name)
+		_refresh())
+	_job_box.add_child(comp)
+	if target.get("companion"):
+		_job_box.add_child(_label("Niveau %d · progresse avec toi." % target.get("level"), 9, C_DIM))
 		return
 	_job_box.add_child(_label("Poste de travail", 12, Color("f2c86a")))
 	var cur = target.get("work_room")

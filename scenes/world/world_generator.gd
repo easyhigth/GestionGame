@@ -214,6 +214,10 @@ func _ready() -> void:
 		var dm := DungeonManager.new()
 		dm.name = "Donjons"
 		add_child(dm)
+	if get_node_or_null("Menaces") == null:
+		var rm := RaidManager.new()
+		rm.name = "Menaces"
+		add_child(rm)
 	if generate_on_start:
 		generate(randi() if random_seed_on_start else world_seed)
 
@@ -771,7 +775,8 @@ func step_ok(cell: Vector2i, h_from: float) -> bool:
 
 
 ## Chemin (liste de points) entre deux positions, en passant par les portes (A*, cases voisines).
-func find_path(from: Vector3, to: Vector3, max_nodes := 2500) -> Array[Vector3]:
+## `through_build` : ignore les blocs construits (les pillards passent au travers en les cassant).
+func find_path(from: Vector3, to: Vector3, max_nodes := 2500, through_build := false) -> Array[Vector3]:
 	var out: Array[Vector3] = []
 	var start := cell_at(from)
 	var goal := cell_at(to)
@@ -805,15 +810,22 @@ func find_path(from: Vector3, to: Vector3, max_nodes := 2500) -> Array[Vector3]:
 			return out
 		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 			var n: Vector2i = cur + d
-			if not _inside(n) or not step_ok(n, hgt[cur]):
+			if not _inside(n):
 				continue
-			if n != goal and _prop_blocked(n, hgt[cur], props):
+			if through_build:
+				var tn := _type(n)
+				var th := _h(n)
+				if tn == WATER or tn == DEEP or th - hgt[cur] > max_step:
+					continue
+			elif not step_ok(n, hgt[cur]):
+				continue
+			if Vector2(n - goal).length() > 1.5 and _prop_blocked(n, hgt[cur], props):
 				continue
 			var ng: float = g[cur] + 1.0
 			if not g.has(n) or ng < g[n]:
 				g[n] = ng
 				came[n] = cur
-				hgt[n] = support_height(Vector3(n.x + 0.5, 0, n.y + 0.5), hgt[cur])
+				hgt[n] = _h(n) if through_build else support_height(Vector3(n.x + 0.5, 0, n.y + 0.5), hgt[cur])
 				if not open.has(n):
 					open.append(n)
 	return out
@@ -1381,6 +1393,21 @@ func _build_content(ch: Vector2i) -> void:
 		if crng.randf() < chance and far and not near_site and (t == GRASS or t == STONE or t == SAND) \
 				and _decor[_idx(cell)] == D_NONE and _is_dry_area(cell, 2):
 			_add_camp(holder, cell, z, crng)
+	# campement de voyageurs (rare, jamais près d'un camp de monstres ni du village)
+	var trng := RandomNumberGenerator.new()
+	trng.seed = hash(Vector3i(ch.x, ch.y, world_seed + 909))
+	var tcell := Vector2i(ch.x * CHUNK + trng.randi_range(3, CHUNK - 4), ch.y * CHUNK + trng.randi_range(3, CHUNK - 4))
+	if _inside(tcell):
+		var tz: Dictionary = zones[_zone[_idx(tcell)]]
+		var tr: RegionData = tz.type
+		var tchance := (tr.traveler_density if tr else 0.15) * CHUNK * CHUNK / 1000.0
+		var tpos := cell_center(tcell)
+		var tfar := Vector2(tpos.x - origin.x, tpos.z - origin.z).length() >= 40.0
+		var tt := _type(tcell)
+		var no_camp := holder.get_node_or_null("Camp") == null or (holder.get_node("Camp") as Node3D).global_position.distance_to(tpos) > 14.0
+		if trng.randf() < tchance and tfar and no_camp and (tt == GRASS or tt == SAND or tt == STONE) \
+				and _decor[_idx(tcell)] == D_NONE and _is_dry_area(tcell, 2):
+			_add_travelers(holder, tcell, tz, trng)
 	# objets à ramasser
 	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
 		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
@@ -1425,6 +1452,91 @@ func _loot_at(c: Vector2i) -> Array:
 		if t == GRASS and roll < 0.012:
 			return [wood_item if roll < 0.008 else fiber_item, 1]
 	return []
+
+
+## Voyageurs déjà recrutés (clé de campement -> true).
+var _recruited := {}
+
+const OFFER_WISHES := {
+	"forgeron": ["iron_ore", 4, "Je forge depuis vingt ans. Apporte-moi du minerai de fer et je te suivrai."],
+	"macon": ["stone", 10, "Donne-moi de la bonne pierre et je te bâtirai des murs qui ne tombent jamais."],
+	"bucheron": ["wood", 10, "Un peu de bois pour ma cognée, et je suis à toi."],
+	"fermier": ["fiber", 6, "J'ai perdu mes semences sur la route... Tu aurais des fibres ?"],
+	"garde": ["leather", 4, "Une armure de cuir neuve, et je défendrai ton village jusqu'à mon dernier souffle."],
+	"tisserand": ["fiber", 8, "Avec des fibres, je te tisse ce que tu veux."],
+	"verrier": ["stone", 6, "Le verre naît du sable et de la pierre. Montre-moi que tu en as."],
+	"boulanger": ["wood", 6, "Il me faut du bois pour chauffer un four. Le pain suivra !"],
+	"aubergiste": ["wood", 8, "Un village sans auberge, c'est triste. Aide-moi à en monter une."],
+	"marchand": ["leather", 5, "Du cuir à revendre, et je t'ouvre mon réseau de commerce."],
+	"erudit": ["fiber", 5, "Il me faut de quoi fabriquer du papier. Je sais lire les vieilles ruines."],
+	"pretre": ["stone", 6, "Aide-moi à bâtir un autel et je bénirai ton village."],
+	"mage": ["iron_ore", 3, "Le fer brut canalise la magie. Apporte-m'en et je t'enseignerai."],
+}
+
+
+## Ce qu'un voyageur demande pour rejoindre le village.
+func make_offer(job: String, lv: int) -> Dictionary:
+	var wish: Array = OFFER_WISHES.get(job, ["wood", 6, "Je cherche un endroit sûr où vivre."])
+	var items := []
+	var it := Items.get_item(wish[0])
+	if it:
+		items.append([it, int(wish[1]) + lv / 2])
+	var gold := Items.get_item("piece_or")
+	if lv >= 5 and gold:
+		items.append([gold, lv])
+	return {"items": items, "text": wish[2]}
+
+
+func _add_travelers(holder: Node3D, cell: Vector2i, z: Dictionary, trng: RandomNumberGenerator) -> void:
+	var node := Node3D.new()
+	node.name = "Voyageurs"
+	holder.add_child(node)
+	node.global_position = cell_center(cell)
+	if campfire_scene:
+		var fire := campfire_scene.instantiate() as Node3D
+		node.add_child(fire)
+	var sign := Label3D.new()
+	sign.text = "Campement de voyageurs"
+	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sign.font_size = 44
+	sign.pixel_size = 0.008
+	sign.outline_size = 9
+	sign.modulate = Color("ffe0a0")
+	sign.position.y = 3.4
+	node.add_child(sign)
+	var r: RegionData = z.type
+	var races: Array = r.recruit_races if r and not r.recruit_races.is_empty() else villager_races
+	var n := trng.randi_range(1, 3)
+	for i in n:
+		var key := "%d,%d,%d" % [cell.x, cell.y, i]
+		if _recruited.has(key) or villager_scene == null or races.is_empty():
+			continue
+		var v := villager_scene.instantiate() as Villager
+		v.stranger = true
+		v.race = races[trng.randi() % races.size()]
+		v.villager_name = Villager.NAMES[trng.randi() % Villager.NAMES.size()]
+		var lv: Vector2i = z.level
+		v.level = trng.randi_range(lv.x, lv.y)
+		var jobs := Villager.JOBS.duplicate()
+		var j1: String = jobs[trng.randi() % jobs.size()]
+		jobs.erase(j1)
+		var j2: String = jobs[trng.randi() % jobs.size()]
+		v.talents = {j1: trng.randf_range(0.45, 0.7), j2: trng.randf_range(0.15, 0.3)}
+		v.recruit_offer = make_offer(j1, v.level)
+		v.set_meta("recruit_key", key)
+		v.wander_radius = 2.5
+		var a := TAU * i / n + 0.4
+		node.add_child(v)
+		v.global_position = cell_center(cell) + Vector3(cos(a), 0, sin(a)) * 2.2
+		v.home = v.global_position
+		if trng.randf() < 0.7:
+			_give_kit(v, VILLAGER_KITS[trng.randi() % VILLAGER_KITS.size()])
+
+
+## Un voyageur a rejoint le village : il ne réapparaîtra plus dans son campement.
+func mark_recruited(v: Node) -> void:
+	if v.has_meta("recruit_key"):
+		_recruited[v.get_meta("recruit_key")] = true
 
 
 func _add_camp(holder: Node3D, cell: Vector2i, z: Dictionary, crng: RandomNumberGenerator) -> void:
@@ -1609,6 +1721,7 @@ func travel_to(z: Dictionary) -> bool:
 	player.global_position = dest
 	if player.has_method("snap_camera"):
 		player.snap_camera()
+	Villager.bring_companions(get_tree(), dest)
 	reveal(dest, REVEAL_RADIUS)
 	return true
 

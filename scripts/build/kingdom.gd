@@ -370,6 +370,8 @@ func assign(villager: Node, room: Variant) -> bool:
 	var t: RoomTypeData = room.type
 	if t == null or workers_of(room).size() >= t.job_slots:
 		return false
+	if villager.get("companion"):
+		villager.call("set_companion", false)
 	villager.set("work_room", room)
 	changed.emit()
 	_refresh_labels()
@@ -403,6 +405,15 @@ func hero_bonus(key: String) -> float:
 			seen[r.type.id] = true
 			total += float((r.type as RoomTypeData).hero_bonus.get(key, 0.0))
 	return total
+
+
+## Habitants au départ, sans lit construit.
+const BASE_POPULATION := 8
+
+
+## Nombre maximal d'habitants : la population de départ + les lits des maisons et dortoirs.
+func population_cap() -> int:
+	return BASE_POPULATION + beds()
 
 
 func beds() -> int:

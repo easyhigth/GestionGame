@@ -51,18 +51,32 @@ var _path: Array[Vector3] = []
 var _repath := 0.0
 var _work_anim := randf() * 2.0
 var _at_work := false
+## Voyageur rencontré dans le monde (pas encore habitant) : il attend qu'on lui parle.
+var stranger := false
+## Ce qu'il demande pour rejoindre le village : {"item": ItemData, "count": int, "text": String}.
+var recruit_offer := {}
+## Compagnon d'expédition : il suit le héros partout et combat avec lui.
+var companion := false
+## Niveau de l'habitant (un compagnon progresse avec le héros).
+var level := 1
+## Bonus d'attaque des gardes pendant un raid.
+var guard_bonus := 0.0
+const JOB_NAMES := {"forgeron": "Forgeron", "boulanger": "Boulanger", "garde": "Garde", "fermier": "Fermier",
+	"bucheron": "Bûcheron", "macon": "Maçon", "verrier": "Verrier", "aubergiste": "Aubergiste", "marchand": "Marchand",
+	"erudit": "Érudit", "pretre": "Prêtre", "mage": "Mage", "tisserand": "Tisserand"}
 const JOBS := ["forgeron", "boulanger", "garde", "fermier", "bucheron", "macon", "verrier", "aubergiste",
 	"marchand", "erudit", "pretre", "mage", "tisserand"]
 
 
 func _ready() -> void:
 	super()
-	add_to_group("villagers")
-	# deux talents personnels au hasard
-	var pool := JOBS.duplicate()
-	pool.shuffle()
-	talents[pool[0]] = randf_range(0.2, 0.4)
-	talents[pool[1]] = randf_range(0.1, 0.25)
+	add_to_group("strangers" if stranger else "villagers")
+	# deux talents personnels au hasard (un voyageur a déjà les siens)
+	if talents.is_empty():
+		var pool := JOBS.duplicate()
+		pool.shuffle()
+		talents[pool[0]] = randf_range(0.2, 0.4)
+		talents[pool[1]] = randf_range(0.1, 0.25)
 	if villager_name.is_empty():
 		villager_name = NAMES.pick_random()
 	home = global_position
@@ -82,17 +96,94 @@ func set_race(new_race: RaceData) -> void:
 		vis.set_model(race.villager_models.pick_random())
 	elif race.model:
 		vis.set_model(race.model)
+	_apply_level(true)
+
+
+## Vie selon la race et le niveau.
+func _apply_level(refill := false) -> void:
 	var hp := get_node_or_null("Health") as Health
-	if hp:
-		hp.set_max(race.max_health, true)
+	if hp and race:
+		hp.set_max(roundi(race.max_health * _level_mult()), refill)
+
+
+func _level_mult() -> float:
+	return 1.0 + 0.1 * (level - 1)
+
+
+func set_level(lv: int) -> void:
+	if lv == level:
+		return
+	level = maxi(1, lv)
+	_apply_level(false)
 
 
 func base_attack() -> int:
-	return race.strength if race else 10
+	return roundi((race.strength if race else 10) * _level_mult() * (1.0 + guard_bonus))
 
 
 func base_magic() -> int:
-	return race.magic if race else 10
+	return roundi((race.magic if race else 10) * _level_mult())
+
+
+## Métier où il est le plus doué (son talent le plus fort).
+func best_job() -> String:
+	var best := ""
+	var bv := -1.0
+	for j in talents:
+		if float(talents[j]) > bv:
+			bv = float(talents[j])
+			best = j
+	return best
+
+
+## Le voyageur rejoint le village : il y part tout de suite et devient un habitant.
+func join_village(village_center: Vector3) -> void:
+	stranger = false
+	recruit_offer = {}
+	remove_from_group("strangers")
+	add_to_group("villagers")
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+	var dest := village_center + Vector3(randf_range(-4, 4), 0, randf_range(-4, 4))
+	if world:
+		dest.y = world.ground_height_at(Vector3(dest.x, village_center.y + 1.0, dest.z))
+		var holder := world.get_node("Village")
+		if get_parent() != holder:
+			reparent(holder)
+	global_position = dest
+	home = dest
+	_target = dest
+	_threat = null
+	_path.clear()
+
+
+## Passe en compagnon d'expédition (ou revient au village).
+func set_companion(on: bool) -> void:
+	companion = on
+	_threat = null
+	_path.clear()
+	if on:
+		work_room = null
+	else:
+		var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+		if world:
+			var v := world.cell_center(world.spawn_cell)
+			home = v + Vector3(randf_range(-4, 4), 0, randf_range(-4, 4))
+			_target = home
+
+
+## Place les compagnons autour d'une position (voyage rapide, donjons, réveil au village).
+static func bring_companions(tree: SceneTree, pos: Vector3) -> void:
+	var i := 0
+	for v in tree.get_nodes_in_group("villagers"):
+		if v.get("companion"):
+			var a := PI * 0.75 + i * PI * 0.5
+			v.global_position = pos + Vector3(cos(a), 0, sin(a)) * 1.6
+			v.set("_threat", null)
+			i += 1
+
+
+func companions_count(tree: SceneTree) -> int:
+	return tree.get_nodes_in_group("villagers").filter(func(v): return v.get("companion")).size()
 
 
 func can_be_targeted() -> bool:
@@ -131,6 +222,9 @@ func _physics_process(delta: float) -> void:
 		_update_threat()
 	if _threat:
 		_fight_or_flee(delta)
+		return
+	if companion and _follow_step(delta):
+		_update_label()
 		return
 	if work_room != null and _work_step(delta):
 		_update_label()
@@ -273,14 +367,58 @@ func _choose_work_spot() -> void:
 
 ## Choisit le monstre à combattre (ou à fuir).
 func _update_threat() -> void:
+	# un compagnon défend le héros, un habitant défend sa maison
+	var center := home
+	var radius := defend_radius
+	if companion:
+		var hero := get_tree().get_first_node_in_group("player") as Node3D
+		if hero:
+			center = hero.global_position
+			radius = 14.0
 	if _threat and (not is_instance_valid(_threat) or not _threat.is_alive() \
-			or _threat.global_position.distance_to(home) > defend_radius + 4.0):
+			or _threat.global_position.distance_to(center) > radius + 4.0):
 		_threat = null
 	if _threat == null:
-		var t := nearest_hostile(alert_radius)
-		if t and t.global_position.distance_to(home) <= defend_radius:
+		var t := nearest_hostile(alert_radius + (4.0 if companion else 0.0))
+		if t and t.global_position.distance_to(center) <= radius:
 			_threat = t
 			_fetch = null
+
+
+## Compagnon : suit le héros (derrière lui) et le rejoint s'il est trop loin.
+func _follow_step(delta: float) -> bool:
+	var hero := get_tree().get_first_node_in_group("player") as Player
+	if hero == null or not hero.is_alive():
+		return false
+	set_level(maxi(level, hero.level - 1))
+	var idx := 0
+	for v in get_tree().get_nodes_in_group("villagers"):
+		if v == self:
+			break
+		if v.get("companion"):
+			idx += 1
+	var back := -Vector3(hero.facing.x, 0, hero.facing.z).normalized()
+	if back == Vector3.ZERO:
+		back = Vector3.BACK
+	var side := back.cross(Vector3.UP) * (1.3 if idx % 2 == 0 else -1.3)
+	var spot := hero.global_position + back * 1.8 + side
+	var to := spot - global_position
+	to.y = 0.0
+	var dist := to.length()
+	# trop loin (téléportation, chute...) : il rejoint le héros
+	if dist > 28.0 or absf(hero.global_position.y - global_position.y) > 6.0:
+		global_position = spot
+		return true
+	var speed := walk_speed * (2.8 if dist > 4.0 else 1.6) * (race.speed_multiplier if race else 1.0)
+	if dist > 0.6:
+		facing = to / dist
+		velocity = facing * speed
+	else:
+		velocity = Vector3.ZERO
+		facing = facing.lerp(-back, 0.1).normalized()
+	_move_on_ground(delta)
+	visual.animate(delta, velocity, facing)
+	return true
 
 
 func _fight_or_flee(delta: float) -> void:
@@ -364,13 +502,21 @@ func _drop(item: ItemData) -> void:
 
 func _update_label() -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node3D
-	var near := player != null and player.global_position.distance_to(global_position) < 2.4
+	var d := player.global_position.distance_to(global_position) if player else 999.0
+	# un voyageur se repère de loin ; un compagnon ne s'affiche que tout près (il est toujours là)
+	var near := d < (7.0 if stranger else (1.3 if companion else 2.4))
 	label.visible = near
 	if near:
 		var job := ""
 		if work_room != null and work_room.type:
 			job = " · " + (work_room.type as RoomTypeData).job_name
-		label.text = "%s (%s)%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job]
+		if stranger:
+			label.text = "%s (%s) · Nv %d\nVoyageur · %s%s" % [villager_name, race.display_name if race else "?", level,
+				JOB_NAMES.get(best_job(), "?"), "\n[E] Parler" if d < 3.0 else ""]
+		elif companion:
+			label.text = "%s (%s) · Nv %d\nCompagnon d'expédition\n[E] Équipement" % [villager_name, race.display_name if race else "?", level]
+		else:
+			label.text = "%s (%s)%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job]
 
 
 ## Attaque, défense et magie totales (race + équipement).

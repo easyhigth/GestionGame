@@ -64,6 +64,17 @@ func _draw() -> void:
 		var edge := rect.get_center() + dir * (SIZE / 2.0 - 8.0)
 		var side := Vector2(-dir.y, dir.x)
 		draw_colored_polygon(PackedVector2Array([edge + dir * 6, edge - dir * 3 + side * 4, edge - dir * 3 - side * 4]), Color("f2c86a"))
+	# pillards (rouge) et compagnons (vert)
+	for e in get_tree().get_nodes_in_group("enemy_units"):
+		if e.has_meta("raider") and e.is_alive():
+			var q := (Vector2(e.global_position.x, e.global_position.z) - src.position) * s
+			if rect.has_point(q):
+				draw_rect(Rect2(q - Vector2(2.5, 2.5), Vector2(5, 5)), Color("ff3a2a"))
+	for vg in get_tree().get_nodes_in_group("villagers"):
+		if vg.get("companion"):
+			var q := (Vector2(vg.global_position.x, vg.global_position.z) - src.position) * s
+			if rect.has_point(q):
+				draw_circle(q, 3.0, Color("6aff6a"))
 	# héros au centre
 	var c := rect.get_center()
 	var f := Vector2(player.facing.x, player.facing.z).normalized()

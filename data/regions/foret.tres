@@ -3,29 +3,35 @@
 [ext_resource type="Script" path="res://scripts/data/region_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="3"]
-[ext_resource type="Resource" path="res://data/enemies/boss_reine_araignee.tres" id="r3"]
-[ext_resource type="Resource" path="res://data/items/bloc_terre.tres" id="r4"]
-[ext_resource type="Resource" path="res://data/items/bloc_rondins.tres" id="r5"]
-[ext_resource type="Resource" path="res://data/items/bloc_planches.tres" id="r6"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_1.glb" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_2.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_3.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/oak_1.glb" id="r10"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/oak_2.glb" id="r11"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/mushroom_red.glb" id="r12"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/bush_1.glb" id="r13"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/bush_2.glb" id="r14"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r15"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r16"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="r17"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/flowers_2.glb" id="r18"]
-[ext_resource type="Resource" path="res://data/enemies/loup.tres" id="r19"]
-[ext_resource type="Resource" path="res://data/enemies/araignee.tres" id="r20"]
-[ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="r21"]
-[ext_resource type="Resource" path="res://data/enemies/loup_alpha.tres" id="r22"]
-[ext_resource type="Resource" path="res://data/items/wood.tres" id="r23"]
-[ext_resource type="Resource" path="res://data/items/fiber.tres" id="r24"]
-[ext_resource type="Resource" path="res://data/items/leather.tres" id="r25"]
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="4"]
+[ext_resource type="Resource" path="res://data/enemies/boss_reine_araignee.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/bloc_terre.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/bloc_rondins.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/bloc_planches.tres" id="r7"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_1.glb" id="r8"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_2.glb" id="r9"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_3.glb" id="r10"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_1.glb" id="r11"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_2.glb" id="r12"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/mushroom_red.glb" id="r13"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/bush_1.glb" id="r14"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/bush_2.glb" id="r15"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r16"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r17"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="r18"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/flowers_2.glb" id="r19"]
+[ext_resource type="Resource" path="res://data/enemies/loup.tres" id="r20"]
+[ext_resource type="Resource" path="res://data/enemies/araignee.tres" id="r21"]
+[ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="r22"]
+[ext_resource type="Resource" path="res://data/enemies/loup_alpha.tres" id="r23"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="r24"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="r25"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="r26"]
+[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r27"]
+[ext_resource type="Resource" path="res://data/races/elfe.tres" id="r28"]
+[ext_resource type="Resource" path="res://data/races/lycan.tres" id="r29"]
+[ext_resource type="Resource" path="res://data/races/dryade.tres" id="r30"]
+[ext_resource type="Resource" path="res://data/races/homme_bete.tres" id="r31"]
 
 [resource]
 script = ExtResource("1")
@@ -46,27 +52,28 @@ dirt_color = Color(0.353, 0.267, 0.188, 1)
 sand_color = Color(0.784, 0.706, 0.478, 1)
 stone_color = Color(0.478, 0.478, 0.455, 1)
 water_floor_color = Color(0.784, 0.706, 0.471, 1)
-boss = ExtResource("r3")
+boss = ExtResource("r4")
 boss_title = "Les toiles frémissent..."
 boss_powers = PackedStringArray("invocation", "charge", "onde")
-dungeon_floor = ExtResource("r4")
-dungeon_wall = ExtResource("r5")
-dungeon_accent = ExtResource("r6")
+dungeon_floor = ExtResource("r5")
+dungeon_wall = ExtResource("r6")
+dungeon_accent = ExtResource("r7")
 dungeon_light = Color(0.627, 1.000, 0.502, 1)
 dungeon_ambient = Color(0.063, 0.102, 0.063, 1)
 boss_soul = {"attack": 3.0, "xp": 0.05}
 boss_soul_name = "Instinct de la Reine Araignée : +3 attaque, +5 % d'expérience"
-trees = Array[PackedScene]([ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12")])
+trees = Array[PackedScene]([ExtResource("r8"), ExtResource("r9"), ExtResource("r10"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13")])
 forest_density = 0.62
 scattered_tree_chance = 0.05
-bushes = Array[PackedScene]([ExtResource("r13"), ExtResource("r14")])
+bushes = Array[PackedScene]([ExtResource("r14"), ExtResource("r15")])
 bush_chance = 0.06
-rocks = Array[PackedScene]([ExtResource("r15"), ExtResource("r16")])
+rocks = Array[PackedScene]([ExtResource("r16"), ExtResource("r17")])
 rock_chance = 0.04
-small_plants = Array[PackedScene]([ExtResource("r17"), ExtResource("r17"), ExtResource("r18")])
+small_plants = Array[PackedScene]([ExtResource("r18"), ExtResource("r18"), ExtResource("r19")])
 small_plant_chance = 0.1
-enemies = Array[ExtResource("2")]([ExtResource("r19"), ExtResource("r20"), ExtResource("r20"), ExtResource("r21")])
-elite_enemies = Array[ExtResource("2")]([ExtResource("r22")])
+enemies = Array[ExtResource("2")]([ExtResource("r20"), ExtResource("r21"), ExtResource("r21"), ExtResource("r22")])
+elite_enemies = Array[ExtResource("2")]([ExtResource("r23")])
 camp_density = 0.55
-resources = Array[ExtResource("3")]([ExtResource("r23"), ExtResource("r23"), ExtResource("r24"), ExtResource("r25")])
+resources = Array[ExtResource("3")]([ExtResource("r24"), ExtResource("r24"), ExtResource("r25"), ExtResource("r26"), ExtResource("r27")])
 resource_chance = 0.014
+recruit_races = Array[ExtResource("4")]([ExtResource("r28"), ExtResource("r29"), ExtResource("r30"), ExtResource("r31")])

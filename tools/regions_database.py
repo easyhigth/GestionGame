@@ -158,7 +158,7 @@ def write_enemies():
 
 # ---------------------------------------------------------------- régions
 REGIONS = [
-    dict(id='prairie', soul={'regen': 1.0, 'attack': 2}, soulname="Vigueur du Roi Sanglier : +2 attaque, +1 vie/s", boss='boss_roi_sanglier', title='Le seigneur des plaines se réveille !', powers=['charge', 'onde', 'invocation'], dfloor='bloc_pierre_brute', dwall='bloc_briques', daccent='bloc_rondins', dlight='ffb060', damb='201a18', name='Prairie', map='7ec850', temp=0.0, moist=0.0, dist=0.0, lv=(1, 4),
+    dict(id='prairie', races=['humain', 'homme_bete', 'elfe', 'hobgobelin'], soul={'regen': 1.0, 'attack': 2}, soulname="Vigueur du Roi Sanglier : +2 attaque, +1 vie/s", boss='boss_roi_sanglier', title='Le seigneur des plaines se réveille !', powers=['charge', 'onde', 'invocation'], dfloor='bloc_pierre_brute', dwall='bloc_briques', daccent='bloc_rondins', dlight='ffb060', damb='201a18', name='Prairie', map='7ec850', temp=0.0, moist=0.0, dist=0.0, lv=(1, 4),
          names=['Plaines de Verdoyance', 'Vallon des Brises', 'Prés de Clairval', 'Collines de Mielfleur', 'Champs de Ventdoux', 'Pâtures du Soleil'],
          desc="Des plaines douces et des bosquets : le berceau de ton royaume.",
          grass=('5e9c44', '4f8c3a'), dirt='7a5a3c', sand='e0cc8a', stone='8e8c86',
@@ -166,8 +166,8 @@ REGIONS = [
          bushes=['bush_1', 'bush_2'], bush=0.02, rocks=['rock_1', 'rock_2', 'rock_big'], rock=0.05,
          plants=['flowers_1', 'flowers_2', 'grass_1', 'grass_1'], plant=0.12,
          enemies=['loup', 'sanglier', 'slime_bleu', 'slime_bleu', 'gobelin_pillard'], elite=['loup_alpha'], camps=0.35,
-         res=['wood', 'fiber', 'leather', 'stone'], resc=0.010),
-    dict(id='foret', soul={'attack': 3, 'xp': 0.05}, soulname="Instinct de la Reine Araignée : +3 attaque, +5 % d'expérience", boss='boss_reine_araignee', title='Les toiles frémissent...', powers=['invocation', 'charge', 'onde'], dfloor='bloc_terre', dwall='bloc_rondins', daccent='bloc_planches', dlight='a0ff80', damb='101a10', name='Forêt profonde', map='2e7a3a', temp=0.0, moist=0.75, dist=0.1, lv=(3, 7),
+         res=['wood', 'fiber', 'leather', 'stone', 'piece_or'], resc=0.010),
+    dict(id='foret', races=['elfe', 'lycan', 'dryade', 'homme_bete'], soul={'attack': 3, 'xp': 0.05}, soulname="Instinct de la Reine Araignée : +3 attaque, +5 % d'expérience", boss='boss_reine_araignee', title='Les toiles frémissent...', powers=['invocation', 'charge', 'onde'], dfloor='bloc_terre', dwall='bloc_rondins', daccent='bloc_planches', dlight='a0ff80', damb='101a10', name='Forêt profonde', map='2e7a3a', temp=0.0, moist=0.75, dist=0.1, lv=(3, 7),
          names=['Forêt de Sylvebrune', 'Bois des Murmures', 'Sombreramure', 'Forêt des Mille Troncs', 'Futaie des Loups', 'Bois de Ronceterre'],
          desc="Des arbres immenses où rôdent loups et araignées.",
          grass=('3f7a34', '356a2c'), dirt='5a4430', sand='c8b47a', stone='7a7a74',
@@ -175,8 +175,8 @@ REGIONS = [
          bushes=['bush_1', 'bush_2'], bush=0.06, rocks=['rock_1', 'rock_2'], rock=0.04,
          plants=['grass_1', 'grass_1', 'flowers_2'], plant=0.1,
          enemies=['loup', 'araignee', 'araignee', 'gobelin_pillard'], elite=['loup_alpha'], camps=0.55,
-         res=['wood', 'wood', 'fiber', 'leather'], resc=0.014),
-    dict(id='marais', soul={'regen': 2.5}, soulname="Prédation du Slime Primordial : +2,5 vie/s", boss='boss_slime_primordial', title='Il a tout dévoré... et il a encore faim.', powers=['onde', 'invocation', 'pluie'], dfloor='bloc_ardoise', dwall='bloc_pierre_brute', daccent='bloc_terre', dlight='9aff6a', damb='101a10', name='Marais brumeux', map='6a7a3a', temp=0.35, moist=1.0, dist=0.45, lv=(5, 9),
+         res=['wood', 'wood', 'fiber', 'leather', 'piece_or'], resc=0.014),
+    dict(id='marais', races=['homme_lezard', 'gobelin', 'slime', 'insectoide'], soul={'regen': 2.5}, soulname="Prédation du Slime Primordial : +2,5 vie/s", boss='boss_slime_primordial', title='Il a tout dévoré... et il a encore faim.', powers=['onde', 'invocation', 'pluie'], dfloor='bloc_ardoise', dwall='bloc_pierre_brute', daccent='bloc_terre', dlight='9aff6a', damb='101a10', name='Marais brumeux', map='6a7a3a', temp=0.35, moist=1.0, dist=0.45, lv=(5, 9),
          names=['Marais de Fangebrume', 'Tourbières de Vasemort', 'Les Eaux Croupies', 'Bourbier des Crapauds', 'Mangrove de Verdâtre'],
          desc="Eaux verdâtres, roseaux et slimes acides. Les hommes-lézards y chassent.",
          grass=('5a6a3a', '4a5a30'), dirt='4a3e2a', sand='8a8a5a', stone='6a6a60', water_floor='4a5a2a',
@@ -185,8 +185,8 @@ REGIONS = [
          bushes=['bush_1'], bush=0.03, rocks=['rock_1'], rock=0.02,
          plants=['reeds_1', 'reeds_2', 'reeds_1'], plant=0.18,
          enemies=['slime_acide', 'slime_acide', 'homme_lezard', 'araignee'], elite=['homme_lezard'], camps=0.6,
-         res=['fiber', 'fiber', 'leather'], resc=0.012),
-    dict(id='desert', soul={'defense': 4}, soulname="Carapace d'Ankhar : +4 défense", boss='boss_scorpion_empereur', title='Le sable se soulève...', powers=['charge', 'onde', 'invocation'], dfloor='bloc_sable', dwall='bloc_briques', daccent='bloc_marbre_dore', dlight='ffd070', damb='201810', name='Désert', map='e8c878', temp=1.0, moist=-0.9, dist=0.5, lv=(6, 11),
+         res=['fiber', 'fiber', 'leather', 'piece_or'], resc=0.012),
+    dict(id='desert', races=['dragonide', 'humain', 'mort_vivant', 'homme_lezard'], soul={'defense': 4}, soulname="Carapace d'Ankhar : +4 défense", boss='boss_scorpion_empereur', title='Le sable se soulève...', powers=['charge', 'onde', 'invocation'], dfloor='bloc_sable', dwall='bloc_briques', daccent='bloc_marbre_dore', dlight='ffd070', damb='201810', name='Désert', map='e8c878', temp=1.0, moist=-0.9, dist=0.5, lv=(6, 11),
          names=["Désert d'Ossebrûle", 'Dunes de Solcendre', 'Mer de Sable Doré', 'Erg des Mirages', 'Plateau Écarlate'],
          desc="Soleil écrasant, scorpions géants et ruines hantées de squelettes.",
          grass=('e4cc8c', 'd8bc78'), dirt='c8a060', sand='ecd89a', stone='b89a6a', water_floor='d8c080',
@@ -195,8 +195,8 @@ REGIONS = [
          bushes=[], bush=0.0, rocks=['rock_1', 'rock_2', 'rock_big'], rock=0.03,
          plants=['dry_grass_1'], plant=0.06,
          enemies=['scorpion', 'scorpion', 'squelette', 'homme_lezard'], elite=['seigneur_squelette'], camps=0.5,
-         res=['stone', 'or_brut', 'stone'], resc=0.008),
-    dict(id='montagnes', soul={'attack': 5}, soulname="Force de Brisemonts : +5 attaque", boss='boss_ogre_roi', title='La montagne gronde !', powers=['onde', 'charge', 'invocation'], dfloor='bloc_pierre_polie', dwall='bloc_pierre_brute', daccent='bloc_ardoise', dlight='ffc080', damb='18181c', name='Hautes montagnes', map='9a9890', temp=-0.4, moist=0.0, dist=0.45, lv=(7, 12),
+         res=['stone', 'or_brut', 'stone', 'piece_or'], resc=0.008),
+    dict(id='montagnes', races=['nain', 'ogre', 'orc', 'harpie'], soul={'attack': 5}, soulname="Force de Brisemonts : +5 attaque", boss='boss_ogre_roi', title='La montagne gronde !', powers=['onde', 'charge', 'invocation'], dfloor='bloc_pierre_polie', dwall='bloc_pierre_brute', daccent='bloc_ardoise', dlight='ffc080', damb='18181c', name='Hautes montagnes', map='9a9890', temp=-0.4, moist=0.0, dist=0.45, lv=(7, 12),
          names=['Pics de Grisaille', 'Monts Ferrecime', "Crêtes de l'Aigle", 'Massif des Géants', 'Col des Tempêtes', 'Hauts de Roc-Tonnerre'],
          desc="Falaises et cols battus par le vent. Riches en fer et en marbre, gardés par les ogres.",
          grass=('6a8a50', '5a7a44'), dirt='6a5a48', sand='b0a48a', stone='9a9890',
@@ -205,8 +205,8 @@ REGIONS = [
          bushes=['bush_2'], bush=0.01, rocks=['rock_big', 'rock_1', 'rock_2'], rock=0.12,
          plants=['grass_1'], plant=0.05,
          enemies=['orc_brute', 'harpie', 'harpie', 'gobelin_pillard'], elite=['ogre'], camps=0.55,
-         res=['iron_ore', 'stone', 'marbre_brut'], resc=0.016),
-    dict(id='toundra', soul={'defense': 3, 'regen': 1.0}, soulname="Fourrure de Givrecroc : +3 défense, +1 vie/s", boss='boss_ours_ancien', title='Un froid mortel envahit la salle...', powers=['charge', 'onde', 'pluie'], dfloor='bloc_marbre', dwall='bloc_pierre_polie', daccent='bloc_verre', dlight='a0e0ff', damb='101820', name='Toundra gelée', map='e8f0f8', temp=-1.0, moist=0.3, dist=0.55, lv=(8, 13),
+         res=['iron_ore', 'stone', 'marbre_brut', 'piece_or'], resc=0.016),
+    dict(id='toundra', races=['humain', 'oni', 'lycan', 'nain'], soul={'defense': 3, 'regen': 1.0}, soulname="Fourrure de Givrecroc : +3 défense, +1 vie/s", boss='boss_ours_ancien', title='Un froid mortel envahit la salle...', powers=['charge', 'onde', 'pluie'], dfloor='bloc_marbre', dwall='bloc_pierre_polie', daccent='bloc_verre', dlight='a0e0ff', damb='101820', name='Toundra gelée', map='e8f0f8', temp=-1.0, moist=0.3, dist=0.55, lv=(8, 13),
          names=['Toundra de Blanchegivre', 'Steppes Hurlantes', 'Glacis du Nord', 'Plaine des Aurores', 'Fjords de Givrecœur'],
          desc="Neige éternelle, loups de givre et ours gigantesques.",
          grass=('eef2f6', 'dce4ec'), dirt='8a8a92', sand='d0d8e0', stone='b0b4bc', water_floor='a8c0d0',
@@ -215,8 +215,8 @@ REGIONS = [
          bushes=[], bush=0.0, rocks=['snow_rock_1', 'snow_rock_2'], rock=0.05,
          plants=['dry_grass_1'], plant=0.03,
          enemies=['loup_givre', 'loup_givre', 'ours_neige'], elite=['ours_neige'], camps=0.5,
-         res=['stone', 'leather', 'iron_ore'], resc=0.008),
-    dict(id='bois_enchante', soul={'magic': 0.15, 'xp': 0.1}, soulname="Sève de Sylvaëlle : +15 % magie, +10 % d'expérience", boss='boss_dryade_mere', title='La forêt pleure...', powers=['pluie', 'invocation', 'onde'], dfloor='bloc_marbre', dwall='bloc_marbre_noir', daccent='bloc_marbre_dore', dlight='d0a0ff', damb='18101e', name='Bois enchanté', map='5ad0c0', temp=0.3, moist=0.4, dist=0.6, lv=(10, 15),
+         res=['stone', 'leather', 'iron_ore', 'piece_or'], resc=0.008),
+    dict(id='bois_enchante', races=['fee', 'esprit', 'dryade', 'ange'], soul={'magic': 0.15, 'xp': 0.1}, soulname="Sève de Sylvaëlle : +15 % magie, +10 % d'expérience", boss='boss_dryade_mere', title='La forêt pleure...', powers=['pluie', 'invocation', 'onde'], dfloor='bloc_marbre', dwall='bloc_marbre_noir', daccent='bloc_marbre_dore', dlight='d0a0ff', damb='18101e', name='Bois enchanté', map='5ad0c0', temp=0.3, moist=0.4, dist=0.6, lv=(10, 15),
          names=['Bois de Lunécume', 'Sylve des Fées', 'Vallée Cristalline', 'Jardins de Nacre', 'Clairière des Songes'],
          desc="Cerisiers, champignons géants et cristaux. Les fées n'aiment pas les intrus.",
          grass=('4ab08a', '3aa080'), dirt='5a4a6a', sand='d8c8e0', stone='8a80a0',
@@ -224,8 +224,8 @@ REGIONS = [
          bushes=['bush_1'], bush=0.02, rocks=['crystal_blue', 'crystal_pink'], rock=0.03,
          plants=['flowers_1', 'flowers_2', 'grass_1'], plant=0.14,
          enemies=['esprit_follet', 'fee_sauvage', 'fee_sauvage', 'slime_bleu'], elite=['dryade_corrompue'], camps=0.5,
-         res=['fiber', 'or_brut', 'wood'], resc=0.01),
-    dict(id='volcan', soul={'attack': 6, 'magic': 0.1}, soulname="Brasier d'Ignarok : +6 attaque, +10 % magie", boss='boss_seigneur_ignarok', title='Les flammes se lèvent pour leur seigneur !', powers=['pluie', 'onde', 'invocation', 'charge'], dfloor='bloc_marbre_noir', dwall='bloc_ardoise', daccent='bloc_marbre_dore', dlight='ff6a30', damb='200c08', name='Terres de cendres', map='6a3a30', temp=1.0, moist=-0.2, dist=0.75, lv=(12, 20),
+         res=['fiber', 'or_brut', 'wood', 'piece_or'], resc=0.01),
+    dict(id='volcan', races=['demon', 'oni', 'dragonide', 'vampire'], soul={'attack': 6, 'magic': 0.1}, soulname="Brasier d'Ignarok : +6 attaque, +10 % magie", boss='boss_seigneur_ignarok', title='Les flammes se lèvent pour leur seigneur !', powers=['pluie', 'onde', 'invocation', 'charge'], dfloor='bloc_marbre_noir', dwall='bloc_ardoise', daccent='bloc_marbre_dore', dlight='ff6a30', damb='200c08', name='Terres de cendres', map='6a3a30', temp=1.0, moist=-0.2, dist=0.75, lv=(12, 20),
          names=['Terres de Cendrefeu', 'Caldeira Rugissante', 'Plaine des Brasiers', 'Gorge du Dragon Endormi', 'Champs de Magma'],
          desc="Cendres, lave et démons. Le territoire le plus dangereux du monde connu.",
          grass=('4a3a36', '3e302c'), dirt='2e2422', sand='5a4a44', stone='4a4040', water_floor='3a2020',
@@ -234,7 +234,7 @@ REGIONS = [
          bushes=[], bush=0.0, rocks=['lava_rock_1', 'lava_rock_2'], rock=0.1,
          plants=[], plant=0.0,
          enemies=['slime_magma', 'salamandre', 'demon', 'salamandre'], elite=['seigneur_demon'], camps=0.6,
-         res=['or_brut', 'stone', 'iron_ore'], resc=0.012),
+         res=['or_brut', 'stone', 'iron_ore', 'piece_or'], resc=0.012),
 ]
 
 
@@ -245,6 +245,7 @@ def write_regions():
         r = Res('RegionData', 'res://scripts/data/region_data.gd')
         r.add('Script', 'res://scripts/data/enemy_data.gd', '2')
         r.add('Script', 'res://scripts/data/item_data.gd', '3')
+        r.add('Script', 'res://scripts/data/race_data.gd', '4')
 
         def scenes(lst):
             return 'Array[PackedScene]([%s])' % ', '.join(r.ref('PackedScene', ENV % s) for s in lst)
@@ -276,7 +277,8 @@ def write_regions():
                   ('small_plants', scenes(d['plants'])), ('small_plant_chance', d['plant']),
                   ('enemies', enemies(d['enemies'])), ('elite_enemies', enemies(d['elite'])), ('camp_density', d['camps']),
                   ('resources', 'Array[ExtResource("3")]([%s])' % ', '.join(r.ref('Resource', 'res://data/items/%s.tres' % i) for i in d['res'])),
-                  ('resource_chance', d['resc'])]
+                  ('resource_chance', d['resc']),
+                  ('recruit_races', 'Array[ExtResource("4")]([%s])' % ', '.join(r.ref('Resource', 'res://data/races/%s.tres' % x) for x in d['races']))]
         r.write(os.path.join(out, d['id'] + '.tres'), props)
     print('%d régions' % len(REGIONS))
 

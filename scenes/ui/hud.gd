@@ -36,6 +36,8 @@ var _zone_title: Label
 var _zone_sub: Label
 var _zone_tween: Tween
 var map_ui: WorldMapUI
+var _raid_label: Label
+var _raid_timer := 0.0
 var _boss_box: Control
 var _boss_name: Label
 var _boss_fill: ColorRect
@@ -266,11 +268,29 @@ func _build_maps() -> void:
 	_zone_sub.offset_right = 400
 	_zone_sub.offset_top = 124
 	_zone_sub.offset_bottom = 184
+	var recruit := RecruitDialog.new()
+	recruit.player = player
+	add_child(recruit)
+	if player:
+		player.talk.connect(func(s): recruit.open(s))
 	map_ui = WorldMapUI.new()
 	map_ui.world = world
 	map_ui.player = player
 	add_child(map_ui)
 	_build_boss_bar()
+	_raid_label = _outlined("", 14)
+	_raid_label.position = Vector2(14, 132)
+	_raid_label.add_theme_color_override("font_color", Color("ff8a6a"))
+	add_child(_raid_label)
+	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
+	if rm:
+		rm.raid_warning.connect(func(r):
+			show_banner("⚠ Raid imminent !", "%s arrivent %s du village. Prépare tes défenses !" % [r.name, r.dir_text], Color("ff8a6a"))
+			show_message("Des pillards (%s, %d) approchent %s du village !" % [r.name, r.count, r.dir_text]))
+		rm.raid_started.connect(func(r): show_feat("Les pillards attaquent !", Color("ff6a4a")))
+		rm.raid_ended.connect(func(_r, ok, text):
+			show_feat("Raid repoussé !" if ok else "Le village a été pillé...", Color("ffd24a") if ok else Color("c86a5a"))
+			show_message(text))
 	var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
 	if dm:
 		dm.entered.connect(func(z):
@@ -420,6 +440,11 @@ func _process(delta: float) -> void:
 		_target_box.hide()
 	if _boss_box:
 		_update_boss_bar(delta)
+	_raid_timer -= delta
+	if _raid_label and _raid_timer <= 0.0:
+		_raid_timer = 0.25
+		var rm := get_tree().get_first_node_in_group("raids") as RaidManager
+		_raid_label.text = rm.status_text() if rm else ""
 	# la barre jaune rattrape doucement la rouge (on voit les dégâts reçus)
 	if _hp_lag and _hp_fill:
 		_hp_lag.size.x = move_toward(_hp_lag.size.x, _hp_fill.size.x, delta * 90.0)

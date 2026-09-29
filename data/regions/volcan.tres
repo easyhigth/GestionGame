@@ -3,21 +3,27 @@
 [ext_resource type="Script" path="res://scripts/data/region_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="3"]
-[ext_resource type="Resource" path="res://data/enemies/boss_seigneur_ignarok.tres" id="r3"]
-[ext_resource type="Resource" path="res://data/items/bloc_marbre_noir.tres" id="r4"]
-[ext_resource type="Resource" path="res://data/items/bloc_ardoise.tres" id="r5"]
-[ext_resource type="Resource" path="res://data/items/bloc_marbre_dore.tres" id="r6"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_1.glb" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_2.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/lava_rock_1.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/lava_rock_2.glb" id="r10"]
-[ext_resource type="Resource" path="res://data/enemies/slime_magma.tres" id="r11"]
-[ext_resource type="Resource" path="res://data/enemies/salamandre.tres" id="r12"]
-[ext_resource type="Resource" path="res://data/enemies/demon.tres" id="r13"]
-[ext_resource type="Resource" path="res://data/enemies/seigneur_demon.tres" id="r14"]
-[ext_resource type="Resource" path="res://data/items/or_brut.tres" id="r15"]
-[ext_resource type="Resource" path="res://data/items/stone.tres" id="r16"]
-[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="r17"]
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="4"]
+[ext_resource type="Resource" path="res://data/enemies/boss_seigneur_ignarok.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/bloc_marbre_noir.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/bloc_ardoise.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/bloc_marbre_dore.tres" id="r7"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_1.glb" id="r8"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_2.glb" id="r9"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/lava_rock_1.glb" id="r10"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/lava_rock_2.glb" id="r11"]
+[ext_resource type="Resource" path="res://data/enemies/slime_magma.tres" id="r12"]
+[ext_resource type="Resource" path="res://data/enemies/salamandre.tres" id="r13"]
+[ext_resource type="Resource" path="res://data/enemies/demon.tres" id="r14"]
+[ext_resource type="Resource" path="res://data/enemies/seigneur_demon.tres" id="r15"]
+[ext_resource type="Resource" path="res://data/items/or_brut.tres" id="r16"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="r17"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="r18"]
+[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r19"]
+[ext_resource type="Resource" path="res://data/races/demon.tres" id="r20"]
+[ext_resource type="Resource" path="res://data/races/oni.tres" id="r21"]
+[ext_resource type="Resource" path="res://data/races/dragonide.tres" id="r22"]
+[ext_resource type="Resource" path="res://data/races/vampire.tres" id="r23"]
 
 [resource]
 script = ExtResource("1")
@@ -40,27 +46,28 @@ stone_color = Color(0.290, 0.251, 0.251, 1)
 water_floor_color = Color(0.227, 0.125, 0.125, 1)
 liquid_color = Color(1.000, 0.416, 0.102, 1)
 liquid_glow = true
-boss = ExtResource("r3")
+boss = ExtResource("r4")
 boss_title = "Les flammes se lèvent pour leur seigneur !"
 boss_powers = PackedStringArray("pluie", "onde", "invocation", "charge")
-dungeon_floor = ExtResource("r4")
-dungeon_wall = ExtResource("r5")
-dungeon_accent = ExtResource("r6")
+dungeon_floor = ExtResource("r5")
+dungeon_wall = ExtResource("r6")
+dungeon_accent = ExtResource("r7")
 dungeon_light = Color(1.000, 0.416, 0.188, 1)
 dungeon_ambient = Color(0.125, 0.047, 0.031, 1)
 boss_soul = {"attack": 6.0, "magic": 0.1}
 boss_soul_name = "Brasier d'Ignarok : +6 attaque, +10 % magie"
-trees = Array[PackedScene]([ExtResource("r7"), ExtResource("r8")])
+trees = Array[PackedScene]([ExtResource("r8"), ExtResource("r9")])
 forest_density = 0.05
 scattered_tree_chance = 0.02
 bushes = Array[PackedScene]([])
 bush_chance = 0.0
-rocks = Array[PackedScene]([ExtResource("r9"), ExtResource("r10")])
+rocks = Array[PackedScene]([ExtResource("r10"), ExtResource("r11")])
 rock_chance = 0.1
 small_plants = Array[PackedScene]([])
 small_plant_chance = 0.0
-enemies = Array[ExtResource("2")]([ExtResource("r11"), ExtResource("r12"), ExtResource("r13"), ExtResource("r12")])
-elite_enemies = Array[ExtResource("2")]([ExtResource("r14")])
+enemies = Array[ExtResource("2")]([ExtResource("r12"), ExtResource("r13"), ExtResource("r14"), ExtResource("r13")])
+elite_enemies = Array[ExtResource("2")]([ExtResource("r15")])
 camp_density = 0.6
-resources = Array[ExtResource("3")]([ExtResource("r15"), ExtResource("r16"), ExtResource("r17")])
+resources = Array[ExtResource("3")]([ExtResource("r16"), ExtResource("r17"), ExtResource("r18"), ExtResource("r19")])
 resource_chance = 0.012
+recruit_races = Array[ExtResource("4")]([ExtResource("r20"), ExtResource("r21"), ExtResource("r22"), ExtResource("r23")])

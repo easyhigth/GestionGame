@@ -9,6 +9,7 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage
 - I (ou Tab) : inventaire, équipement et artisanat
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures
+- E près d'un voyageur : lui parler pour le recruter
 - E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
 - B (ou Start à la manette) : mode construction (voir plus bas)
 - M (ou croix haut à la manette) : carte du monde et voyage rapide
@@ -119,6 +120,15 @@ Tout se construit à la main, bloc par bloc, sans plan imposé. Touche **B** : m
 - Boss vaincu : trésor (or, lingots, équipements rares), portail de sortie, beaucoup d'expérience, et ton héros **absorbe l'âme du boss** : un bonus permanent propre à chaque boss (**Boss Soul**, par exemple « Prédation du Slime Primordial : +2,5 vie/s »). L'entrée du donjon devient verte sur la carte (« Vaincu »).
 - Si tu tombes dans un donjon, tu te réveilles au village comme d'habitude. On ne peut pas construire dans un donjon.
 
+## Recrutement, compagnons et raids
+- **Voyageurs** : des campements de voyageurs sont dispersés dans le monde (réglage **Traveler Density** des régions). Leurs races dépendent de la région (**Recruit Races** : nains et ogres en montagne, fées et esprits au bois enchanté, démons et onis dans les cendres...). Chacun a un niveau, un métier où il excelle et un second talent.
+- **E** près d'un voyageur : il se présente et dit ce qu'il demande pour rejoindre ton village (des matériaux selon son métier, et de l'or pour les plus expérimentés). Il faut aussi de la place : la population maximale vaut 8 + les lits de tes maisons et dortoirs. Une fois recruté, il part pour ton village où tu peux lui donner un poste.
+- **Prisonniers** : chaque donjon retient un prisonnier (dans une petite cage) qui te rejoint sans rien demander.
+- **Compagnons d'expédition** : dans la fiche d'un habitant (E près de lui), coche « Compagnon d'expédition » (2 au plus). Il te suit partout (voyage par obélisque, donjons, réveil au village), défend le héros et progresse avec toi (son niveau suit le tien). Donne-lui de bonnes armes et armures ! Points verts sur la mini-carte.
+- **Raids** : de temps en temps (premier raid après 8 minutes, puis toutes les 10 à 14 minutes, réglable dans le nœud **Menaces**), une bande de pillards attaque le village. Le raid est annoncé 45 secondes à l'avance avec sa direction. La bande dépend de ton niveau (gobelins, horde d'orcs, clan des ogres, légion des cendres) et grossit avec le rang de ton royaume.
+- Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
+- Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
+
 ## Feuille de route
 Le jeu a deux piliers : un **RPG d'action en monde ouvert** vu de dessus (héros, exploration libre, donjons, boss, combat en temps réel à la Zelda) et la **construction d'un royaume** (des huttes jusqu'à une capitale d'empire, population de n'importe quelles races, habitants dirigés un par un). Inspiration : l'univers de « Moi, quand je me réincarne en Slime », avec des noms originaux.
 
@@ -135,5 +145,5 @@ Choix de conception :
 3. Construction du royaume : terrassement, blocs et matériaux par âge, pièces reconnues par leur mobilier, rangs, postes des habitants et production. **(fait)**
 4. Monde ouvert : 8 régions et 25 zones nommées, monde chargé par morceaux, niveaux des monstres, carte, mini-carte, obélisques de voyage rapide. **(fait)**
 5. Donjons et boss : un donjon généré par zone, 8 boss à pouvoirs annoncés et seconde phase, trésors, âmes de boss. **(fait)**
-6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville. **(prochaine étape)**
-7. Sauvegarde, menus, équilibrage.
+6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville : voyageurs et prisonniers à recruter, 2 compagnons, raids de pillards qui assiègent le village. **(fait)**
+7. Sauvegarde, menus, équilibrage. **(prochaine étape)**
