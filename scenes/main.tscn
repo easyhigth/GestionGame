@@ -82,6 +82,8 @@
 [ext_resource type="Resource" path="res://data/enemies/squelette.tres" id="en_squelette"]
 [ext_resource type="Resource" path="res://data/enemies/orc_brute.tres" id="en_orc_brute"]
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="16"]
+[ext_resource type="Script" path="res://scripts/build/build_grid.gd" id="bg"]
+[ext_resource type="Script" path="res://scripts/build/kingdom.gd" id="kg"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_height"]
 frequency = 0.025
@@ -146,6 +148,12 @@ villager_races = Array[ExtResource("10")]([ExtResource("r1"), ExtResource("r2"),
 [node name="Terrain" type="Node3D" parent="World"]
 
 [node name="Decor" type="Node3D" parent="World"]
+
+[node name="Build" type="Node3D" parent="World"]
+script = ExtResource("bg")
+
+[node name="Royaume" type="Node" parent="World"]
+script = ExtResource("kg")
 
 [node name="Village" type="Node3D" parent="World"]
 

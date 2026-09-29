@@ -56,7 +56,32 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 	var inner := Node3D.new()
 	holder.add_child(inner)
 	var parts := []
-	if item.is_equipment():
+	if item.is_block():
+		var mi := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(1, 0.5 if item.block_slab else 1.0, 1)
+		mi.mesh = bm
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = item.block_texture
+		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+		if item.block_transparent:
+			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mi.material_override = m
+		inner.add_child(mi)
+	elif item.is_furniture():
+		var f := item.furniture_model.instantiate()
+		for mi in f.find_children("*", "MeshInstance3D", true, false):
+			var copy := MeshInstance3D.new()
+			copy.mesh = (mi as MeshInstance3D).mesh
+			var xf := Transform3D.IDENTITY
+			var n: Node = mi
+			while n != f and n is Node3D:
+				xf = (n as Node3D).transform * xf
+				n = n.get_parent()
+			copy.transform = xf
+			inner.add_child(copy)
+		f.free()
+	elif item.is_equipment():
 		parts = VoxelCharacter.library_parts(DISPLAY_EQUIPMENT).get(item.id, [])
 		# on reconstruit les pièces à leur place sur un humain de référence
 		var ref := _reference_bones()

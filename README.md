@@ -9,6 +9,7 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage
 - I (ou Tab) : inventaire, équipement et artisanat
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures
+- B (ou Start à la manette) : mode construction (voir plus bas)
 - R : changer de race (pour tester les 22 races)
 - N : nouveau monde
 
@@ -16,7 +17,8 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - `data/races/*.tres` : les 22 races (nom, description, stats, modèle 3D nu du joueur, modèles des habitants, équipements de la race). Duplique un fichier pour créer une race.
 - `data/items/*.tres` : les 28 objets (matériaux, armes, boucliers, casques, armures, brassards, jambières, capes) : nom, description, emplacement, rareté, bonus d'attaque / défense / magie / vitesse.
 - `data/enemies/*.tres` : les 6 monstres (loup, loup alpha, sanglier, gobelin pillard, squelette, orc brutal) : modèle, équipement porté, vie, attaque, défense, vitesse, distance de repérage, portée et durée de leurs coups, butin et chances de le lâcher.
-- `data/recipes/*.tres` : les 23 recettes d'artisanat (objet fabriqué, ingrédients et quantités, établi obligatoire ou non).
+- `data/recipes/*.tres` : les 69 recettes d'artisanat (objet fabriqué, ingrédients et quantités, établi obligatoire ou non, meuble d'artisan à avoir à côté (**Station**), onglet (**Category**)).
+- `data/rooms/*.tres` : les 17 types de pièces (maison, dortoir, forge, boulangerie, camp d'entraînement, grange, scierie, maçonnerie, verrerie, taverne, marché, bibliothèque, temple, tour de mage, atelier de tissage, entrepôt, salle du trône) : mobilier obligatoire, taille minimale, métier et nombre de postes, production, lits, bonus pour le héros.
 - `data/player/player_stats.tres` : vitesse (en m/s), roulade, vie du joueur.
 - `scenes/player/player.tscn` > propriété **Race** : la race du joueur au démarrage. **Camera Offset** : position de la caméra par rapport au joueur.
 - `scenes/main.tscn` > nœud **World** : taille du monde, niveaux d'eau/sable/roche, relief 3D (hauteur des marches), couleurs du sol, forêts et modèles des décors, village de départ (scènes des huttes, feu, habitants, liste des races des habitants, nombre d'habitants).
@@ -79,12 +81,23 @@ Règles :
   - `voxel_creature_generator.py` : régénère les créatures (loup, loup alpha, sanglier) dans `assets/characters/creatures/`.
   - `voxel_equipment_generator.py` : régénère les équipements de toutes les races (`python voxel_equipment_generator.py`). Pour ajouter une pièce : écris sa fonction, ajoute-la à `ITEMS`, relance le script, puis crée son fichier dans `data/items/` avec le même `id`.
 
+## Construction du royaume (façon Minecraft)
+Tout se construit à la main, bloc par bloc, sans plan imposé. Touche **B** : mode construction.
+- **Outils** : Récolter (arbres, buissons, rochers), Aplanir (maintenir et glisser : met le sol au niveau de la première case visée), Creuser et Remblayer (±50 cm, la terre, le sable et la pierre retirés vont dans le sac), Démolir (rend le bloc ou le meuble). `[` et `]` : taille du pinceau (1×1 à 7×7). **R** : tourner un meuble. **C** : voir l'intérieur (coupe les toits).
+- **Blocs** (1 m, ou dalles de 50 cm) : planches, rondins, chaume, terre, sable → pierre brute → briques, tuiles, verre → pierre polie, ardoise → marbre, marbre noir → marbre doré. Plus le matériau est rare, plus il faut un atelier pour le fabriquer (table de tailleur, four, meule, enclume).
+- **Pièces** : une zone fermée par des murs (au moins 2 m de haut) avec une **porte** devient un lieu dès que son **mobilier** est posé : enclume + foyer de forge + établi = Forge, four à pain + pétrin + table = Boulangerie, 2 mannequins + râtelier = Camp d'entraînement, lit + coffre = Maison... En mode construction, les pièces incomplètes affichent ce qu'il leur manque. Taille et forme libres.
+- **Âges de l'empire** : le matériau des murs fixe l'âge d'une pièce. Deux pièces reconnues en pierre font passer à l'Âge de la Pierre, puis Pierre taillée, Pierre polie, Marbre et Or.
+- **Rangs** : Campement, Hameau, Village, Bourg, Ville, Cité, Capitale d'empire (nombre de pièces reconnues + âge).
+- **Habitants** : **E** près d'un habitant > Poste de travail. Les étoiles indiquent son affinité (race et talents). Il va à son poste par la porte, travaille près des meubles et produit (lingots, pain, briques, planches...) directement dans ton sac. Certaines pièces donnent aussi un bonus au héros (attaque, défense, magie, régénération, expérience).
+- Les meubles d'artisan servent aussi d'ateliers pour toi : approche-toi d'un four, d'une enclume, d'une meule... pour débloquer leurs recettes.
+- Modèles : `tools/voxel_blocks_generator.py` (textures des blocs), `tools/voxel_furniture_generator.py` (31 meubles), `tools/build_database.py` (objets, recettes et types de pièces).
+
 ## Feuille de route
 Le jeu a deux piliers : un **RPG d'action en monde ouvert** vu de dessus (héros, exploration libre, donjons, boss, combat en temps réel à la Zelda) et la **construction d'un royaume** (des huttes jusqu'à une capitale d'empire, population de n'importe quelles races, habitants dirigés un par un). Inspiration : l'univers de « Moi, quand je me réincarne en Slime », avec des noms originaux.
 
 Choix de conception :
 - Création du héros libre : on choisit la race, la classe et le métier ; les compétences uniques évoluent.
-- Construction : placement libre sur une grille, paliers de progression (campement, village, bourg, ville, cité, capitale).
+- Construction : libre, bloc par bloc comme Minecraft (terrassement, murs, toits) ; une pièce fermée devient un lieu selon son mobilier ; âges selon les matériaux et rangs (campement → capitale d'empire).
 - Habitants : dirigés un par un, avec un métier et un poste selon leurs affinités.
 - Mort du héros : réveil à la ville, sans perte d'inventaire.
 - Commandes : manette et clavier-souris.
@@ -92,8 +105,8 @@ Choix de conception :
 Étapes :
 1. Combat à la Zelda : verrouillage de cible, combos, attaque chargée, esquive parfaite, parade et contre, animations et effets. **(fait)**
 2. Héros : création et personnalisation, classes, métiers, niveaux **(fait)**  ; 151 compétences uniques qui évoluent **(fait)**.
-3. Construction du royaume : bâtiments sur grille, paliers, métiers et postes des habitants. **(prochaine étape)**
-4. Monde ouvert : régions, monde plus grand chargé par morceaux, carte.
+3. Construction du royaume : terrassement, blocs et matériaux par âge, pièces reconnues par leur mobilier, rangs, postes des habitants et production. **(fait)**
+4. Monde ouvert : régions, monde plus grand chargé par morceaux, carte. **(prochaine étape)**
 5. Donjons et boss.
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville.
 7. Sauvegarde, menus, équilibrage.

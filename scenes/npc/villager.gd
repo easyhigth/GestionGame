@@ -39,11 +39,30 @@ var _threat: Combatant
 var _threat_timer := randf() * 0.5
 var _ko_left := 0.0
 var _combo := 0
+## Pièce où l'habitant travaille (voir Kingdom), ou null.
+var work_room = null
+## Talents personnels : métier -> bonus d'affinité.
+var talents := {}
+var _stuck := 0.0
+var _work_for = null
+var _work_spot := Vector3.INF
+var _work_face := Vector3.BACK
+var _path: Array[Vector3] = []
+var _repath := 0.0
+var _work_anim := randf() * 2.0
+var _at_work := false
+const JOBS := ["forgeron", "boulanger", "garde", "fermier", "bucheron", "macon", "verrier", "aubergiste",
+	"marchand", "erudit", "pretre", "mage", "tisserand"]
 
 
 func _ready() -> void:
 	super()
 	add_to_group("villagers")
+	# deux talents personnels au hasard
+	var pool := JOBS.duplicate()
+	pool.shuffle()
+	talents[pool[0]] = randf_range(0.2, 0.4)
+	talents[pool[1]] = randf_range(0.1, 0.25)
 	if villager_name.is_empty():
 		villager_name = NAMES.pick_random()
 	home = global_position
@@ -113,6 +132,10 @@ func _physics_process(delta: float) -> void:
 	if _threat:
 		_fight_or_flee(delta)
 		return
+	if work_room != null and _work_step(delta):
+		_update_label()
+		return
+	_at_work = false
 	_scan_timer -= delta
 	if _scan_timer <= 0.0:
 		_scan_timer = 1.5
@@ -148,6 +171,104 @@ func _physics_process(delta: float) -> void:
 		_fetch = null
 	visual.animate(delta, velocity, facing)
 	_update_label()
+
+
+## Vrai quand l'habitant est à son poste (la pièce produit).
+func is_at_work() -> bool:
+	return work_room != null and _at_work
+
+
+## Va à son poste de travail (en passant par la porte) et y travaille. Renvoie faux s'il ne peut pas.
+func _work_step(delta: float) -> bool:
+	if _work_for != work_room:
+		_work_for = work_room
+		_choose_work_spot()
+		_path.clear()
+	if _work_spot == Vector3.INF:
+		return false
+	var to := _work_spot - global_position
+	to.y = 0.0
+	var speed := walk_speed * 1.3 * (race.speed_multiplier if race else 1.0)
+	if to.length() < 0.3:
+		_at_work = true
+		velocity = Vector3.ZERO
+		facing = _work_face
+		_work_anim -= delta
+		if _work_anim <= 0.0:
+			_work_anim = randf_range(1.6, 2.8)
+			var t: RoomTypeData = work_room.type
+			var move := "heavy_1" if t.job_id in ["forgeron", "bucheron", "macon"] else ("cast_1" if t.job_id in ["mage", "pretre", "erudit"] else "punch_1")
+			visual.play_move(move, 0.7)
+			if t.job_id == "forgeron":
+				VoxelBurst.spawn(self, global_position + _work_face * 0.8 + Vector3(0, 0.9, 0), Color(1.0, 0.7, 0.3), 8, 2.5, 0.05, 0.4)
+		_move_on_ground(delta)
+		visual.animate(delta, velocity, facing)
+		return true
+	_at_work = false
+	_repath -= delta
+	if _path.is_empty() and _repath <= 0.0:
+		_repath = 1.5
+		_path = _world.find_path(global_position, _work_spot) if _world else []
+	var goal := _work_spot
+	if not _path.is_empty():
+		goal = _path[0]
+		if Vector2(goal.x - global_position.x, goal.z - global_position.z).length() < 0.25:
+			_path.pop_front()
+			if not _path.is_empty():
+				goal = _path[0]
+	var dir := goal - global_position
+	dir.y = 0.0
+	if dir.length() > 0.01:
+		facing = dir.normalized()
+	velocity = facing * speed
+	var before := global_position
+	_move_on_ground(delta)
+	# coincé (un autre habitant, un objet) : on recalcule le chemin
+	if Vector2(global_position.x - before.x, global_position.z - before.z).length() < speed * delta * 0.2:
+		_stuck += delta
+		if _stuck > 0.6:
+			_stuck = 0.0
+			_path.clear()
+			_repath = 0.0
+			if _world:
+				global_position = _world.constrain_move(global_position, global_position + Vector3(randf_range(-0.2, 0.2), 0, randf_range(-0.2, 0.2)))
+	else:
+		_stuck = 0.0
+	visual.animate(delta, velocity, facing)
+	return true
+
+
+func _choose_work_spot() -> void:
+	_work_spot = Vector3.INF
+	if work_room == null or _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+		if work_room == null or _world == null:
+			return
+	var t: RoomTypeData = work_room.type
+	var grid := _world.build
+	var cells: Dictionary = work_room.cells
+	var floor_y: float = work_room.floor
+	var taken := []
+	for v in get_tree().get_nodes_in_group("villagers"):
+		if v != self and v.get("work_room") == work_room and v.get("_work_spot") != Vector3.INF:
+			taken.append(_world.cell_at(v.get("_work_spot")))
+	var dirs := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+	for c in cells:
+		for f in grid.furniture_in(c):
+			if not t.required.has(f.item.id):
+				continue
+			for d in dirs:
+				var n: Vector2i = c + d
+				if not cells.has(n) or taken.has(n) or grid.body_blocked(n, floor_y):
+					continue
+				_work_spot = Vector3(n.x + 0.5, floor_y, n.y + 0.5)
+				_work_face = Vector3(-d.x, 0, -d.y)
+				return
+	# à défaut : n'importe quelle case libre de la pièce
+	for c in cells:
+		if not grid.body_blocked(c, floor_y) and not taken.has(c):
+			_work_spot = Vector3(c.x + 0.5, floor_y, c.y + 0.5)
+			return
 
 
 ## Choisit le monstre à combattre (ou à fuir).
@@ -246,7 +367,10 @@ func _update_label() -> void:
 	var near := player != null and player.global_position.distance_to(global_position) < 2.4
 	label.visible = near
 	if near:
-		label.text = "%s (%s)\n[E] Équipement" % [villager_name, race.display_name if race else "?"]
+		var job := ""
+		if work_room != null and work_room.type:
+			job = " · " + (work_room.type as RoomTypeData).job_name
+		label.text = "%s (%s)%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job]
 
 
 ## Attaque, défense et magie totales (race + équipement).

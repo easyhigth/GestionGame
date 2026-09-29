@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/chaudron.tres" id="it_chaudron"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="it_iron_ingot"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("it_chaudron")
+ingredients = Array[ExtResource("2")]([ExtResource("it_iron_ingot")])
+amounts = PackedInt32Array(3)
+station = "enclume"
+category = "Mobilier"

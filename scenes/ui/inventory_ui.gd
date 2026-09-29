@@ -29,6 +29,9 @@ var _info_name: Label
 var _info_text: Label
 var _recipes: VBoxContainer
 var _bench: Label
+var _cat := "Équipement"
+var _cat_buttons := {}
+var _job_box: VBoxContainer
 
 
 func _ready() -> void:
@@ -165,6 +168,9 @@ func _build() -> void:
 	c1.add_child(_slots_box)
 	_stats = _label("", 11)
 	c1.add_child(_stats)
+	_job_box = VBoxContainer.new()
+	_job_box.add_theme_constant_override("separation", 3)
+	c1.add_child(_job_box)
 
 	# 2. sac
 	var c2 := _column("Sac", 300, cols)
@@ -192,7 +198,20 @@ func _build() -> void:
 
 	# 3. artisanat
 	var c3 := _column("Artisanat", 330, cols)
-	_bench = _label("", 10, C_DIM)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 2)
+	for cname in ["Équipement", "Construction", "Mobilier", "Matériaux"]:
+		var tb := Button.new()
+		tb.text = cname
+		tb.toggle_mode = true
+		tb.add_theme_font_size_override("font_size", 9)
+		tb.pressed.connect(func(): _cat = cname; _refresh())
+		tabs.add_child(tb)
+		_cat_buttons[cname] = tb
+	c3.add_child(tabs)
+	_bench = _label("", 9, C_DIM)
+	_bench.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_bench.custom_minimum_size = Vector2(310, 0)
 	c3.add_child(_bench)
 	var rscroll := ScrollContainer.new()
 	rscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -280,18 +299,73 @@ func _refresh() -> void:
 		_bag.add_child(_label("Sac vide", 10, C_DIM))
 
 	var near := player.is_near_workbench()
-	_bench.text = "Établi : à proximité ✔" if near else "Établi : trop loin (objets en fer impossibles)"
+	_stations = player.nearby_stations()
+	var names := []
+	for sid in _stations:
+		var it: ItemData = Items.get_item(sid)
+		names.append(it.display_name if it else sid)
+	_bench.text = "À proximité : %s" % (", ".join(PackedStringArray(names)) if names else "aucun meuble d'artisan (approche-toi d'un établi, d'un four, d'une enclume...)")
 	_bench.add_theme_color_override("font_color", C_OK if near else C_DIM)
+	for cn in _cat_buttons:
+		_cat_buttons[cn].set_pressed_no_signal(cn == _cat)
 	for c in _recipes.get_children():
 		c.queue_free()
-	var list: Array = Items.recipes.duplicate()
-	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near)) > int(b.can_craft(player.inventory, near)))
+	var list: Array = Items.recipes.filter(func(r): return r.category == _cat or (_cat == "Matériaux" and r.category == "Matériaux"))
+	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
 	for r: RecipeData in list:
 		_recipes.add_child(_recipe_row(r, near))
+	_refresh_job()
+
+
+var _stations: Array = []
+
+
+## Poste de travail d'un habitant (affiché quand on ouvre l'équipement d'un habitant).
+func _refresh_job() -> void:
+	for c in _job_box.get_children():
+		c.queue_free()
+	if target == player or not target.has_method("is_at_work"):
+		return
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k == null:
+		return
+	_job_box.add_child(_label("Poste de travail", 12, Color("f2c86a")))
+	var cur = target.get("work_room")
+	var opt := OptionButton.new()
+	opt.add_theme_font_size_override("font_size", 10)
+	opt.add_item("Aucun (se promène)")
+	var rooms := k.workplaces()
+	var sel := 0
+	for i in rooms.size():
+		var r: Dictionary = rooms[i]
+		var t: RoomTypeData = r.type
+		var a := Kingdom.affinity(target, t.job_id)
+		var stars := "★".repeat(clampi(roundi((a - 0.5) * 4.0), 1, 5))
+		opt.add_item("%s — %s %d/%d  %s" % [t.display_name, t.job_name, k.workers_of(r).size(), t.job_slots, stars])
+		if r == cur:
+			sel = i + 1
+	opt.select(sel)
+	opt.item_selected.connect(func(idx):
+		var ok := k.assign(target, null if idx == 0 else rooms[idx - 1])
+		if not ok:
+			player.notify.emit("Plus de place à ce poste.")
+		_refresh())
+	_job_box.add_child(opt)
+	if rooms.is_empty():
+		var l := _label("Construis une pièce avec des postes (forge, boulangerie...) pour lui donner un métier.", 9, C_DIM)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(230, 0)
+		_job_box.add_child(l)
+	else:
+		var best := []
+		for jid in Kingdom.RACE_AFFINITY.get((target.get("race") as RaceData).model_id, []):
+			best.append(jid)
+		var l2 := _label("Doué pour : %s" % ", ".join(best), 9, C_DIM)
+		_job_box.add_child(l2)
 
 
 func _recipe_row(r: RecipeData, near: bool) -> Control:
-	var ok := r.can_craft(player.inventory, near)
+	var ok := r.can_craft(player.inventory, near, _stations)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _style(C_SLOT if ok else C_SLOT.darkened(0.2), C_FRAME.darkened(0.5 if ok else 0.7), 1))
 	var row := HBoxContainer.new()
@@ -310,6 +384,9 @@ func _recipe_row(r: RecipeData, near: bool) -> Control:
 		parts.append("[color=#%s]%d %s (%d)[/color]" % [(C_OK if have >= need else C_BAD).to_html(false), need, r.ingredients[i].display_name, have])
 	if r.needs_workbench:
 		parts.append("[color=#%s]établi[/color]" % (C_OK if near else C_BAD).to_html(false))
+	if r.station != "":
+		var st_item: ItemData = Items.get_item(r.station)
+		parts.append("[color=#%s]près : %s[/color]" % [(C_OK if _stations.has(r.station) else C_BAD).to_html(false), st_item.display_name if st_item else r.station])
 	var ing := RichTextLabel.new()
 	ing.bbcode_enabled = true
 	ing.fit_content = true
@@ -358,7 +435,7 @@ func _unequip(slot: int) -> void:
 
 
 func _craft(r: RecipeData) -> void:
-	if r.craft(player.inventory, player.is_near_workbench()):
+	if r.craft(player.inventory, player.is_near_workbench(), player.nearby_stations()):
 		player.notify.emit("Fabriqué : %s" % r.result.display_name)
 	_refresh()
 

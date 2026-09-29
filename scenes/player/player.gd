@@ -34,6 +34,9 @@ signal skill_changed(skill: HeroSkill)
 @export var interact_distance: float = 2.4
 ## Équipe automatiquement un objet ramassé si l'emplacement est vide.
 @export var auto_equip: bool = true
+## Kit du fondateur : blocs et meubles donnés au début d'une partie (paires objet / quantité).
+@export var founder_kit: Array[ItemData] = []
+@export var founder_counts: PackedInt32Array = PackedInt32Array()
 ## Temps avant de se relever au village après avoir été vaincu (secondes).
 @export var respawn_delay: float = 4.0
 
@@ -61,6 +64,8 @@ var lock_target: Combatant
 var profile: HeroProfile
 var level := 1
 var xp := 0
+## En mode construction (les clics servent à construire, pas à frapper).
+var building := false
 ## Compétence unique (peut être null).
 var skill: HeroSkill
 var _base_parry_window := 0.22
@@ -123,6 +128,8 @@ func apply_profile(hero: HeroProfile, new_game := true) -> void:
 			for it in hero.hero_class.starting_equipment:
 				for old in equipment.equip(it):
 					inventory.add(old)
+		for i in founder_kit.size():
+			inventory.add(founder_kit[i], founder_counts[i] if i < founder_counts.size() else 1)
 		if hero.job:
 			for i in hero.job.starting_items.size():
 				var n := hero.job.starting_counts[i] if i < hero.job.starting_counts.size() else 1
@@ -154,7 +161,7 @@ func _update_max_health(refill := false) -> void:
 	if skill:
 		regen += skill.p("regen")
 		parry_window = _base_parry_window + skill.p("parry")
-	health.regen_per_second = regen
+	health.regen_per_second = regen + _kingdom_bonus("regen") if is_inside_tree() else regen
 
 
 ## Recalcule les caractéristiques (après une absorption, un renforcement...).
@@ -169,18 +176,18 @@ func attack_power() -> int:
 	var v := super()
 	if skill:
 		v = roundi(v * skill.atk_mult()) + skill.absorbed["attack"]
-	return v
+	return v + roundi(_kingdom_bonus("attack"))
 
 
 func defense_power() -> int:
-	return super() + (skill.def_bonus() if skill else 0)
+	return super() + (skill.def_bonus() if skill else 0) + roundi(_kingdom_bonus("defense"))
 
 
 func magic_power() -> int:
 	var v := super()
 	if skill:
 		v = roundi(v * skill.mag_mult()) + skill.absorbed["magic"]
-	return v
+	return roundi(v * (1.0 + _kingdom_bonus("magic")))
 
 
 func outgoing_multiplier(target: Combatant) -> float:
@@ -272,7 +279,7 @@ func xp_to_next() -> int:
 func gain_xp(amount: int) -> void:
 	if amount <= 0 or not is_alive():
 		return
-	amount = roundi(amount * (1.0 + (skill.p("xp") if skill else 0.0)))
+	amount = roundi(amount * (1.0 + (skill.p("xp") if skill else 0.0) + _kingdom_bonus("xp")))
 	xp += amount
 	Combat.popup(self, global_position + Vector3(0, 2.3 * visual.scale.y, 0), "+%d XP" % amount, Color("9fe0ff"))
 	while xp >= xp_to_next():
@@ -330,8 +337,10 @@ func _physics_process(delta: float) -> void:
 		input = input.normalized()
 	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0)
 
-	if can_input and can_act():
+	if can_input and can_act() and not building:
 		_handle_combat_input(input, delta)
+	elif can_input and can_act() and building and Input.is_action_just_pressed("dash") and _dash_cooldown_left <= 0.0 and not is_dashing():
+		_start_dash(input if input != Vector3.ZERO else facing)
 
 	if is_dashing():
 		_dash_time -= delta
@@ -611,7 +620,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("inventory"):
 		open_inventory.emit(self)
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("skill"):
+	elif event.is_action_pressed("skill") and not building:
 		use_skill()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("lock_on"):
@@ -745,7 +754,22 @@ func is_near_workbench() -> bool:
 	for w in get_tree().get_nodes_in_group("workbench"):
 		if (w as Node3D).global_position.distance_to(global_position) < interact_distance + 1.2:
 			return true
-	return false
+	return nearby_stations().has("etabli")
+
+
+## Meubles à proximité (pour l'artisanat : enclume, four, meule...).
+func nearby_stations() -> Array:
+	var grid := get_tree().get_first_node_in_group("build_grid") as BuildGrid
+	var out: Array = grid.furniture_near(global_position, 4.0) if grid else []
+	for w in get_tree().get_nodes_in_group("workbench"):
+		if (w as Node3D).global_position.distance_to(global_position) < interact_distance + 1.2 and not out.has("etabli"):
+			out.append("etabli")
+	return out
+
+
+func _kingdom_bonus(key: String) -> float:
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	return k.hero_bonus(key) if k else 0.0
 
 
 ## Appelé par un objet au sol quand le joueur marche dessus.

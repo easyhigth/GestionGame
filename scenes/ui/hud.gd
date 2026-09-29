@@ -25,6 +25,7 @@ var _slow_tint: ColorRect
 var _target: Combatant
 var _xp_fill: ColorRect
 var _xp_text: Label
+var _kingdom_text: Label
 var _skill_box: PanelContainer
 var _skill_icon: ColorRect
 var _skill_cd: ColorRect
@@ -106,6 +107,15 @@ func _build_health_bar() -> void:
 	_xp_text = _outlined("", 10)
 	_xp_text.position = Vector2(HP_WIDTH + 12, 16)
 	box.add_child(_xp_text)
+	_kingdom_text = _outlined("", 11)
+	_kingdom_text.position = Vector2(0, 30)
+	box.add_child(_kingdom_text)
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k:
+		k.changed.connect(_update_kingdom)
+		k.age_changed.connect(func(a): show_feat("Nouvel âge : %s !" % Kingdom.AGE_NAMES[a], Kingdom.AGE_COLORS[a]))
+		k.rank_changed.connect(func(r): show_feat("Votre royaume devient : %s !" % Kingdom.RANK_NAMES[r], Color("f2c86a")))
+	_update_kingdom.call_deferred()
 
 
 func _build_death_screen() -> void:
@@ -223,6 +233,14 @@ func _update_skill() -> void:
 	_skill_rank.text = "%s  ·  Q / RB" % SkillData.TIER_LABELS[s.tier]
 
 
+func _update_kingdom() -> void:
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k == null or _kingdom_text == null:
+		return
+	_kingdom_text.text = "♜ %s   (B : construire)" % k.title()
+	_kingdom_text.add_theme_color_override("font_color", Kingdom.AGE_COLORS[k.age].lightened(0.2))
+
+
 ## Grand message au centre de l'écran (« Parade ! », « Esquive parfaite ! »...).
 func show_feat(text: String, color: Color) -> void:
 	_feat.text = text
@@ -288,7 +306,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("new_world") and world:
 		world.generate(randi())
-	elif event.is_action_pressed("next_race") and player and not races.is_empty():
+	elif event.is_action_pressed("next_race") and player and not races.is_empty() and not player.building:
 		_race_index = (_race_index + 1) % races.size()
 		player.apply_race(races[_race_index])
 		_refresh()
@@ -314,4 +332,4 @@ func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	_update_health()
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence   B : construire   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]

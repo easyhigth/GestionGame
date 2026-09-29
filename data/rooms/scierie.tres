@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="p"]
+
+[resource]
+script = ExtResource("1")
+id = "scierie"
+display_name = "Scierie"
+description = "On y débite les troncs en planches."
+color = Color(0.690, 0.541, 0.314, 1)
+required = {"billot": 1, "etabli": 1}
+min_cells = 6
+job_id = "bucheron"
+job_name = "Bûcheron"
+job_slots = 2
+production = ExtResource("p")
+production_count = 3
+production_interval = 60.0
+effect_text = "Produit du bois."

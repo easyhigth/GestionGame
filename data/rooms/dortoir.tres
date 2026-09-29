@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dortoir"
+display_name = "Dortoir"
+description = "Beaucoup de lits pour loger la population."
+color = Color(0.816, 0.690, 0.502, 1)
+required = {"lit": 4, "coffre": 1}
+min_cells = 12
+beds = 6
+effect_text = "Loge 6 habitants."

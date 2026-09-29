@@ -8,6 +8,7 @@ enum Rarity { COMMON, UNCOMMON, RARE, EPIC }
 ## Façon de se battre avec l'arme (choisit la suite de coups du combo).
 enum WeaponStyle { SWORD, SPEAR, HEAVY, STAFF, UNARMED }
 
+const TIER_NAMES := ["Bois", "Pierre", "Pierre taillée", "Pierre polie", "Marbre", "Or"]
 const SLOT_NAMES := {
 	Slot.NONE: "Matériau",
 	Slot.MAIN_HAND: "Arme",
@@ -58,6 +59,37 @@ const RARITY_COLORS := {
 @export var projectile: bool = false
 
 
+@export_group("Construction")
+## Texture du bloc : si elle est renseignée, l'objet est un bloc de construction à poser.
+@export var block_texture: Texture2D
+## Âge du matériau (0 bois, 1 pierre, 2 pierre taillée, 3 pierre polie, 4 marbre, 5 or).
+@export_range(0, 5) var block_tier: int = 0
+## Demi-bloc (dalle de 50 cm) : sert de plancher, on peut marcher dessus.
+@export var block_slab: bool = false
+## Bloc transparent (verre).
+@export var block_transparent: bool = false
+## Modèle du meuble : s'il est renseigné, l'objet est un meuble à poser.
+@export var furniture_model: PackedScene
+## Le meuble bloque le passage.
+@export var furniture_solid: bool = true
+## C'est une porte (on passe à travers, et elle ferme une pièce).
+@export var furniture_door: bool = false
+## Le meuble éclaire (torche, lanterne...).
+@export var furniture_light: bool = false
+
+
+func is_block() -> bool:
+	return block_texture != null
+
+
+func is_furniture() -> bool:
+	return furniture_model != null
+
+
+func is_placeable() -> bool:
+	return is_block() or is_furniture()
+
+
 func is_equipment() -> bool:
 	return slot != Slot.NONE
 
@@ -68,6 +100,10 @@ func power() -> float:
 
 
 func slot_name() -> String:
+	if is_block():
+		return "Bloc · %s" % TIER_NAMES[block_tier]
+	if is_furniture():
+		return "Mobilier"
 	return SLOT_NAMES.get(slot, "?")
 
 

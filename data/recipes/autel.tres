@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/autel.tres" id="it_autel"]
+[ext_resource type="Resource" path="res://data/items/bloc_pierre_polie.tres" id="it_bloc_pierre_polie"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("it_autel")
+ingredients = Array[ExtResource("2")]([ExtResource("it_bloc_pierre_polie")])
+amounts = PackedInt32Array(4)
+station = "table_tailleur"
+category = "Mobilier"

@@ -137,6 +137,8 @@ const SAND := 2
 const GRASS := 3
 const STONE := 4
 const PLAZA := 5
+## Terre remuée (terrassement).
+const DIRT := 6
 # Types de décor
 const D_NONE := 0
 const D_OAK := 1
@@ -159,10 +161,19 @@ var _heights := PackedFloat32Array()
 var _flowers := PackedByteArray()
 var _decor := PackedByteArray()
 var _mesh_cache := {}
+var _terrain_nodes := {}   # morceau -> MeshInstance3D
+var _decor_nodes := {}     # morceau -> Node3D
+var _terrain_mat: StandardMaterial3D
+var _trunk_shape: CylinderShape3D
+var _bush_shape: CylinderShape3D
+var _rock_shape: BoxShape3D
+## Les constructions du joueur (nœud « Build »).
+var build: BuildGrid
 
 
 func _ready() -> void:
 	add_to_group("world")
+	build = get_node_or_null("Build") as BuildGrid
 	if Engine.is_editor_hint():
 		return
 	if generate_on_start:
@@ -177,6 +188,10 @@ func clear() -> void:
 	for holder in [$Terrain, $Decor, $Village]:
 		for child in holder.get_children():
 			child.free()
+	_terrain_nodes.clear()
+	_decor_nodes.clear()
+	if build:
+		build.clear()
 
 
 func generate(seed_value: int) -> void:
@@ -266,21 +281,32 @@ func cell_center(cell: Vector2i) -> Vector3:
 	return Vector3(cell.x + 0.5, _h(cell), cell.y + 0.5)
 
 
-## Hauteur du sol sous une position.
+## Hauteur du sol sous une position (terrain, ou dessus d'un bloc accessible depuis la hauteur `pos.y`).
 func ground_height_at(pos: Vector3) -> float:
+	return support_height(pos, pos.y)
+
+
+## Surface sur laquelle on se tient dans la colonne de `pos`, pour quelqu'un dont les pieds sont à `feet`.
+func support_height(pos: Vector3, feet: float) -> float:
 	var cell := cell_at(pos)
 	var t := _type(cell)
-	if t == WATER or t == DEEP:
-		return water_surface
-	return _h(cell)
+	var g := _h(cell)
+	if (t == WATER or t == DEEP) and g < water_surface:
+		g = water_surface
+	if build:
+		g = maxf(g, build.support(cell, feet + max_step))
+	return g
 
 
 func is_walkable(pos: Vector3) -> bool:
-	var t := _type(cell_at(pos))
-	return t != WATER and t != DEEP
+	var cell := cell_at(pos)
+	var t := _type(cell)
+	if t != WATER and t != DEEP:
+		return true
+	return build != null and build.support(cell, 1000.0) > water_surface
 
 
-## Empêche d'entrer dans l'eau ou de monter une marche trop haute.
+## Empêche d'entrer dans l'eau, de monter une marche trop haute ou de traverser un mur.
 ## Glisse le long de l'obstacle si possible.
 func constrain_move(from: Vector3, to: Vector3) -> Vector3:
 	if _can_step(from, to):
@@ -299,12 +325,153 @@ func _can_step(from: Vector3, to: Vector3) -> bool:
 	var probe := to
 	if dir.length_squared() > 0.000001:
 		probe += dir.normalized() * 0.22
-	if not is_walkable(probe):
-		return false
 	var h_from := ground_height_at(from)
-	var probe_cell := cell_at(probe)
-	var to_cell := cell_at(to)
-	return _h(probe_cell) - h_from <= max_step and _h(to_cell) - h_from <= max_step
+	for p in [probe, to]:
+		var cell := cell_at(p)
+		if not _inside(cell):
+			return false
+		if not step_ok(cell, h_from):
+			return false
+	return true
+
+
+## Peut-on aller sur la case `cell` en partant d'une hauteur `h_from` ?
+func step_ok(cell: Vector2i, h_from: float) -> bool:
+	var hs := support_height(Vector3(cell.x + 0.5, 0, cell.y + 0.5), h_from)
+	var t := _type(cell)
+	if (t == WATER or t == DEEP) and hs <= water_surface + 0.01:
+		return false
+	if hs - h_from > max_step:
+		return false
+	if build and build.body_blocked(cell, hs):
+		return false
+	return true
+
+
+## Chemin (liste de points) entre deux positions, en passant par les portes (A*, cases voisines).
+func find_path(from: Vector3, to: Vector3, max_nodes := 2500) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	var start := cell_at(from)
+	var goal := cell_at(to)
+	if start == goal:
+		out.append(to)
+		return out
+	var open := [start]
+	var came := {start: start}
+	var g := {start: 0.0}
+	var hgt := {start: ground_height_at(from)}
+	var props := {}
+	var visited := 0
+	while not open.is_empty() and visited < max_nodes:
+		var best := 0
+		var best_f := INF
+		for i in open.size():
+			var c: Vector2i = open[i]
+			var f: float = g[c] + Vector2(c - goal).length()
+			if f < best_f:
+				best_f = f
+				best = i
+		var cur: Vector2i = open[best]
+		open.remove_at(best)
+		visited += 1
+		if cur == goal:
+			var path := [cur]
+			while path[0] != start:
+				path.push_front(came[path[0]])
+			for c in path.slice(1):
+				out.append(Vector3(c.x + 0.5, hgt[c], c.y + 0.5))
+			return out
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var n: Vector2i = cur + d
+			if not _inside(n) or not step_ok(n, hgt[cur]):
+				continue
+			if n != goal and _prop_blocked(n, hgt[cur], props):
+				continue
+			var ng: float = g[cur] + 1.0
+			if not g.has(n) or ng < g[n]:
+				g[n] = ng
+				came[n] = cur
+				hgt[n] = support_height(Vector3(n.x + 0.5, 0, n.y + 0.5), hgt[cur])
+				if not open.has(n):
+					open.append(n)
+	return out
+
+
+## Vrai si un objet du décor (cabane, tonneau, feu...) occupe la case. Résultats mis en cache dans `cache`.
+func _prop_blocked(cell: Vector2i, h: float, cache: Dictionary) -> bool:
+	if cache.has(cell):
+		return cache[cell]
+	var shape := SphereShape3D.new()
+	shape.radius = 0.3
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = shape
+	q.transform = Transform3D(Basis(), Vector3(cell.x + 0.5, h + 0.6, cell.y + 0.5))
+	q.collide_with_areas = false
+	var blocked := false
+	for hit in get_world_3d().direct_space_state.intersect_shape(q, 4):
+		if hit.collider is StaticBody3D:
+			blocked = true
+			break
+	cache[cell] = blocked
+	return blocked
+
+
+# ---------------------------------------------------------------- terrassement
+
+func terrain_height(cell: Vector2i) -> float:
+	return _h(cell)
+
+
+func terrain_type(cell: Vector2i) -> int:
+	return _type(cell)
+
+
+func decor_at(cell: Vector2i) -> int:
+	return _decor[_idx(cell)] if _inside(cell) else D_NONE
+
+
+## Enlève le décor d'une case (arbre, rocher...). Renvoie son type (D_NONE s'il n'y avait rien).
+func remove_decor(cell: Vector2i, refresh := true) -> int:
+	if not _inside(cell):
+		return D_NONE
+	var i := _idx(cell)
+	var k := _decor[i]
+	_decor[i] = D_NONE
+	_flowers[i] = 0
+	if refresh and k != D_NONE:
+		_build_decor_chunk(Vector2i(cell.x / CHUNK, cell.y / CHUNK))
+	return k
+
+
+## Change la hauteur d'une case. Le sol remué devient de la terre ; l'eau comblée devient de la terre.
+func set_terrain_height(cell: Vector2i, h: float) -> void:
+	if not _inside(cell):
+		return
+	var i := _idx(cell)
+	var t := _types[i]
+	if (t == WATER or t == DEEP) and h > water_surface:
+		_types[i] = DIRT
+	elif t == GRASS or t == PLAZA:
+		_types[i] = DIRT
+	_heights[i] = h
+	if _decor[i] != D_NONE:
+		_decor[i] = D_NONE
+		_flowers[i] = 0
+
+
+## Redessine le terrain (et les décors) autour de ces cases.
+func refresh_cells(cells: Array, decor := true) -> void:
+	var chunks := {}
+	for c in cells:
+		for dx in [-1, 0, 1]:
+			for dz in [-1, 0, 1]:
+				var n: Vector2i = c + Vector2i(dx, dz)
+				if _inside(n):
+					chunks[Vector2i(n.x / CHUNK, n.y / CHUNK)] = true
+	for ch in chunks:
+		_build_terrain_chunk(ch)
+		if decor:
+			_build_decor_chunk(ch)
 
 
 # ---------------------------------------------------------------- génération
@@ -410,6 +577,8 @@ func _top_color(cell: Vector2i) -> Color:
 			c = stone_color
 		PLAZA:
 			c = plaza_color if (cell.x + cell.y) % 2 == 0 else plaza_color.darkened(0.08)
+		DIRT:
+			c = dirt_color.lightened(0.12)
 		_:
 			c = grass_color.lerp(grass_dark_color, v)
 	return c.darkened(v * 0.07) if t != GRASS else c
@@ -421,31 +590,39 @@ func _side_color(cell: Vector2i) -> Color:
 			return sand_color.darkened(0.1)
 		STONE, PLAZA:
 			return stone_color.darkened(0.08)
+		DIRT:
+			return dirt_color.darkened(0.05)
 	return dirt_color
 
 
 func _build_terrain() -> void:
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.vertex_color_is_srgb = true
-	mat.albedo_texture = GRAIN
-	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
-	mat.roughness = 1.0
-	var chunks_x := ceili(world_size.x / float(CHUNK))
-	var chunks_y := ceili(world_size.y / float(CHUNK))
-	for cy in chunks_y:
-		for cx in chunks_x:
-			var st := SurfaceTool.new()
-			st.begin(Mesh.PRIMITIVE_TRIANGLES)
-			for y in range(cy * CHUNK, mini((cy + 1) * CHUNK, world_size.y)):
-				for x in range(cx * CHUNK, mini((cx + 1) * CHUNK, world_size.x)):
-					_add_column(st, Vector2i(x, y))
-			st.generate_tangents()
-			var mi := MeshInstance3D.new()
-			mi.name = "Sol_%d_%d" % [cx, cy]
-			mi.mesh = st.commit()
-			mi.material_override = mat
-			$Terrain.add_child(mi)
+	if _terrain_mat == null:
+		_terrain_mat = StandardMaterial3D.new()
+		_terrain_mat.vertex_color_use_as_albedo = true
+		_terrain_mat.vertex_color_is_srgb = true
+		_terrain_mat.albedo_texture = GRAIN
+		_terrain_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+		_terrain_mat.roughness = 1.0
+	for cy in ceili(world_size.y / float(CHUNK)):
+		for cx in ceili(world_size.x / float(CHUNK)):
+			_build_terrain_chunk(Vector2i(cx, cy))
+
+
+func _build_terrain_chunk(ch: Vector2i) -> void:
+	if _terrain_nodes.has(ch) and is_instance_valid(_terrain_nodes[ch]):
+		_terrain_nodes[ch].queue_free()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
+		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
+			_add_column(st, Vector2i(x, y))
+	st.generate_tangents()
+	var mi := MeshInstance3D.new()
+	mi.name = "Sol_%d_%d" % [ch.x, ch.y]
+	mi.mesh = st.commit()
+	mi.material_override = _terrain_mat
+	$Terrain.add_child(mi)
+	_terrain_nodes[ch] = mi
 
 
 func _add_column(st: SurfaceTool, cell: Vector2i) -> void:
@@ -593,22 +770,30 @@ func _mesh_of(scene: PackedScene) -> Array:
 
 
 func _build_decor() -> void:
-	var groups := {}  # [scène, chunk] -> transforms
+	for cy in ceili(world_size.y / float(CHUNK)):
+		for cx in ceili(world_size.x / float(CHUNK)):
+			_build_decor_chunk(Vector2i(cx, cy))
+
+
+func _build_decor_chunk(ch: Vector2i) -> void:
+	if _decor_nodes.has(ch) and is_instance_valid(_decor_nodes[ch]):
+		_decor_nodes[ch].queue_free()
+	if _trunk_shape == null:
+		_trunk_shape = CylinderShape3D.new()
+		_trunk_shape.radius = 0.35
+		_trunk_shape.height = 3.0
+		_bush_shape = CylinderShape3D.new()
+		_bush_shape.radius = 0.5
+		_bush_shape.height = 1.0
+		_rock_shape = BoxShape3D.new()
+		_rock_shape.size = Vector3(1.0, 1.0, 0.9)
+	var holder := Node3D.new()
+	holder.name = "Decor_%d_%d" % [ch.x, ch.y]
 	var obstacles := StaticBody3D.new()
-	obstacles.name = "Obstacles"
-	$Decor.add_child(obstacles)
-	var trunk_shape := CylinderShape3D.new()
-	trunk_shape.radius = 0.35
-	trunk_shape.height = 3.0
-	var bush_shape := CylinderShape3D.new()
-	bush_shape.radius = 0.5
-	bush_shape.height = 1.0
-	var rock_shape := BoxShape3D.new()
-	rock_shape.size = Vector3(1.0, 1.0, 0.9)
-	var drng := RandomNumberGenerator.new()
-	drng.seed = world_seed + 7
-	for y in world_size.y:
-		for x in world_size.x:
+	holder.add_child(obstacles)
+	var groups := {}  # scène -> transforms
+	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
+		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
 			var cell := Vector2i(x, y)
 			var kind := _decor[_idx(cell)]
 			if kind == D_NONE:
@@ -616,6 +801,9 @@ func _build_decor() -> void:
 			var models := _models_for(kind)
 			if models.is_empty():
 				continue
+			# hasard propre à la case : le décor ne change pas quand on redessine le morceau
+			var drng := RandomNumberGenerator.new()
+			drng.seed = hash(Vector3i(x, y, world_seed))
 			var scene: PackedScene = models[drng.randi() % models.size()]
 			var s := 1.0
 			var jitter := 0.2
@@ -629,32 +817,31 @@ func _build_decor() -> void:
 					s = drng.randf_range(0.8, 1.3)
 			var pos := cell_center(cell) + Vector3(drng.randf_range(-jitter, jitter), 0, drng.randf_range(-jitter, jitter))
 			var basis := Basis(Vector3.UP, drng.randi_range(0, 3) * PI * 0.5).scaled(Vector3.ONE * s)
-			var key := [scene, Vector2i(x / CHUNK, y / CHUNK)]
-			if not groups.has(key):
-				groups[key] = []
-			groups[key].append(Transform3D(basis, pos))
+			if not groups.has(scene):
+				groups[scene] = []
+			groups[scene].append(Transform3D(basis, pos))
 			var shape: Shape3D = null
 			var shape_y := 0.0
 			match kind:
 				D_OAK, D_PINE:
-					shape = trunk_shape
+					shape = _trunk_shape
 					shape_y = 1.5
 				D_BUSH:
-					shape = bush_shape
+					shape = _bush_shape
 					shape_y = 0.5
 				D_ROCK:
-					shape = rock_shape
+					shape = _rock_shape
 					shape_y = 0.5
 			if shape:
 				var cs := CollisionShape3D.new()
 				cs.shape = shape
 				cs.position = pos + Vector3(0, shape_y, 0)
 				obstacles.add_child(cs)
-	for key in groups:
-		var info := _mesh_of(key[0])
+	for scene in groups:
+		var info := _mesh_of(scene)
 		if info.is_empty():
 			continue
-		var list: Array = groups[key]
+		var list: Array = groups[scene]
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = info[0]
@@ -663,7 +850,9 @@ func _build_decor() -> void:
 			mm.set_instance_transform(i, (list[i] as Transform3D) * (info[1] as Transform3D))
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
-		$Decor.add_child(mmi)
+		holder.add_child(mmi)
+	$Decor.add_child(holder)
+	_decor_nodes[ch] = holder
 
 
 # ---------------------------------------------------------------- village

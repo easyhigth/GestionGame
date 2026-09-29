@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/blocks/bloc_verre.png" id="t"]
+
+[resource]
+script = ExtResource("1")
+id = "bloc_verre"
+display_name = "Verre"
+description = "Du verre soufflé pour les fenêtres."
+max_stack = 99
+block_texture = ExtResource("t")
+block_tier = 2
+rarity = 1
+block_transparent = true

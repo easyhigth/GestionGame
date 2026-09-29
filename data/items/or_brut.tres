@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "or_brut"
+display_name = "Minerai d'or"
+description = "Une pépite dans sa gangue. À fondre au foyer de forge."
+max_stack = 50
+rarity = 2

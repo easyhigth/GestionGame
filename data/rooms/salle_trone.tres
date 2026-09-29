@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "salle_trone"
+display_name = "Salle du trône"
+description = "Le cœur du pouvoir. Réservée aux grands royaumes."
+color = Color(1.000, 0.816, 0.251, 1)
+required = {"statue": 2, "table": 1, "lanterne": 2}
+min_cells = 20
+hero_bonus = {"attack": 3.0, "defense": 3.0, "xp": 0.1}
+effect_text = "Héros : +3 attaque, +3 défense, +10 % d'expérience."
