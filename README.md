@@ -115,7 +115,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
   4. **Toits** : à deux pans (avec débord et pignons fermés) ou plat.
   5. **Portes et fenêtres** : clic sur un mur pour y percer une porte (dans l'axe du mur) ou une fenêtre.
   6. **Mobilier** : tous les meubles, avec les pièces auxquelles ils servent (R : tourner).
-  7. **Démolir** : zone à démonter (les blocs et meubles reviennent dans le sac), ou Annuler les plans d'une zone.
+  7. **Démolir** : zone à démonter à partir du niveau choisi (les blocs et meubles reviennent dans le sac), ou Annuler les plans d'une zone. Les décors du village de départ se démolissent aussi : cabanes (planches, rondins, chaume), tonneaux, caisses, établi et râtelier (rendus comme meubles à reposer). On ne peut pas construire à travers un de ces décors : il faut d'abord le démolir.
 - **Matériau** : choisi sous les outils (V pour passer au suivant) ; le nombre que tu possèdes est affiché (rouge : aucun).
 - **Blocs** (1 m, ou dalles de 50 cm) : planches, rondins, chaume, terre, sable → pierre brute → briques, tuiles, verre → pierre polie, ardoise → marbre, marbre noir → marbre doré. Plus le matériau est rare, plus il faut un atelier pour le fabriquer (table de tailleur, four, meule, enclume).
 - **Pièces** : une zone fermée par des murs (au moins 2 m de haut) avec une **porte** devient un lieu dès que son **mobilier** est posé : enclume + foyer de forge + établi = Forge, four à pain + pétrin + table = Boulangerie, 2 mannequins + râtelier = Camp d'entraînement, lit + coffre = Maison... En mode construction, les pièces incomplètes affichent ce qu'il leur manque. Taille et forme libres.

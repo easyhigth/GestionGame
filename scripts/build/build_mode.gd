@@ -34,7 +34,7 @@ const CATEGORIES := [
 		{"id": "window", "name": "Fenêtre", "desc": "Clic sur un mur : une fenêtre en verre à hauteur des yeux."}]},
 	{"id": "furniture", "name": "Mobilier", "glyph": "♜", "tools": []},
 	{"id": "demolish", "name": "Démolir", "glyph": "✕", "tools": [
-		{"id": "demolish", "name": "Démolir", "desc": "Zone : démonter les blocs et meubles (à partir du niveau choisi) ; ils reviennent dans le sac."},
+		{"id": "demolish", "name": "Démolir", "desc": "Zone : démonter les blocs, les meubles et les décors du village (à partir du niveau choisi) ; tout revient dans le sac."},
 		{"id": "cancel", "name": "Annuler les plans", "desc": "Zone : effacer les plans pas encore construits."}]},
 ]
 ## Meubles sans pièce précise, montrés en premier.
@@ -581,6 +581,7 @@ func _commit_selection() -> void:
 	var mat := _material()
 	var n := 0
 	var t: String = _tool().id
+	orders.blocked_by_prop = 0
 	match t:
 		"wall_line", "wall_room", "floor", "roof_flat", "roof_gable":
 			# du bas vers le haut
@@ -628,6 +629,9 @@ func _commit_selection() -> void:
 		"cancel":
 			n = orders.cancel_rect(_rect(_selection[0][0], _selection[_selection.size() - 1][0]))
 		"demolish":
+			# d'abord on efface les plans pas encore construits de la zone (sans toucher aux démolitions)
+			var zone := _rect(_selection[0][0], _selection[_selection.size() - 1][0])
+			n += orders.cancel_rect(zone, layer - 1.0, 1000.0, false)
 			for s in _selection:
 				var c: Vector2i = s[0]
 				for b in grid.column(c):
@@ -636,7 +640,9 @@ func _commit_selection() -> void:
 				for f in grid.furniture_in(c):
 					if f.base >= layer - 1.0:
 						n += 1 if orders.remove_furniture(grid.furniture_key(c, f.base)) > 0 else 0
-			orders.cancel_rect(_rect(_selection[0][0], _selection[_selection.size() - 1][0]), layer - 1.0)
+			# décors du village de départ (cabanes, tonneaux, caisses, établi, râtelier)
+			for prop in world.village_props_in(zone):
+				n += 1 if orders.remove_prop(prop) > 0 else 0
 	if orders.instant:
 		orders.flush()
 	if n > 0:
@@ -646,6 +652,8 @@ func _commit_selection() -> void:
 		elif orders.instant:
 			msg += " réalisé%s" % ("s" if n > 1 else "")
 		player.notify.emit(msg + ".")
+	if orders.blocked_by_prop > 0:
+		player.notify.emit("Un décor du village occupe la place : démolis-le d'abord (outil Démolir).")
 	_selection = []
 
 
