@@ -17,6 +17,12 @@ var _hp_text: Label
 var _stats_text: Label
 var _death: Control
 var _death_label: Label
+var _feat: Label
+var _target_box: Control
+var _target_name: Label
+var _target_fill: ColorRect
+var _slow_tint: ColorRect
+var _target: Combatant
 const HP_WIDTH := 220.0
 
 
@@ -34,7 +40,10 @@ func _ready() -> void:
 		world.world_generated.connect(func(_s): _refresh())
 	_build_health_bar()
 	_build_death_screen()
+	_build_combat_ui()
 	if player:
+		player.feat.connect(show_feat)
+		player.lock_changed.connect(func(t): _target = t)
 		player.notify.connect(show_message)
 		player.health.changed.connect(func(_c, _m): _update_health())
 		player.defeated.connect(func(): _death.show())
@@ -89,6 +98,60 @@ func _build_death_screen() -> void:
 	_death.add_child(_death_label)
 
 
+func _build_combat_ui() -> void:
+	# teinte bleutée pendant le ralenti (esquive parfaite)
+	_slow_tint = ColorRect.new()
+	_slow_tint.color = Color(0.3, 0.6, 1.0, 0.0)
+	_slow_tint.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_slow_tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_slow_tint)
+	move_child(_slow_tint, 0)
+	# grand message au centre
+	_feat = _outlined("", 30)
+	_feat.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_feat.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_feat.size = Vector2(600, 50)
+	_feat.position = Vector2(-300, 120)
+	_feat.pivot_offset = Vector2(300, 25)
+	_feat.add_theme_constant_override("outline_size", 8)
+	_feat.modulate.a = 0.0
+	add_child(_feat)
+	# cadre de la cible verrouillée (en haut au centre)
+	_target_box = Control.new()
+	_target_box.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_target_box.position = Vector2(-160, 58)
+	_target_box.size = Vector2(320, 40)
+	add_child(_target_box)
+	_target_name = _outlined("", 14)
+	_target_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_target_name.size = Vector2(320, 20)
+	_target_box.add_child(_target_name)
+	var back := ColorRect.new()
+	back.color = Color(0.05, 0.04, 0.04, 0.85)
+	back.position = Vector2(0, 22)
+	back.size = Vector2(320, 10)
+	_target_box.add_child(back)
+	_target_fill = ColorRect.new()
+	_target_fill.color = Color(0.86, 0.22, 0.16)
+	_target_fill.position = Vector2(2, 24)
+	_target_fill.size = Vector2(316, 6)
+	_target_box.add_child(_target_fill)
+	_target_box.hide()
+
+
+## Grand message au centre de l'écran (« Parade ! », « Esquive parfaite ! »...).
+func show_feat(text: String, color: Color) -> void:
+	_feat.text = text
+	_feat.add_theme_color_override("font_color", color)
+	_feat.modulate.a = 1.0
+	_feat.scale = Vector2.ONE * 1.6
+	var tw := _feat.create_tween()
+	tw.set_ignore_time_scale(true)
+	tw.tween_property(_feat, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.7)
+	tw.tween_property(_feat, "modulate:a", 0.0, 0.3)
+
+
 func _outlined(text: String, size: int) -> Label:
 	var l := Label.new()
 	l.text = text
@@ -111,6 +174,15 @@ func _update_health() -> void:
 
 
 func _process(delta: float) -> void:
+	_slow_tint.color.a = move_toward(_slow_tint.color.a, 0.14 if TimeFX.is_slowed() else 0.0, 0.02)
+	if _target and is_instance_valid(_target) and _target.is_alive():
+		_target_box.show()
+		var d := _target.get("data") as EnemyData
+		_target_name.text = d.display_name if d else String(_target.name)
+		_target_name.add_theme_color_override("font_color", d.color if d else Color.WHITE)
+		_target_fill.size.x = 316.0 * _target.health.ratio()
+	else:
+		_target_box.hide()
 	# la barre jaune rattrape doucement la rouge (on voit les dégâts reçus)
 	if _hp_lag and _hp_fill:
 		_hp_lag.size.x = move_toward(_hp_lag.size.x, _hp_fill.size.x, delta * 90.0)
@@ -148,4 +220,4 @@ func show_message(text: String) -> void:
 func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace : roulade (esquive)   Clic / J : frapper   I : inventaire   E : équiper un habitant   R : race   N : nouveau monde\nRace : %s     Graine du monde : %d" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]

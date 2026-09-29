@@ -5,6 +5,8 @@ extends Resource
 
 enum Slot { NONE, MAIN_HAND, OFF_HAND, HEAD, CHEST, ARMS, LEGS, BACK }
 enum Rarity { COMMON, UNCOMMON, RARE, EPIC }
+## Façon de se battre avec l'arme (choisit la suite de coups du combo).
+enum WeaponStyle { SWORD, SPEAR, HEAVY, STAFF, UNARMED }
 
 const SLOT_NAMES := {
 	Slot.NONE: "Matériau",
@@ -44,6 +46,8 @@ const RARITY_COLORS := {
 @export_range(-0.5, 0.5, 0.01) var speed_bonus: float = 0.0
 
 @export_group("Arme")
+## Style de combat : épée (combos rapides), lance (estocs), arme lourde, bâton (sorts).
+@export var weapon_style: WeaponStyle = WeaponStyle.SWORD
 ## Portée du coup (mètres). Pour un bâton : distance parcourue par le sort.
 @export var reach: float = 1.7
 ## Vitesse des coups (1 = normal, 1.5 = rapide, 0.6 = lent).

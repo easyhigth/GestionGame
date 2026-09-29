@@ -38,6 +38,7 @@ var _scan_timer := randf()
 var _threat: Combatant
 var _threat_timer := randf() * 0.5
 var _ko_left := 0.0
+var _combo := 0
 
 
 func _ready() -> void:
@@ -188,9 +189,13 @@ func _fight_or_flee(delta: float) -> void:
 			velocity = facing * speed
 		else:
 			velocity = Vector3.ZERO
-			start_attack()
-	if is_attacking():
-		velocity *= 0.3
+			if can_attack():
+				var combo := MoveLibrary.combo_for(weapon_style())
+				perform(combo[_combo % combo.size()], attack_speed())
+				_combo += 1
+				_attack_cooldown = 0.15 if _combo % 3 != 0 else 0.9
+	if in_move() or not can_act():
+		velocity = Vector3.ZERO
 	_move_on_ground(delta)
 	visual.animate(delta, velocity, facing)
 	_update_label()

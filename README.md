@@ -35,13 +35,22 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer.
 - **Habitants** : ils commencent avec une partie de la tenue d'un métier (garde, mage, guerrier...), vont chercher les armes et armures meilleures que les leurs qui traînent près d'eux et reposent l'ancienne au sol. Touche E près d'un habitant pour l'équiper avec le contenu de ton sac.
 - **Artisanat** (fenêtre I) : le bois, la pierre, le cuir et la fibre se ramassent dans la nature ; le minerai de fer se trouve sur la roche et se fond en lingots à l'**établi** du village. Les objets en fer demandent d'être près de l'établi.
 
-## Combat
-- **Dégâts** = attaque × 40 / (40 + défense), ±15 % de hasard. L'attaque vient de la force de la race et de l'arme, la défense des armures, la magie de la race et des objets de mage.
-- **Armes** : chacune a sa portée et sa vitesse (dague rapide, lance longue, marteau lent qui repousse fort). Le **bâton de mage** lance un sort à distance dont les dégâts dépendent de la magie. Sans arme, on se bat à mains nues (faible).
-- **Esquive** : la roulade rend invulnérable. Les monstres **clignotent de leur couleur** juste avant de frapper : c'est le moment de rouler.
-- **Monstres** : ils vivent en camps éloignés du village (loups et sangliers en forêt, gobelins dans les plaines, squelettes dans la roche, orcs et loups alpha loin du village). Ils poursuivent ceux qui s'approchent, abandonnent s'ils s'éloignent trop de leur camp, et lâchent du butin (cuir, minerai, lingots, parfois une arme ou une armure). Un camp vidé se repeuple au bout de 2 minutes si le joueur est loin.
-- **Habitants** : armés, ils défendent le village ; sans arme ils s'enfuient. À 0 PV ils tombent K.O. puis se relèvent 20 s plus tard.
-- **Joueur** : la vie remonte doucement hors combat. À 0 PV, il se réveille au village au bout de quelques secondes.
+## Combat (temps réel, façon Zelda)
+Commandes (clavier-souris / manette) :
+- **Attaque** : clic gauche, J / X. Trois appuis = combo (le 3e coup est un coup final qui fait une onde de choc). Chaque arme a ses coups : épée (taillades), lance (estocs et balayage), arme lourde (lents, puissants), bâton (sorts, le 3e en éventail), mains nues (poings et uppercut).
+- **Attaque chargée** : maintenir l'attaque (l'arme brille, puis devient dorée), relâcher = attaque tournoyante.
+- **Roulade** : Espace / A. Invulnérable. Attaquer juste après = estoc en avant.
+- **Esquive parfaite** : rouler au dernier moment avant un coup → ralenti bleuté + images fantômes ; attaquer pendant le ralenti = **riposte** (on se jette sur l'ennemi pour une rafale de coups).
+- **Garde** : clic droit, K / LB. Le bouclier bloque tout (sans bouclier, la moitié des dégâts passe). Lever la garde juste avant l'impact = **parade** : l'ennemi est étourdi, et attaquer juste après = **contre** dévastateur.
+- **Viser** : clic molette, L / LT. Verrouille la cible (réticule, caméra et personnage tournés vers elle) ; appuyer encore passe à la cible suivante.
+
+Règles :
+- Dégâts = attaque × 40 / (40 + défense), ±15 %. Un ennemi étourdi prend 50 % de dégâts en plus.
+- **Équilibre** : chaque monstre a une jauge d'équilibre ; quand elle est vide, il est étourdi (étoiles au-dessus de la tête). Les monstres légers sont interrompus par chaque coup, les gros (orc, loup alpha) encaissent.
+- Les monstres **annoncent** chaque attaque : pose de préparation, clignotement de leur couleur et « ! ». Pas plus de 2 monstres attaquent la même cible à la fois, les autres tournent autour.
+- Effets : traînée de cubes derrière l'arme, gerbes de voxels à l'impact, arrêt sur image, tremblements de caméra, ralentis.
+- Les animations sont décrites par des poses clés dans `scripts/combat/move_library.gd` (une pose = rotation de chaque os) : on peut les modifier ou en ajouter.
+- Les monstres vivent en camps et lâchent du butin ; les habitants armés défendent le village (K.O. 20 s à 0 PV) ; le joueur se réveille au village sans rien perdre.
 
 ## Graphismes (3D voxel)
 - 1 case du monde = 1 mètre. Le sol est fait de colonnes de blocs en terrasses, avec le même grain que les personnages (`assets/environment/voxel_grain.png`).
@@ -54,3 +63,22 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer.
   - `voxel_props_generator.py` : régénère les décors (`python voxel_props_generator.py`).
   - `voxel_creature_generator.py` : régénère les créatures (loup, loup alpha, sanglier) dans `assets/characters/creatures/`.
   - `voxel_equipment_generator.py` : régénère les équipements de toutes les races (`python voxel_equipment_generator.py`). Pour ajouter une pièce : écris sa fonction, ajoute-la à `ITEMS`, relance le script, puis crée son fichier dans `data/items/` avec le même `id`.
+
+## Feuille de route
+Le jeu a deux piliers : un **RPG d'action en monde ouvert** vu de dessus (héros, exploration libre, donjons, boss, combat en temps réel à la Zelda) et la **construction d'un royaume** (des huttes jusqu'à une capitale d'empire, population de n'importe quelles races, habitants dirigés un par un). Inspiration : l'univers de « Moi, quand je me réincarne en Slime », avec des noms originaux.
+
+Choix de conception :
+- Création du héros libre : on choisit la race, la classe et le métier ; les compétences uniques évoluent.
+- Construction : placement libre sur une grille, paliers de progression (campement, village, bourg, ville, cité, capitale).
+- Habitants : dirigés un par un, avec un métier et un poste selon leurs affinités.
+- Mort du héros : réveil à la ville, sans perte d'inventaire.
+- Commandes : manette et clavier-souris.
+
+Étapes :
+1. Combat à la Zelda : verrouillage de cible, combos, attaque chargée, esquive parfaite, parade et contre, animations et effets. **(fait)**
+2. Héros : création, classes, métiers, compétences uniques qui évoluent, niveaux. **(prochaine étape)**
+3. Construction du royaume : bâtiments sur grille, paliers, métiers et postes des habitants.
+4. Monde ouvert : régions, monde plus grand chargé par morceaux, carte.
+5. Donjons et boss.
+6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville.
+7. Sauvegarde, menus, équilibrage.

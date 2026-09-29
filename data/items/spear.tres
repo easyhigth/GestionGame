@@ -14,3 +14,4 @@ defense = 1
 reach = 2.5
 attack_speed = 0.9
 knockback = 1.0
+weapon_style = 1

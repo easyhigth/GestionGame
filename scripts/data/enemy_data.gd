@@ -29,8 +29,12 @@ extends Resource
 @export var leash_range: float = 18.0
 ## Portée de son coup.
 @export var attack_range: float = 1.5
-## Durée du coup : le monstre prévient (clignote) puis frappe au milieu.
-@export var attack_duration: float = 0.7
+## Ses attaques (animations de MoveLibrary : enemy_chop, enemy_sweep, bite, charge_ram...). Une au hasard.
+@export var attack_moves: PackedStringArray = PackedStringArray(["enemy_chop"])
+## Vitesse de ses attaques (1 = normale, plus bas = plus lent et plus facile à esquiver).
+@export var attack_speed: float = 1.0
+## Équilibre : quand il tombe à 0, le monstre est étourdi. Sous 20, chaque coup l'interrompt.
+@export var poise: float = 20.0
 ## Pause entre deux coups.
 @export var attack_cooldown: float = 1.0
 @export var knockback: float = 4.0

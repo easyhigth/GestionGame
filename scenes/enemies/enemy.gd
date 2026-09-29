@@ -1,8 +1,9 @@
 class_name Enemy
 extends Combatant
-## Monstre : patrouille autour de son camp, poursuit le joueur et les habitants qui s'approchent,
-## prévient avant de frapper (il clignote), puis retourne au camp s'il s'en éloigne trop.
-## Laisse tomber du butin quand il est vaincu.
+## Monstre : patrouille autour de son camp et poursuit ceux qui s'approchent.
+## En combat, il tourne autour de sa cible et n'attaque que s'il a un « jeton » (2 attaquants max
+## par cible) : chaque attaque est annoncée (pose de préparation, flash de sa couleur, « ! »),
+## ce qui laisse le temps d'esquiver ou de parer. Laisse tomber du butin quand il est vaincu.
 
 signal died_at(pos: Vector3)
 
@@ -16,6 +17,9 @@ var _pause := randf_range(0.5, 2.0)
 var _think := randf() * 0.3
 var _returning := false
 var _dead_time := 0.0
+var _orbit_dir := 1.0 if randf() < 0.5 else -1.0
+var _orbit_timer := 0.0
+var _has_token := false
 
 @onready var name_label: Label3D = $Name
 @onready var bar: HealthBar3D = $HealthBar
@@ -23,6 +27,10 @@ var _dead_time := 0.0
 
 func _ready() -> void:
 	team = Team.ENEMIES
+	# pas d'invulnérabilité après un coup : les combos du joueur s'enchaînent
+	hit_invulnerability = 0.0
+	if data:
+		poise_max = data.poise
 	super()
 	add_to_group("enemy_units")
 	home = global_position
@@ -35,13 +43,14 @@ func _apply_data() -> void:
 	visual.set_equipment_library(data.equipment_library)
 	visual.set_model(data.model)
 	visual.scale = Vector3.ONE * data.model_scale
+	visual.trail_color = Color(data.color, 1.0).lightened(0.3)
 	body_radius = data.body_radius
 	for it in data.equipment:
 		equipment.equip(it)
 	health.set_max(data.max_health, true)
 	name_label.text = data.display_name
 	name_label.modulate = data.color
-	name_label.position.y = 2.1 * data.model_scale if not visual._quadruped else 1.5 * data.model_scale
+	name_label.position.y = 2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale
 	bar.position.y = name_label.position.y - 0.22
 
 
@@ -65,21 +74,30 @@ func attack_reach() -> float:
 	return data.attack_range if data else 1.5
 
 
-func attack_duration() -> float:
-	return data.attack_duration if data else 0.7
-
-
 func knockback_strength() -> float:
 	return data.knockback if data else 4.0
 
 
-func start_attack() -> bool:
-	if super():
-		# avertissement : le monstre clignote de sa couleur juste avant de frapper
-		visual.flash(Color(data.color, 0.55) if data else Color(1, 0.4, 0.2, 0.55), attack_duration() * 0.4)
-		_attack_cooldown = attack_duration() + (data.attack_cooldown if data else 1.0)
-		return true
-	return false
+func _start_attack() -> void:
+	var moves := data.attack_moves if data and not data.attack_moves.is_empty() else PackedStringArray(["enemy_chop"])
+	var m: String = moves[randi() % moves.size()]
+	if not perform(m, data.attack_speed if data else 1.0):
+		return
+	# avertissement : il prend la pose de préparation en clignotant de sa couleur
+	var windup := float(MoveLibrary.get_move(m).get("windup", 0.4)) / move_speed
+	visual.flash(Color(data.color if data else Color(1, 0.4, 0.2), 0.5), windup)
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.3, 0), "!", Color("ff4a3a"), true)
+
+
+func _on_move_ended(_name: String, _interrupted: bool) -> void:
+	_attack_cooldown = (data.attack_cooldown if data else 1.0) * randf_range(0.8, 1.3)
+	_release_token()
+
+
+func _release_token() -> void:
+	if _has_token:
+		Combat.release_token(_target, self)
+		_has_token = false
 
 
 func _physics_process(delta: float) -> void:
@@ -88,7 +106,7 @@ func _physics_process(delta: float) -> void:
 		_dead_time += delta
 		velocity = Vector3.ZERO
 		visual.animate(delta, Vector3.ZERO, facing)
-		if _dead_time > 1.2:
+		if _dead_time > 1.0:
 			visual.scale = visual.scale.move_toward(Vector3.ZERO, delta * 2.5)
 			if visual.scale.x <= 0.02:
 				queue_free()
@@ -104,37 +122,59 @@ func _physics_process(delta: float) -> void:
 		_think = 0.3
 		_choose_target()
 	var speed := data.move_speed if data else 3.5
-	if _target:
-		var to := _target.global_position - global_position
-		to.y = 0.0
-		var dist := to.length()
-		if dist > 0.01 and not is_attacking():
-			facing = to / dist
-		if dist > attack_reach() + _target.body_radius * 0.5:
-			velocity = facing * speed if not is_attacking() else Vector3.ZERO
-		else:
-			velocity = Vector3.ZERO
-			start_attack()
+	velocity = Vector3.ZERO
+	if not can_act() or in_move():
+		pass
+	elif _target:
+		_fight(delta, speed)
 	else:
-		var to := _wander_to - global_position
-		to.y = 0.0
-		var run := speed * (1.0 if _returning else 0.35)
-		if to.length() > 0.3:
-			facing = to.normalized()
-			velocity = facing * run
-		else:
-			velocity = Vector3.ZERO
-			_returning = false
-			_pause -= delta
-			if _pause <= 0.0:
-				_pause = randf_range(1.5, 4.0)
-				var off := Vector2.from_angle(randf() * TAU) * randf_range(0.5, 4.0)
-				_wander_to = home + Vector3(off.x, 0, off.y)
+		_wander(delta, speed)
 	var before := global_position
 	_move_on_ground(delta)
 	if velocity.length() > 0.1 and before.distance_to(global_position) < 0.002 and _target == null:
 		_wander_to = home
 	visual.animate(delta, velocity, facing)
+
+
+func _fight(delta: float, speed: float) -> void:
+	var to := _target.global_position - global_position
+	to.y = 0.0
+	var dist := to.length()
+	if dist > 0.01:
+		facing = to / dist
+	var reach := attack_reach() + _target.body_radius * 0.5
+	if _attack_cooldown <= 0.0 and (_has_token or Combat.take_token(_target, self)):
+		_has_token = true
+		if dist > reach:
+			velocity = facing * speed
+		else:
+			_start_attack()
+		return
+	# pas son tour : il tourne autour de sa cible en gardant ses distances
+	_orbit_timer -= delta
+	if _orbit_timer <= 0.0:
+		_orbit_timer = randf_range(1.5, 3.0)
+		_orbit_dir = -_orbit_dir if randf() < 0.4 else _orbit_dir
+	var ring := reach + 1.6
+	var side := facing.cross(Vector3.UP) * _orbit_dir
+	var radial := facing * clampf(dist - ring, -1.0, 1.0)
+	velocity = (side * 0.55 + radial).normalized() * speed * 0.45 if (side * 0.55 + radial).length() > 0.05 else Vector3.ZERO
+
+
+func _wander(delta: float, speed: float) -> void:
+	var to := _wander_to - global_position
+	to.y = 0.0
+	var run := speed * (1.0 if _returning else 0.35)
+	if to.length() > 0.3:
+		facing = to.normalized()
+		velocity = facing * run
+	else:
+		_returning = false
+		_pause -= delta
+		if _pause <= 0.0:
+			_pause = randf_range(1.5, 4.0)
+			var off := Vector2.from_angle(randf() * TAU) * randf_range(0.5, 4.0)
+			_wander_to = home + Vector3(off.x, 0, off.y)
 
 
 func _choose_target() -> void:
@@ -144,6 +184,7 @@ func _choose_target() -> void:
 				or global_position.distance_to(home) > range_home \
 				or _target.global_position.distance_to(global_position) > (data.aggro_range if data else 9.0) * 1.8
 		if lost:
+			_release_token()
 			_target = null
 			_returning = true
 			_wander_to = home
@@ -158,19 +199,22 @@ func _choose_target() -> void:
 
 func _on_hurt(_amount: int, source: Node) -> void:
 	# riposte contre celui qui l'a frappé (même un sort lancé de loin)
-	var src := source
-	if source is MagicBolt:
-		src = (source as MagicBolt).shooter
-	if src is Combatant and (src as Combatant).is_alive():
+	var src := _attacker_of(source)
+	if src and src.is_alive() and src != _target:
+		_release_token()
 		_target = src
 		_returning = false
 
 
 func _on_died() -> void:
 	super()
+	_release_token()
 	collision_layer = 0
 	name_label.visible = false
 	bar.visible = false
+	var c := data.color if data else Color.WHITE
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), c.darkened(0.2), 36, 5.0, 0.13, 0.9, "sphere", 12.0, false)
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color(1, 1, 0.9), 16, 6.0, 0.07, 0.4)
 	_drop_loot()
 	died_at.emit(global_position)
 
