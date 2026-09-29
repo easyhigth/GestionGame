@@ -6,8 +6,11 @@
 Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par l'écran titre (`scenes/ui/title_screen.tscn`) : Continuer, Nouvelle partie (création du héros), Charger, Options, Quitter. `scenes/main.tscn` se lance aussi seul (F6) avec un héros par défaut.
 
 ## Commandes
-- ZQSD ou flèches : se déplacer
-- Espace : roulade (esquive : invulnérable pendant la roulade)
+- ZQSD ou flèches (joystick gauche) : se déplacer, dans le sens de la caméra
+- Espace (A à la manette) : sauter (assez haut pour monter sur un bloc de 1 m)
+- Maj (B à la manette) : roulade (esquive : invulnérable pendant la roulade)
+- Clic molette maintenu + glisser (joystick droit) : tourner la caméra à 360° autour du héros et changer sa hauteur ; molette : zoom
+- Clic molette simple, F, L ou gâchette gauche : viser la cible la plus proche
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage
 - I (ou Tab) : inventaire, équipement et artisanat
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures
@@ -87,9 +90,19 @@ Règles :
   - `voxel_creature_generator.py` : régénère les créatures (loup, loup alpha, sanglier) dans `assets/characters/creatures/`.
   - `voxel_equipment_generator.py` : régénère les équipements de toutes les races (`python voxel_equipment_generator.py`). Pour ajouter une pièce : écris sa fonction, ajoute-la à `ITEMS`, relance le script, puis crée son fichier dans `data/items/` avec le même `id`.
 
-## Construction du royaume (façon Minecraft)
-Tout se construit à la main, bloc par bloc, sans plan imposé. Touche **B** : mode construction.
-- **Outils** : Récolter (arbres, buissons, rochers), Aplanir (maintenir et glisser : met le sol au niveau de la première case visée), Creuser et Remblayer (±50 cm, la terre, le sable et la pierre retirés vont dans le sac), Démolir (rend le bloc ou le meuble). `[` et `]` : taille du pinceau (1×1 à 7×7). **R** : tourner un meuble. **C** : voir l'intérieur (coupe les toits).
+## Construction du royaume (façon Going Medieval)
+Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur place et une **caméra libre** survole le village : ZQSD/flèches pour la déplacer (Maj : plus vite), molette pour zoomer, clic molette + glisser ou A/E (Q/E en QWERTY) pour tourner. B ou Échap pour revenir au héros (on y revient aussi tout seul si le héros est attaqué).
+- On trace des **plans** : ils apparaissent en fantômes bleus, et les **habitants libres** (sans poste de travail ni expédition) viennent les construire eux-mêmes, du bas vers le haut, avec les matériaux de ton sac. Un plan sans matériaux devient rouge et attend. Clic droit : effacer le plan visé. Case « Construction instantanée » pour tout réaliser tout de suite.
+- **Niveau** (Page ↑ / Page ↓, Ctrl + molette, gâchettes) : la hauteur où l'on travaille. Les murs partent de ce niveau, les sols sont posés juste dessous (leur dessus est au niveau), les toits se posent au niveau du haut des murs. « Couper au-dessus » (C) cache ce qui dépasse pour voir l'intérieur.
+- **Catégories** (1-7, ou LB/RB) :
+  1. **Terrain** : Récolter (zone : arbres, rochers, buissons → bois, pierre, fibres, minerais), Aplanir (zone : sol mis au niveau choisi), Creuser, Remblayer (±50 cm).
+  2. **Murs** : Pièce (glisser un rectangle : les 4 murs) ou Mur droit ; hauteur de 1 à 6 (`[` `]`).
+  3. **Sols** : plancher sur une zone.
+  4. **Toits** : à deux pans (avec débord et pignons fermés) ou plat.
+  5. **Portes et fenêtres** : clic sur un mur pour y percer une porte (dans l'axe du mur) ou une fenêtre.
+  6. **Mobilier** : tous les meubles, avec les pièces auxquelles ils servent (R : tourner).
+  7. **Démolir** : zone à démonter (les blocs et meubles reviennent dans le sac), ou Annuler les plans d'une zone.
+- **Matériau** : choisi sous les outils (V pour passer au suivant) ; le nombre que tu possèdes est affiché (rouge : aucun).
 - **Blocs** (1 m, ou dalles de 50 cm) : planches, rondins, chaume, terre, sable → pierre brute → briques, tuiles, verre → pierre polie, ardoise → marbre, marbre noir → marbre doré. Plus le matériau est rare, plus il faut un atelier pour le fabriquer (table de tailleur, four, meule, enclume).
 - **Pièces** : une zone fermée par des murs (au moins 2 m de haut) avec une **porte** devient un lieu dès que son **mobilier** est posé : enclume + foyer de forge + établi = Forge, four à pain + pétrin + table = Boulangerie, 2 mannequins + râtelier = Camp d'entraînement, lit + coffre = Maison... En mode construction, les pièces incomplètes affichent ce qu'il leur manque. Taille et forme libres.
 - **Âges de l'empire** : le matériau des murs fixe l'âge d'une pièce. Deux pièces reconnues en pierre font passer à l'Âge de la Pierre, puis Pierre taillée, Pierre polie, Marbre et Or.

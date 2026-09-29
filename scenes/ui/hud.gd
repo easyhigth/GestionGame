@@ -430,6 +430,13 @@ func _update_health() -> void:
 
 
 func _process(delta: float) -> void:
+	# en construction, l'interface de construction remplace l'aide et la compétence
+	if player:
+		var b := player.building
+		info.visible = bool(SaveGame.options.show_help) and not b and not player.ui_open
+		if _skill_box:
+			_skill_box.visible = not b
+		_messages.offset_bottom = -210.0 if b else -10.0
 	if player and player.skill and _skill_cd:
 		var r := player.skill.cooldown_ratio()
 		_skill_cd.size.y = 36.0 * r
@@ -498,4 +505,4 @@ func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	_update_health()
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence\nB : construire   M : carte   I : inventaire   E : parler / habitant   Échap : pause (options, sauvegarde)     Race : %s     Graine du monde : %d" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace/A : sauter   Maj/B : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   F/L/LT (ou clic molette) : viser   Clic molette maintenu / joystick droit : tourner la caméra   Molette : zoom\nQ/RB : compétence   B : construire   M : carte   I : inventaire   E : parler / habitant   Échap : pause (options, sauvegarde)     Race : %s     Graine du monde : %d" % [race_name, seed_value]

@@ -49,6 +49,9 @@ var _quadruped := false
 var _flash_left := 0.0
 var _flash_mat: StandardMaterial3D
 var _downed := false
+## En l'air (saut, chute) : bras et jambes repliés.
+var airborne := false
+var _air := 0.0
 var _down := 0.0
 
 # coup en cours (poses clés)
@@ -325,6 +328,11 @@ func animate(delta: float, velocity: Vector3, facing: Vector3) -> void:
 	_idle_t += delta
 	var s := sin(_phase) * walk_swing * walk
 	var loco := {"LegL": s, "LegR": -s, "ArmL": -s * 0.8, "ArmR": s * 0.8}
+	_air = move_toward(_air, 1.0 if airborne else 0.0, delta * 9.0)
+	if _air > 0.0:
+		var air_pose := {"LegL": -0.9, "LegR": 0.45, "ArmL": -1.1, "ArmR": -0.7}
+		for b in loco:
+			loco[b] = lerpf(loco[b], air_pose[b], _air)
 
 	# avancement du coup
 	if not _move.is_empty():

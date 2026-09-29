@@ -203,6 +203,8 @@ var _bush_shape: CylinderShape3D
 var _rock_shape: BoxShape3D
 var _stream_timer := 0.0
 var _generated := false
+## Point autour duquel afficher le monde (caméra libre du mode construction) ; INF = le héros.
+var stream_focus := Vector3.INF
 ## Cases modifiées par le joueur (terrassement, décor récolté) : case -> [hauteur, type, décor].
 var _edits := {}
 
@@ -216,6 +218,10 @@ func _ready() -> void:
 		var dm := DungeonManager.new()
 		dm.name = "Donjons"
 		add_child(dm)
+	if get_node_or_null("Chantiers") == null:
+		var bo := BuildOrders.new()
+		bo.name = "Chantiers"
+		add_child(bo)
 	if get_node_or_null("Menaces") == null:
 		var rm := RaidManager.new()
 		rm.name = "Menaces"
@@ -755,7 +761,8 @@ func _can_step(from: Vector3, to: Vector3) -> bool:
 	var probe := to
 	if dir.length_squared() > 0.000001:
 		probe += dir.normalized() * 0.22
-	var h_from := ground_height_at(from)
+	# en l'air (saut), on peut monter sur ce qui est sous ses pieds
+	var h_from := maxf(ground_height_at(from), from.y - 0.05)
 	for p in [probe, to]:
 		var cell := cell_at(p)
 		if not _inside(cell):
@@ -938,7 +945,7 @@ func _process(delta: float) -> void:
 	_stream_timer -= delta
 	if _stream_timer <= 0.0:
 		_stream_timer = 0.05
-		_stream(player.global_position, false)
+		_stream(stream_focus if stream_focus != Vector3.INF else player.global_position, false)
 	if player.global_position.y < UNDERGROUND:
 		return
 	# carte : on dévoile autour du héros

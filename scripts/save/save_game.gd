@@ -174,6 +174,8 @@ func save_game(slot: String) -> bool:
 	d.world = world.export_state()
 	d.build = _save_build(world.build)
 	d.villagers = _save_villagers()
+	var bo := get_tree().get_first_node_in_group("build_orders") as BuildOrders
+	d.orders = bo.export_state() if bo else []
 	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
 	d.raid_timer = rm.next_raid_in() if rm else 600.0
 	d.play_time = play_time
@@ -382,6 +384,9 @@ func apply_pending(world: WorldGenerator) -> void:
 			var room = k.room_at(Vector2i(int(vd.work.x), int(vd.work.z)), float(vd.work.floor))
 			if room and room.type and (room.type as RoomTypeData).id == vd.work.type:
 				k.assign(v, room)
+	var bo := get_tree().get_first_node_in_group("build_orders") as BuildOrders
+	if bo:
+		bo.import_state(d.get("orders", []))
 	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
 	if rm:
 		rm.set_next_raid(float(d.get("raid_timer", 600.0)))

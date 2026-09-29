@@ -64,8 +64,15 @@ var ui_open := false
 var lock_target: Combatant
 ## Le héros (race, apparence, classe, métier).
 var profile: HeroProfile
-## Distance de la caméra (option du joueur : 1 = normale).
+## Distance de la caméra (option du joueur : 1 = normale ; molette pour zoomer).
 var camera_zoom := 1.0
+## Rotation de la caméra autour du héros (clic molette maintenu + glisser, ou joystick droit).
+var cam_yaw := 0.0
+## Hauteur de la caméra (angle au-dessus de l'horizon, en radians).
+var cam_pitch := deg_to_rad(45.0)
+var _orbiting := false
+var _orbit_moved := 0.0
+var _orbit_pressed_at := 0
 var level := 1
 var xp := 0
 ## En mode construction (les clics servent à construire, pas à frapper).
@@ -309,7 +316,7 @@ func shake(strength: float) -> void:
 
 ## Place la caméra directement sur le joueur (sans glissement).
 func snap_camera() -> void:
-	camera.global_position = global_position + camera_offset * camera_zoom
+	camera.global_position = global_position + camera_vector(camera_offset)
 	camera.look_at(global_position + Vector3(0, 0.8, 0))
 
 
@@ -338,16 +345,21 @@ func _physics_process(delta: float) -> void:
 	_update_lock()
 
 	var can_input := not ui_open
-	var input2 := Input.get_vector("move_left", "move_right", "move_up", "move_down") if can_input else Vector2.ZERO
-	var input := Vector3(input2.x, 0, input2.y)
+	# en mode construction, le héros reste sur place (c'est la caméra libre qui bouge)
+	var input2 := Input.get_vector("move_left", "move_right", "move_up", "move_down") if can_input and not building else Vector2.ZERO
+	# les touches suivent la caméra : « haut » = vers là où regarde la caméra
+	var input := Vector3(input2.x, 0, input2.y).rotated(Vector3.UP, cam_yaw)
+	if can_input and not building:
+		_update_orbit_stick(delta)
+		if Input.is_action_just_pressed("jump") and can_act() and not in_move() and not is_dashing():
+			if jump():
+				VoxelBurst.spawn(self, global_position + Vector3(0, 0.05, 0), Color(0.8, 0.75, 0.65), 8, 2.0, 0.07, 0.3, "ring", 0.0, false)
 	if input.length() > 1.0:
 		input = input.normalized()
 	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0)
 
 	if can_input and can_act() and not building:
 		_handle_combat_input(input, delta)
-	elif can_input and can_act() and building and Input.is_action_just_pressed("dash") and _dash_cooldown_left <= 0.0 and not is_dashing():
-		_start_dash(input if input != Vector3.ZERO else facing)
 
 	if is_dashing():
 		_dash_time -= delta
@@ -623,6 +635,9 @@ func _start_dash(direction: Vector3) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if ui_open or not is_alive():
 		return
+	# en construction, seule la touche inventaire reste active côté héros
+	if building and not event.is_action_pressed("inventory"):
+		return
 	if event.is_action_pressed("interact"):
 		var dm := get_tree().get_first_node_in_group("dungeons")
 		if dm and dm.try_interact(self):
@@ -642,14 +657,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("skill") and not building:
 		use_skill()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("lock_on"):
-		if lock_target:
-			# un nouvel appui passe à la cible suivante, ou relâche s'il n'y en a pas d'autre
-			var next := _find_lock_target(lock_target)
-			_set_lock(next)
-		else:
-			_set_lock(_find_lock_target(null))
+	elif not building and _camera_input(event):
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("lock_on"):
+		_toggle_lock()
+		get_viewport().set_input_as_handled()
+
+
+func _toggle_lock() -> void:
+	if building:
+		return
+	if lock_target:
+		# un nouvel appui passe à la cible suivante, ou relâche s'il n'y en a pas d'autre
+		_set_lock(_find_lock_target(lock_target))
+	else:
+		_set_lock(_find_lock_target(null))
 
 
 func _find_lock_target(exclude: Combatant) -> Combatant:
@@ -741,11 +763,52 @@ func _update_reticle(delta: float) -> void:
 	arrow.position.y = top + 0.08 * sin(Time.get_ticks_msec() * 0.006)
 
 
+## Décalage de la caméra selon la rotation (yaw), la hauteur (pitch) et le zoom.
+func camera_vector(base: Vector3) -> Vector3:
+	var dist := base.length() * camera_zoom
+	return Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch)) * dist
+
+
+func _update_orbit_stick(delta: float) -> void:
+	var rx := Input.get_joy_axis(0, JOY_AXIS_RIGHT_X)
+	var ry := Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y)
+	if absf(rx) > 0.2:
+		cam_yaw -= rx * delta * 2.4
+	if absf(ry) > 0.2:
+		cam_pitch = clampf(cam_pitch + ry * delta * 1.4, deg_to_rad(18.0), deg_to_rad(80.0))
+
+
+## Molette : zoom ; clic molette maintenu : tourner la caméra (un simple clic : viser la cible).
+func _camera_input(event: InputEvent) -> bool:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_MIDDLE:
+			if mb.pressed:
+				_orbiting = true
+				_orbit_moved = 0.0
+				_orbit_pressed_at = Time.get_ticks_msec()
+			else:
+				_orbiting = false
+				if _orbit_moved < 8.0 and Time.get_ticks_msec() - _orbit_pressed_at < 350:
+					_toggle_lock()
+			return true
+		if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+			camera_zoom = clampf(camera_zoom * (0.9 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1.1), 0.45, 1.8)
+			return true
+	elif event is InputEventMouseMotion and _orbiting:
+		var mm := event as InputEventMouseMotion
+		_orbit_moved += mm.relative.length()
+		cam_yaw -= mm.relative.x * 0.008
+		cam_pitch = clampf(cam_pitch + mm.relative.y * 0.006, deg_to_rad(18.0), deg_to_rad(80.0))
+		return true
+	return false
+
+
 func _update_camera(delta: float) -> void:
-	var offset := camera_offset * camera_zoom
+	var offset := camera_vector(camera_offset)
 	var focus := global_position
 	if lock_target and is_instance_valid(lock_target):
-		offset = lock_camera_offset * camera_zoom
+		offset = camera_vector(lock_camera_offset)
 		focus = global_position.lerp(lock_target.global_position, 0.35)
 	var target := focus + offset
 	camera.global_position = camera.global_position.lerp(target, clampf(camera_smoothing * delta, 0.0, 1.0))
