@@ -1,7 +1,9 @@
-# Jeu de gestion
+# L'Éveil du Royaume
+
+(Nom provisoire : il se change dans Projet > Paramètres du projet > Application > Nom, et dans `scenes/ui/title_screen.gd`.)
 
 ## Ouvrir le projet
-Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par l'écran de création du héros (`scenes/ui/character_creator.tscn`) ; `scenes/main.tscn` se lance aussi seul (F6) avec un héros par défaut.
+Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par l'écran titre (`scenes/ui/title_screen.tscn`) : Continuer, Nouvelle partie (création du héros), Charger, Options, Quitter. `scenes/main.tscn` se lance aussi seul (F6) avec un héros par défaut.
 
 ## Commandes
 - ZQSD ou flèches : se déplacer
@@ -11,10 +13,10 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures
 - E près d'un voyageur : lui parler pour le recruter
 - E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
-- B (ou Start à la manette) : mode construction (voir plus bas)
+- B (ou croix bas à la manette) : mode construction (voir plus bas)
 - M (ou croix haut à la manette) : carte du monde et voyage rapide
-- R : changer de race (pour tester les 22 races)
-- N : nouveau monde
+- Échap (ou Start à la manette) : pause (sauvegarder, charger, options, menu principal)
+- Touches de test, seulement quand le jeu est lancé depuis l'éditeur Godot : R (changer de race), N (nouveau monde)
 
 ## Ce que tu peux modifier sans code
 - `data/races/*.tres` : les 22 races (nom, description, stats, modèle 3D nu du joueur, modèles des habitants, équipements de la race). Duplique un fichier pour créer une race.
@@ -129,6 +131,14 @@ Tout se construit à la main, bloc par bloc, sans plan imposé. Touche **B** : m
 - Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
 - Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
 
+## Sauvegarde, menus et options
+- **3 emplacements de sauvegarde** et une **sauvegarde automatique** toutes les 5 minutes (désactivable). Menu pause > Sauvegarder ; écran titre > Continuer (la plus récente) ou Charger. Chaque emplacement affiche le héros, son niveau, le rang du royaume, la zone, le temps de jeu et la date.
+- Ce qui est sauvegardé : le héros (apparence, classe, métier, compétence, niveau, expérience, vie, sac, équipement, âmes de boss), le monde (graine, terrassement, décors récoltés, carte dévoilée, zones découvertes, obélisques activés, donjons vaincus, objets ramassés, voyageurs recrutés), toutes les constructions (blocs et meubles : les pièces sont reconnues à nouveau), les habitants (race, nom, talents, niveau, équipement, poste de travail, compagnons) et le temps avant le prochain raid. Sauvegarder dans un donjon te fera reprendre devant son entrée.
+- Les fichiers sont dans le dossier utilisateur de Godot (`user://saves/partie_1.json`... ; sous Windows : `%APPDATA%\Godot\app_userdata\L'Éveil du Royaume\saves`).
+- **Options** (écran titre ou pause, enregistrées dans `user://options.cfg`) : difficulté, distance de la caméra, volume, plein écran, aide des touches à l'écran, sauvegarde automatique.
+- **Difficulté** : Facile (monstres −25 % de vie et −30 % de dégâts, raids 40 % plus espacés), Normal, Difficile (monstres +35 % de vie et de dégâts, raids 25 % plus fréquents). Les valeurs sont dans `scripts/save/save_game.gd` (ENEMY_HP, ENEMY_DMG, RAID_DELAY).
+- **Équilibrage** : à niveau égal avec l'équipement de sa tranche de niveau, un monstre normal tombe en 3 à 7 coups et le héros encaisse 12 à 25 coups ; un boss demande 35 à 75 coups et le héros tombe en 7 à 9 de ses coups (ils sont tous annoncés : esquive-les !).
+
 ## Feuille de route
 Le jeu a deux piliers : un **RPG d'action en monde ouvert** vu de dessus (héros, exploration libre, donjons, boss, combat en temps réel à la Zelda) et la **construction d'un royaume** (des huttes jusqu'à une capitale d'empire, population de n'importe quelles races, habitants dirigés un par un). Inspiration : l'univers de « Moi, quand je me réincarne en Slime », avec des noms originaux.
 
@@ -146,4 +156,6 @@ Choix de conception :
 4. Monde ouvert : 8 régions et 25 zones nommées, monde chargé par morceaux, niveaux des monstres, carte, mini-carte, obélisques de voyage rapide. **(fait)**
 5. Donjons et boss : un donjon généré par zone, 8 boss à pouvoirs annoncés et seconde phase, trésors, âmes de boss. **(fait)**
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville : voyageurs et prisonniers à recruter, 2 compagnons, raids de pillards qui assiègent le village. **(fait)**
-7. Sauvegarde, menus, équilibrage. **(prochaine étape)**
+7. Sauvegarde, menus, équilibrage : écran titre, menu pause, 3 emplacements + sauvegarde automatique, options, 3 niveaux de difficulté, réglage des boss. **(fait)**
+
+Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : sons et musiques, cycle jour/nuit et météo, quêtes et personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.

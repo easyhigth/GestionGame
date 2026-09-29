@@ -203,6 +203,8 @@ var _bush_shape: CylinderShape3D
 var _rock_shape: BoxShape3D
 var _stream_timer := 0.0
 var _generated := false
+## Cases modifiées par le joueur (terrassement, décor récolté) : case -> [hauteur, type, décor].
+var _edits := {}
 
 
 func _ready() -> void:
@@ -219,7 +221,12 @@ func _ready() -> void:
 		rm.name = "Menaces"
 		add_child(rm)
 	if generate_on_start:
-		generate(randi() if random_seed_on_start else world_seed)
+		var loaded_seed := SaveGame.pending_seed()
+		if loaded_seed >= 0:
+			generate(loaded_seed)
+			SaveGame.apply_pending.call_deferred(self)
+		else:
+			generate(randi() if random_seed_on_start else world_seed)
 
 
 func _editor_preview() -> void:
@@ -266,6 +273,8 @@ func generate(seed_value: int) -> void:
 	_chunk_ready.resize(_chunks.x * _chunks.y)
 	_chunk_ready.fill(0)
 	_taken.clear()
+	_edits.clear()
+	_recruited.clear()
 	_camp_cells.clear()
 	current_zone = -1
 	map_image = Image.create(world_size.x, world_size.y, false, Image.FORMAT_RGBA8)
@@ -874,6 +883,7 @@ func remove_decor(cell: Vector2i, refresh := true) -> int:
 	var i := _idx(cell)
 	var k := _decor[i]
 	_decor[i] = D_NONE
+	_edits[cell] = [_heights[i], _types[i], D_NONE]
 	if refresh and k != D_NONE and _decor_nodes.has(_chunk_of(cell)):
 		_build_decor_chunk(_chunk_of(cell))
 	return k
@@ -892,6 +902,7 @@ func set_terrain_height(cell: Vector2i, h: float) -> void:
 	_heights[i] = h
 	if _decor[i] != D_NONE:
 		_decor[i] = D_NONE
+	_edits[cell] = [h, _types[i], D_NONE]
 
 
 ## Redessine le terrain (et les décors) autour de ces cases.
@@ -1690,6 +1701,66 @@ func refresh_map(cells: Array) -> void:
 		if is_revealed(c):
 			map_image.set_pixelv(c, map_color(c))
 	_map_dirty = true
+
+
+# ---------------------------------------------------------------- sauvegarde
+
+## État du monde qui ne se recalcule pas à partir de la graine.
+func export_state() -> Dictionary:
+	var edits := []
+	for c in _edits:
+		var e: Array = _edits[c]
+		edits.append([c.x, c.y, e[0], e[1], e[2]])
+	var taken := []
+	for c in _taken:
+		taken.append([c.x, c.y])
+	var zs := []
+	for z in zones:
+		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0])
+	return {
+		"seed": world_seed, "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
+		"revealed": Marshalls.raw_to_base64(_revealed.compress(FileAccess.COMPRESSION_ZSTD)),
+		"map": Marshalls.raw_to_base64(map_image.save_png_to_buffer()),
+	}
+
+
+func import_state(d: Dictionary) -> void:
+	for e in d.get("edits", []):
+		var c := Vector2i(int(e[0]), int(e[1]))
+		if not _inside(c):
+			continue
+		_ensure_chunk_of(c)
+		var i := _idx(c)
+		_heights[i] = float(e[2])
+		_types[i] = int(e[3])
+		_decor[i] = int(e[4])
+		_edits[c] = [float(e[2]), int(e[3]), int(e[4])]
+	for t in d.get("taken", []):
+		_taken[Vector2i(int(t[0]), int(t[1]))] = true
+	for k in d.get("recruited", []):
+		_recruited[k] = true
+	var zs: Array = d.get("zones", [])
+	for i in mini(zs.size(), zones.size()):
+		zones[i].discovered = int(zs[i][0]) == 1
+		zones[i].obelisk_on = int(zs[i][1]) == 1
+		zones[i].cleared = int(zs[i][2]) == 1
+	if d.has("revealed"):
+		var raw := Marshalls.base64_to_raw(d.revealed).decompress(_revealed.size(), FileAccess.COMPRESSION_ZSTD)
+		if raw.size() == _revealed.size():
+			_revealed = raw
+	if d.has("map"):
+		var img := Image.new()
+		if img.load_png_from_buffer(Marshalls.base64_to_raw(d.map)) == OK:
+			img.convert(Image.FORMAT_RGBA8)
+			map_image = img
+			map_texture.set_image(map_image)
+	# on redessine ce qui est déjà affiché avec les modifications
+	for ch in _terrain_nodes.keys():
+		_build_terrain_chunk(ch)
+		_build_decor_chunk(ch)
+	for ch in _content_nodes.keys():
+		refresh_content(Vector2i(ch.x * CHUNK, ch.y * CHUNK))
+	current_zone = -1
 
 
 ## Recrée le contenu (camps, objets, lieux) du morceau de cette case, s'il est affiché.

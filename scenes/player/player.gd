@@ -64,6 +64,8 @@ var ui_open := false
 var lock_target: Combatant
 ## Le héros (race, apparence, classe, métier).
 var profile: HeroProfile
+## Distance de la caméra (option du joueur : 1 = normale).
+var camera_zoom := 1.0
 var level := 1
 var xp := 0
 ## En mode construction (les clics servent à construire, pas à frapper).
@@ -106,7 +108,10 @@ func _ready() -> void:
 		hero.reset_colors()
 		hero.hero_class = load("res://data/classes/guerrier.tres")
 		hero.skill = load("res://data/skills/vorace.tres")
-	apply_profile(hero, GameState.hero != null)
+	# nouvelle partie : équipement de départ ; partie chargée : tout vient de la sauvegarde
+	var loading: bool = not SaveGame.pending.is_empty()
+	apply_profile(hero, GameState.hero != null and not loading)
+	camera_zoom = float(SaveGame.options.camera_distance)
 	parried.connect(_on_parried)
 	_make_reticle()
 	snap_camera()
@@ -304,7 +309,7 @@ func shake(strength: float) -> void:
 
 ## Place la caméra directement sur le joueur (sans glissement).
 func snap_camera() -> void:
-	camera.global_position = global_position + camera_offset
+	camera.global_position = global_position + camera_offset * camera_zoom
 	camera.look_at(global_position + Vector3(0, 0.8, 0))
 
 
@@ -737,10 +742,10 @@ func _update_reticle(delta: float) -> void:
 
 
 func _update_camera(delta: float) -> void:
-	var offset := camera_offset
+	var offset := camera_offset * camera_zoom
 	var focus := global_position
 	if lock_target and is_instance_valid(lock_target):
-		offset = lock_camera_offset
+		offset = lock_camera_offset * camera_zoom
 		focus = global_position.lerp(lock_target.global_position, 0.35)
 	var target := focus + offset
 	camera.global_position = camera.global_position.lerp(target, clampf(camera_smoothing * delta, 0.0, 1.0))

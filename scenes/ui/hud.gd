@@ -46,6 +46,7 @@ const HP_WIDTH := 220.0
 
 
 func _ready() -> void:
+	add_to_group("hud")
 	_messages = VBoxContainer.new()
 	_messages.position = Vector2(10, 470)
 	_messages.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -73,6 +74,11 @@ func _ready() -> void:
 		player.skill_changed.connect(func(_s): _update_skill())
 	_refresh()
 	_update_health()
+	var pause := PauseMenu.new()
+	pause.player = player
+	add_child(pause)
+	set_help_visible(bool(SaveGame.options.show_help))
+	SaveGame.saved.connect(func(s): if s != SaveGame.AUTO: show_message("Partie sauvegardée."))
 
 
 func _build_health_bar() -> void:
@@ -455,12 +461,21 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if player and player.ui_open:
 		return
+	# touches de test (uniquement quand on lance le jeu depuis l'éditeur Godot)
+	if not OS.has_feature("editor"):
+		return
 	if event.is_action_pressed("new_world") and world:
 		world.generate(randi())
 	elif event.is_action_pressed("next_race") and player and not races.is_empty() and not player.building:
 		_race_index = (_race_index + 1) % races.size()
 		player.apply_race(races[_race_index])
 		_refresh()
+
+
+## Affiche ou cache l'aide des touches (option).
+func set_help_visible(on: bool) -> void:
+	if info:
+		info.visible = on
 
 
 func show_message(text: String) -> void:
@@ -483,4 +498,4 @@ func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	_update_health()
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence   B : construire   M : carte   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence\nB : construire   M : carte   I : inventaire   E : parler / habitant   Échap : pause (options, sauvegarde)     Race : %s     Graine du monde : %d" % [race_name, seed_value]
