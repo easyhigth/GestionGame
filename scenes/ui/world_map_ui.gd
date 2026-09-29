@@ -31,6 +31,9 @@ func _ready() -> void:
 func open() -> void:
 	if world == null or world.map_texture == null:
 		return
+	if player and player.global_position.y < WorldGenerator.UNDERGROUND:
+		player.notify.emit("Pas de carte dans un donjon : trouve la sortie (portail) ou vaincs le gardien.")
+		return
 	world.map_texture.update(world.map_image)
 	visible = true
 	zoom = 1.0
@@ -193,7 +196,7 @@ func _draw() -> void:
 	for z in world.zones:
 		if (z.gate as Vector2i).x >= 0 and world.is_revealed(z.gate):
 			var g := cell_to_screen(Vector2(z.gate) + Vector2(0.5, 0.5))
-			draw_rect(Rect2(g - Vector2(5, 5), Vector2(10, 10)), Color("c84a3a"))
+			draw_rect(Rect2(g - Vector2(5, 5), Vector2(10, 10)), Color("5ac84a") if z.get("cleared", false) else Color("c84a3a"))
 			draw_rect(Rect2(g - Vector2(5, 5), Vector2(10, 10)), Color.BLACK, false, 1.5)
 		if (z.obelisk as Vector2i).x >= 0 and (z.obelisk_on or world.is_revealed(z.obelisk)):
 			var q := cell_to_screen(Vector2(z.obelisk) + Vector2(0.5, 0.5))
@@ -238,7 +241,7 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([Vector2(lx + 5, ly + 14), Vector2(lx + 9, ly + 20), Vector2(lx + 5, ly + 26), Vector2(lx + 1, ly + 20)]), C_OBELISK)
 	draw_string(_font, Vector2(lx + 18, ly + 24), "Obélisque (voyage)", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
 	draw_rect(Rect2(lx, ly + 35, 10, 10), Color("c84a3a"))
-	draw_string(_font, Vector2(lx + 18, ly + 44), "Donjon (bientôt)", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
+	draw_string(_font, Vector2(lx + 18, ly + 44), "Donjon (vert : vaincu)", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
 	draw_colored_polygon(PackedVector2Array([Vector2(lx + 5, ly + 54), Vector2(lx + 10, ly + 66), Vector2(lx, ly + 66)]), Color.WHITE)
 	draw_string(_font, Vector2(lx + 18, ly + 64), "Toi", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
 

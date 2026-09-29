@@ -58,6 +58,25 @@ extends Resource
 ## Nombre de camps de monstres pour 1000 cases.
 @export_range(0.0, 5.0, 0.05) var camp_density: float = 0.5
 
+@export_group("Donjon")
+## Boss qui garde le donjon de cette région.
+@export var boss: EnemyData
+## Titre affiché à l'apparition du boss.
+@export var boss_title: String = ""
+## Pouvoirs du boss : "onde" (onde de choc autour de lui), "pluie" (projectiles qui tombent sur le héros),
+## "invocation" (appelle des monstres de la région), "charge" (fonce sur le héros).
+@export var boss_powers: PackedStringArray = PackedStringArray(["onde", "invocation"])
+## Bonus permanents gagnés en absorbant l'âme du boss (clés : attack, defense, magic, regen, xp).
+@export var boss_soul: Dictionary = {}
+@export var boss_soul_name: String = ""
+## Blocs du donjon : sol, murs et piliers.
+@export var dungeon_floor: ItemData
+@export var dungeon_wall: ItemData
+@export var dungeon_accent: ItemData
+## Couleur de l'éclairage (torches) et de l'ambiance.
+@export var dungeon_light: Color = Color(1.0, 0.7, 0.4)
+@export var dungeon_ambient: Color = Color(0.12, 0.1, 0.14)
+
 @export_group("Ressources")
 ## Matériaux qu'on trouve au sol dans cette région (au hasard).
 @export var resources: Array[ItemData] = []

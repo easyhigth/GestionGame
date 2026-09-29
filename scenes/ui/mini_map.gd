@@ -25,7 +25,8 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	visible = world != null and world.map_texture != null and player != null and not player.ui_open
+	visible = world != null and world.map_texture != null and player != null and not player.ui_open \
+			and player.global_position.y > WorldGenerator.UNDERGROUND
 	if visible:
 		queue_redraw()
 
@@ -53,7 +54,7 @@ func _draw() -> void:
 		if (z.gate as Vector2i).x >= 0 and world.is_revealed(z.gate):
 			var g := (Vector2(z.gate) + Vector2(0.5, 0.5) - src.position) * s
 			if rect.has_point(g):
-				draw_rect(Rect2(g - Vector2(3, 3), Vector2(6, 6)), Color("c84a3a"))
+				draw_rect(Rect2(g - Vector2(3, 3), Vector2(6, 6)), Color("5ac84a") if z.get("cleared", false) else Color("c84a3a"))
 	var v := (Vector2(world.spawn_cell) + Vector2(0.5, 0.5) - src.position) * s
 	if rect.has_point(v):
 		draw_rect(Rect2(v - Vector2(4, 4), Vector2(8, 8)), Color("f2c86a"))

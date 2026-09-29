@@ -36,6 +36,10 @@ var _zone_title: Label
 var _zone_sub: Label
 var _zone_tween: Tween
 var map_ui: WorldMapUI
+var _boss_box: Control
+var _boss_name: Label
+var _boss_fill: ColorRect
+var _boss_lag: ColorRect
 const HP_WIDTH := 220.0
 
 
@@ -266,6 +270,18 @@ func _build_maps() -> void:
 	map_ui.world = world
 	map_ui.player = player
 	add_child(map_ui)
+	_build_boss_bar()
+	var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
+	if dm:
+		dm.entered.connect(func(z):
+			var t: RegionData = z.type
+			show_banner("Donjon de %s" % z.name, "Niveau %d à %d  ·  Trouve et affronte le gardien du donjon." % [z.level.y, z.level.y + 2], Color("ffb0a0")))
+		dm.exited.connect(func(_z): show_message("Tu remontes à la surface."))
+		dm.boss_awoken.connect(func(b, title): show_banner(b.data.display_name, title, Color("ff6a4a")))
+		dm.boss_defeated.connect(func(_z, soul):
+			show_feat("Boss vaincu !", Color("ffd24a"))
+			show_banner("Âme absorbée", soul, Color("aee8ff"))
+			show_message("Ton héros absorbe l'âme du boss : " + soul))
 	if world:
 		world.zone_entered.connect(_on_zone_entered)
 		world.obelisk_activated.connect(func(z): show_feat("Obélisque activé !", Color("8af0ff")); show_message("Obélisque de %s activé : voyage rapide depuis la carte (M)." % z.name))
@@ -276,9 +292,14 @@ func _on_zone_entered(z: Dictionary) -> void:
 	var t: RegionData = z.type
 	if t == null or _zone_title == null:
 		return
-	_zone_title.text = z.name
-	_zone_title.add_theme_color_override("font_color", t.map_color.lightened(0.55))
-	_zone_sub.text = "%s  ·  Niveau %d à %d\n%s" % [t.display_name, z.level.x, z.level.y, t.description]
+	show_banner(z.name, "%s  ·  Niveau %d à %d\n%s" % [t.display_name, z.level.x, z.level.y, t.description], t.map_color.lightened(0.55))
+
+
+## Grand titre au centre-haut de l'écran, qui s'efface après quelques secondes.
+func show_banner(title: String, sub: String, color: Color) -> void:
+	_zone_title.text = title
+	_zone_title.add_theme_color_override("font_color", color)
+	_zone_sub.text = sub
 	if _zone_tween:
 		_zone_tween.kill()
 	_zone_tween = create_tween()
@@ -287,6 +308,53 @@ func _on_zone_entered(z: Dictionary) -> void:
 	_zone_tween.tween_interval(3.0)
 	_zone_tween.tween_property(_zone_title, "modulate:a", 0.0, 1.0)
 	_zone_tween.parallel().tween_property(_zone_sub, "modulate:a", 0.0, 1.0)
+
+
+func _build_boss_bar() -> void:
+	_boss_box = Control.new()
+	add_child(_boss_box)
+	_boss_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_boss_box.offset_left = -300
+	_boss_box.offset_right = 300
+	_boss_box.offset_top = -96
+	_boss_box.offset_bottom = -52
+	_boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_name = _outlined("", 16)
+	_boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_name.size = Vector2(600, 20)
+	_boss_box.add_child(_boss_name)
+	var back := ColorRect.new()
+	back.color = Color(0.05, 0.03, 0.04, 0.85)
+	back.position = Vector2(0, 24)
+	back.size = Vector2(600, 16)
+	_boss_box.add_child(back)
+	_boss_lag = ColorRect.new()
+	_boss_lag.color = Color("f2c86a")
+	_boss_lag.position = Vector2(2, 26)
+	_boss_lag.size = Vector2(596, 12)
+	_boss_box.add_child(_boss_lag)
+	_boss_fill = ColorRect.new()
+	_boss_fill.color = Color("c8302a")
+	_boss_fill.position = Vector2(2, 26)
+	_boss_fill.size = Vector2(596, 12)
+	_boss_box.add_child(_boss_fill)
+	_boss_box.hide()
+
+
+func _update_boss_bar(delta: float) -> void:
+	var b: Boss = null
+	for n in get_tree().get_nodes_in_group("bosses"):
+		if n.awake and n.is_alive():
+			b = n
+	if b == null:
+		_boss_box.hide()
+		return
+	_boss_box.show()
+	_boss_name.text = "☠  %s  ·  Nv %d%s  ☠" % [b.data.display_name, b.level, "  ·  ENRAGÉ" if b.phase == 2 else ""]
+	_boss_name.add_theme_color_override("font_color", b.data.color.lightened(0.3))
+	_boss_fill.size.x = 596.0 * b.health.ratio()
+	_boss_fill.color = Color("c8302a") if b.phase == 1 else Color("ff5a1a")
+	_boss_lag.size.x = maxf(_boss_fill.size.x, move_toward(_boss_lag.size.x, _boss_fill.size.x, delta * 120.0))
 
 
 func _update_kingdom() -> void:
@@ -350,6 +418,8 @@ func _process(delta: float) -> void:
 		_target_fill.size.x = 316.0 * _target.health.ratio()
 	else:
 		_target_box.hide()
+	if _boss_box:
+		_update_boss_bar(delta)
 	# la barre jaune rattrape doucement la rouge (on voit les dégâts reçus)
 	if _hp_lag and _hp_fill:
 		_hp_lag.size.x = move_toward(_hp_lag.size.x, _hp_fill.size.x, delta * 90.0)

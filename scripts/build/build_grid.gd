@@ -91,8 +91,13 @@ var _shader_glass: Shader
 var _cut := [Vector3.ZERO, 10000.0, 0.0]
 
 
+## Grille du joueur (construction) ; faux pour la grille d'un donjon.
+var register := true
+
+
 func _ready() -> void:
-	add_to_group("build_grid")
+	if register:
+		add_to_group("build_grid")
 	_shader_opaque = Shader.new()
 	_shader_opaque.code = SHADER_OPAQUE
 	_shader_glass = Shader.new()

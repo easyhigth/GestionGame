@@ -155,6 +155,8 @@ const D_FLOWERS := 5 # petite plante (modèle choisi dans la région)
 const D_GRASS := 6
 
 const CHUNK := 16
+## Sous cette altitude, on est dans un donjon (le sol est celui de `dungeon_grid`).
+const UNDERGROUND := -40.0
 const SEA_FLOOR := -2.0
 ## Rayon (m) autour du héros dévoilé sur la carte.
 const REVEAL_RADIUS := 26
@@ -170,6 +172,8 @@ var map_image: Image
 var map_texture: ImageTexture
 var current_zone := -1
 var build: BuildGrid
+## Grille du donjon en cours (null hors donjon).
+var dungeon_grid: BuildGrid
 
 var _rng := RandomNumberGenerator.new()
 var _types := PackedByteArray()
@@ -206,6 +210,10 @@ func _ready() -> void:
 	build = get_node_or_null("Build") as BuildGrid
 	if Engine.is_editor_hint():
 		return
+	if get_node_or_null("Donjons") == null:
+		var dm := DungeonManager.new()
+		dm.name = "Donjons"
+		add_child(dm)
 	if generate_on_start:
 		generate(randi() if random_seed_on_start else world_seed)
 
@@ -692,6 +700,10 @@ func ground_height_at(pos: Vector3) -> float:
 ## Surface sur laquelle on se tient dans la colonne de `pos`, pour quelqu'un dont les pieds sont à `feet`.
 func support_height(pos: Vector3, feet: float) -> float:
 	var cell := cell_at(pos)
+	if feet < UNDERGROUND:
+		# dans un donjon : seul le sol du donjon compte (sinon on reste à sa hauteur)
+		var d := dungeon_grid.support(cell, feet + max_step) if dungeon_grid else -INF
+		return d if d > -INF else feet
 	var t := _type(cell)
 	var g := _h(cell)
 	if (t == WATER or t == DEEP) and g < water_surface:
@@ -703,6 +715,8 @@ func support_height(pos: Vector3, feet: float) -> float:
 
 func is_walkable(pos: Vector3) -> bool:
 	var cell := cell_at(pos)
+	if pos.y < UNDERGROUND:
+		return dungeon_grid != null and dungeon_grid.support(cell, pos.y + max_step) > -INF
 	var t := _type(cell)
 	if t != WATER and t != DEEP:
 		return true
@@ -740,6 +754,11 @@ func _can_step(from: Vector3, to: Vector3) -> bool:
 
 ## Peut-on aller sur la case `cell` en partant d'une hauteur `h_from` ?
 func step_ok(cell: Vector2i, h_from: float) -> bool:
+	if h_from < UNDERGROUND:
+		if dungeon_grid == null:
+			return false
+		var ds := dungeon_grid.support(cell, h_from + max_step)
+		return ds > -INF and ds - h_from <= max_step and not dungeon_grid.body_blocked(cell, ds)
 	var hs := support_height(Vector3(cell.x + 0.5, 0, cell.y + 0.5), h_from)
 	var t := _type(cell)
 	if (t == WATER or t == DEEP) and hs <= water_surface + 0.01:
@@ -897,6 +916,8 @@ func _process(delta: float) -> void:
 	if _stream_timer <= 0.0:
 		_stream_timer = 0.05
 		_stream(player.global_position, false)
+	if player.global_position.y < UNDERGROUND:
+		return
 	# carte : on dévoile autour du héros
 	if _last_reveal == Vector3.INF or player.global_position.distance_to(_last_reveal) > 2.5:
 		reveal(player.global_position, REVEAL_RADIUS)
@@ -1489,12 +1510,12 @@ func _add_gate(holder: Node3D, z: Dictionary) -> void:
 	if dungeon_gate_model:
 		body.add_child(dungeon_gate_model.instantiate())
 	var label := Label3D.new()
-	label.text = "Donjon de %s\n(scellé)" % z.name
+	label.text = ("Donjon de %s\nVaincu ✔" if z.get("cleared", false) else "Donjon de %s\nE : entrer") % z.name
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.font_size = 36
 	label.pixel_size = 0.006
 	label.outline_size = 10
-	label.modulate = Color("ffb0a0")
+	label.modulate = Color("b0ffb0") if z.get("cleared", false) else Color("ffb0a0")
 	label.position.y = 3.0
 	body.add_child(label)
 	holder.add_child(body)
@@ -1557,6 +1578,19 @@ func refresh_map(cells: Array) -> void:
 		if is_revealed(c):
 			map_image.set_pixelv(c, map_color(c))
 	_map_dirty = true
+
+
+## Recrée le contenu (camps, objets, lieux) du morceau de cette case, s'il est affiché.
+func refresh_content(cell: Vector2i) -> void:
+	var ch := _chunk_of(cell)
+	if not _content_nodes.has(ch):
+		return
+	var holder: Node = _content_nodes[ch]
+	if is_instance_valid(holder):
+		holder.set_meta("unloading", true)
+		holder.queue_free()
+	_content_nodes.erase(ch)
+	_build_content(ch)
 
 
 ## Affiche tout de suite les morceaux autour d'une position (avant une téléportation).

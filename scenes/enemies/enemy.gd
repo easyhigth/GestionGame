@@ -258,5 +258,5 @@ func _drop_loot() -> void:
 		var chance := minf(1.0, (data.loot_chances[i] if i < data.loot_chances.size() else 0.5) * mult)
 		if randf() < chance:
 			var a := TAU * n / 5.0 + randf() * 0.5
-			world.spawn_pickup(data.loot[i], global_position + Vector3(cos(a), 0, sin(a)) * 0.9)
+			world.spawn_pickup(data.loot[i], global_position + Vector3(cos(a), 0, sin(a)) * 0.9, 1, get_parent())
 			n += 1

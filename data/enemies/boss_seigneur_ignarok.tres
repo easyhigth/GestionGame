@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/demon_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/demon_equipment.glb" id="r3"]
+[ext_resource type="Resource" path="res://data/items/axe.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/iron_armor.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/horned_helmet.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/iron_gauntlets.tres" id="r7"]
+[ext_resource type="Resource" path="res://data/items/iron_greaves.tres" id="r8"]
+[ext_resource type="Resource" path="res://data/items/cape_red.tres" id="r9"]
+[ext_resource type="Resource" path="res://data/items/lingot_or.tres" id="r10"]
+[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r11"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Ignarok, Seigneur des Cendres"
+model = ExtResource("r2")
+equipment_library = ExtResource("r3")
+equipment = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8"), ExtResource("r9")])
+model_scale = 2.1
+color = Color(1.000, 0.227, 0.165, 1)
+max_health = 2200
+attack = 50
+defense = 16
+move_speed = 3.6
+aggro_range = 10
+leash_range = 20
+attack_range = 3.2
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 0.8
+poise = 900
+attack_cooldown = 1.0
+knockback = 12.0
+body_radius = 1.1
+loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r10"), ExtResource("r11"), ExtResource("r11")])
+loot_chances = PackedFloat32Array(0.6, 0.6, 1.0, 1.0, 1.0)

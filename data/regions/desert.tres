@@ -3,20 +3,24 @@
 [ext_resource type="Script" path="res://scripts/data/region_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="3"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_1.glb" id="r3"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_2.glb" id="r4"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_3.glb" id="r5"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_1.glb" id="r6"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_big.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dry_grass_1.glb" id="r10"]
-[ext_resource type="Resource" path="res://data/enemies/scorpion.tres" id="r11"]
-[ext_resource type="Resource" path="res://data/enemies/squelette.tres" id="r12"]
-[ext_resource type="Resource" path="res://data/enemies/homme_lezard.tres" id="r13"]
-[ext_resource type="Resource" path="res://data/enemies/seigneur_squelette.tres" id="r14"]
-[ext_resource type="Resource" path="res://data/items/stone.tres" id="r15"]
-[ext_resource type="Resource" path="res://data/items/or_brut.tres" id="r16"]
+[ext_resource type="Resource" path="res://data/enemies/boss_scorpion_empereur.tres" id="r3"]
+[ext_resource type="Resource" path="res://data/items/bloc_sable.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/bloc_briques.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/bloc_marbre_dore.tres" id="r6"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_1.glb" id="r7"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_2.glb" id="r8"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_3.glb" id="r9"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_1.glb" id="r10"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r11"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r12"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_big.glb" id="r13"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/dry_grass_1.glb" id="r14"]
+[ext_resource type="Resource" path="res://data/enemies/scorpion.tres" id="r15"]
+[ext_resource type="Resource" path="res://data/enemies/squelette.tres" id="r16"]
+[ext_resource type="Resource" path="res://data/enemies/homme_lezard.tres" id="r17"]
+[ext_resource type="Resource" path="res://data/enemies/seigneur_squelette.tres" id="r18"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="r19"]
+[ext_resource type="Resource" path="res://data/items/or_brut.tres" id="r20"]
 
 [resource]
 script = ExtResource("1")
@@ -37,17 +41,27 @@ dirt_color = Color(0.784, 0.627, 0.376, 1)
 sand_color = Color(0.925, 0.847, 0.604, 1)
 stone_color = Color(0.722, 0.604, 0.416, 1)
 water_floor_color = Color(0.847, 0.753, 0.502, 1)
-trees = Array[PackedScene]([ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6")])
+boss = ExtResource("r3")
+boss_title = "Le sable se soulève..."
+boss_powers = PackedStringArray("charge", "onde", "invocation")
+dungeon_floor = ExtResource("r4")
+dungeon_wall = ExtResource("r5")
+dungeon_accent = ExtResource("r6")
+dungeon_light = Color(1.000, 0.816, 0.439, 1)
+dungeon_ambient = Color(0.125, 0.094, 0.063, 1)
+boss_soul = {"defense": 4.0}
+boss_soul_name = "Carapace d'Ankhar : +4 défense"
+trees = Array[PackedScene]([ExtResource("r7"), ExtResource("r8"), ExtResource("r9"), ExtResource("r10")])
 forest_density = 0.0
 scattered_tree_chance = 0.02
 bushes = Array[PackedScene]([])
 bush_chance = 0.0
-rocks = Array[PackedScene]([ExtResource("r7"), ExtResource("r8"), ExtResource("r9")])
+rocks = Array[PackedScene]([ExtResource("r11"), ExtResource("r12"), ExtResource("r13")])
 rock_chance = 0.03
-small_plants = Array[PackedScene]([ExtResource("r10")])
+small_plants = Array[PackedScene]([ExtResource("r14")])
 small_plant_chance = 0.06
-enemies = Array[ExtResource("2")]([ExtResource("r11"), ExtResource("r11"), ExtResource("r12"), ExtResource("r13")])
-elite_enemies = Array[ExtResource("2")]([ExtResource("r14")])
+enemies = Array[ExtResource("2")]([ExtResource("r15"), ExtResource("r15"), ExtResource("r16"), ExtResource("r17")])
+elite_enemies = Array[ExtResource("2")]([ExtResource("r18")])
 camp_density = 0.5
-resources = Array[ExtResource("3")]([ExtResource("r15"), ExtResource("r16"), ExtResource("r15")])
+resources = Array[ExtResource("3")]([ExtResource("r19"), ExtResource("r20"), ExtResource("r19")])
 resource_chance = 0.008

@@ -136,7 +136,8 @@ static func meteor(from: Node, pos: Vector3, color: Color, size: float, on_impac
 	tw.tween_property(mi, "global_position", pos + Vector3(0, size * 0.4, 0), delay).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 	tw.tween_property(mi, "rotation", Vector3(4, 3, 2), delay)
 	tw.chain().tween_callback(func():
-		on_impact.call()
+		if on_impact.is_valid():
+			on_impact.call()
 		mi.queue_free())
 
 

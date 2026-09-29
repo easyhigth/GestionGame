@@ -616,6 +616,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if ui_open or not is_alive():
 		return
 	if event.is_action_pressed("interact"):
+		var dm := get_tree().get_first_node_in_group("dungeons")
+		if dm and dm.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
 		var v := nearest_villager()
 		open_inventory.emit(v if v else self)
 		get_viewport().set_input_as_handled()
@@ -771,7 +775,25 @@ func nearby_stations() -> Array:
 
 func _kingdom_bonus(key: String) -> float:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
-	return k.hero_bonus(key) if k else 0.0
+	var total := float(soul_bonus.get(key, 0.0))
+	return total + (k.hero_bonus(key) if k else 0.0)
+
+
+## Âmes de boss absorbées (région -> bonus). Chaque âme ne compte qu'une fois.
+var souls := {}
+## Somme des bonus des âmes absorbées (attack, defense, magic, regen, xp).
+var soul_bonus := {}
+
+
+## Absorbe l'âme d'un boss vaincu : bonus permanent.
+func absorb_soul(id: String, bonus: Dictionary) -> void:
+	if souls.has(id):
+		return
+	souls[id] = bonus
+	for k in bonus:
+		soul_bonus[k] = float(soul_bonus.get(k, 0.0)) + float(bonus[k])
+	VoxelBurst.spawn(self, global_position + Vector3(0, 1.0, 0), Color(0.6, 0.9, 1.0), 60, 5.0, 0.1, 1.2, "sphere", -2.0)
+	refresh_stats()
 
 
 ## Appelé par un objet au sol quand le joueur marche dessus.

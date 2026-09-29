@@ -79,6 +79,9 @@ func toggle(on: bool) -> void:
 	_find_world()
 	if grid == null:
 		return
+	if on and player.global_position.y < WorldGenerator.UNDERGROUND:
+		player.notify.emit("Impossible de construire dans un donjon.")
+		return
 	active = on
 	_ui.visible = on
 	player.building = on
