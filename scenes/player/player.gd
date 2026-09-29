@@ -23,6 +23,8 @@ signal lock_changed(target: Combatant)
 signal xp_changed(xp: int, needed: int, level: int)
 ## La compétence unique a changé (nouvelle compétence ou évolution).
 signal skill_changed(skill: HeroSkill)
+## L'arbre de talents a changé (talent débloqué, emplacements modifiés).
+signal talents_changed
 
 @export var stats: PlayerStats
 @export var race: RaceData
@@ -64,6 +66,12 @@ var ui_open := false
 var lock_target: Combatant
 ## Le héros (race, apparence, classe, métier).
 var profile: HeroProfile
+## Arbre de talents : talents débloqués (id -> true), emplacements des talents actifs (touches 1-4).
+var talents := {}
+var ability_slots: Array = ["", "", "", ""]
+var abilities := {}      # id -> HeroSkill (talents actifs)
+var selected_slot := 0
+var _double_used := false
 ## Distance de la caméra (option du joueur : 1 = normale ; molette pour zoomer).
 var camera_zoom := 1.0
 ## Rotation de la caméra autour du héros (clic molette maintenu + glisser, ou joystick droit).
@@ -138,6 +146,7 @@ func apply_profile(hero: HeroProfile, new_game := true) -> void:
 		skill.evolved.connect(_on_skill_evolved)
 		skill_changed.emit(skill)
 	if new_game:
+		_give_class_talent()
 		if hero.hero_class:
 			for it in hero.hero_class.starting_equipment:
 				for old in equipment.equip(it):
@@ -235,6 +244,136 @@ func on_enemy_killed(enemy: Combatant) -> void:
 		skill.on_kill(enemy)
 
 
+# ---------------------------------------------------------------- arbre de talents
+
+## Talent offert par la classe (gratuit).
+func class_talent() -> String:
+	if profile == null or profile.hero_class == null:
+		return ""
+	return TalentTree.CLASS_START.get(profile.hero_class.resource_path.get_file().get_basename(), "")
+
+
+func _give_class_talent() -> void:
+	var id := class_talent()
+	if id != "" and not talents.has(id):
+		talents[id] = true
+		_apply_talents()
+
+
+## Points gagnés : 1 par niveau (le premier au niveau 2) + 1 par âme de boss.
+func talent_points_total() -> int:
+	return (level - 1) + souls.size()
+
+
+func talent_points_spent() -> int:
+	var n := 0
+	var free := class_talent()
+	for id in talents:
+		if id != free:
+			n += TalentTree.cost(id)
+	return n
+
+
+func talent_points() -> int:
+	return talent_points_total() - talent_points_spent()
+
+
+## Pourquoi ce talent ne peut pas être débloqué ("" s'il peut l'être).
+func talent_block_reason(id: String) -> String:
+	var n := TalentTree.node(id)
+	if n.is_empty():
+		return "?"
+	if talents.has(id):
+		return "Déjà appris"
+	var need: int = TalentTree.ROW_LEVEL[n.row]
+	if level < need:
+		return "Niveau %d requis" % need
+	var req: Array = n.get("requires", [])
+	if not req.is_empty() and not req.any(func(r): return talents.has(r)):
+		return "Apprends d'abord un talent relié"
+	if talent_points() < TalentTree.cost(id):
+		return "Pas assez de points"
+	return ""
+
+
+func unlock_talent(id: String) -> bool:
+	if talent_block_reason(id) != "":
+		return false
+	talents[id] = true
+	var n := TalentTree.node(id)
+	if n.kind == "active":
+		var free := ability_slots.find("")
+		if free >= 0:
+			ability_slots[free] = id
+	_apply_talents()
+	feat.emit("Talent : %s" % n.name, TalentTree.branch(n.branch).color.lightened(0.3))
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), TalentTree.branch(n.branch).color, 40, 3.5, 0.1, 1.0, "up", -1.5)
+	return true
+
+
+## Oublie tous les talents (sauf celui de la classe) et rend les points.
+func reset_talents() -> void:
+	talents.clear()
+	ability_slots = ["", "", "", ""]
+	_give_class_talent()
+	_apply_talents()
+
+
+func set_ability_slot(slot: int, id: String) -> void:
+	for i in ability_slots.size():
+		if ability_slots[i] == id:
+			ability_slots[i] = ""
+	ability_slots[slot] = id
+	talents_changed.emit()
+
+
+## Applique les passifs et prépare les talents actifs.
+func _apply_talents() -> void:
+	var bonus := TalentTree.passive_bonus(talents)
+	if skill:
+		skill.talent_bonus = bonus
+	for id in abilities.keys():
+		if not talents.has(id):
+			abilities.erase(id)
+	for id in talents:
+		if TalentTree.node(id).get("kind") == "active" and not abilities.has(id):
+			var hs := HeroSkill.new(TalentTree.make_skill(id), self)
+			abilities[id] = hs
+	for id in abilities:
+		abilities[id].talent_bonus = bonus
+		abilities[id].set_level(level)
+	for i in ability_slots.size():
+		if ability_slots[i] != "" and not talents.has(ability_slots[i]):
+			ability_slots[i] = ""
+	refresh_stats()
+	talents_changed.emit()
+
+
+func talent_bonus(key: String) -> float:
+	return float(skill.talent_bonus.get(key, 0.0)) if skill else 0.0
+
+
+## Lance le talent actif de l'emplacement `slot` (0 à 3).
+func cast_ability(slot: int) -> bool:
+	var id: String = ability_slots[slot] if slot < ability_slots.size() else ""
+	if id == "" or not abilities.has(id) or not can_act() or ui_open or building:
+		return false
+	var hs: HeroSkill = abilities[id]
+	if not hs.activate():
+		return false
+	# les renforcements et barrières passent sur le héros (sa compétence principale)
+	if skill and hs != skill:
+		for k in hs.buffs:
+			skill.buffs[k] = hs.buffs[k]
+		hs.buffs.clear()
+		if hs._barrier_left > 0.0:
+			skill._barrier_left = hs._barrier_left
+			skill._barrier_reduce = hs._barrier_reduce
+			hs._barrier_left = 0.0
+		refresh_stats()
+	return true
+
+
 func use_skill() -> void:
 	if skill and can_act() and not ui_open:
 		skill.activate()
@@ -302,7 +441,11 @@ func gain_xp(amount: int) -> void:
 		_update_max_health(true)
 		if skill:
 			skill.set_level(level)
+		for id in abilities:
+			abilities[id].set_level(level)
 		feat.emit("Niveau %d !" % level, Color("ffd24a"))
+		notify.emit("+1 point de talent (T : arbre de talents).")
+		talents_changed.emit()
 		notify.emit("Niveau %d : vie, attaque et magie augmentent." % level)
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.2, 0), Color(1.0, 0.85, 0.3), 40, 3.5, 0.1, 1.2, "up", -1.5)
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.1, 0), Color(1.0, 0.95, 0.6), 30, 5.0, 0.08, 0.6, "ring", 0.0)
@@ -326,6 +469,8 @@ func _physics_process(delta: float) -> void:
 	_combat_step(delta)
 	if skill:
 		skill.process(delta)
+	for id in abilities:
+		abilities[id].process(delta)
 	_dash_cooldown_left = maxf(_dash_cooldown_left - delta, 0.0)
 	_dash_elapsed += delta
 	_counter_ready = maxf(_counter_ready - delta, 0.0)
@@ -352,7 +497,13 @@ func _physics_process(delta: float) -> void:
 	if can_input and not building:
 		_update_orbit_stick(delta)
 		if Input.is_action_just_pressed("jump") and can_act() and not in_move() and not is_dashing():
-			if jump():
+			# double saut (talent Ombre)
+			if airborne and not _double_used and talent_bonus("double_jump") > 0.0:
+				_double_used = true
+				air_vy = 7.2
+				VoxelBurst.spawn(self, global_position + Vector3(0, 0.1, 0), Color(0.6, 1.0, 0.7), 12, 2.5, 0.07, 0.35, "ring", 0.0, false)
+			elif jump():
+				_double_used = false
 				VoxelBurst.spawn(self, global_position + Vector3(0, 0.05, 0), Color(0.8, 0.75, 0.65), 8, 2.0, 0.07, 0.3, "ring", 0.0, false)
 	if input.length() > 1.0:
 		input = input.normalized()
@@ -625,7 +776,7 @@ func _start_dash(direction: Vector3) -> void:
 	facing = _dash_dir
 	_dash_time = stats.dash_duration
 	_dash_elapsed = 0.0
-	_dash_cooldown_left = stats.dash_cooldown
+	_dash_cooldown_left = stats.dash_cooldown * (1.0 - clampf(talent_bonus("dash_cd"), 0.0, 0.7))
 	visual.play_roll(stats.dash_duration)
 	dashed.emit()
 
@@ -637,6 +788,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	# en construction, seule la touche inventaire reste active côté héros
 	if building and not event.is_action_pressed("inventory"):
+		return
+	for i in TalentTree.SLOTS:
+		if event.is_action_pressed("ability_%d" % (i + 1)):
+			cast_ability(i)
+			get_viewport().set_input_as_handled()
+			return
+	if event.is_action_pressed("ability_cast"):
+		cast_ability(selected_slot)
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("ability_next"):
+		selected_slot = (selected_slot + 1) % TalentTree.SLOTS
+		talents_changed.emit()
+		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("interact"):
 		var dm := get_tree().get_first_node_in_group("dungeons")
@@ -882,6 +1047,7 @@ func absorb_soul(id: String, bonus: Dictionary) -> void:
 		soul_bonus[k] = float(soul_bonus.get(k, 0.0)) + float(bonus[k])
 	VoxelBurst.spawn(self, global_position + Vector3(0, 1.0, 0), Color(0.6, 0.9, 1.0), 60, 5.0, 0.1, 1.2, "sphere", -2.0)
 	refresh_stats()
+	talents_changed.emit()
 
 
 ## Appelé par un objet au sol quand le joueur marche dessus.

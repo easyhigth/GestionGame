@@ -42,6 +42,9 @@ var _boss_box: Control
 var _boss_name: Label
 var _boss_fill: ColorRect
 var _boss_lag: ColorRect
+var _ability_bar: HBoxContainer
+var _ability_cells: Array = []
+var talent_ui: TalentTreeUI
 const HP_WIDTH := 220.0
 
 
@@ -63,6 +66,7 @@ func _ready() -> void:
 	_build_combat_ui()
 	_build_skill_slot()
 	_build_maps()
+	_build_ability_bar()
 	if player:
 		player.feat.connect(show_feat)
 		player.lock_changed.connect(func(t): _target = t)
@@ -248,6 +252,62 @@ func _update_skill() -> void:
 	_skill_name.text = s.current_name()
 	_skill_name.add_theme_color_override("font_color", s.data.color.lightened(0.35))
 	_skill_rank.text = "%s  ·  Q / RB" % SkillData.TIER_LABELS[s.tier]
+
+
+## Barre des 4 attaques / sorts débloqués dans l'arbre de talents (touches 1-4, R3 / croix droite).
+func _build_ability_bar() -> void:
+	_ability_bar = HBoxContainer.new()
+	_ability_bar.add_theme_constant_override("separation", 6)
+	_ability_bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_ability_bar.position = Vector2(140, -54)
+	add_child(_ability_bar)
+	for i in TalentTree.SLOTS:
+		var cell := Panel.new()
+		cell.custom_minimum_size = Vector2(40, 40)
+		_ability_bar.add_child(cell)
+		var glyph := _outlined("", 20)
+		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		glyph.size = Vector2(40, 40)
+		cell.add_child(glyph)
+		var cd := ColorRect.new()
+		cd.color = Color(0, 0, 0, 0.7)
+		cd.size = Vector2(40, 0)
+		cell.add_child(cd)
+		var key := _outlined("%d" % (i + 1), 10)
+		key.position = Vector2(3, 24)
+		cell.add_child(key)
+		var timer := _outlined("", 14)
+		timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		timer.size = Vector2(40, 40)
+		timer.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cell.add_child(timer)
+		_ability_cells.append({"cell": cell, "glyph": glyph, "cd": cd, "timer": timer})
+	talent_ui = TalentTreeUI.new()
+	talent_ui.player = player
+	add_child(talent_ui)
+	if player:
+		player.talents_changed.connect(_update_abilities)
+	_update_abilities()
+
+
+func _update_abilities() -> void:
+	if player == null:
+		return
+	for i in _ability_cells.size():
+		var c: Dictionary = _ability_cells[i]
+		var id: String = player.ability_slots[i]
+		var n := TalentTree.node(id) if id != "" else {}
+		var col: Color = TalentTree.branch(n.branch).color if not n.is_empty() else Color(0.4, 0.35, 0.3)
+		var st := StyleBoxFlat.new()
+		st.bg_color = col.darkened(0.55) if not n.is_empty() else Color(0.08, 0.06, 0.05, 0.6)
+		st.border_color = Color("f0d890") if i == player.selected_slot else col.darkened(0.2)
+		st.set_border_width_all(3 if i == player.selected_slot else 2)
+		st.set_corner_radius_all(4)
+		c.cell.add_theme_stylebox_override("panel", st)
+		c.glyph.text = n.get("glyph", "")
+		c.glyph.add_theme_color_override("font_color", col.lightened(0.4))
+		c.cell.tooltip_text = n.get("name", "")
 
 
 func _build_maps() -> void:
@@ -436,6 +496,9 @@ func _process(delta: float) -> void:
 		info.visible = bool(SaveGame.options.show_help) and not b and not player.ui_open
 		if _skill_box:
 			_skill_box.visible = not b
+		if _ability_bar:
+			_ability_bar.visible = not b and player.ability_slots.any(func(x): return x != "")
+			_process_abilities()
 		_messages.offset_bottom = -210.0 if b else -10.0
 	if player and player.skill and _skill_cd:
 		var r := player.skill.cooldown_ratio()
@@ -463,6 +526,21 @@ func _process(delta: float) -> void:
 		_hp_lag.size.x = move_toward(_hp_lag.size.x, _hp_fill.size.x, delta * 90.0)
 		if _hp_lag.size.x < _hp_fill.size.x:
 			_hp_lag.size.x = _hp_fill.size.x
+
+
+var _shown_slot := -1
+
+func _process_abilities() -> void:
+	if _shown_slot != player.selected_slot:
+		_shown_slot = player.selected_slot
+		_update_abilities()
+	for i in _ability_cells.size():
+		var c: Dictionary = _ability_cells[i]
+		var hs: HeroSkill = player.abilities.get(player.ability_slots[i])
+		var r := hs.cooldown_ratio() if hs else 0.0
+		c.cd.size.y = 40.0 * r
+		c.cd.position.y = 40.0 * (1.0 - r)
+		c.timer.text = "%d" % ceili(hs.cooldown_left) if r > 0.0 else ""
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -505,4 +583,4 @@ func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	_update_health()
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace/A : sauter   Maj/B : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   F/L/LT (ou clic molette) : viser   Clic molette maintenu / joystick droit : tourner la caméra   Molette : zoom\nQ/RB : compétence   B : construire   M : carte   I : inventaire   E : parler / habitant   Échap : pause (options, sauvegarde)     Race : %s     Graine du monde : %d" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace/A : sauter   Maj/B : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   F/L/LT (ou clic molette) : viser   Clic molette maintenu / joystick droit : tourner la caméra   Molette : zoom\nQ/RB : compétence   1-4 (R3, croix droite) : attaques/sorts   T (croix gauche) : talents   B : construire   M : carte   I : inventaire   E : parler / habitant   Échap : pause (options, sauvegarde)     Race : %s     Graine du monde : %d" % [race_name, seed_value]

@@ -43,8 +43,12 @@ func set_level(level: int) -> void:
 
 # ---------------------------------------------------------------- passifs
 
+## Bonus des talents passifs (arbre de talents), ajoutés aux passifs de la compétence.
+var talent_bonus := {}
+
+
 func p(key: String) -> float:
-	var v := data.passive_value(key, tier)
+	var v := data.passive_value(key, tier) + float(talent_bonus.get(key, 0.0))
 	if buffs.has(key):
 		v += float(buffs[key][0])
 	return v
@@ -533,6 +537,47 @@ func _a_execute(prm: Dictionary) -> void:
 	VoxelBurst.spawn(owner, target.global_position + Vector3(0, 1.0, 0), data.color, 30, 6.0, 0.1, 0.5)
 	_tfx().hit_stop(0.1)
 	owner.shake(1.3)
+
+
+## Attaque du répertoire de mouvements (tourbillon...) avec un bonus de dégâts.
+func _a_move(prm: Dictionary) -> void:
+	owner._do_move(str(prm.get("move", "spin")), 1.0, float(prm.get("dmg", 1.0)) * SkillData.DMG_SCALE[tier])
+	SkillFX.ring(owner, owner.global_position, 2.6, data.color, 0.35)
+
+
+## Éclair en chaîne : frappe l'ennemi le plus proche puis rebondit sur les suivants.
+func _a_chain(prm: Dictionary) -> void:
+	var n := data._count(tier)
+	var from := owner.global_position + Vector3(0, 1.1, 0)
+	var first := owner.lock_target if owner.lock_target and is_instance_valid(owner.lock_target) and owner.lock_target.is_alive() else null
+	var hit := []
+	var cur: Combatant = first
+	for i in n:
+		if cur == null:
+			var best: Combatant = null
+			var bd := 9.0 if i == 0 else 5.5
+			for e in _enemies(owner.global_position if i == 0 else from, bd):
+				if hit.has(e):
+					continue
+				var d: float = e.global_position.distance_to(from)
+				if d < bd:
+					bd = d
+					best = e
+			cur = best
+		if cur == null:
+			break
+		var to := cur.global_position + Vector3(0, 1.0, 0)
+		# éclair : des étincelles le long du trait
+		for k in 7:
+			var pt := from.lerp(to, k / 6.0) + Vector3(randf_range(-0.15, 0.15), randf_range(-0.15, 0.15), randf_range(-0.15, 0.15))
+			VoxelBurst.spawn(owner, pt, data.color.lightened(0.4), 3, 0.6, 0.09, 0.25, "sphere", 0.0)
+		_hit(cur, _dmg(prm) * (1.0 - 0.12 * i), 3.0, prm)
+		hit.append(cur)
+		from = to
+		cur = null
+	if not hit.is_empty():
+		_tfx().hit_stop(0.04)
+		owner.shake(0.5)
 
 
 func _a_blink(prm: Dictionary) -> void:
