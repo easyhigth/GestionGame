@@ -2,28 +2,20 @@
 
 [ext_resource type="Script" path="res://scenes/npc/villager.gd" id="1"]
 [ext_resource type="Resource" path="res://data/races/humain.tres" id="2"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/races/humain_frames.tres" id="3"]
-[ext_resource type="Texture2D" path="res://assets/characters/shadow.png" id="4"]
+[ext_resource type="Script" path="res://scripts/voxel_character.gd" id="3"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_feet"]
-radius = 7.0
+[sub_resource type="CapsuleShape3D" id="Shape_body"]
+radius = 0.3
+height = 1.6
 
-[node name="Villager" type="CharacterBody2D"]
+[node name="Villager" type="CharacterBody3D"]
 motion_mode = 1
 script = ExtResource("1")
 race = ExtResource("2")
 
-[node name="Shadow" type="Sprite2D" parent="."]
-position = Vector2(0, -2)
-texture = ExtResource("4")
+[node name="Visual" type="Node3D" parent="."]
+script = ExtResource("3")
 
-[node name="Sprite" type="AnimatedSprite2D" parent="."]
-scale = Vector2(2, 2)
-sprite_frames = ExtResource("3")
-animation = &"idle_down"
-autoplay = "idle_down"
-offset = Vector2(0, -17)
-
-[node name="Collision" type="CollisionShape2D" parent="."]
-position = Vector2(0, -4)
-shape = SubResource("CircleShape2D_feet")
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_body")

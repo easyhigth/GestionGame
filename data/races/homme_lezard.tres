@@ -1,10 +1,22 @@
 [gd_resource type="Resource" script_class="RaceData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/races/homme_lezard_frames.tres" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_garde.glb" id="m0"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_garde_v2.glb" id="m1"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_garde_v3.glb" id="m2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_forgeron.glb" id="m3"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_forgeron_v2.glb" id="m4"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_forgeron_v3.glb" id="m5"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_marchand.glb" id="m6"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_marchand_v2.glb" id="m7"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_marchand_v3.glb" id="m8"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_mage.glb" id="m9"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_mage_v2.glb" id="m10"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/lizard_mage_v3.glb" id="m11"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Homme-lézard"
 description = "Guerriers des marais, excellents nageurs et pisteurs."
-sprite_frames = ExtResource("2")
+model = ExtResource("m0")
+villager_models = Array[PackedScene]([ExtResource("m1"), ExtResource("m2"), ExtResource("m3"), ExtResource("m4"), ExtResource("m5"), ExtResource("m6"), ExtResource("m7"), ExtResource("m8"), ExtResource("m9"), ExtResource("m10"), ExtResource("m11")])

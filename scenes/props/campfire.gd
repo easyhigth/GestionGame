@@ -1,14 +1,23 @@
-extends StaticBody2D
-## Feu de camp : la lumière vacille doucement.
+extends StaticBody3D
+## Feu de camp : la lumière vacille doucement et les flammes dansent.
 
-@export var base_energy: float = 1.3
-@export var flicker_strength: float = 0.18
+@export var base_energy: float = 1.0
+@export var flicker_strength: float = 0.25
 @export var flicker_speed: float = 9.0
 
-@onready var light: PointLight2D = $Light
+@onready var light: OmniLight3D = $Light
+var _flame: Node3D
 var _t := 0.0
+
+
+func _ready() -> void:
+	_flame = find_child("Flame", true, false) as Node3D
 
 
 func _process(delta: float) -> void:
 	_t += delta * flicker_speed
-	light.energy = base_energy + sin(_t) * flicker_strength * 0.6 + sin(_t * 2.7) * flicker_strength * 0.4
+	var f := sin(_t) * 0.6 + sin(_t * 2.7) * 0.4
+	light.light_energy = base_energy + f * flicker_strength
+	if _flame:
+		_flame.scale = Vector3(1.0 - f * 0.06, 1.0 + f * 0.12, 1.0 - f * 0.06)
+		_flame.rotation.y = sin(_t * 0.3) * 0.3
