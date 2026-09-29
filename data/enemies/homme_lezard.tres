@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/lizard_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/lizard_equipment.glb" id="r3"]
+[ext_resource type="Resource" path="res://data/items/spear.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/shield_wood.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="r7"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Homme-lézard"
+model = ExtResource("r2")
+equipment_library = ExtResource("r3")
+equipment = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r6")])
+model_scale = 1.0
+color = Color(0.541, 1.000, 0.416, 1)
+max_health = 90
+attack = 11
+defense = 3
+move_speed = 3.6
+aggro_range = 10
+leash_range = 20
+attack_range = 2.0
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 1.0
+poise = 30
+attack_cooldown = 1.0
+knockback = 4.0
+body_radius = 0.4
+loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r7")])
+loot_chances = PackedFloat32Array(0.15, 0.1, 0.6)

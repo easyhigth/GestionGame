@@ -32,6 +32,10 @@ var _skill_cd: ColorRect
 var _skill_name: Label
 var _skill_rank: Label
 var _skill_key: Label
+var _zone_title: Label
+var _zone_sub: Label
+var _zone_tween: Tween
+var map_ui: WorldMapUI
 const HP_WIDTH := 220.0
 
 
@@ -51,6 +55,7 @@ func _ready() -> void:
 	_build_death_screen()
 	_build_combat_ui()
 	_build_skill_slot()
+	_build_maps()
 	if player:
 		player.feat.connect(show_feat)
 		player.lock_changed.connect(func(t): _target = t)
@@ -233,6 +238,57 @@ func _update_skill() -> void:
 	_skill_rank.text = "%s  ·  Q / RB" % SkillData.TIER_LABELS[s.tier]
 
 
+func _build_maps() -> void:
+	var mini := MiniMap.new()
+	mini.world = world
+	mini.player = player
+	add_child(mini)
+	_zone_title = _outlined("", 30)
+	_zone_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_zone_title.add_theme_constant_override("outline_size", 8)
+	_zone_title.modulate.a = 0.0
+	add_child(_zone_title)
+	_zone_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_zone_title.offset_left = -400
+	_zone_title.offset_right = 400
+	_zone_title.offset_top = 84
+	_zone_title.offset_bottom = 124
+	_zone_sub = _outlined("", 14)
+	_zone_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_zone_sub.modulate.a = 0.0
+	add_child(_zone_sub)
+	_zone_sub.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_zone_sub.offset_left = -400
+	_zone_sub.offset_right = 400
+	_zone_sub.offset_top = 124
+	_zone_sub.offset_bottom = 184
+	map_ui = WorldMapUI.new()
+	map_ui.world = world
+	map_ui.player = player
+	add_child(map_ui)
+	if world:
+		world.zone_entered.connect(_on_zone_entered)
+		world.obelisk_activated.connect(func(z): show_feat("Obélisque activé !", Color("8af0ff")); show_message("Obélisque de %s activé : voyage rapide depuis la carte (M)." % z.name))
+
+
+## Bandeau quand on entre dans une zone : son nom, sa région et son niveau.
+func _on_zone_entered(z: Dictionary) -> void:
+	var t: RegionData = z.type
+	if t == null or _zone_title == null:
+		return
+	_zone_title.text = z.name
+	_zone_title.add_theme_color_override("font_color", t.map_color.lightened(0.55))
+	_zone_sub.text = "%s  ·  Niveau %d à %d\n%s" % [t.display_name, z.level.x, z.level.y, t.description]
+	if _zone_tween:
+		_zone_tween.kill()
+	_zone_tween = create_tween()
+	_zone_tween.tween_property(_zone_title, "modulate:a", 1.0, 0.5)
+	_zone_tween.parallel().tween_property(_zone_sub, "modulate:a", 1.0, 0.5)
+	_zone_tween.tween_interval(3.0)
+	_zone_tween.tween_property(_zone_title, "modulate:a", 0.0, 1.0)
+	_zone_tween.parallel().tween_property(_zone_sub, "modulate:a", 0.0, 1.0)
+
+
 func _update_kingdom() -> void:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k == null or _kingdom_text == null:
@@ -332,4 +388,4 @@ func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	_update_health()
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence   B : construire   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace/A : roulade   Clic/J/X : frapper (maintenir = charger)   Clic droit/K/LB : garde   Clic molette/L/LT : viser   Q/RB : compétence   B : construire   M : carte   I : inventaire   E : habitant\nRace : %s     Graine du monde : %d     R : race   N : nouveau monde" % [race_name, seed_value]

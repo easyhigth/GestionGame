@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="RegionData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/region_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="3"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_1.glb" id="r3"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_2.glb" id="r4"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_3.glb" id="r5"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_1.glb" id="r6"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/oak_2.glb" id="r7"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/mushroom_red.glb" id="r8"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/bush_1.glb" id="r9"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/bush_2.glb" id="r10"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r11"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r12"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="r13"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/flowers_2.glb" id="r14"]
+[ext_resource type="Resource" path="res://data/enemies/loup.tres" id="r15"]
+[ext_resource type="Resource" path="res://data/enemies/araignee.tres" id="r16"]
+[ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="r17"]
+[ext_resource type="Resource" path="res://data/enemies/loup_alpha.tres" id="r18"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="r19"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="r20"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="r21"]
+
+[resource]
+script = ExtResource("1")
+id = "foret"
+display_name = "Forêt profonde"
+names = PackedStringArray("Forêt de Sylvebrune", "Bois des Murmures", "Sombreramure", "Forêt des Mille Troncs", "Futaie des Loups", "Bois de Ronceterre")
+description = "Des arbres immenses où rôdent loups et araignées."
+level_range = Vector2i(3, 7)
+map_color = Color(0.180, 0.478, 0.227, 1)
+temperature = 0.0
+moisture = 0.75
+min_distance = 0.1
+height_bias = 0.0
+relief = 1.0
+grass_color = Color(0.247, 0.478, 0.204, 1)
+grass_dark_color = Color(0.208, 0.416, 0.173, 1)
+dirt_color = Color(0.353, 0.267, 0.188, 1)
+sand_color = Color(0.784, 0.706, 0.478, 1)
+stone_color = Color(0.478, 0.478, 0.455, 1)
+water_floor_color = Color(0.784, 0.706, 0.471, 1)
+trees = Array[PackedScene]([ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7"), ExtResource("r8")])
+forest_density = 0.62
+scattered_tree_chance = 0.05
+bushes = Array[PackedScene]([ExtResource("r9"), ExtResource("r10")])
+bush_chance = 0.06
+rocks = Array[PackedScene]([ExtResource("r11"), ExtResource("r12")])
+rock_chance = 0.04
+small_plants = Array[PackedScene]([ExtResource("r13"), ExtResource("r13"), ExtResource("r14")])
+small_plant_chance = 0.1
+enemies = Array[ExtResource("2")]([ExtResource("r15"), ExtResource("r16"), ExtResource("r16"), ExtResource("r17")])
+elite_enemies = Array[ExtResource("2")]([ExtResource("r18")])
+camp_density = 0.55
+resources = Array[ExtResource("3")]([ExtResource("r19"), ExtResource("r19"), ExtResource("r20"), ExtResource("r21")])
+resource_chance = 0.014

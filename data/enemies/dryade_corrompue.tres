@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/dryad_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/dryad_equipment.glb" id="r3"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/mage_robe.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/cape_red.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/lingot_or.tres" id="r7"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Dryade corrompue"
+model = ExtResource("r2")
+equipment_library = ExtResource("r3")
+equipment = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r6")])
+model_scale = 1.15
+color = Color(0.753, 0.439, 1.000, 1)
+max_health = 360
+attack = 30
+defense = 8
+move_speed = 3.4
+aggro_range = 10
+leash_range = 20
+attack_range = 2.1
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 0.85
+poise = 80
+attack_cooldown = 1.0
+knockback = 7.0
+body_radius = 0.5
+loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r7")])
+loot_chances = PackedFloat32Array(0.3, 0.25, 0.4)

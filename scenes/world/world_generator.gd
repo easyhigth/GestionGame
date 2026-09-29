@@ -1,30 +1,45 @@
 @tool
 class_name WorldGenerator
 extends Node3D
-## Génère le monde 3D voxel (île en terrasses) à partir de bruits, puis installe le village de départ.
+## Génère le monde ouvert 3D voxel à partir de bruits, puis installe le village de départ.
+## Le monde est découpé en zones (régions nommées : prairie, forêt profonde, désert...) décrites
+## par les fichiers de data/regions/. Le terrain est calculé et affiché par morceaux de 16 m
+## autour du héros : seuls les morceaux proches existent en 3D.
 ## Tous les réglages sont dans l'Inspecteur. Le bouton « Générer un aperçu »
-## affiche le terrain directement dans l'éditeur (sans le village).
+## affiche le terrain autour du centre directement dans l'éditeur (sans le village).
 ## 1 case = 1 mètre. Le sol est fait de colonnes de blocs, les décors sont des modèles voxel (.glb).
 
 signal world_generated(seed_used: int)
+## Le héros entre dans une autre zone.
+signal zone_entered(zone: Dictionary)
+## Un obélisque de téléportation vient d'être activé.
+signal obelisk_activated(zone: Dictionary)
 
 @export_tool_button("Générer un aperçu", "Reload") var _btn_generate: Callable = _editor_preview
 @export_tool_button("Effacer l'aperçu", "Remove") var _btn_clear: Callable = clear
 
 @export_group("Monde")
-## Taille du monde en cases (1 case = 1 mètre).
-@export var world_size: Vector2i = Vector2i(140, 140)
+## Taille du monde en cases (1 case = 1 m).
+@export var world_size: Vector2i = Vector2i(640, 640)
+## Taille (en mètres) d'une zone : le monde est découpé en zones d'environ cette taille.
+@export var zone_size: int = 128
+## Distance d'affichage autour du héros (en morceaux de 16 m).
+@export_range(2.0, 10.0, 0.5) var view_distance: float = 4.5
+## Largeur (en mètres) des transitions entre deux régions.
+@export var region_blend: float = 10.0
+## Dossier des types de régions.
+@export_dir var regions_dir: String = "res://data/regions/"
 @export var generate_on_start: bool = true
-## Si activé, chaque partie a un monde différent.
+## Une nouvelle île à chaque partie (sinon, `world_seed` est utilisé).
 @export var random_seed_on_start: bool = true
 @export var world_seed: int = 12345
-## Le joueur est placé ici. Laisser vide pour ne pas le déplacer.
+## Le joueur, placé au village après la génération.
 @export var player: Node3D
 
 @export_group("Bruits")
-## Relief : décide eau / sable / herbe / roche.
+## Bruit du relief.
 @export var height_noise: FastNoiseLite
-## Humidité : décide où poussent les forêts.
+## Bruit de l'humidité (forêts).
 @export var moisture_noise: FastNoiseLite
 
 @export_group("Altitudes (-1 à 1)")
@@ -32,24 +47,25 @@ signal world_generated(seed_used: int)
 @export_range(-1.0, 1.0, 0.01) var water_level: float = -0.12
 @export_range(-1.0, 1.0, 0.01) var sand_level: float = -0.05
 @export_range(-1.0, 1.0, 0.01) var stone_level: float = 0.58
-## Plus c'est haut, plus les bords du monde deviennent de l'océan.
+## Force de l'effet « île » (les bords du monde descendent dans la mer).
 @export_range(0.0, 3.0, 0.05) var island_falloff: float = 1.0
-## Plus c'est haut, plus il y a de terres émergées.
+## Monte ou descend tout le terrain (plus = plus de terre).
 @export_range(-1.0, 1.0, 0.01) var land_bias: float = 0.30
 
 @export_group("Relief 3D")
-## Hauteur d'une marche de terrain (en mètres).
+## Hauteur d'une marche de terrain (mètres).
 @export var step_height: float = 0.25
-## Écart d'altitude (bruit) entre deux marches. Plus petit = collines plus hautes.
+## Écart d'altitude (bruit) entre deux marches : plus petit = plus de marches.
 @export_range(0.01, 0.5, 0.01) var terrace_size: float = 0.07
-## Les marches de roche sont plus hautes (falaises).
+## Les rochers montent plus vite (falaises).
 @export var stone_step_multiplier: float = 2.0
-## Plus haute marche que les personnages peuvent monter (en mètres).
+## Hauteur de marche maximale franchissable à pied (mètres).
 @export var max_step: float = 0.55
-## Hauteur de la surface de l'eau (en mètres).
+## Hauteur de la surface de l'eau.
 @export var water_surface: float = -0.2
 
 @export_group("Couleurs du sol")
+## Couleurs par défaut (chaque région a les siennes dans data/regions/).
 @export var grass_color: Color = Color("5e9c44")
 @export var grass_dark_color: Color = Color("4f8c3a")
 @export var dirt_color: Color = Color("7a5a3c")
@@ -60,14 +76,9 @@ signal world_generated(seed_used: int)
 @export var water_color: Color = Color(0.25, 0.55, 0.85, 0.72)
 
 @export_group("Végétation")
-@export_range(0.0, 1.0, 0.01) var forest_moisture: float = 0.05
-@export_range(0.0, 1.0, 0.01) var forest_density: float = 0.30
-@export_range(0.0, 1.0, 0.01) var scattered_tree_chance: float = 0.015
-@export_range(0.0, 1.0, 0.01) var bush_chance: float = 0.02
-@export_range(0.0, 1.0, 0.01) var rock_chance: float = 0.06
-@export_range(0.0, 1.0, 0.01) var flower_chance: float = 0.05
-@export_range(0.0, 1.0, 0.01) var grass_tuft_chance: float = 0.08
-## Modèles voxel des décors (un est tiré au hasard pour chaque objet).
+## Au-dessus de cette humidité, l'herbe devient forêt.
+@export_range(-1.0, 1.0, 0.01) var forest_moisture: float = 0.05
+## Modèles par défaut (si une région n'en donne pas).
 @export var oak_models: Array[PackedScene] = []
 @export var pine_models: Array[PackedScene] = []
 @export var bush_models: Array[PackedScene] = []
@@ -76,99 +87,118 @@ signal world_generated(seed_used: int)
 @export var grass_models: Array[PackedScene] = []
 
 @export_group("Village de départ")
-## Rayon (en cases) de la clairière dégagée autour du point de départ.
+## Rayon (en cases) de la clairière autour du village.
 @export var spawn_clearing_radius: int = 11
-## Rayon (en cases) de la place pavée autour du feu.
+## Rayon de la place pavée.
 @export var plaza_radius: int = 4
 @export var hut_scene: PackedScene
 @export var campfire_scene: PackedScene
 @export var barrel_scene: PackedScene
 @export var crate_scene: PackedScene
 @export var villager_scene: PackedScene
-## Races possibles pour les habitants de départ.
+## Races possibles des habitants.
 @export var villager_races: Array[RaceData] = []
 @export var villager_count: int = 6
-## Établi (pour fabriquer les objets en fer) et râtelier d'armes du village.
 @export var workbench_scene: PackedScene
 @export var weapon_rack_scene: PackedScene
-## Chance qu'un habitant commence avec une partie de l'équipement d'un métier.
+## Chance qu'un habitant porte un équipement au départ.
 @export_range(0.0, 1.0, 0.05) var villager_gear_chance: float = 0.85
 
 @export_group("Objets à ramasser")
-## Scène d'un objet posé au sol.
 @export var pickup_scene: PackedScene
-## Objets posés autour du feu au début de la partie.
+## Objets posés autour du feu au départ.
 @export var starting_loot: Array[ItemData] = []
-## Équipements rares cachés dans la nature.
+## Équipements rares qu'on peut trouver dans la nature.
 @export var wild_loot: Array[ItemData] = []
-@export_range(0.0, 0.01, 0.0001) var wild_loot_chance: float = 0.0008
+@export_range(0.0, 0.01, 0.0001) var wild_loot_chance: float = 0.0006
 @export var wood_item: ItemData
 @export var stone_item: ItemData
 @export var iron_ore_item: ItemData
 @export var leather_item: ItemData
 @export var fiber_item: ItemData
-## Chances par case (herbe près des forêts pour le bois, roche pour la pierre et le fer...).
-@export_range(0.0, 0.05, 0.001) var wood_chance: float = 0.008
-@export_range(0.0, 0.05, 0.001) var stone_chance: float = 0.012
-@export_range(0.0, 0.05, 0.001) var iron_chance: float = 0.008
-@export_range(0.0, 0.05, 0.001) var leather_chance: float = 0.003
-@export_range(0.0, 0.05, 0.001) var fiber_chance: float = 0.004
 
 @export_group("Monstres")
-## Nombre de camps de monstres sur l'île.
-@export var camp_count: int = 16
-## Distance minimum (mètres) entre le village et un camp.
-@export var camp_min_distance: float = 24.0
-## Distance minimum entre deux camps.
+## Pas de camp de monstres plus près que ça du village (mètres).
+@export var camp_min_distance: float = 26.0
+## Écart minimal entre deux camps (mètres).
 @export var camp_spacing: float = 14.0
-## Au-delà de cette distance du village, les monstres sont plus dangereux.
-@export var danger_distance: float = 45.0
 @export var monsters_per_camp := Vector2i(2, 4)
-## Monstres des forêts, des plaines, de la roche, et monstres dangereux (loin du village).
+## Anciens réglages (monde sans régions) : utilisés si aucune région n'est trouvée.
 @export var forest_enemies: Array[EnemyData] = []
 @export var plains_enemies: Array[EnemyData] = []
 @export var rock_enemies: Array[EnemyData] = []
 @export var danger_enemies: Array[EnemyData] = []
 
-# Types de sol
+@export_group("Lieux")
+## Obélisque de téléportation (un par zone).
+@export var obelisk_model: PackedScene = preload("res://assets/environment/models/obelisk.glb")
+## Entrée de donjon (une par zone, hors zone de départ).
+@export var dungeon_gate_model: PackedScene = preload("res://assets/environment/models/dungeon_gate.glb")
+
+# types de sol
 const DEEP := 0
 const WATER := 1
 const SAND := 2
 const GRASS := 3
 const STONE := 4
 const PLAZA := 5
-## Terre remuée (terrassement).
+## Sol remué par le joueur (terrassement).
 const DIRT := 6
-# Types de décor
+
+# décors
 const D_NONE := 0
-const D_OAK := 1
-const D_PINE := 2
+const D_OAK := 1     # arbre (modèle choisi dans la région)
+const D_PINE := 2    # arbre (ancien type)
 const D_BUSH := 3
 const D_ROCK := 4
-const D_FLOWERS := 5
+const D_FLOWERS := 5 # petite plante (modèle choisi dans la région)
 const D_GRASS := 6
 
 const CHUNK := 16
 const SEA_FLOOR := -2.0
-## Le grain des modèles voxel : la texture 16x16 couvre 16 voxels de 5 cm.
+## Rayon (m) autour du héros dévoilé sur la carte.
+const REVEAL_RADIUS := 26
 const GRAIN_SCALE := 1.0 / 0.8
 const GRAIN := preload("res://assets/environment/voxel_grain.png")
 
 var spawn_cell: Vector2i
+## Zones du monde : {id, type (RegionData), name, site, level, obelisk, gate, discovered, obelisk_on}
+var zones: Array = []
+var region_types: Array[RegionData] = []
+## Carte du monde (1 pixel = 1 case), dévoilée au fil de l'exploration.
+var map_image: Image
+var map_texture: ImageTexture
+var current_zone := -1
+var build: BuildGrid
+
 var _rng := RandomNumberGenerator.new()
 var _types := PackedByteArray()
 var _heights := PackedFloat32Array()
-var _flowers := PackedByteArray()
 var _decor := PackedByteArray()
+var _zone := PackedByteArray()    # zone principale de chaque case
+var _zone2 := PackedByteArray()   # zone voisine (transition)
+var _blend := PackedByteArray()   # part de la zone voisine (0 à 127 = 0 à 50 %)
+var _chunks := Vector2i.ZERO
+var _chunk_ready := PackedByteArray()
+var _revealed := PackedByteArray()
+var _map_dirty := false
+var _map_timer := 0.0
+var _last_reveal := Vector3.INF
+var _warp_noise: FastNoiseLite
 var _mesh_cache := {}
 var _terrain_nodes := {}   # morceau -> MeshInstance3D
 var _decor_nodes := {}     # morceau -> Node3D
+var _content_nodes := {}   # morceau -> Node3D (camps, objets, lieux)
+var _taken := {}           # objets déjà ramassés (case -> true)
+var _camp_cells: Array[Vector2i] = []
 var _terrain_mat: StandardMaterial3D
+var _liquid_mat: StandardMaterial3D
+var _lava_mat: StandardMaterial3D
 var _trunk_shape: CylinderShape3D
 var _bush_shape: CylinderShape3D
 var _rock_shape: BoxShape3D
-## Les constructions du joueur (nœud « Build »).
-var build: BuildGrid
+var _stream_timer := 0.0
+var _generated := false
 
 
 func _ready() -> void:
@@ -184,12 +214,23 @@ func _editor_preview() -> void:
 	generate(world_seed)
 
 
+func _content_root() -> Node3D:
+	var n := get_node_or_null("Contenu") as Node3D
+	if n == null:
+		n = Node3D.new()
+		n.name = "Contenu"
+		add_child(n)
+	return n
+
+
 func clear() -> void:
-	for holder in [$Terrain, $Decor, $Village]:
+	for holder in [$Terrain, $Decor, $Village, _content_root()]:
 		for child in holder.get_children():
 			child.free()
 	_terrain_nodes.clear()
 	_decor_nodes.clear()
+	_content_nodes.clear()
+	_generated = false
 	if build:
 		build.clear()
 
@@ -199,23 +240,229 @@ func generate(seed_value: int) -> void:
 	_ensure_noises()
 	height_noise.seed = seed_value
 	moisture_noise.seed = seed_value + 1
+	_warp_noise.seed = seed_value + 2
 	_rng.seed = seed_value
 	clear()
+	_load_region_types()
 
 	var n := world_size.x * world_size.y
-	_types.resize(n)
+	for arr in [_types, _decor, _zone, _zone2, _blend, _revealed]:
+		arr.resize(n)
+		arr.fill(0)
 	_heights.resize(n)
-	_flowers.resize(n)
-	_decor.resize(n)
-	_flowers.fill(0)
-	_decor.fill(D_NONE)
-	var center := Vector2(world_size) / 2.0
+	_chunks = Vector2i(ceili(world_size.x / float(CHUNK)), ceili(world_size.y / float(CHUNK)))
+	_chunk_ready.resize(_chunks.x * _chunks.y)
+	_chunk_ready.fill(0)
+	_taken.clear()
+	_camp_cells.clear()
+	current_zone = -1
+	map_image = Image.create(world_size.x, world_size.y, false, Image.FORMAT_RGBA8)
+	map_image.fill(Color(0, 0, 0, 0))
+	map_texture = ImageTexture.create_from_image(map_image)
 
-	for y in world_size.y:
-		for x in world_size.x:
-			var cell := Vector2i(x, y)
-			var i := _idx(cell)
-			var h := _height_at(cell, center)
+	_make_zones()
+	var center := Vector2(world_size) / 2.0
+	spawn_cell = _find_spawn(center)
+	_make_clearing(spawn_cell)
+	_place_sites()
+	_build_water()
+	_generated = true
+	var focus := cell_center(spawn_cell)
+	_stream(focus, true)
+	_place_player()
+	if not Engine.is_editor_hint():
+		_build_village()
+		reveal(focus, REVEAL_RADIUS + 10)
+	world_generated.emit(seed_value)
+
+
+func _load_region_types() -> void:
+	region_types.clear()
+	var dir := DirAccess.open(regions_dir)
+	if dir == null:
+		return
+	var files := Array(dir.get_files())
+	files.sort()
+	for f in files:
+		var fname: String = f.trim_suffix(".remap")
+		if fname.ends_with(".tres"):
+			var r := load(regions_dir.path_join(fname)) as RegionData
+			if r:
+				region_types.append(r)
+
+
+# ---------------------------------------------------------------- zones
+
+## Découpe le monde en zones (un point par case de `zone_size`, un peu décalé) et choisit leur région.
+func _make_zones() -> void:
+	zones.clear()
+	var zrng := RandomNumberGenerator.new()
+	zrng.seed = world_seed + 7
+	var grid := Vector2i(ceili(world_size.x / float(zone_size)), ceili(world_size.y / float(zone_size)))
+	var center := Vector2(world_size) / 2.0
+	var half := minf(world_size.x, world_size.y) * 0.5
+	var used_names := {}
+	var start_id := -1
+	for gy in grid.y:
+		for gx in grid.x:
+			var site := Vector2((gx + 0.2 + zrng.randf() * 0.6) * zone_size, (gy + 0.2 + zrng.randf() * 0.6) * zone_size)
+			var z := {"id": zones.size(), "site": site, "grid": Vector2i(gx, gy), "type": null, "name": "",
+				"level": Vector2i(1, 3), "obelisk": Vector2i(-1, -1), "gate": Vector2i(-1, -1),
+				"discovered": false, "obelisk_on": false, "dist": site.distance_to(center) / half}
+			zones.append(z)
+	# la zone du centre accueille le village
+	var best := INF
+	for z in zones:
+		var d: float = (z.site as Vector2).distance_to(center)
+		if d < best:
+			best = d
+			start_id = z.id
+	zones[start_id].site = center
+	zones[start_id].dist = 0.0
+	# région de chaque zone : climat (nord froid, sud chaud) + humidité + éloignement
+	var prairie: RegionData = null
+	for r in region_types:
+		if r.min_distance <= 0.0:
+			prairie = r
+			break
+	for z in zones:
+		var site: Vector2 = z.site
+		var d: float = z.dist
+		if z.id == start_id or region_types.is_empty():
+			z.type = prairie if prairie else (region_types[0] if not region_types.is_empty() else null)
+		else:
+			var temp := clampf((site.y / world_size.y) * 2.2 - 1.1 + zrng.randf_range(-0.35, 0.35), -1.0, 1.0)
+			var moist := clampf(moisture_noise.get_noise_2d(site.x * 0.2, site.y * 0.2) * 2.5 + zrng.randf_range(-0.4, 0.4), -1.0, 1.0)
+			var choice: RegionData = null
+			var score := INF
+			for r in region_types:
+				if r.min_distance > d:
+					continue
+				var s := pow(temp - r.temperature, 2.0) + pow(moist - r.moisture, 2.0) + zrng.randf() * 0.25
+				if r == prairie and d > 0.7:
+					s += 1.0
+				# variété : on évite la même région que les voisines déjà choisies, et les régions déjà fréquentes
+				for o in zones:
+					if o.type == r:
+						s += 0.12
+						if (o.grid as Vector2i).distance_to(z.grid) < 1.5:
+							s += 0.35
+				if s < score:
+					score = s
+					choice = r
+			z.type = choice if choice else prairie
+		var t: RegionData = z.type
+		if t == null:
+			continue
+		# nom de la zone
+		var names := Array(t.names)
+		names.shuffle()
+		var nm := ""
+		for cand in names:
+			if not used_names.has(cand):
+				nm = cand
+				break
+		if nm == "":
+			nm = "%s %d" % [t.display_name, zones.filter(func(o): return o.type == t).size()]
+		used_names[nm] = true
+		z.name = nm
+		# niveau : plus loin du village = plus fort
+		var span := t.level_range.y - t.level_range.x
+		var k := clampf((d - t.min_distance) / maxf(0.1, 1.2 - t.min_distance), 0.0, 1.0)
+		var lo := t.level_range.x + roundi(span * k * 0.6)
+		z.level = Vector2i(lo, mini(t.level_range.y, lo + 3))
+	current_zone = -1
+
+
+func _zone_type(id: int) -> RegionData:
+	return zones[id].type if id >= 0 and id < zones.size() else null
+
+
+## Les deux zones les plus proches d'une case (position déformée pour des frontières naturelles).
+func _nearest_zones(x: int, y: int) -> Array:
+	var p := Vector2(x, y) + Vector2(_warp_noise.get_noise_2d(x, y), _warp_noise.get_noise_2d(x + 913, y - 377)) * 26.0
+	var gx := clampi(floori(p.x / zone_size), 0, 1000)
+	var gy := clampi(floori(p.y / zone_size), 0, 1000)
+	var grid_w := ceili(world_size.x / float(zone_size))
+	var grid_h := ceili(world_size.y / float(zone_size))
+	var b1 := -1
+	var b2 := -1
+	var d1 := INF
+	var d2 := INF
+	for oy in range(-1, 2):
+		for ox in range(-1, 2):
+			var cx := gx + ox
+			var cy := gy + oy
+			if cx < 0 or cy < 0 or cx >= grid_w or cy >= grid_h:
+				continue
+			var id := cy * grid_w + cx
+			var d: float = p.distance_squared_to(zones[id].site)
+			if d < d1:
+				d2 = d1
+				b2 = b1
+				d1 = d
+				b1 = id
+			elif d < d2:
+				d2 = d
+				b2 = id
+	if b2 < 0:
+		b2 = b1
+	# part de la zone voisine : 50 % sur la frontière, 0 % à `region_blend` mètres
+	var gap := sqrt(d2) - sqrt(d1)
+	var f := clampf(0.5 - gap / (2.0 * region_blend), 0.0, 0.5)
+	return [b1, b2, f]
+
+
+## Zone (Dictionary) sous une position, ou {} hors du monde.
+func zone_at(pos: Vector3) -> Dictionary:
+	var cell := cell_at(pos)
+	if not _inside(cell) or zones.is_empty():
+		return {}
+	_ensure_chunk_of(cell)
+	return zones[_zone[_idx(cell)]]
+
+
+func region_at(pos: Vector3) -> RegionData:
+	var z := zone_at(pos)
+	return z.type if not z.is_empty() else null
+
+
+# ---------------------------------------------------------------- génération par morceaux
+
+func _ensure_chunk_of(cell: Vector2i) -> void:
+	var ci := (cell.y / CHUNK) * _chunks.x + (cell.x / CHUNK)
+	if _chunk_ready[ci] == 0:
+		_gen_chunk_data(Vector2i(cell.x / CHUNK, cell.y / CHUNK))
+
+
+func _rand(x: int, y: int, salt: int) -> float:
+	return float(hash(Vector3i(x, y, world_seed * 31 + salt)) & 0xFFFFFF) / 16777215.0
+
+
+## Calcule le sol, la région et les décors d'un morceau (une seule fois).
+func _gen_chunk_data(ch: Vector2i) -> void:
+	var ci := ch.y * _chunks.x + ch.x
+	if _chunk_ready[ci] != 0:
+		return
+	_chunk_ready[ci] = 1
+	var center := Vector2(world_size) / 2.0
+	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
+		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
+			var i := y * world_size.x + x
+			var nz := _nearest_zones(x, y)
+			var z1: int = nz[0]
+			var z2: int = nz[1]
+			var f: float = nz[2]
+			_zone[i] = z1
+			_zone2[i] = z2
+			_blend[i] = int(f * 254.0)
+			var r1 := _zone_type(z1)
+			var r2 := _zone_type(z2)
+			var bias := lerpf(r1.height_bias if r1 else 0.0, r2.height_bias if r2 else 0.0, f)
+			var relief := lerpf(r1.relief if r1 else 1.0, r2.relief if r2 else 1.0, f)
+			var d := (Vector2(x, y) - center) / center
+			var edge := maxf(absf(d.x), absf(d.y))
+			var h := height_noise.get_noise_2d(x, y) * relief + bias - pow(edge, 4.0) * island_falloff + land_bias
 			var m := moisture_noise.get_noise_2d(x, y)
 			var t: int
 			if h < deep_water_level:
@@ -228,30 +475,180 @@ func generate(seed_value: int) -> void:
 				t = STONE
 			else:
 				t = GRASS
-				if _rng.randf() < flower_chance:
-					_flowers[i] = 1
 			_types[i] = t
 			_heights[i] = _terrain_height(t, h)
-			var deco := _pick_decor(t, h, m)
-			if (deco == D_OAK or deco == D_PINE) and x % 2 != 0:
-				deco = D_NONE
-			if deco == D_NONE and _flowers[i] == 1:
-				deco = D_FLOWERS
-			elif deco == D_NONE and t == GRASS and _rng.randf() < grass_tuft_chance:
-				deco = D_GRASS
-			_decor[i] = deco
+			_decor[i] = _pick_decor(x, y, t, h, m, r1)
 
-	spawn_cell = _find_spawn(center)
-	_make_clearing(spawn_cell)
-	_build_terrain()
-	_build_water()
-	_build_decor()
-	_place_player()
-	if not Engine.is_editor_hint():
-		_build_village()
-		_scatter_loot()
-		_spawn_camps()
-	world_generated.emit(seed_value)
+
+func _terrain_height(t: int, h: float) -> float:
+	match t:
+		DEEP:
+			return -1.5
+		WATER:
+			return -0.75
+		SAND:
+			return 0.0
+		STONE:
+			var top := step_height * (1.0 + floorf((stone_level - sand_level) / terrace_size))
+			return top + step_height * stone_step_multiplier * (1.0 + floorf((h - stone_level) / terrace_size))
+	return step_height * (1.0 + floorf((h - sand_level) / terrace_size))
+
+
+func _pick_decor(x: int, y: int, t: int, h: float, m: float, r: RegionData) -> int:
+	var a := _rand(x, y, 1)
+	var b := _rand(x, y, 2)
+	var forest := r.forest_density if r else 0.3
+	var scattered := r.scattered_tree_chance if r else 0.015
+	var bush := r.bush_chance if r else 0.02
+	var rock := r.rock_chance if r else 0.06
+	var plant := r.small_plant_chance if r else 0.1
+	var tree_ok := x % 2 == 0
+	if t == STONE:
+		if a < rock:
+			return D_ROCK
+		if tree_ok and b < scattered * 0.6:
+			return D_OAK
+		return D_NONE
+	if t == GRASS:
+		# les forêts poussent là où il fait humide (les régions très boisées en ont partout)
+		if tree_ok and m > forest_moisture - forest * 0.6 and a < forest:
+			return D_OAK
+		if tree_ok and a < scattered:
+			return D_OAK
+		if b < bush:
+			return D_BUSH
+		if b < bush + rock * 0.25:
+			return D_ROCK
+		if _rand(x, y, 3) < plant:
+			return D_FLOWERS
+	elif t == SAND:
+		if a < rock * 0.15:
+			return D_ROCK
+		if r and r.small_plants.size() > 0 and b < plant * 0.2:
+			return D_FLOWERS
+	return D_NONE
+
+
+func _find_spawn(center: Vector2) -> Vector2i:
+	# case d'herbe la plus proche du centre, entourée de terre ferme
+	var c := Vector2i(center)
+	for r in range(0, mini(world_size.x, world_size.y) / 2):
+		for y in range(c.y - r, c.y + r + 1):
+			for x in range(c.x - r, c.x + r + 1):
+				if absi(x - c.x) != r and absi(y - c.y) != r:
+					continue
+				var cell := Vector2i(x, y)
+				if _type(cell) == GRASS and _is_dry_area(cell, spawn_clearing_radius + 2):
+					return cell
+	return c
+
+
+func _is_dry_area(cell: Vector2i, radius: int) -> bool:
+	for y in range(-radius, radius + 1, 2):
+		for x in range(-radius, radius + 1, 2):
+			var t := _type(cell + Vector2i(x, y))
+			if t == WATER or t == DEEP:
+				return false
+	return true
+
+
+func _make_clearing(cell: Vector2i) -> void:
+	var r := spawn_clearing_radius
+	var base := _h(cell)
+	var blend := 5
+	for y in range(-r - blend, r + blend + 1):
+		for x in range(-r - blend, r + blend + 1):
+			var c := cell + Vector2i(x, y)
+			if not _inside(c):
+				continue
+			_ensure_chunk_of(c)
+			var i := _idx(c)
+			var t := _types[i]
+			if t == WATER or t == DEEP:
+				continue
+			var d := Vector2(x, y).length()
+			if d <= r + 2:
+				_decor[i] = D_NONE if d <= r else _decor[i]
+				_heights[i] = base
+				if d <= plaza_radius + 0.5:
+					_types[i] = PLAZA
+					_decor[i] = D_NONE
+				elif d <= r and t == STONE:
+					_types[i] = GRASS
+			elif d <= r + 2 + blend:
+				# pente douce entre la clairière et le reste du terrain
+				var k := (d - r - 2) / float(blend)
+				_heights[i] = snappedf(lerpf(base, _heights[i], k), step_height)
+
+
+## Aplanit une petite place (lieux : obélisques, donjons).
+func _flatten_spot(cell: Vector2i, radius: int) -> void:
+	var base := _h(cell)
+	for y in range(-radius, radius + 1):
+		for x in range(-radius, radius + 1):
+			var c := cell + Vector2i(x, y)
+			if not _inside(c):
+				continue
+			_ensure_chunk_of(c)
+			var i := _idx(c)
+			_decor[i] = D_NONE
+			if absf(_heights[i] - base) < 1.6 and _types[i] != WATER and _types[i] != DEEP:
+				_heights[i] = base
+
+
+## Cherche une case sèche et plate près de `from` (en spirale).
+func _find_site(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
+	for r in range(0, max_r, 2):
+		for y in range(from.y - r, from.y + r + 1, 2):
+			for x in range(from.x - r, from.x + r + 1, 2):
+				if absi(x - from.x) != r and absi(y - from.y) != r:
+					continue
+				var c := Vector2i(x, y)
+				if not _inside(c) or c.x < 4 or c.y < 4 or c.x >= world_size.x - 4 or c.y >= world_size.y - 4:
+					continue
+				var t := _type(c)
+				if t != GRASS and t != SAND and t != STONE:
+					continue
+				if zone_id >= 0 and _zone[_idx(c)] != zone_id:
+					continue
+				if not _is_dry_area(c, 3):
+					continue
+				var ok := true
+				for o in [Vector2i(2, 0), Vector2i(-2, 0), Vector2i(0, 2), Vector2i(0, -2)]:
+					if absf(_h(c + o) - _h(c)) > 1.0:
+						ok = false
+				if ok:
+					return c
+	return Vector2i(-1, -1)
+
+
+## Place un obélisque et une entrée de donjon dans chaque zone.
+func _place_sites() -> void:
+	for z in zones:
+		var site: Vector2 = z.site
+		var start: bool = z.dist == 0.0
+		var ob: Vector2i
+		if start:
+			ob = spawn_cell + Vector2i(-8, -8)
+		else:
+			ob = _find_site(Vector2i(site), z.id, 44)
+			if ob.x < 0:
+				ob = _find_site(Vector2i(site), -1, 80)
+		if ob.x >= 0:
+			z.obelisk = ob
+			if not start:
+				_flatten_spot(ob, 2)
+			else:
+				_ensure_chunk_of(ob)
+				_decor[_idx(ob)] = D_NONE
+			if start:
+				z.obelisk_on = true
+		if not start:
+			var dir := Vector2.from_angle(_rand(z.id, 5, 9) * TAU)
+			var gate := _find_site(Vector2i(site + dir * 30.0), z.id, 36)
+			if gate.x >= 0 and (z.obelisk as Vector2i).distance_to(gate) > 12:
+				z.gate = gate
+				_flatten_spot(gate, 3)
 
 
 # ---------------------------------------------------------------- requêtes
@@ -265,11 +662,17 @@ func _inside(cell: Vector2i) -> bool:
 
 
 func _type(cell: Vector2i) -> int:
-	return _types[_idx(cell)] if _inside(cell) else DEEP
+	if not _inside(cell):
+		return DEEP
+	_ensure_chunk_of(cell)
+	return _types[_idx(cell)]
 
 
 func _h(cell: Vector2i) -> float:
-	return _heights[_idx(cell)] if _inside(cell) else SEA_FLOOR
+	if not _inside(cell):
+		return SEA_FLOOR
+	_ensure_chunk_of(cell)
+	return _heights[_idx(cell)]
 
 
 func cell_at(pos: Vector3) -> Vector2i:
@@ -427,7 +830,10 @@ func terrain_type(cell: Vector2i) -> int:
 
 
 func decor_at(cell: Vector2i) -> int:
-	return _decor[_idx(cell)] if _inside(cell) else D_NONE
+	if not _inside(cell):
+		return D_NONE
+	_ensure_chunk_of(cell)
+	return _decor[_idx(cell)]
 
 
 ## Enlève le décor d'une case (arbre, rocher...). Renvoie son type (D_NONE s'il n'y avait rien).
@@ -437,9 +843,8 @@ func remove_decor(cell: Vector2i, refresh := true) -> int:
 	var i := _idx(cell)
 	var k := _decor[i]
 	_decor[i] = D_NONE
-	_flowers[i] = 0
-	if refresh and k != D_NONE:
-		_build_decor_chunk(Vector2i(cell.x / CHUNK, cell.y / CHUNK))
+	if refresh and k != D_NONE and _decor_nodes.has(_chunk_of(cell)):
+		_build_decor_chunk(_chunk_of(cell))
 	return k
 
 
@@ -456,7 +861,6 @@ func set_terrain_height(cell: Vector2i, h: float) -> void:
 	_heights[i] = h
 	if _decor[i] != D_NONE:
 		_decor[i] = D_NONE
-		_flowers[i] = 0
 
 
 ## Redessine le terrain (et les décors) autour de ces cases.
@@ -469,100 +873,127 @@ func refresh_cells(cells: Array, decor := true) -> void:
 				if _inside(n):
 					chunks[Vector2i(n.x / CHUNK, n.y / CHUNK)] = true
 	for ch in chunks:
+		if not _terrain_nodes.has(ch):
+			continue
 		_build_terrain_chunk(ch)
 		if decor:
 			_build_decor_chunk(ch)
+	refresh_map(cells)
 
 
-# ---------------------------------------------------------------- génération
-
-func _height_at(cell: Vector2i, center: Vector2) -> float:
-	var h := height_noise.get_noise_2d(cell.x, cell.y)
-	var d := (Vector2(cell) - center) / center
-	var edge := maxf(absf(d.x), absf(d.y))
-	return h - pow(edge, 4.0) * island_falloff + land_bias
 
 
-func _terrain_height(t: int, h: float) -> float:
-	match t:
-		DEEP:
-			return -1.5
-		WATER:
-			return -0.75
-		SAND:
-			return 0.0
-		STONE:
-			var top := step_height * (1.0 + floorf((stone_level - sand_level) / terrace_size))
-			return top + step_height * stone_step_multiplier * (1.0 + floorf((h - stone_level) / terrace_size))
-	return step_height * (1.0 + floorf((h - sand_level) / terrace_size))
+# ---------------------------------------------------------------- affichage par morceaux
+
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint() or not _generated or player == null:
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam:
+		RenderingServer.global_shader_parameter_set("see_from", cam.global_position)
+		RenderingServer.global_shader_parameter_set("see_to", player.global_position + Vector3(0, 0.9, 0))
+		RenderingServer.global_shader_parameter_set("see_radius", 1.9)
+	_stream_timer -= delta
+	if _stream_timer <= 0.0:
+		_stream_timer = 0.05
+		_stream(player.global_position, false)
+	# carte : on dévoile autour du héros
+	if _last_reveal == Vector3.INF or player.global_position.distance_to(_last_reveal) > 2.5:
+		reveal(player.global_position, REVEAL_RADIUS)
+	_map_timer -= delta
+	if _map_dirty and _map_timer <= 0.0:
+		_map_timer = 0.4
+		_map_dirty = false
+		map_texture.update(map_image)
+	# zone actuelle, obélisques
+	var z := zone_at(player.global_position)
+	if not z.is_empty() and z.id != current_zone:
+		current_zone = z.id
+		var first: bool = not z.discovered
+		z.discovered = true
+		zone_entered.emit(z)
+		if first and player.has_method("gain_xp") and z.dist > 0.0:
+			player.gain_xp(15 + 5 * (z.level as Vector2i).x)
+	if not z.is_empty() and not z.obelisk_on and (z.obelisk as Vector2i).x >= 0:
+		var ob := cell_center(z.obelisk)
+		if Vector2(ob.x - player.global_position.x, ob.z - player.global_position.z).length() < 2.6:
+			z.obelisk_on = true
+			obelisk_activated.emit(z)
+			var holder: Node = _content_nodes.get(_chunk_of(z.obelisk))
+			if holder:
+				var n := holder.get_node_or_null("Obelisque")
+				if n:
+					VoxelBurst.spawn(n, ob + Vector3(0, 2.5, 0), Color("8af0ff"), 40, 6.0, 0.1, 0.8, "sphere", 8.0, false)
 
 
-func _pick_decor(t: int, h: float, m: float) -> int:
-	if t == STONE:
-		return D_ROCK if _rng.randf() < rock_chance else D_NONE
-	if t == GRASS:
-		if m > forest_moisture and _rng.randf() < forest_density:
-			return D_PINE if h > 0.35 else D_OAK
-		if _rng.randf() < scattered_tree_chance:
-			return D_OAK
-		if _rng.randf() < bush_chance:
-			return D_BUSH
-	elif t == SAND and _rng.randf() < rock_chance * 0.15:
-		return D_ROCK
-	return D_NONE
+func _chunk_of(cell: Vector2i) -> Vector2i:
+	return Vector2i(cell.x / CHUNK, cell.y / CHUNK)
 
 
-func _find_spawn(center: Vector2) -> Vector2i:
-	# case d'herbe la plus proche du centre, entourée de terre ferme
-	var c := Vector2i(center)
-	for r in range(0, maxi(world_size.x, world_size.y) / 2):
-		for y in range(c.y - r, c.y + r + 1):
-			for x in range(c.x - r, c.x + r + 1):
-				var cell := Vector2i(x, y)
-				if _type(cell) == GRASS and _is_dry_area(cell, spawn_clearing_radius + 2):
-					return cell
-	return c
-
-
-func _is_dry_area(cell: Vector2i, radius: int) -> bool:
-	for y in range(-radius, radius + 1, 2):
-		for x in range(-radius, radius + 1, 2):
-			var t := _type(cell + Vector2i(x, y))
-			if t == WATER or t == DEEP:
-				return false
-	return true
-
-
-func _make_clearing(cell: Vector2i) -> void:
-	var r := spawn_clearing_radius
-	var base := _h(cell)
-	var blend := 5
-	for y in range(-r - blend, r + blend + 1):
-		for x in range(-r - blend, r + blend + 1):
-			var c := cell + Vector2i(x, y)
-			if not _inside(c):
+## Crée les morceaux proches de `focus` et libère les morceaux lointains.
+## `all_now` : tout construire tout de suite (au chargement), sinon un morceau par appel.
+func _stream(focus: Vector3, all_now: bool) -> void:
+	var pc := Vector2(focus.x / CHUNK, focus.z / CHUNK)
+	var r := view_distance
+	var wanted := []
+	for cy in range(floori(pc.y - r), ceili(pc.y + r) + 1):
+		for cx in range(floori(pc.x - r), ceili(pc.x + r) + 1):
+			if cx < 0 or cy < 0 or cx >= _chunks.x or cy >= _chunks.y:
 				continue
-			var i := _idx(c)
-			var t := _types[i]
-			if t == WATER or t == DEEP:
-				continue
-			var d := Vector2(x, y).length()
-			if d <= r + 2:
-				_decor[i] = D_NONE if d <= r else _decor[i]
-				_heights[i] = base
-				if d <= plaza_radius + 0.5:
-					_types[i] = PLAZA
-					_decor[i] = D_NONE
-					_flowers[i] = 0
-				elif d <= r and t == STONE:
-					_types[i] = GRASS
-			elif d <= r + 2 + blend:
-				# pente douce entre la clairière et le reste du terrain
-				var k := (d - r - 2) / float(blend)
-				_heights[i] = snappedf(lerpf(base, _heights[i], k), step_height)
+			var ch := Vector2i(cx, cy)
+			var d := (Vector2(cx + 0.5, cy + 0.5) - pc).length()
+			if d <= r and not _terrain_nodes.has(ch):
+				wanted.append([d, ch])
+	wanted.sort_custom(func(a, b): return a[0] < b[0])
+	var budget := wanted.size() if all_now else 1 + wanted.size() / 10
+	for i in mini(budget, wanted.size()):
+		_load_chunk(wanted[i][1])
+	# on oublie les morceaux trop loin
+	for ch in _terrain_nodes.keys():
+		var d := (Vector2(ch.x + 0.5, ch.y + 0.5) - pc).length()
+		if d > r + 1.5:
+			_unload_chunk(ch)
 
 
-# ---------------------------------------------------------------- sol 3D
+func _load_chunk(ch: Vector2i) -> void:
+	_build_terrain_chunk(ch)
+	_build_decor_chunk(ch)
+	if not Engine.is_editor_hint():
+		_build_content(ch)
+
+
+func _unload_chunk(ch: Vector2i) -> void:
+	for dict in [_terrain_nodes, _decor_nodes]:
+		if dict.has(ch):
+			if is_instance_valid(dict[ch]):
+				dict[ch].queue_free()
+			dict.erase(ch)
+	if _content_nodes.has(ch):
+		var holder: Node = _content_nodes[ch]
+		if is_instance_valid(holder):
+			holder.set_meta("unloading", true)
+			holder.queue_free()
+		_content_nodes.erase(ch)
+
+
+## Vrai si ce morceau est affiché (et a donc ses obstacles).
+func is_chunk_loaded(cell: Vector2i) -> bool:
+	return _terrain_nodes.has(_chunk_of(cell))
+
+
+# ---------------------------------------------------------------- couleurs
+
+func _zone_color(cell: Vector2i, key: StringName, fallback: Color) -> Color:
+	var i := _idx(cell)
+	var r1 := _zone_type(_zone[i])
+	var c1: Color = r1.get(key) if r1 else fallback
+	var f := _blend[i] / 254.0
+	if f <= 0.0:
+		return c1
+	var r2 := _zone_type(_zone2[i])
+	var c2: Color = r2.get(key) if r2 else fallback
+	return c1.lerp(c2, f)
+
 
 func _top_color(cell: Vector2i) -> Color:
 	var t := _type(cell)
@@ -570,57 +1001,110 @@ func _top_color(cell: Vector2i) -> Color:
 	var c: Color
 	match t:
 		DEEP, WATER:
-			c = water_floor_color.darkened(0.25 if t == DEEP else 0.0)
+			c = _zone_color(cell, &"water_floor_color", water_floor_color).darkened(0.25 if t == DEEP else 0.0)
 		SAND:
-			c = sand_color
+			c = _zone_color(cell, &"sand_color", sand_color)
 		STONE:
-			c = stone_color
+			c = _zone_color(cell, &"stone_color", stone_color)
 		PLAZA:
 			c = plaza_color if (cell.x + cell.y) % 2 == 0 else plaza_color.darkened(0.08)
 		DIRT:
-			c = dirt_color.lightened(0.12)
+			c = _zone_color(cell, &"dirt_color", dirt_color).lightened(0.12)
 		_:
-			c = grass_color.lerp(grass_dark_color, v)
+			c = _zone_color(cell, &"grass_color", grass_color).lerp(_zone_color(cell, &"grass_dark_color", grass_dark_color), v)
 	return c.darkened(v * 0.07) if t != GRASS else c
 
 
 func _side_color(cell: Vector2i) -> Color:
 	match _type(cell):
 		SAND, DEEP, WATER:
-			return sand_color.darkened(0.1)
+			return _zone_color(cell, &"sand_color", sand_color).darkened(0.1)
 		STONE, PLAZA:
-			return stone_color.darkened(0.08)
+			return _zone_color(cell, &"stone_color", stone_color).darkened(0.08)
 		DIRT:
-			return dirt_color.darkened(0.05)
-	return dirt_color
+			return _zone_color(cell, &"dirt_color", dirt_color).darkened(0.05)
+	return _zone_color(cell, &"dirt_color", dirt_color)
 
 
-func _build_terrain() -> void:
-	if _terrain_mat == null:
-		_terrain_mat = StandardMaterial3D.new()
-		_terrain_mat.vertex_color_use_as_albedo = true
-		_terrain_mat.vertex_color_is_srgb = true
-		_terrain_mat.albedo_texture = GRAIN
-		_terrain_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
-		_terrain_mat.roughness = 1.0
-	for cy in ceili(world_size.y / float(CHUNK)):
-		for cx in ceili(world_size.x / float(CHUNK)):
-			_build_terrain_chunk(Vector2i(cx, cy))
+# ---------------------------------------------------------------- sol 3D
+
+func _ensure_materials() -> void:
+	if _terrain_mat:
+		return
+	_terrain_mat = StandardMaterial3D.new()
+	_terrain_mat.vertex_color_use_as_albedo = true
+	_terrain_mat.vertex_color_is_srgb = true
+	_terrain_mat.albedo_texture = GRAIN
+	_terrain_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+	_terrain_mat.roughness = 1.0
+	_liquid_mat = StandardMaterial3D.new()
+	_liquid_mat.vertex_color_use_as_albedo = true
+	_liquid_mat.vertex_color_is_srgb = true
+	_liquid_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_liquid_mat.albedo_texture = GRAIN
+	_liquid_mat.roughness = 0.2
+	_liquid_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+	_lava_mat = StandardMaterial3D.new()
+	_lava_mat.vertex_color_use_as_albedo = true
+	_lava_mat.vertex_color_is_srgb = true
+	_lava_mat.albedo_texture = GRAIN
+	_lava_mat.emission_enabled = true
+	_lava_mat.emission = Color(1.0, 0.4, 0.1)
+	_lava_mat.emission_energy_multiplier = 0.55
+	_lava_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
 
 
 func _build_terrain_chunk(ch: Vector2i) -> void:
+	_ensure_materials()
 	if _terrain_nodes.has(ch) and is_instance_valid(_terrain_nodes[ch]):
 		_terrain_nodes[ch].queue_free()
+	_gen_chunk_data(ch)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var liquid := SurfaceTool.new()
+	liquid.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var lava := SurfaceTool.new()
+	lava.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var has_liquid := false
+	var has_lava := false
 	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
 		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
-			_add_column(st, Vector2i(x, y))
+			var cell := Vector2i(x, y)
+			_add_column(st, cell)
+			var t := _types[_idx(cell)]
+			if t == WATER or t == DEEP:
+				var r := _zone_type(_zone[_idx(cell)])
+				if r and r.liquid_color.a > 0.0:
+					var yy := water_surface + 0.03
+					var c := r.liquid_color
+					var target := lava if r.liquid_glow else liquid
+					if not r.liquid_glow:
+						c.a = 0.82
+					else:
+						c = c.darkened(0.3)
+					_quad(target, Vector3(x, yy, y + 1), Vector3(x + 1, yy, y + 1), Vector3(x + 1, yy, y), Vector3(x, yy, y),
+						Vector3.UP, c.darkened(_rand(x, y, 11) * 0.15), Vector2(x, y), true)
+					if r.liquid_glow:
+						has_lava = true
+					else:
+						has_liquid = true
 	st.generate_tangents()
 	var mi := MeshInstance3D.new()
 	mi.name = "Sol_%d_%d" % [ch.x, ch.y]
 	mi.mesh = st.commit()
 	mi.material_override = _terrain_mat
+	if has_liquid:
+		var lm := MeshInstance3D.new()
+		lm.mesh = liquid.commit()
+		lm.material_override = _liquid_mat
+		lm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.add_child(lm)
+	if has_lava:
+		var lv := MeshInstance3D.new()
+		lv.mesh = lava.commit()
+		lv.material_override = _lava_mat
+		lv.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.add_child(lv)
 	$Terrain.add_child(mi)
 	_terrain_nodes[ch] = mi
 
@@ -730,9 +1214,25 @@ void fragment() {
 	$Terrain.add_child(sea_floor)
 
 
+
+
 # ---------------------------------------------------------------- décors 3D
 
-func _models_for(kind: int) -> Array[PackedScene]:
+func _models_for(kind: int, cell: Vector2i) -> Array[PackedScene]:
+	var r := _zone_type(_zone[_idx(cell)])
+	if r:
+		match kind:
+			D_OAK, D_PINE:
+				if not r.trees.is_empty():
+					return r.trees
+			D_BUSH:
+				if not r.bushes.is_empty():
+					return r.bushes
+			D_ROCK:
+				if not r.rocks.is_empty():
+					return r.rocks
+			D_FLOWERS, D_GRASS:
+				return r.small_plants
 	match kind:
 		D_OAK:
 			return oak_models
@@ -749,35 +1249,10 @@ func _models_for(kind: int) -> Array[PackedScene]:
 	return []
 
 
-## Maillage d'un modèle .glb de décor (avec sa position dans le modèle).
-func _mesh_of(scene: PackedScene) -> Array:
-	if _mesh_cache.has(scene):
-		return _mesh_cache[scene]
-	var inst := scene.instantiate() as Node3D
-	var mi := inst.find_children("*", "MeshInstance3D", true, false)
-	var result := []
-	if not mi.is_empty():
-		var m := mi[0] as MeshInstance3D
-		var xf := Transform3D.IDENTITY
-		var n: Node = m
-		while n != inst and n is Node3D:
-			xf = (n as Node3D).transform * xf
-			n = n.get_parent()
-		result = [m.mesh, xf]
-	inst.free()
-	_mesh_cache[scene] = result
-	return result
-
-
-func _build_decor() -> void:
-	for cy in ceili(world_size.y / float(CHUNK)):
-		for cx in ceili(world_size.x / float(CHUNK)):
-			_build_decor_chunk(Vector2i(cx, cy))
-
-
 func _build_decor_chunk(ch: Vector2i) -> void:
 	if _decor_nodes.has(ch) and is_instance_valid(_decor_nodes[ch]):
 		_decor_nodes[ch].queue_free()
+	_gen_chunk_data(ch)
 	if _trunk_shape == null:
 		_trunk_shape = CylinderShape3D.new()
 		_trunk_shape.radius = 0.35
@@ -798,7 +1273,7 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 			var kind := _decor[_idx(cell)]
 			if kind == D_NONE:
 				continue
-			var models := _models_for(kind)
+			var models := _models_for(kind, cell)
 			if models.is_empty():
 				continue
 			# hasard propre à la case : le décor ne change pas quand on redessine le morceau
@@ -853,6 +1328,331 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 		holder.add_child(mmi)
 	$Decor.add_child(holder)
 	_decor_nodes[ch] = holder
+
+
+# ---------------------------------------------------------------- contenu des morceaux
+
+## Camps de monstres, objets au sol, obélisques et donjons d'un morceau (recréés à chaque affichage).
+func _build_content(ch: Vector2i) -> void:
+	var holder := Node3D.new()
+	holder.name = "Contenu_%d_%d" % [ch.x, ch.y]
+	_content_root().add_child(holder)
+	_content_nodes[ch] = holder
+	var origin := cell_center(spawn_cell)
+	# lieux
+	for z in zones:
+		if _chunk_of(z.obelisk) == ch and (z.obelisk as Vector2i).x >= 0:
+			_add_obelisk(holder, z)
+		if _chunk_of(z.gate) == ch and (z.gate as Vector2i).x >= 0:
+			_add_gate(holder, z)
+	# camp de monstres (un au plus par morceau)
+	var crng := RandomNumberGenerator.new()
+	crng.seed = hash(Vector3i(ch.x, ch.y, world_seed + 555))
+	var cell := Vector2i(ch.x * CHUNK + crng.randi_range(2, CHUNK - 3), ch.y * CHUNK + crng.randi_range(2, CHUNK - 3))
+	if _inside(cell):
+		var z: Dictionary = zones[_zone[_idx(cell)]]
+		var r: RegionData = z.type
+		var chance := (r.camp_density if r else 0.5) * CHUNK * CHUNK / 1000.0
+		var t := _type(cell)
+		var pos := cell_center(cell)
+		var far := Vector2(pos.x - origin.x, pos.z - origin.z).length() >= camp_min_distance
+		var near_site := (z.obelisk as Vector2i).distance_to(cell) < 8 or (z.gate as Vector2i).distance_to(cell) < 6
+		if crng.randf() < chance and far and not near_site and (t == GRASS or t == STONE or t == SAND) \
+				and _decor[_idx(cell)] == D_NONE and _is_dry_area(cell, 2):
+			_add_camp(holder, cell, z, crng)
+	# objets à ramasser
+	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
+		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
+			var c := Vector2i(x, y)
+			if _taken.has(c):
+				continue
+			var got := _loot_at(c)
+			if got.is_empty():
+				continue
+			var p := spawn_pickup(got[0], cell_center(c), got[1], holder)
+			if p:
+				p.tree_exiting.connect(_on_pickup_gone.bind(c, holder))
+
+
+func _on_pickup_gone(cell: Vector2i, holder: Node) -> void:
+	if is_instance_valid(holder) and not holder.has_meta("unloading"):
+		_taken[cell] = true
+
+
+## Objet posé sur une case (toujours le même pour une partie donnée) : [objet, quantité] ou [].
+func _loot_at(c: Vector2i) -> Array:
+	var i := _idx(c)
+	var d := _decor[i]
+	if d == D_OAK or d == D_PINE or d == D_BUSH or d == D_ROCK:
+		return []
+	if Vector2(c - spawn_cell).length() < plaza_radius + 1:
+		return []
+	var t := _types[i]
+	if t == WATER or t == DEEP:
+		return []
+	var r := _zone_type(_zone[i])
+	var roll := _rand(c.x, c.y, 21)
+	var chance := r.resource_chance if r else 0.01
+	if roll < chance and r and not r.resources.is_empty():
+		var it: ItemData = r.resources[int(_rand(c.x, c.y, 22) * r.resources.size()) % r.resources.size()]
+		return [it, 1 + int(_rand(c.x, c.y, 23) * 2.5)]
+	if roll < chance + wild_loot_chance and not wild_loot.is_empty() and t != SAND:
+		return [wild_loot[int(_rand(c.x, c.y, 24) * wild_loot.size()) % wild_loot.size()], 1]
+	if r == null:
+		if t == STONE and roll < 0.02:
+			return [iron_ore_item if roll < 0.008 else stone_item, 1]
+		if t == GRASS and roll < 0.012:
+			return [wood_item if roll < 0.008 else fiber_item, 1]
+	return []
+
+
+func _add_camp(holder: Node3D, cell: Vector2i, z: Dictionary, crng: RandomNumberGenerator) -> void:
+	var r: RegionData = z.type
+	var camp := EnemyCamp.new()
+	camp.name = "Camp"
+	var pool: Array[EnemyData] = []
+	var lv: Vector2i = z.level
+	if r and not r.elite_enemies.is_empty() and crng.randf() < 0.1 + 0.25 * float(z.dist):
+		pool.append(r.elite_enemies[crng.randi() % r.elite_enemies.size()])
+		camp.count = 1
+		lv = Vector2i(lv.y, lv.y + 1)
+		# l'élite vient avec quelques monstres de la région
+		if not r.enemies.is_empty() and crng.randf() < 0.6:
+			var extra := EnemyCamp.new()
+			extra.name = "Escorte"
+			extra.enemy_types = [r.enemies[crng.randi() % r.enemies.size()]]
+			extra.count = crng.randi_range(1, 2)
+			extra.levels = z.level
+			extra.base_level = r.level_range.x
+			extra.radius = 3.5
+			holder.add_child(extra)
+			extra.global_position = cell_center(cell)
+	elif r and not r.enemies.is_empty():
+		pool.append(r.enemies[crng.randi() % r.enemies.size()])
+		if crng.randf() < 0.4:
+			pool.append(r.enemies[crng.randi() % r.enemies.size()])
+		camp.count = crng.randi_range(monsters_per_camp.x, monsters_per_camp.y)
+	else:
+		var old := plains_enemies if _type(cell) != STONE else rock_enemies
+		if old.is_empty():
+			return
+		pool.append(old[crng.randi() % old.size()])
+		camp.count = crng.randi_range(monsters_per_camp.x, monsters_per_camp.y)
+	camp.enemy_types = pool
+	camp.levels = lv
+	camp.base_level = r.level_range.x if r else 1
+	holder.add_child(camp)
+	camp.global_position = cell_center(cell)
+
+
+func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
+	var body := StaticBody3D.new()
+	body.name = "Obelisque"
+	var cs := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(1.2, 3.0, 1.2)
+	cs.shape = box
+	cs.position.y = 1.5
+	body.add_child(cs)
+	if obelisk_model:
+		body.add_child(obelisk_model.instantiate())
+	var light := OmniLight3D.new()
+	light.light_color = Color("8af0ff")
+	light.light_energy = 1.2
+	light.omni_range = 5.0
+	light.position.y = 3.2
+	body.add_child(light)
+	var label := Label3D.new()
+	label.text = "Obélisque\n%s" % z.name
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.font_size = 40
+	label.pixel_size = 0.006
+	label.outline_size = 10
+	label.modulate = Color("bff6ff")
+	label.position.y = 4.0
+	label.no_depth_test = true
+	body.add_child(label)
+	holder.add_child(body)
+	body.global_position = cell_center(z.obelisk)
+
+
+func _add_gate(holder: Node3D, z: Dictionary) -> void:
+	var body := StaticBody3D.new()
+	body.name = "Donjon"
+	for sx in [-0.7, 0.7]:
+		var cs := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.5, 2.0, 0.6)
+		cs.shape = box
+		cs.position = Vector3(sx, 1.0, 0)
+		body.add_child(cs)
+	if dungeon_gate_model:
+		body.add_child(dungeon_gate_model.instantiate())
+	var label := Label3D.new()
+	label.text = "Donjon de %s\n(scellé)" % z.name
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.font_size = 36
+	label.pixel_size = 0.006
+	label.outline_size = 10
+	label.modulate = Color("ffb0a0")
+	label.position.y = 3.0
+	body.add_child(label)
+	holder.add_child(body)
+	body.global_position = cell_center(z.gate)
+
+
+# ---------------------------------------------------------------- carte
+
+## Couleur d'une case sur la carte (relief éclairé du nord-ouest).
+func map_color(cell: Vector2i) -> Color:
+	var t := _type(cell)
+	var c := _top_color(cell)
+	if t == WATER or t == DEEP:
+		var r := _zone_type(_zone[_idx(cell)])
+		if r and r.liquid_color.a > 0.0:
+			c = r.liquid_color
+		else:
+			c = Color(0.25, 0.5, 0.8).darkened(0.25 if t == DEEP else 0.0)
+	else:
+		var slope := _h(cell) - _h(cell + Vector2i(-1, -1))
+		c = c.lightened(clampf(slope * 0.25, 0.0, 0.3)) if slope > 0 else c.darkened(clampf(-slope * 0.25, 0.0, 0.3))
+	if build and not build.column(cell).is_empty():
+		c = Color("c8a070")
+	return c
+
+
+## Dévoile la carte autour d'une position.
+func reveal(pos: Vector3, radius: int) -> void:
+	if map_image == null:
+		return
+	_last_reveal = pos
+	var c := cell_at(pos)
+	var r2 := radius * radius
+	for y in range(c.y - radius, c.y + radius + 1):
+		for x in range(c.x - radius, c.x + radius + 1):
+			var dx := x - c.x
+			var dy := y - c.y
+			if dx * dx + dy * dy > r2:
+				continue
+			var cell := Vector2i(x, y)
+			if not _inside(cell):
+				continue
+			var i := _idx(cell)
+			if _revealed[i] != 0:
+				continue
+			_revealed[i] = 1
+			map_image.set_pixelv(cell, map_color(cell))
+	_map_dirty = true
+
+
+func is_revealed(cell: Vector2i) -> bool:
+	return _inside(cell) and _revealed[_idx(cell)] != 0
+
+
+## Redessine des cases de la carte (après une construction ou un terrassement).
+func refresh_map(cells: Array) -> void:
+	if map_image == null:
+		return
+	for c in cells:
+		if is_revealed(c):
+			map_image.set_pixelv(c, map_color(c))
+	_map_dirty = true
+
+
+## Affiche tout de suite les morceaux autour d'une position (avant une téléportation).
+func load_area(pos: Vector3) -> void:
+	if _generated:
+		_stream(pos, true)
+
+
+## Téléporte le héros près d'un obélisque activé (ou au village).
+func travel_to(z: Dictionary) -> bool:
+	if player == null or z.is_empty() or not z.obelisk_on:
+		return false
+	var cell: Vector2i = z.obelisk
+	var dest := cell_center(cell + Vector2i(0, 2))
+	_stream(dest, true)
+	player.global_position = dest
+	if player.has_method("snap_camera"):
+		player.snap_camera()
+	reveal(dest, REVEAL_RADIUS)
+	return true
+
+
+const DECOR_SHADER := """
+shader_type spatial;
+render_mode cull_back;
+uniform vec4 albedo : source_color = vec4(1.0);
+uniform sampler2D tex : source_color, filter_nearest_mipmap, repeat_enable;
+uniform vec3 emission = vec3(0.0);
+global uniform vec3 see_from;
+global uniform vec3 see_to;
+global uniform float see_radius;
+varying vec3 wpos;
+void vertex() { wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+void fragment() {
+	// les feuillages entre la caméra et le héros deviennent transparents
+	vec3 d = see_to - see_from;
+	float t = dot(wpos - see_from, d) / max(dot(d, d), 0.001);
+	if (see_radius > 0.0 && t > 0.0 && t < 0.97 && wpos.y > see_to.y + 0.2) {
+		float r = distance(wpos, see_from + d * t) / (see_radius * 1.25);
+		float dither = fract(sin(dot(floor(FRAGCOORD.xy), vec2(12.9898, 78.233))) * 43758.5453);
+		if (r < 0.7 + 0.3 * dither) { discard; }
+	}
+	ALBEDO = albedo.rgb * texture(tex, UV).rgb;
+	EMISSION = emission;
+	ROUGHNESS = 0.95;
+}
+"""
+var _decor_shader: Shader
+var _decor_mats := {}
+
+
+## Matériau des décors avec « fenêtre de vision » (même couleur que le matériau du modèle).
+func _decor_material(src: Material) -> Material:
+	var sm := src as StandardMaterial3D
+	if sm == null or sm.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+		return src
+	if _decor_mats.has(sm):
+		return _decor_mats[sm]
+	if _decor_shader == null:
+		_decor_shader = Shader.new()
+		_decor_shader.code = DECOR_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = _decor_shader
+	m.set_shader_parameter("albedo", sm.albedo_color)
+	m.set_shader_parameter("tex", sm.albedo_texture)
+	if sm.emission_enabled:
+		m.set_shader_parameter("emission", Vector3(sm.emission.r, sm.emission.g, sm.emission.b) * sm.emission_energy_multiplier)
+	_decor_mats[sm] = m
+	return m
+
+
+## Maillage d'un modèle .glb de décor (avec sa position dans le modèle).
+func _mesh_of(scene: PackedScene) -> Array:
+	if _mesh_cache.has(scene):
+		return _mesh_cache[scene]
+	var inst := scene.instantiate() as Node3D
+	var mi := inst.find_children("*", "MeshInstance3D", true, false)
+	var result := []
+	if not mi.is_empty():
+		var m := mi[0] as MeshInstance3D
+		var xf := Transform3D.IDENTITY
+		var n: Node = m
+		while n != inst and n is Node3D:
+			xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		var mesh := m.mesh
+		if not Engine.is_editor_hint() and mesh is ArrayMesh:
+			mesh = mesh.duplicate()
+			for s in mesh.get_surface_count():
+				var mat := m.get_active_material(s)
+				if mat:
+					(mesh as ArrayMesh).surface_set_material(s, _decor_material(mat))
+		result = [mesh, xf]
+	inst.free()
+	_mesh_cache[scene] = result
+	return result
 
 
 # ---------------------------------------------------------------- village
@@ -944,103 +1744,15 @@ func _give_kit(villager: Node, kit: Array) -> void:
 
 
 ## Pose un objet au sol (il flotte et se ramasse en marchant dessus).
-func spawn_pickup(item: ItemData, pos: Vector3, amount: int = 1) -> ItemPickup:
+func spawn_pickup(item: ItemData, pos: Vector3, amount: int = 1, parent: Node = null) -> ItemPickup:
 	if pickup_scene == null or item == null:
 		return null
 	var p := pickup_scene.instantiate() as ItemPickup
 	p.item = item
 	p.count = amount
-	$Village.add_child(p)
+	(parent if parent else $Village).add_child(p)
 	p.global_position = Vector3(pos.x, ground_height_at(pos), pos.z)
 	return p
-
-
-## Place les camps de monstres, loin du village.
-func _spawn_camps() -> void:
-	var crng := RandomNumberGenerator.new()
-	crng.seed = world_seed + 555
-	var origin := cell_center(spawn_cell)
-	var camps: Array[Vector3] = []
-	var tries := 0
-	while camps.size() < camp_count and tries < 4000:
-		tries += 1
-		var cell := Vector2i(crng.randi_range(2, world_size.x - 3), crng.randi_range(2, world_size.y - 3))
-		var t := _type(cell)
-		if t != GRASS and t != STONE:
-			continue
-		var pos := cell_center(cell)
-		var d := Vector2(pos.x - origin.x, pos.z - origin.z).length()
-		if d < camp_min_distance:
-			continue
-		var ok := true
-		for c in camps:
-			if c.distance_to(pos) < camp_spacing:
-				ok = false
-				break
-		if not ok or not _is_dry_area(cell, 2):
-			continue
-		var pool: Array[EnemyData]
-		if d > danger_distance and not danger_enemies.is_empty() and crng.randf() < 0.45:
-			pool = danger_enemies
-		elif t == STONE:
-			pool = rock_enemies
-		elif moisture_noise.get_noise_2d(cell.x, cell.y) > forest_moisture:
-			pool = forest_enemies
-		else:
-			pool = plains_enemies
-		if pool.is_empty():
-			continue
-		var camp := EnemyCamp.new()
-		camp.name = "Camp_%d" % camps.size()
-		camp.enemy_types = [pool[crng.randi() % pool.size()]]
-		camp.count = crng.randi_range(monsters_per_camp.x, monsters_per_camp.y)
-		$Village.add_child(camp)
-		camp.global_position = pos
-		camps.append(pos)
-
-
-## Répartit les matériaux et quelques équipements rares sur l'île.
-func _scatter_loot() -> void:
-	var lrng := RandomNumberGenerator.new()
-	lrng.seed = world_seed + 99
-	for y in world_size.y:
-		for x in world_size.x:
-			var cell := Vector2i(x, y)
-			var i := _idx(cell)
-			var d := _decor[i]
-			if d == D_OAK or d == D_PINE or d == D_BUSH or d == D_ROCK:
-				continue
-			if Vector2(cell - spawn_cell).length() < plaza_radius + 1:
-				continue
-			var t := _types[i]
-			var item: ItemData = null
-			var amount := 1
-			var r := lrng.randf()
-			match t:
-				GRASS:
-					var m := moisture_noise.get_noise_2d(x, y)
-					if m > forest_moisture and r < wood_chance:
-						item = wood_item
-						amount = lrng.randi_range(1, 3)
-					elif r < fiber_chance:
-						item = fiber_item
-						amount = lrng.randi_range(1, 3)
-					elif r < fiber_chance + leather_chance:
-						item = leather_item
-					elif r < fiber_chance + leather_chance + wild_loot_chance and not wild_loot.is_empty():
-						item = wild_loot[lrng.randi() % wild_loot.size()]
-				STONE:
-					if r < iron_chance:
-						item = iron_ore_item
-						amount = lrng.randi_range(1, 2)
-					elif r < iron_chance + stone_chance:
-						item = stone_item
-						amount = lrng.randi_range(1, 3)
-				SAND:
-					if r < stone_chance * 0.4:
-						item = stone_item
-			if item:
-				spawn_pickup(item, cell_center(cell), amount)
 
 
 func _ensure_noises() -> void:
@@ -1050,3 +1762,6 @@ func _ensure_noises() -> void:
 	if moisture_noise == null:
 		moisture_noise = FastNoiseLite.new()
 		moisture_noise.frequency = 0.04
+	if _warp_noise == null:
+		_warp_noise = FastNoiseLite.new()
+		_warp_noise.frequency = 0.012

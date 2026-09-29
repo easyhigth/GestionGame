@@ -10,13 +10,15 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 - I (ou Tab) : inventaire, équipement et artisanat
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures
 - B (ou Start à la manette) : mode construction (voir plus bas)
+- M (ou croix haut à la manette) : carte du monde et voyage rapide
 - R : changer de race (pour tester les 22 races)
 - N : nouveau monde
 
 ## Ce que tu peux modifier sans code
 - `data/races/*.tres` : les 22 races (nom, description, stats, modèle 3D nu du joueur, modèles des habitants, équipements de la race). Duplique un fichier pour créer une race.
 - `data/items/*.tres` : les 28 objets (matériaux, armes, boucliers, casques, armures, brassards, jambières, capes) : nom, description, emplacement, rareté, bonus d'attaque / défense / magie / vitesse.
-- `data/enemies/*.tres` : les 6 monstres (loup, loup alpha, sanglier, gobelin pillard, squelette, orc brutal) : modèle, équipement porté, vie, attaque, défense, vitesse, distance de repérage, portée et durée de leurs coups, butin et chances de le lâcher.
+- `data/regions/*.tres` : les 8 types de régions du monde ouvert (prairie, forêt profonde, marais brumeux, désert, hautes montagnes, toundra gelée, bois enchanté, terres de cendres) : noms des zones, niveaux, climat, distance minimale au village, relief, couleurs du sol, liquide (marais, lave), arbres, buissons, rochers, plantes, monstres et monstres d'élite, densité des camps, ressources au sol.
+- `data/enemies/*.tres` : les 23 monstres (loup, loup alpha, sanglier, gobelin pillard, squelette, orc brutal) : modèle, équipement porté, vie, attaque, défense, vitesse, distance de repérage, portée et durée de leurs coups, butin et chances de le lâcher.
 - `data/recipes/*.tres` : les 69 recettes d'artisanat (objet fabriqué, ingrédients et quantités, établi obligatoire ou non, meuble d'artisan à avoir à côté (**Station**), onglet (**Category**)).
 - `data/rooms/*.tres` : les 17 types de pièces (maison, dortoir, forge, boulangerie, camp d'entraînement, grange, scierie, maçonnerie, verrerie, taverne, marché, bibliothèque, temple, tour de mage, atelier de tissage, entrepôt, salle du trône) : mobilier obligatoire, taille minimale, métier et nombre de postes, production, lits, bonus pour le héros.
 - `data/player/player_stats.tres` : vitesse (en m/s), roulade, vie du joueur.
@@ -92,6 +94,17 @@ Tout se construit à la main, bloc par bloc, sans plan imposé. Touche **B** : m
 - Les meubles d'artisan servent aussi d'ateliers pour toi : approche-toi d'un four, d'une enclume, d'une meule... pour débloquer leurs recettes.
 - Modèles : `tools/voxel_blocks_generator.py` (textures des blocs), `tools/voxel_furniture_generator.py` (31 meubles), `tools/build_database.py` (objets, recettes et types de pièces).
 
+## Monde ouvert
+- Un monde de 640 × 640 m (réglable : nœud **World** > **World Size**) découpé en 25 zones d'environ 128 m (**Zone Size**), chacune avec un nom et un type de région tiré selon le climat (nord froid, sud chaud), l'humidité et l'éloignement du village. Les frontières sont fondues sur une dizaine de mètres (**Region Blend**).
+- Le terrain est calculé et affiché par morceaux de 16 m autour du héros (**View Distance**) : seuls les morceaux proches existent en 3D, avec leurs camps de monstres et leurs objets au sol. Un objet ramassé ne revient pas.
+- Plus on s'éloigne du village, plus les monstres sont forts : chaque zone a sa fourchette de niveaux (« Loup · Nv 3 ») et des camps d'élite (loup alpha, ogre des cimes, seigneur squelette, dryade corrompue, seigneur démon...).
+- Nouveaux monstres : slimes (bleu, acide, de magma), araignée géante, loup de givre, ours des neiges, scorpion géant, salamandre de feu, homme-lézard, harpie, ogre, esprit follet, fée sauvage, dryade corrompue, démons, seigneur squelette.
+- **Obélisques** : un par zone. Passe à côté pour l'activer, puis voyage vers n'importe quel obélisque activé depuis la carte. Celui du village est actif dès le départ.
+- **Carte** (M) : se dévoile là où tu passes, avec les noms et niveaux des zones découvertes, les obélisques, les entrées de donjon (scellées jusqu'à l'étape 5) et ton royaume. Molette ou gâchettes : zoom. **Mini-carte** en haut à droite, avec le nom de la zone.
+- Un bandeau annonce chaque nouvelle zone (nom, région, niveaux) ; la découverte d'une zone donne de l'expérience.
+- Les feuillages et les murs entre la caméra et le héros deviennent transparents.
+- Modèles : `tools/voxel_region_props.py` (cactus, sapins enneigés, arbres morts, champignons géants, cerisiers, roseaux, cristaux, roches volcaniques, obélisque, porte de donjon), `tools/voxel_creature_generator.py` (créatures), `tools/regions_database.py` (monstres et régions).
+
 ## Feuille de route
 Le jeu a deux piliers : un **RPG d'action en monde ouvert** vu de dessus (héros, exploration libre, donjons, boss, combat en temps réel à la Zelda) et la **construction d'un royaume** (des huttes jusqu'à une capitale d'empire, population de n'importe quelles races, habitants dirigés un par un). Inspiration : l'univers de « Moi, quand je me réincarne en Slime », avec des noms originaux.
 
@@ -106,7 +119,7 @@ Choix de conception :
 1. Combat à la Zelda : verrouillage de cible, combos, attaque chargée, esquive parfaite, parade et contre, animations et effets. **(fait)**
 2. Héros : création et personnalisation, classes, métiers, niveaux **(fait)**  ; 151 compétences uniques qui évoluent **(fait)**.
 3. Construction du royaume : terrassement, blocs et matériaux par âge, pièces reconnues par leur mobilier, rangs, postes des habitants et production. **(fait)**
-4. Monde ouvert : régions, monde plus grand chargé par morceaux, carte. **(prochaine étape)**
-5. Donjons et boss.
+4. Monde ouvert : 8 régions et 25 zones nommées, monde chargé par morceaux, niveaux des monstres, carte, mini-carte, obélisques de voyage rapide. **(fait)**
+5. Donjons et boss. **(prochaine étape)**
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville.
 7. Sauvegarde, menus, équilibrage.

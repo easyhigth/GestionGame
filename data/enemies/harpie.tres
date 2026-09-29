@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/harpy_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/harpy_equipment.glb" id="r3"]
+[ext_resource type="Resource" path="res://data/items/dagger.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="r6"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Harpie"
+model = ExtResource("r2")
+equipment_library = ExtResource("r3")
+equipment = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5")])
+model_scale = 1.0
+color = Color(1.000, 0.690, 0.941, 1)
+max_health = 85
+attack = 15
+defense = 2
+move_speed = 4.8
+aggro_range = 10
+leash_range = 20
+attack_range = 1.6
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 1.25
+poise = 15
+attack_cooldown = 1.0
+knockback = 3.0
+body_radius = 0.35
+loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r6")])
+loot_chances = PackedFloat32Array(0.15, 0.6)

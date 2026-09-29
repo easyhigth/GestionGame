@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="RegionData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/region_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="3"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_snow_1.glb" id="r3"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_snow_2.glb" id="r4"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/snow_rock_1.glb" id="r5"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/snow_rock_2.glb" id="r6"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/dry_grass_1.glb" id="r7"]
+[ext_resource type="Resource" path="res://data/enemies/loup_givre.tres" id="r8"]
+[ext_resource type="Resource" path="res://data/enemies/ours_neige.tres" id="r9"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="r10"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="r11"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="r12"]
+
+[resource]
+script = ExtResource("1")
+id = "toundra"
+display_name = "Toundra gelée"
+names = PackedStringArray("Toundra de Blanchegivre", "Steppes Hurlantes", "Glacis du Nord", "Plaine des Aurores", "Fjords de Givrecœur")
+description = "Neige éternelle, loups de givre et ours gigantesques."
+level_range = Vector2i(8, 13)
+map_color = Color(0.910, 0.941, 0.973, 1)
+temperature = -1.0
+moisture = 0.3
+min_distance = 0.55
+height_bias = 0.0
+relief = 1.1
+grass_color = Color(0.933, 0.949, 0.965, 1)
+grass_dark_color = Color(0.863, 0.894, 0.925, 1)
+dirt_color = Color(0.541, 0.541, 0.573, 1)
+sand_color = Color(0.816, 0.847, 0.878, 1)
+stone_color = Color(0.690, 0.706, 0.737, 1)
+water_floor_color = Color(0.659, 0.753, 0.816, 1)
+trees = Array[PackedScene]([ExtResource("r3"), ExtResource("r4")])
+forest_density = 0.3
+scattered_tree_chance = 0.03
+bushes = Array[PackedScene]([])
+bush_chance = 0.0
+rocks = Array[PackedScene]([ExtResource("r5"), ExtResource("r6")])
+rock_chance = 0.05
+small_plants = Array[PackedScene]([ExtResource("r7")])
+small_plant_chance = 0.03
+enemies = Array[ExtResource("2")]([ExtResource("r8"), ExtResource("r8"), ExtResource("r9")])
+elite_enemies = Array[ExtResource("2")]([ExtResource("r9")])
+camp_density = 0.5
+resources = Array[ExtResource("3")]([ExtResource("r10"), ExtResource("r11"), ExtResource("r12")])
+resource_chance = 0.008

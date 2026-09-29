@@ -580,7 +580,9 @@ func _on_died() -> void:
 ## Se relève au village, avec toute sa vie.
 func _respawn() -> void:
 	if _world:
-		global_position = _world.cell_center(_world.spawn_cell) + Vector3(0, 0, 3)
+		var home := _world.cell_center(_world.spawn_cell) + Vector3(0, 0, 3)
+		_world.load_area(home)
+		global_position = home
 	health.revive(1.0)
 	visual.set_downed(false)
 	_knockback = Vector3.ZERO

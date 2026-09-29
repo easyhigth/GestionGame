@@ -8,6 +8,9 @@ extends Combatant
 signal died_at(pos: Vector3)
 
 @export var data: EnemyData
+## Niveau (affiché) et multiplicateur de puissance, fixés par le camp selon la région.
+@export var level: int = 1
+@export var power: float = 1.0
 
 ## Position du camp.
 var home: Vector3
@@ -48,19 +51,19 @@ func _apply_data() -> void:
 	body_radius = data.body_radius
 	for it in data.equipment:
 		equipment.equip(it)
-	health.set_max(data.max_health, true)
-	name_label.text = data.display_name
+	health.set_max(roundi(data.max_health * power), true)
+	name_label.text = "%s · Nv %d" % [data.display_name, level]
 	name_label.modulate = data.color
 	name_label.position.y = 2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale
 	bar.position.y = name_label.position.y - 0.22
 
 
 func base_attack() -> int:
-	return data.attack if data else 8
+	return roundi((data.attack if data else 8) * power)
 
 
 func base_defense() -> int:
-	return data.defense if data else 0
+	return roundi((data.defense if data else 0) * power)
 
 
 func base_magic() -> int:
@@ -238,7 +241,7 @@ func _on_died() -> void:
 	if player and player.has_method("on_enemy_killed"):
 		player.on_enemy_killed(self)
 	if player and player.has_method("gain_xp") and data:
-		player.gain_xp(data.xp_reward if data.xp_reward > 0 else roundi(data.max_health / 4.0 + data.attack))
+		player.gain_xp(roundi((data.xp_reward if data.xp_reward > 0 else data.max_health / 4.0 + data.attack) * power))
 	died_at.emit(global_position)
 
 
