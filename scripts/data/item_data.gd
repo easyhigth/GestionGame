@@ -43,6 +43,16 @@ const RARITY_COLORS := {
 ## Bonus de vitesse de déplacement (0.1 = +10 %, négatif pour les armures lourdes).
 @export_range(-0.5, 0.5, 0.01) var speed_bonus: float = 0.0
 
+@export_group("Arme")
+## Portée du coup (mètres). Pour un bâton : distance parcourue par le sort.
+@export var reach: float = 1.7
+## Vitesse des coups (1 = normal, 1.5 = rapide, 0.6 = lent).
+@export_range(0.3, 2.0, 0.05) var attack_speed: float = 1.0
+## Recul supplémentaire infligé.
+@export var knockback: float = 0.0
+## Lance un sort magique au lieu de frapper (dégâts = magie).
+@export var projectile: bool = false
+
 
 func is_equipment() -> bool:
 	return slot != Slot.NONE
@@ -72,4 +82,6 @@ func stats_text() -> String:
 		parts.append("Magie %+d" % magic)
 	if speed_bonus:
 		parts.append("Vitesse %+d %%" % roundi(speed_bonus * 100.0))
+	if slot == Slot.MAIN_HAND:
+		parts.append("Sort à distance" if projectile else "Portée %.1f m" % reach)
 	return "  ".join(parts)

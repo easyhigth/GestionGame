@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/undead_base.glb" id="model"]
+[ext_resource type="PackedScene" path="res://assets/equipment/undead_equipment.glb" id="lib"]
+[ext_resource type="Resource" path="res://data/items/sword_iron.tres" id="it_sword_iron"]
+[ext_resource type="Resource" path="res://data/items/shield_wood.tres" id="it_shield_wood"]
+[ext_resource type="Resource" path="res://data/items/iron_helmet.tres" id="it_iron_helmet"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="it_stone"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="it_iron_ingot"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Squelette"
+model = ExtResource("model")
+equipment_library = ExtResource("lib")
+equipment = Array[ExtResource("2")]([ExtResource("it_sword_iron"), ExtResource("it_shield_wood"), ExtResource("it_iron_helmet")])
+color = Color(0.847, 0.847, 0.941, 1)
+max_health = 60
+attack = 6
+defense = 1
+move_speed = 3.1
+aggro_range = 9
+leash_range = 18
+attack_range = 1.8
+attack_duration = 0.8
+attack_cooldown = 1.0
+knockback = 4.0
+body_radius = 0.35
+loot = Array[ExtResource("2")]([ExtResource("it_stone"), ExtResource("it_iron_ingot"), ExtResource("it_sword_iron"), ExtResource("it_shield_wood"), ExtResource("it_iron_helmet")])
+loot_chances = PackedFloat32Array(0.6, 0.3, 0.08, 0.12, 0.08)

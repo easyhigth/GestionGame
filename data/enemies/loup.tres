@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/creatures/wolf.glb" id="model"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Loup"
+model = ExtResource("model")
+color = Color(1.000, 0.690, 0.439, 1)
+max_health = 40
+attack = 9
+defense = 1
+move_speed = 4.4
+aggro_range = 10
+leash_range = 20
+attack_range = 1.5
+attack_duration = 0.62
+attack_cooldown = 0.9
+knockback = 3.5
+body_radius = 0.45
+loot = Array[ExtResource("2")]([ExtResource("it_leather"), ExtResource("it_leather"), ExtResource("it_fiber")])
+loot_chances = PackedFloat32Array(0.7, 0.3, 0.2)

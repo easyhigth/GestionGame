@@ -10,3 +10,5 @@ description = "Courte et rapide, idéale pour les agiles."
 slot = 1
 attack = 4
 speed_bonus = 0.05
+reach = 1.35
+attack_speed = 1.5

@@ -12,3 +12,6 @@ rarity = 2
 two_handed = true
 attack = 14
 speed_bonus = -0.08
+reach = 2.0
+attack_speed = 0.65
+knockback = 4.0

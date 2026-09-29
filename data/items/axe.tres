@@ -11,3 +11,6 @@ slot = 1
 rarity = 1
 attack = 10
 speed_bonus = -0.03
+reach = 1.8
+attack_speed = 0.85
+knockback = 1.5

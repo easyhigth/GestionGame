@@ -11,6 +11,13 @@ extends CanvasLayer
 @onready var info: Label = $Info
 var _race_index := 0
 var _messages: VBoxContainer
+var _hp_fill: ColorRect
+var _hp_lag: ColorRect
+var _hp_text: Label
+var _stats_text: Label
+var _death: Control
+var _death_label: Label
+const HP_WIDTH := 220.0
 
 
 func _ready() -> void:
@@ -25,9 +32,90 @@ func _ready() -> void:
 	add_child(_messages)
 	if world:
 		world.world_generated.connect(func(_s): _refresh())
+	_build_health_bar()
+	_build_death_screen()
 	if player:
 		player.notify.connect(show_message)
+		player.health.changed.connect(func(_c, _m): _update_health())
+		player.defeated.connect(func(): _death.show())
+		player.equipment.changed.connect(_update_health)
 	_refresh()
+	_update_health()
+
+
+func _build_health_bar() -> void:
+	var box := Control.new()
+	box.position = Vector2(10, 46)
+	add_child(box)
+	var frame := ColorRect.new()
+	frame.color = Color(0.05, 0.04, 0.04, 0.85)
+	frame.size = Vector2(HP_WIDTH + 4, 18)
+	box.add_child(frame)
+	_hp_lag = ColorRect.new()
+	_hp_lag.color = Color(0.95, 0.85, 0.5)
+	_hp_lag.position = Vector2(2, 2)
+	_hp_lag.size = Vector2(HP_WIDTH, 14)
+	box.add_child(_hp_lag)
+	_hp_fill = ColorRect.new()
+	_hp_fill.color = Color(0.82, 0.18, 0.14)
+	_hp_fill.position = Vector2(2, 2)
+	_hp_fill.size = Vector2(HP_WIDTH, 14)
+	box.add_child(_hp_fill)
+	var shine := ColorRect.new()
+	shine.color = Color(1, 1, 1, 0.18)
+	shine.position = Vector2(2, 2)
+	shine.size = Vector2(HP_WIDTH, 5)
+	box.add_child(shine)
+	_hp_text = _outlined("", 11)
+	_hp_text.position = Vector2(8, 0)
+	box.add_child(_hp_text)
+	_stats_text = _outlined("", 11)
+	_stats_text.position = Vector2(HP_WIDTH + 12, 0)
+	box.add_child(_stats_text)
+
+
+func _build_death_screen() -> void:
+	_death = ColorRect.new()
+	(_death as ColorRect).color = Color(0.25, 0.0, 0.0, 0.45)
+	_death.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_death.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_death.hide()
+	add_child(_death)
+	_death_label = _outlined("Vous êtes tombé au combat…", 26)
+	_death_label.set_anchors_preset(Control.PRESET_CENTER)
+	_death_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_death_label.size = Vector2(600, 80)
+	_death_label.position = Vector2(-300, -40)
+	_death.add_child(_death_label)
+
+
+func _outlined(text: String, size: int) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", Color("fff2dc"))
+	l.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.06))
+	l.add_theme_constant_override("outline_size", 4)
+	return l
+
+
+func _update_health() -> void:
+	if player == null or _hp_fill == null:
+		return
+	var h := player.health
+	_hp_fill.size.x = HP_WIDTH * h.ratio()
+	_hp_text.text = "Vie %d / %d" % [h.current, h.max_health]
+	_stats_text.text = "Attaque %d   Défense %d   Magie %d" % [player.attack_power(), player.defense_power(), player.magic_power()]
+	if not h.is_dead():
+		_death.hide()
+
+
+func _process(delta: float) -> void:
+	# la barre jaune rattrape doucement la rouge (on voit les dégâts reçus)
+	if _hp_lag and _hp_fill:
+		_hp_lag.size.x = move_toward(_hp_lag.size.x, _hp_fill.size.x, delta * 90.0)
+		if _hp_lag.size.x < _hp_fill.size.x:
+			_hp_lag.size.x = _hp_fill.size.x
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -60,4 +148,4 @@ func show_message(text: String) -> void:
 func _refresh() -> void:
 	var race_name: String = player.race.display_name if player and player.race else "?"
 	var seed_value: int = world.world_seed if world else 0
-	info.text = "ZQSD : bouger   Espace : roulade   Clic / J : frapper   I : inventaire   E : équiper un habitant   R : race   N : nouveau monde\nRace : %s     Graine du monde : %d" % [race_name, seed_value]
+	info.text = "ZQSD : bouger   Espace : roulade (esquive)   Clic / J : frapper   I : inventaire   E : équiper un habitant   R : race   N : nouveau monde\nRace : %s     Graine du monde : %d" % [race_name, seed_value]

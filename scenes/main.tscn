@@ -75,6 +75,13 @@
 [ext_resource type="PackedScene" path="res://scenes/props/workbench.tscn" id="13"]
 [ext_resource type="PackedScene" path="res://scenes/props/weapon_rack.tscn" id="14"]
 [ext_resource type="Script" path="res://scenes/ui/inventory_ui.gd" id="15"]
+[ext_resource type="Resource" path="res://data/enemies/loup.tres" id="en_loup"]
+[ext_resource type="Resource" path="res://data/enemies/loup_alpha.tres" id="en_loup_alpha"]
+[ext_resource type="Resource" path="res://data/enemies/sanglier.tres" id="en_sanglier"]
+[ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="en_gobelin_pillard"]
+[ext_resource type="Resource" path="res://data/enemies/squelette.tres" id="en_squelette"]
+[ext_resource type="Resource" path="res://data/enemies/orc_brute.tres" id="en_orc_brute"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="16"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_height"]
 frequency = 0.025
@@ -123,6 +130,10 @@ villager_scene = ExtResource("9")
 workbench_scene = ExtResource("13")
 weapon_rack_scene = ExtResource("14")
 pickup_scene = ExtResource("12")
+forest_enemies = Array[ExtResource("16")]([ExtResource("en_loup"), ExtResource("en_loup"), ExtResource("en_sanglier")])
+plains_enemies = Array[ExtResource("16")]([ExtResource("en_gobelin_pillard"), ExtResource("en_sanglier"), ExtResource("en_gobelin_pillard")])
+rock_enemies = Array[ExtResource("16")]([ExtResource("en_squelette"), ExtResource("en_squelette"), ExtResource("en_gobelin_pillard")])
+danger_enemies = Array[ExtResource("16")]([ExtResource("en_orc_brute"), ExtResource("en_loup_alpha"), ExtResource("en_orc_brute")])
 starting_loot = Array[ExtResource("11")]([ExtResource("it_sword_wood"), ExtResource("it_shield_wood"), ExtResource("it_leather_cap"), ExtResource("it_leather_armor"), ExtResource("it_wood"), ExtResource("it_leather_pants"), ExtResource("it_fiber"), ExtResource("it_sword_iron"), ExtResource("it_leather"), ExtResource("it_wood")])
 wild_loot = Array[ExtResource("11")]([ExtResource("it_sword_iron"), ExtResource("it_axe"), ExtResource("it_spear"), ExtResource("it_war_hammer"), ExtResource("it_staff"), ExtResource("it_shield_iron"), ExtResource("it_iron_helmet"), ExtResource("it_horned_helmet"), ExtResource("it_mage_hat"), ExtResource("it_iron_armor"), ExtResource("it_mage_robe"), ExtResource("it_iron_gauntlets"), ExtResource("it_iron_greaves"), ExtResource("it_cape_blue")])
 wood_item = ExtResource("it_wood")
@@ -160,7 +171,7 @@ script = ExtResource("15")
 offset_left = 10.0
 offset_top = 8.0
 offset_right = 950.0
-offset_bottom = 60.0
+offset_bottom = 44.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.1, 1)
 theme_override_constants/outline_size = 4

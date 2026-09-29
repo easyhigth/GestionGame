@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/goblin_base.glb" id="model"]
+[ext_resource type="PackedScene" path="res://assets/equipment/goblin_equipment.glb" id="lib"]
+[ext_resource type="Resource" path="res://data/items/dagger.tres" id="it_dagger"]
+[ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="it_leather_cap"]
+[ext_resource type="Resource" path="res://data/items/leather_pants.tres" id="it_leather_pants"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="it_iron_ore"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="it_wood"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Gobelin pillard"
+model = ExtResource("model")
+equipment_library = ExtResource("lib")
+equipment = Array[ExtResource("2")]([ExtResource("it_dagger"), ExtResource("it_leather_cap"), ExtResource("it_leather_pants")])
+color = Color(0.690, 0.878, 0.376, 1)
+max_health = 45
+attack = 6
+defense = 0
+move_speed = 3.9
+aggro_range = 9
+leash_range = 18
+attack_range = 1.4
+attack_duration = 0.6
+attack_cooldown = 0.9
+knockback = 3.0
+body_radius = 0.35
+loot = Array[ExtResource("2")]([ExtResource("it_dagger"), ExtResource("it_leather_cap"), ExtResource("it_iron_ore"), ExtResource("it_fiber"), ExtResource("it_wood")])
+loot_chances = PackedFloat32Array(0.12, 0.15, 0.45, 0.5, 0.4)

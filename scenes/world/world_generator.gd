@@ -114,6 +114,22 @@ signal world_generated(seed_used: int)
 @export_range(0.0, 0.05, 0.001) var leather_chance: float = 0.003
 @export_range(0.0, 0.05, 0.001) var fiber_chance: float = 0.004
 
+@export_group("Monstres")
+## Nombre de camps de monstres sur l'île.
+@export var camp_count: int = 16
+## Distance minimum (mètres) entre le village et un camp.
+@export var camp_min_distance: float = 24.0
+## Distance minimum entre deux camps.
+@export var camp_spacing: float = 14.0
+## Au-delà de cette distance du village, les monstres sont plus dangereux.
+@export var danger_distance: float = 45.0
+@export var monsters_per_camp := Vector2i(2, 4)
+## Monstres des forêts, des plaines, de la roche, et monstres dangereux (loin du village).
+@export var forest_enemies: Array[EnemyData] = []
+@export var plains_enemies: Array[EnemyData] = []
+@export var rock_enemies: Array[EnemyData] = []
+@export var danger_enemies: Array[EnemyData] = []
+
 # Types de sol
 const DEEP := 0
 const WATER := 1
@@ -219,6 +235,7 @@ func generate(seed_value: int) -> void:
 	if not Engine.is_editor_hint():
 		_build_village()
 		_scatter_loot()
+		_spawn_camps()
 	world_generated.emit(seed_value)
 
 
@@ -747,6 +764,50 @@ func spawn_pickup(item: ItemData, pos: Vector3, amount: int = 1) -> ItemPickup:
 	$Village.add_child(p)
 	p.global_position = Vector3(pos.x, ground_height_at(pos), pos.z)
 	return p
+
+
+## Place les camps de monstres, loin du village.
+func _spawn_camps() -> void:
+	var crng := RandomNumberGenerator.new()
+	crng.seed = world_seed + 555
+	var origin := cell_center(spawn_cell)
+	var camps: Array[Vector3] = []
+	var tries := 0
+	while camps.size() < camp_count and tries < 4000:
+		tries += 1
+		var cell := Vector2i(crng.randi_range(2, world_size.x - 3), crng.randi_range(2, world_size.y - 3))
+		var t := _type(cell)
+		if t != GRASS and t != STONE:
+			continue
+		var pos := cell_center(cell)
+		var d := Vector2(pos.x - origin.x, pos.z - origin.z).length()
+		if d < camp_min_distance:
+			continue
+		var ok := true
+		for c in camps:
+			if c.distance_to(pos) < camp_spacing:
+				ok = false
+				break
+		if not ok or not _is_dry_area(cell, 2):
+			continue
+		var pool: Array[EnemyData]
+		if d > danger_distance and not danger_enemies.is_empty() and crng.randf() < 0.45:
+			pool = danger_enemies
+		elif t == STONE:
+			pool = rock_enemies
+		elif moisture_noise.get_noise_2d(cell.x, cell.y) > forest_moisture:
+			pool = forest_enemies
+		else:
+			pool = plains_enemies
+		if pool.is_empty():
+			continue
+		var camp := EnemyCamp.new()
+		camp.name = "Camp_%d" % camps.size()
+		camp.enemy_types = [pool[crng.randi() % pool.size()]]
+		camp.count = crng.randi_range(monsters_per_camp.x, monsters_per_camp.y)
+		$Village.add_child(camp)
+		camp.global_position = pos
+		camps.append(pos)
 
 
 ## Répartit les matériaux et quelques équipements rares sur l'île.

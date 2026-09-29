@@ -12,3 +12,6 @@ rarity = 2
 two_handed = true
 attack = 2
 magic = 12
+reach = 11.0
+attack_speed = 0.9
+projectile = true

@@ -1,6 +1,6 @@
 class_name Player
-extends CharacterBody3D
-## Personnage joueur : déplacement 8 directions, roulade, animations.
+extends Combatant
+## Personnage joueur : déplacement 8 directions, roulade (invulnérable), coups d'arme, sorts.
 ## Change la race dans l'Inspecteur (propriété « race ») pour jouer n'importe quelle race.
 
 signal dashed
@@ -19,33 +19,31 @@ signal open_inventory(target: Node)
 @export var interact_distance: float = 2.4
 ## Équipe automatiquement un objet ramassé si l'emplacement est vide.
 @export var auto_equip: bool = true
+## Temps avant de se relever au village après avoir été vaincu (secondes).
+@export var respawn_delay: float = 4.0
 
-@onready var visual: VoxelCharacter = $Visual
 @onready var camera: Camera3D = $Camera
-@onready var equipment: CharacterEquipment = $Equipment
 
 ## Le sac du joueur.
 var inventory := Inventory.new()
 ## Vrai quand une fenêtre est ouverte (le joueur ne bouge plus).
 var ui_open := false
 
-## Dernière direction regardée (sert aux animations et à la roulade).
-var facing: Vector3 = Vector3.BACK
-var health: int
-
 var _dash_time := 0.0
 var _dash_cooldown_left := 0.0
 var _dash_dir := Vector3.ZERO
-var _world: WorldGenerator
+var _respawn_left := 0.0
+var _shake := 0.0
 
 
 func _ready() -> void:
+	super()
 	add_to_group("player")
 	if stats == null:
 		stats = PlayerStats.new()
-	health = stats.max_health
 	camera.top_level = true
 	apply_race(race)
+	health.set_max(race.max_health if race else stats.max_health, true)
 	snap_camera()
 
 
@@ -55,6 +53,21 @@ func apply_race(new_race: RaceData) -> void:
 		visual.set_equipment_library(race.equipment)
 		if race.model:
 			visual.set_model(race.model)
+		if is_node_ready():
+			health.set_max(race.max_health)
+
+
+func base_attack() -> int:
+	return race.strength if race else 10
+
+
+func base_magic() -> int:
+	return race.magic if race else 10
+
+
+## Secoue la caméra (coup reçu, coup porté).
+func shake(strength: float) -> void:
+	_shake = maxf(_shake, strength)
 
 
 ## Place la caméra directement sur le joueur (sans glissement).
@@ -64,10 +77,19 @@ func snap_camera() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if _world == null:
-		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+	_combat_step(delta)
 	_dash_cooldown_left = maxf(_dash_cooldown_left - delta, 0.0)
-	var input2 := Vector2.ZERO if ui_open else Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if not is_alive():
+		_respawn_left -= delta
+		velocity = Vector3.ZERO
+		_move_on_ground(delta)
+		visual.animate(delta, Vector3.ZERO, facing)
+		_update_camera(delta)
+		if _respawn_left <= 0.0:
+			_respawn()
+		return
+	var can_act := not ui_open
+	var input2 := Vector2.ZERO if not can_act else Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var input := Vector3(input2.x, 0, input2.y)
 	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier()
 
@@ -83,32 +105,80 @@ func _physics_process(delta: float) -> void:
 			horizontal = horizontal.move_toward(Vector3.ZERO, stats.friction * delta)
 		velocity = horizontal
 
-		if not ui_open and Input.is_action_just_pressed("dash") and _dash_cooldown_left <= 0.0:
+		if can_act and Input.is_action_just_pressed("dash") and _dash_cooldown_left <= 0.0:
 			_start_dash(input if input != Vector3.ZERO else facing)
-		if not ui_open and Input.is_action_just_pressed("attack") and not visual.is_attacking():
-			visual.play_attack()
+		if can_act and Input.is_action_pressed("attack") and can_attack():
+			if input != Vector3.ZERO:
+				facing = input
+			_aim_assist()
+			start_attack()
 
-	velocity.y = 0.0
-	var before := global_position
-	move_and_slide()
-	if _world:
-		global_position = _world.constrain_move(before, global_position)
-		var ground := _world.ground_height_at(global_position)
-		global_position.y = lerpf(global_position.y, ground, clampf(18.0 * delta, 0.0, 1.0))
+	# on avance moins vite pendant un coup
+	if is_attacking() and not is_dashing():
+		velocity *= 0.35
+	_move_on_ground(delta)
 	visual.animate(delta, velocity, facing)
+	_update_camera(delta)
 
+
+func _update_camera(delta: float) -> void:
 	var target := global_position + camera_offset
 	camera.global_position = camera.global_position.lerp(target, clampf(camera_smoothing * delta, 0.0, 1.0))
 	camera.look_at(camera.global_position - camera_offset + Vector3(0, 0.8, 0))
+	if _shake > 0.0:
+		camera.global_position += Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)) * _shake * 0.12
+		_shake = maxf(_shake - delta * 4.0, 0.0)
+
+
+## Se tourne vers l'ennemi le plus proche s'il est presque en face (aide à viser).
+func _aim_assist() -> void:
+	var reach := minf(attack_reach(), 8.0) + 1.0
+	var enemy := nearest_hostile(reach)
+	if enemy == null:
+		return
+	var to := enemy.global_position - global_position
+	to.y = 0.0
+	if to.length() > 0.01 and Vector2(facing.x, facing.z).angle_to(Vector2(to.x, to.z)) < deg_to_rad(70.0) \
+			and Vector2(facing.x, facing.z).angle_to(Vector2(to.x, to.z)) > -deg_to_rad(70.0):
+		facing = to.normalized()
+		visual.rotation.y = atan2(facing.x, facing.z)
+
+
+func _on_attack_landed(hits: int) -> void:
+	if hits > 0:
+		shake(0.6)
+
+
+func _on_hurt(amount: int, _source: Node) -> void:
+	shake(0.8 + amount * 0.04)
+
+
+func _on_died() -> void:
+	super()
+	_respawn_left = respawn_delay
+	_dash_time = 0.0
+	notify.emit("Vous êtes tombé au combat…")
+
+
+## Se relève au village, avec toute sa vie.
+func _respawn() -> void:
+	if _world:
+		global_position = _world.cell_center(_world.spawn_cell) + Vector3(0, 0, 3)
+	health.revive(1.0)
+	visual.set_downed(false)
+	_knockback = Vector3.ZERO
+	_invulnerable_left = 2.0
+	snap_camera()
+	notify.emit("Vous vous réveillez au village.")
 
 
 func is_dashing() -> bool:
 	return _dash_time > 0.0
 
 
-## Invulnérable pendant la roulade (utilisé par le combat plus tard).
+## Invulnérable pendant la roulade : c'est l'esquive.
 func is_invulnerable() -> bool:
-	return is_dashing()
+	return is_dashing() or super()
 
 
 func _start_dash(direction: Vector3) -> void:
@@ -121,7 +191,7 @@ func _start_dash(direction: Vector3) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if ui_open:
+	if ui_open or not is_alive():
 		return
 	if event.is_action_pressed("interact"):
 		var v := nearest_villager()
@@ -172,10 +242,11 @@ func try_pickup(pickup: ItemPickup) -> void:
 func total_stats() -> Dictionary:
 	var r := race if race else RaceData.new()
 	return {
-		"health": r.max_health,
-		"attack": r.strength + equipment.total_attack(),
-		"defense": equipment.total_defense(),
-		"magic": r.magic + equipment.total_magic(),
+		"health": health.current,
+		"max_health": health.max_health,
+		"attack": attack_power(),
+		"defense": defense_power(),
+		"magic": magic_power(),
 		"speed": r.speed_multiplier * equipment.speed_multiplier(),
 	}
 

@@ -4,6 +4,8 @@
 [ext_resource type="Resource" path="res://data/races/humain.tres" id="2"]
 [ext_resource type="Script" path="res://scripts/voxel_character.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/items/character_equipment.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/combat/health_bar_3d.gd" id="6"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_body"]
 radius = 0.3
@@ -31,6 +33,15 @@ text = "Habitant"
 font_size = 40
 outline_size = 10
 pixel_size = 0.006
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("5")
+regen_per_second = 1.5
+
+[node name="HealthBar" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+script = ExtResource("6")
+fill_color = Color(0.35, 0.8, 0.3, 1)
 
 [node name="Collision" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)

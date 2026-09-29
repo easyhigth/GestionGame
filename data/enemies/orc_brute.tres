@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/orc_base.glb" id="model"]
+[ext_resource type="PackedScene" path="res://assets/equipment/orc_equipment.glb" id="lib"]
+[ext_resource type="Resource" path="res://data/items/axe.tres" id="it_axe"]
+[ext_resource type="Resource" path="res://data/items/horned_helmet.tres" id="it_horned_helmet"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="it_leather_armor"]
+[ext_resource type="Resource" path="res://data/items/iron_greaves.tres" id="it_iron_greaves"]
+[ext_resource type="Resource" path="res://data/items/iron_ingot.tres" id="it_iron_ingot"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Orc brutal"
+model = ExtResource("model")
+equipment_library = ExtResource("lib")
+equipment = Array[ExtResource("2")]([ExtResource("it_axe"), ExtResource("it_horned_helmet"), ExtResource("it_leather_armor"), ExtResource("it_iron_greaves")])
+color = Color(1.000, 0.290, 0.227, 1)
+max_health = 130
+attack = 10
+defense = 2
+move_speed = 3.3
+aggro_range = 9
+leash_range = 20
+attack_range = 1.9
+attack_duration = 1.0
+attack_cooldown = 1.2
+knockback = 7.0
+body_radius = 0.5
+loot = Array[ExtResource("2")]([ExtResource("it_axe"), ExtResource("it_horned_helmet"), ExtResource("it_iron_greaves"), ExtResource("it_iron_ingot"), ExtResource("it_leather")])
+loot_chances = PackedFloat32Array(0.2, 0.15, 0.1, 0.6, 0.5)

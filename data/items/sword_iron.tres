@@ -10,3 +10,6 @@ description = "Une lame équilibrée et tranchante."
 slot = 1
 rarity = 1
 attack = 8
+reach = 1.85
+attack_speed = 1.0
+knockback = 0.5

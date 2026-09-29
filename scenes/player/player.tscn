@@ -5,6 +5,7 @@
 [ext_resource type="Resource" path="res://data/races/humain.tres" id="3"]
 [ext_resource type="Script" path="res://scripts/voxel_character.gd" id="4"]
 [ext_resource type="Script" path="res://scripts/items/character_equipment.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="6"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_body"]
 radius = 0.3
@@ -21,6 +22,11 @@ script = ExtResource("4")
 
 [node name="Equipment" type="Node" parent="."]
 script = ExtResource("5")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("6")
+regen_per_second = 2.0
+regen_delay = 5.0
 
 [node name="Collision" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)

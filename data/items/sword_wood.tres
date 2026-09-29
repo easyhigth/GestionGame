@@ -9,3 +9,5 @@ display_name = "Épée en bois"
 description = "Une épée d'entraînement. Mieux que rien !"
 slot = 1
 attack = 3
+reach = 1.7
+attack_speed = 1.1
