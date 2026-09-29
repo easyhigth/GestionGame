@@ -13,6 +13,8 @@ signal dashed
 signal notify(text: String)
 ## Le joueur veut ouvrir l'inventaire d'un personnage (lui-même ou un habitant proche).
 signal open_inventory(target: Node)
+## E près d'un voyageur : ouvre le dialogue de recrutement.
+signal talk(stranger: Node)
 ## Grand message au centre de l'écran (« Parade ! », « Esquive parfaite ! »).
 signal feat(text: String, color: Color)
 ## La cible verrouillée a changé (null = aucune).
@@ -589,6 +591,7 @@ func _respawn() -> void:
 	_invulnerable_left = 2.0
 	snap_camera()
 	notify.emit("Vous vous réveillez au village.")
+	Villager.bring_companions(get_tree(), global_position)
 
 
 func is_dashing() -> bool:
@@ -618,6 +621,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
 		var dm := get_tree().get_first_node_in_group("dungeons")
 		if dm and dm.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
+		var s := nearest_stranger()
+		if s:
+			talk.emit(s)
 			get_viewport().set_input_as_handled()
 			return
 		var v := nearest_villager()
@@ -749,6 +757,18 @@ func nearest_villager() -> Node3D:
 	var best: Node3D = null
 	var best_d := interact_distance
 	for v in get_tree().get_nodes_in_group("villagers"):
+		var d := (v as Node3D).global_position.distance_to(global_position)
+		if d < best_d:
+			best_d = d
+			best = v
+	return best
+
+
+## Le voyageur le plus proche à portée (ou null).
+func nearest_stranger() -> Node3D:
+	var best: Node3D = null
+	var best_d := interact_distance + 0.6
+	for v in get_tree().get_nodes_in_group("strangers"):
 		var d := (v as Node3D).global_position.distance_to(global_position)
 		if d < best_d:
 			best_d = d

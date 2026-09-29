@@ -77,6 +77,12 @@ extends Resource
 @export var dungeon_light: Color = Color(1.0, 0.7, 0.4)
 @export var dungeon_ambient: Color = Color(0.12, 0.1, 0.14)
 
+@export_group("Voyageurs")
+## Races des voyageurs qu'on peut recruter dans cette région.
+@export var recruit_races: Array[RaceData] = []
+## Campements de voyageurs pour 1000 cases.
+@export_range(0.0, 1.0, 0.01) var traveler_density: float = 0.15
+
 @export_group("Ressources")
 ## Matériaux qu'on trouve au sol dans cette région (au hasard).
 @export var resources: Array[ItemData] = []

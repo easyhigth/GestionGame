@@ -119,7 +119,7 @@ func _physics_process(delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node3D
 	var player_dist := player.global_position.distance_to(global_position) if player else 0.0
 	name_label.visible = player_dist < 12.0 or _target != null
-	if player and _target == null and player_dist > 45.0:
+	if player and _target == null and player_dist > 45.0 and not has_meta("raider"):
 		return
 	_think -= delta
 	if _think <= 0.0:

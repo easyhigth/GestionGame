@@ -141,6 +141,7 @@ func leave(instant := false) -> void:
 			world.load_area(_return_pos)
 			player.global_position = _return_pos
 			player.snap_camera()
+			Villager.bring_companions(get_tree(), _return_pos)
 		exited.emit(z)
 		_busy = false
 	if instant:
@@ -211,6 +212,7 @@ func _build(z: Dictionary) -> void:
 	_set_lighting(true, r)
 	player.global_position = _floor_pos(entrance_room.get_center() + Vector2i(0, 1))
 	player.snap_camera()
+	Villager.bring_companions(get_tree(), player.global_position)
 	entered.emit(z)
 
 
@@ -399,6 +401,9 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 		# un coffre dans une salle sur deux
 		if i % 2 == 1:
 			_add_chest(room.position + Vector2i(1, room.size.y - 2))
+		# un prisonnier à libérer (il rejoint le village sans rien demander)
+		if i == middle.size() - 1:
+			_add_prisoner(rng, room, z, r)
 	# le boss
 	if r and r.boss:
 		boss = BOSS_SCENE.instantiate() as Boss
@@ -413,6 +418,38 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 		boss.home = boss.global_position
 		boss.facing = Vector3(0, 0, 1)
 		boss.died_at.connect(_on_boss_died)
+
+
+func _add_prisoner(rng: RandomNumberGenerator, room: Rect2i, z: Dictionary, r: RegionData) -> void:
+	var key := "donjon_%d" % z.id
+	if world._recruited.has(key) or world.villager_scene == null:
+		return
+	var races: Array = r.recruit_races if r and not r.recruit_races.is_empty() else world.villager_races
+	if races.is_empty():
+		return
+	var v := world.villager_scene.instantiate() as Villager
+	v.stranger = true
+	v.race = races[rng.randi() % races.size()]
+	v.villager_name = Villager.NAMES[rng.randi() % Villager.NAMES.size()]
+	v.level = (z.level as Vector2i).y
+	var jobs := Villager.JOBS.duplicate()
+	var j1: String = jobs[rng.randi() % jobs.size()]
+	jobs.erase(j1)
+	v.talents = {j1: rng.randf_range(0.55, 0.8), jobs[rng.randi() % jobs.size()]: rng.randf_range(0.2, 0.35)}
+	v.recruit_offer = {"items": [], "text": "Les monstres m'ont enfermé ici depuis des jours... Sors-moi de là et je te servirai fidèlement !"}
+	v.set_meta("recruit_key", key)
+	v.set_meta("prisoner", true)
+	v.wander_radius = 0.6
+	_content.add_child(v)
+	var c := room.end - Vector2i(3, 3)
+	v.global_position = _floor_pos(c)
+	v.home = v.global_position
+	# une petite cage de barreaux autour de lui
+	var bars: ItemData = Items.get_item("bloc_verre")
+	for off in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:
+		var b: Vector2i = c + off
+		if grid.block_at(Vector3i(b.x, FLOOR_Y, b.y)) == null:
+			grid.place_block(Vector3i(b.x, FLOOR_Y, b.y), bars)
 
 
 # ---------------------------------------------------------------- combat de boss

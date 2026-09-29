@@ -3,25 +3,31 @@
 [ext_resource type="Script" path="res://scripts/data/region_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="3"]
-[ext_resource type="Resource" path="res://data/enemies/boss_ogre_roi.tres" id="r3"]
-[ext_resource type="Resource" path="res://data/items/bloc_pierre_polie.tres" id="r4"]
-[ext_resource type="Resource" path="res://data/items/bloc_pierre_brute.tres" id="r5"]
-[ext_resource type="Resource" path="res://data/items/bloc_ardoise.tres" id="r6"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_1.glb" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_2.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_3.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/bush_2.glb" id="r10"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_big.glb" id="r11"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r12"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r13"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="r14"]
-[ext_resource type="Resource" path="res://data/enemies/orc_brute.tres" id="r15"]
-[ext_resource type="Resource" path="res://data/enemies/harpie.tres" id="r16"]
-[ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="r17"]
-[ext_resource type="Resource" path="res://data/enemies/ogre.tres" id="r18"]
-[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="r19"]
-[ext_resource type="Resource" path="res://data/items/stone.tres" id="r20"]
-[ext_resource type="Resource" path="res://data/items/marbre_brut.tres" id="r21"]
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="4"]
+[ext_resource type="Resource" path="res://data/enemies/boss_ogre_roi.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/bloc_pierre_polie.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/bloc_pierre_brute.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/bloc_ardoise.tres" id="r7"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_1.glb" id="r8"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_2.glb" id="r9"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/pine_3.glb" id="r10"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/bush_2.glb" id="r11"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_big.glb" id="r12"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r13"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r14"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="r15"]
+[ext_resource type="Resource" path="res://data/enemies/orc_brute.tres" id="r16"]
+[ext_resource type="Resource" path="res://data/enemies/harpie.tres" id="r17"]
+[ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="r18"]
+[ext_resource type="Resource" path="res://data/enemies/ogre.tres" id="r19"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="r20"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="r21"]
+[ext_resource type="Resource" path="res://data/items/marbre_brut.tres" id="r22"]
+[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r23"]
+[ext_resource type="Resource" path="res://data/races/nain.tres" id="r24"]
+[ext_resource type="Resource" path="res://data/races/ogre.tres" id="r25"]
+[ext_resource type="Resource" path="res://data/races/orc.tres" id="r26"]
+[ext_resource type="Resource" path="res://data/races/harpie.tres" id="r27"]
 
 [resource]
 script = ExtResource("1")
@@ -42,27 +48,28 @@ dirt_color = Color(0.416, 0.353, 0.282, 1)
 sand_color = Color(0.690, 0.643, 0.541, 1)
 stone_color = Color(0.604, 0.596, 0.565, 1)
 water_floor_color = Color(0.784, 0.706, 0.471, 1)
-boss = ExtResource("r3")
+boss = ExtResource("r4")
 boss_title = "La montagne gronde !"
 boss_powers = PackedStringArray("onde", "charge", "invocation")
-dungeon_floor = ExtResource("r4")
-dungeon_wall = ExtResource("r5")
-dungeon_accent = ExtResource("r6")
+dungeon_floor = ExtResource("r5")
+dungeon_wall = ExtResource("r6")
+dungeon_accent = ExtResource("r7")
 dungeon_light = Color(1.000, 0.753, 0.502, 1)
 dungeon_ambient = Color(0.094, 0.094, 0.110, 1)
 boss_soul = {"attack": 5.0}
 boss_soul_name = "Force de Brisemonts : +5 attaque"
-trees = Array[PackedScene]([ExtResource("r7"), ExtResource("r8"), ExtResource("r9")])
+trees = Array[PackedScene]([ExtResource("r8"), ExtResource("r9"), ExtResource("r10")])
 forest_density = 0.25
 scattered_tree_chance = 0.02
-bushes = Array[PackedScene]([ExtResource("r10")])
+bushes = Array[PackedScene]([ExtResource("r11")])
 bush_chance = 0.01
-rocks = Array[PackedScene]([ExtResource("r11"), ExtResource("r12"), ExtResource("r13")])
+rocks = Array[PackedScene]([ExtResource("r12"), ExtResource("r13"), ExtResource("r14")])
 rock_chance = 0.12
-small_plants = Array[PackedScene]([ExtResource("r14")])
+small_plants = Array[PackedScene]([ExtResource("r15")])
 small_plant_chance = 0.05
-enemies = Array[ExtResource("2")]([ExtResource("r15"), ExtResource("r16"), ExtResource("r16"), ExtResource("r17")])
-elite_enemies = Array[ExtResource("2")]([ExtResource("r18")])
+enemies = Array[ExtResource("2")]([ExtResource("r16"), ExtResource("r17"), ExtResource("r17"), ExtResource("r18")])
+elite_enemies = Array[ExtResource("2")]([ExtResource("r19")])
 camp_density = 0.55
-resources = Array[ExtResource("3")]([ExtResource("r19"), ExtResource("r20"), ExtResource("r21")])
+resources = Array[ExtResource("3")]([ExtResource("r20"), ExtResource("r21"), ExtResource("r22"), ExtResource("r23")])
 resource_chance = 0.016
+recruit_races = Array[ExtResource("4")]([ExtResource("r24"), ExtResource("r25"), ExtResource("r26"), ExtResource("r27")])
