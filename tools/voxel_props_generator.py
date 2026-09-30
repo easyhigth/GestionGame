@@ -124,6 +124,35 @@ def rock(seed, big=False):
     return g
 
 
+def vein(seed, ore, ore_l):
+    """Rocher parcouru de pépites de minerai (filon de fer ou d'or)."""
+    rnd = mk(seed * 31 + 7)
+    g = Node('Vein')
+    c = 0x7a7874
+    V(22, 14, 18, c, 0, 7, 0, g)
+    V(15, 9, 13, shade(c, 1.1), 2, 16, -1, g)
+    for i in range(3):
+        V(R(6 + rnd() * 6), R(4 + rnd() * 4), R(6 + rnd() * 6), shade(c, 0.85 + rnd() * 0.2),
+          (rnd() - 0.5) * 22, 2 + rnd() * 5, (rnd() - 0.5) * 18, g)
+    # pépites qui dépassent des faces
+    for i in range(14):
+        face = i % 4
+        y = 3 + rnd() * 16
+        a = (rnd() - 0.5) * 16
+        col = ore_l if rnd() < 0.35 else ore
+        if face == 0:
+            V(3, 3, 1.4, col, a * 0.9, y, 9.3, g)
+        elif face == 1:
+            V(3, 3, 1.4, col, a * 0.9, y, -9.3, g)
+        elif face == 2:
+            V(1.4, 3, 3, col, 11.3, y, a * 0.7, g)
+        else:
+            V(1.4, 3, 3, col, -11.3, y, a * 0.7, g)
+    for i in range(3):
+        V(3, 1.4, 3, ore_l, (rnd() - 0.5) * 10, 20.8, (rnd() - 0.5) * 8, g)
+    return g
+
+
 def flowers(seed):
     rnd = mk(seed * 19 + 1)
     g = Node('Flowers')
@@ -323,15 +352,21 @@ PROPS = {
     'rock_1': lambda: rock(1), 'rock_2': lambda: rock(2), 'rock_big': lambda: rock(3, True),
     'flowers_1': lambda: flowers(1), 'flowers_2': lambda: flowers(2), 'grass_1': lambda: grass(1),
     'hut': hut, 'campfire': campfire, 'barrel': barrel, 'crate': crate,
+    'iron_vein_1': lambda: vein(1, 0xc8743a, 0xe89a5a), 'iron_vein_2': lambda: vein(2, 0xc8743a, 0xe89a5a),
+    'gold_vein_1': lambda: vein(3, 0xe0b030, 0xfff080),
 }
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default='../assets/environment/models')
+    ap.add_argument('--only', default='', help='noms séparés par des virgules (par défaut : tous)')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
+    only = [n for n in a.only.split(',') if n]
     for name, fn in PROPS.items():
+        if only and name not in only:
+            continue
         export_glb(fn(), os.path.join(a.out, name + '.glb'))
     print('%d décor(s) .glb écrit(s) dans %s' % (len(PROPS), a.out))
 

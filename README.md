@@ -78,7 +78,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
   - Une hache coupe les arbres deux fois plus vite, un marteau de guerre casse les rochers deux fois plus vite, et un coup chargé compte double.
 - **Creuser** (G / gâchette droite) : chaque coup de pelle abaisse le sol de 50 cm devant soi et donne 1 bloc de terre (sable sur la plage, cailloux dans la roche, parfois du minerai).
 - Ensuite on fabrique (inventaire, I) : bois → planches, rondins, portes, torches ; fibre → chaume ; cailloux → blocs de pierre...
-- **Outils** (inventaire → Artisanat → Outils) : hache et pioche en bois (3 bois), en pierre (2 bois + 3 cailloux, près d'un établi). Il suffit de les avoir dans son sac, le meilleur est utilisé tout seul : ×2 en bois, ×3 en pierre. Le héros le sort et le tient en main quand il récolte (la hache pour un arbre, un buisson ou un décor du village, la pioche pour un rocher ou pour creuser), puis reprend son arme 3 secondes après, ou tout de suite si un ennemi approche. Sans pioche, un rocher ne donne que des cailloux (pas de minerai) et on ne peut pas creuser la roche.
+- **Outils** (inventaire → Artisanat → Outils) : hache et pioche en bois (3 bois), en pierre (2 bois + 3 cailloux, près d'un établi), en fer (voir « L'âge du fer »). Il suffit de les avoir dans son sac, le meilleur est utilisé tout seul : ×2 en bois, ×3 en pierre, ×4 en fer. Le héros le sort et le tient en main quand il récolte (la hache pour un arbre, un buisson ou un décor du village, la pioche pour un rocher ou pour creuser), puis reprend son arme 3 secondes après, ou tout de suite si un ennemi approche. Sans pioche, un rocher ne donne que des cailloux (pas de minerai) et on ne peut pas creuser la roche.
 - Les réglages sont dans `scripts/world/harvest.gd` (points de vie des décors, butin, outils).
 
 ## Poser et casser à la main
@@ -87,6 +87,12 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Les meubles (porte, lit, torche, coffre...) se posent pareil et regardent le héros.
 - **Casser** : frapper un bloc ou un meuble posé devant soi (quand aucun arbre, rocher ou décor n'est plus proche). Bois : 2 coups, pierre 3,5 coups, marbre 8, verre 1 ; la hache aide pour le bois et les meubles, la pioche pour la pierre. L'objet revient à ramasser. Les blocs ne se cassent pas si un ennemi est tout près (on ne démolit pas sa maison en se battant).
 - Code : `scripts/build/hand_build.gd` (pose), `scripts/world/harvest.gd` (casse).
+
+## L'âge du fer
+- **Filons** : dans la roche des collines et des montagnes, des rochers piquetés d'orange (fer, 8 coups) ou de jaune (or, plus rares, sur les hauteurs, 10 coups). Il faut une pioche pour le fer et une **pioche en fer** pour l'or. Un filon de fer donne 2 à 3 minerais de fer.
+- **Pioches** : sans pioche, un rocher ne donne que des cailloux ; avec une pioche en bois ou en pierre, parfois du minerai de fer ; avec une pioche en fer, aussi du marbre et de l'or.
+- **Chaîne du fer** : four (6 cailloux + 2 terre, près d'un établi) → lingot de fer (2 minerais + 1 bois, près du four) → enclume (4 lingots, près d'un établi) → à côté de l'enclume : hache et pioche en fer (2 lingots + 2 bois, ×4), épée, hache de guerre, marteau, lance, dague, bouclier, casques, armure, gantelets et jambières en fer.
+- Le guide continue avec un 2e chapitre, « L'âge du fer » : miner 2 filons, poser un four, fondre 2 lingots, poser une enclume, forger une pioche en fer.
 
 ## Jour et nuit
 - Un jour dure 10 minutes (6 h → 20 h) et une nuit 4 minutes (20 h → 6 h). L'heure et le jour s'affichent sous la mini-carte ; le ciel, le soleil et la lune changent avec l'heure.

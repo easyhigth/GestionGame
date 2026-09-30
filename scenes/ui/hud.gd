@@ -60,7 +60,7 @@ func _ready() -> void:
 	_messages.position = Vector2(10, 470)
 	_messages.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_messages.alignment = BoxContainer.ALIGNMENT_END
-	_messages.custom_minimum_size = Vector2(400, 0)
+	_messages.custom_minimum_size = Vector2(330, 0)
 	_messages.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	_messages.offset_left = 10
 	_messages.offset_bottom = -10

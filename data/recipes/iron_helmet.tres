@@ -10,4 +10,4 @@ script = ExtResource("1")
 result = ExtResource("iron_helmet")
 ingredients = Array[ExtResource("2")]([ExtResource("iron_ingot")])
 amounts = PackedInt32Array(3)
-needs_workbench = true
+station = "enclume"
