@@ -27,6 +27,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - B (ou croix bas à la manette) : mode construction (voir plus bas)
 - U : panneau du royaume (habitants, lits, réserve de nourriture, bonheur)
 - O : journal de l'histoire (16 actes, objectif en cours, éclats, personnages)
+- P : ordre aux familiers (suivre, attendre ici, attaquer ma cible)
 - M (ou croix haut à la manette) : carte du monde et voyage rapide
 - Échap (ou Start à la manette) : pause (sauvegarder, charger, options, menu principal)
 - Touches de test, seulement quand le jeu est lancé depuis l'éditeur Godot : R (changer de race), N (nouveau monde)
@@ -141,7 +142,11 @@ Une fois le Pacte conclu avec Orvane (acte I de l'histoire), les liens font **é
   - à chaque évolution : nouvelle race ou nouveau titre, **+3 niveaux**, force ×1,25 puis ×1,6, un peu plus grand, et une gerbe de lumière.
 - **Familiers** : un monstre affaibli (moins de 30 % de vie, pas un boss) affiche « [E] Pacte » : appuie sur E pour l'apprivoiser. Il reçoit un nom, te suit partout et **combat à tes côtés** (3 familiers au plus, liste dans le panneau du royaume, U).
   - Chaque victoire près de toi le fait progresser : +1 niveau toutes les 4 victoires, **1re évolution à 12 victoires, 2e à 35** (loup → Loup des tempêtes → Seigneur-loup, sanglier → Sanglier de guerre → Roi sanglier, slime → Slime géant → Slime royal, gobelin → Hobgobelin → Chef hobgobelin, ogre → Oni → Grand oni...), plus grand et bien plus fort.
-  - K.O., il revient auprès de toi au bout de 40 secondes ; trop loin, il te rejoint. Les familiers sont sauvegardés.
+  - K.O., il revient auprès de toi au bout de 40 secondes ; trop loin ou bloqué derrière un obstacle, il te rejoint. Les familiers sont sauvegardés.
+  - **Ordres (touche P)** : « Suivez-moi ! », « Attendez ici ! » (ils gardent l'endroit), « Attaquez ma cible ! » (la cible verrouillée, sinon la plus proche).
+  - **Monture** : E près d'un loup, sanglier, ours, araignée ou scorpion familier pour le monter (×1,6 de vitesse, ×1,8 et ×2 une fois évolué) ; E pour descendre.
+  - **Équipe et village** : 3 familiers te suivent, jusqu'à 8 en tout ; les autres vivent autour du feu de camp et **défendent le village**. Dans le panneau du royaume (U) : « Au village » / « Avec moi » et « Libérer ».
+  - **Modèles d'évolution** : les créatures (loups, sanglier, ours, slimes, araignée, scorpion, salamandre) ont 2 modèles d'évolution (cornes, marques lumineuses, épines de cristal, anneau au sol) ; les familiers humanoïdes (gobelin, orc, ogre...) prennent les modèles d'évolution de leur race.
 - **Évolution du héros** : l'histoire principale fait évoluer ton âme trois fois (fin des actes IV, XII et XVI) : titre selon ta race (homme-bête éveillé → Seigneur-bête → **Roi des Bêtes** ; humain éveillé → Héros → Saint ; slime éveillé → Slime primordial → Slime divin...), vie, attaque, magie, défense et régénération en hausse, un peu plus grand, puis une aura lumineuse. Le titre s'affiche à côté de ton nom.
 - **Modèles 3D des évolutions** : chaque race (sauf l'humain) a **3 modèles d'évolution** — 21 races × 3 paliers, en 3 couleurs pour les habitants et dans tous les styles pour le héros (384 modèles). Les changements sont légers mais reconnaissables : petites cornes et peinture de guerre puis couronne d'os (gobelin), cornes courbes et runes rouges (orc), yeux et marques de jade puis couronne d'or (elfe), ailes de chauve-souris et couronne d'épines (vampire), couronne de gel puis d'or (slime), bois de cerf fleuris (dryade), flammes d'âme (mort-vivant), auréoles et cristaux (ange, esprit)... et au 3e palier un **anneau de lumière au sol**.
   - Le corps garde exactement le squelette et les proportions de sa race : **tous les équipements s'y portent** comme avant (armures, casques, armes, capes).

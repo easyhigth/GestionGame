@@ -56,6 +56,7 @@ var story_state := {}
 var seasons_state := {}
 var mounts_state := {}
 var familiars_state := {}
+var side_quests_state := {}
 var _autosave_timer := 300.0
 
 

@@ -43,11 +43,11 @@ func horses() -> Array:
 
 
 func is_riding() -> bool:
-	return mount != null and is_instance_valid(mount) and mount is Horse
+	return mount != null and is_instance_valid(mount) and (mount is Horse or mount is Enemy)
 
 
 func is_sailing() -> bool:
-	return mount != null and is_instance_valid(mount) and not (mount is Horse)
+	return mount != null and is_instance_valid(mount) and not (mount is Horse or mount is Enemy)
 
 
 # ---------------------------------------------------------------- E
@@ -64,6 +64,14 @@ func try_interact(p: Player) -> bool:
 		if is_instance_valid(b) and Vector2(b.global_position.x - p.global_position.x, b.global_position.z - p.global_position.z).length() < 2.6:
 			board(b)
 			return true
+	# un familier que l'on peut monter (loup, sanglier, ours...)
+	var fam := get_tree().get_first_node_in_group("familiars_mgr")
+	if fam:
+		for entry in fam.team():
+			var n = entry.node
+			if n and is_instance_valid(n) and n.is_alive() and fam.rideable(entry) and n.global_position.distance_to(p.global_position) < 2.6:
+				ride_familiar(n)
+				return true
 	for h in horses():
 		if h.global_position.distance_to(p.global_position) > 2.4:
 			continue
@@ -103,6 +111,18 @@ func ride(h: Horse) -> void:
 	boarded.emit("cheval")
 
 
+## Monter sur un familier : il court sous le héros et attaque ce qu'il percute.
+func ride_familiar(e: Enemy) -> void:
+	mount = e
+	e.set_meta("ridden", true)
+	e.set("_target", null)
+	player.global_position = e.global_position
+	player.visual.position.y = 0.95 * e.visual.scale.y
+	Sound.play("step_grass", e.global_position)
+	player.notify.emit("Tu montes %s : E pour descendre." % e.familiar_name)
+	boarded.emit("familier")
+
+
 func board(b: Node3D) -> void:
 	mount = b
 	player.global_position = Vector3(b.global_position.x, world.water_surface, b.global_position.z)
@@ -114,6 +134,14 @@ func board(b: Node3D) -> void:
 
 ## Descendre du cheval, ou débarquer sur la berge la plus proche. Vrai si fait.
 func dismount() -> bool:
+	if mount is Enemy:
+		var e := mount as Enemy
+		e.remove_meta("ridden")
+		mount = null
+		player.visual.position.y = 0.0
+		var side := Vector3(player.facing.z, 0, -player.facing.x).normalized() * 1.2
+		player.global_position = world.constrain_move(player.global_position, player.global_position + side)
+		return true
 	if mount is Horse:
 		var h := mount as Horse
 		h.ridden = false
@@ -183,11 +211,12 @@ func _process(delta: float) -> void:
 		player = get_tree().get_first_node_in_group("player") as Player
 		return
 	if is_riding():
-		var h := mount as Horse
-		h.global_position = player.global_position
-		h.facing = player.facing
-		h.visual.animate(delta, Vector3(player.velocity.x, 0, player.velocity.z), player.facing)
-		if not player.is_alive() or player.global_position.y < WorldGenerator.UNDERGROUND:
+		var m := mount
+		m.global_position = player.global_position
+		m.set("facing", player.facing)
+		m.get("visual").animate(delta, Vector3(player.velocity.x, 0, player.velocity.z), player.facing)
+		var dead: bool = m is Enemy and not (m as Enemy).is_alive()
+		if not player.is_alive() or player.global_position.y < WorldGenerator.UNDERGROUND or dead:
 			dismount()
 	elif is_sailing() and (not player.is_alive() or player.global_position.y < WorldGenerator.UNDERGROUND):
 		mount = null
@@ -205,6 +234,8 @@ func _process(delta: float) -> void:
 
 ## Vitesse du héros (à cheval : bien plus vite).
 func speed_mult() -> float:
+	if is_riding() and mount is Enemy:
+		return 1.6 + 0.2 * int(mount.get_meta("evo", 0))
 	return Horse.RIDE_SPEED if is_riding() else 1.0
 
 

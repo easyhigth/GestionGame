@@ -29,6 +29,10 @@ var tamed := false
 var familiar_name := ""
 var familiar_title := ""
 var familiar_slot := 0
+## Ordre du familier : « suivre », « attendre » (reste à familiar_home), « attaquer » (la cible du héros),
+## « village » (vit au village et le défend).
+var familiar_order := "suivre"
+var familiar_home := Vector3.INF
 var _stuck_time := 0.0
 var _stuck_from := Vector3.ZERO
 
@@ -52,7 +56,7 @@ func _ready() -> void:
 
 func _apply_data() -> void:
 	visual.set_equipment_library(data.equipment_library)
-	visual.set_model(data.model)
+	visual.set_model(_model_scene())
 	visual.scale = Vector3.ONE * data.model_scale
 	visual.trail_color = Color(data.color, 1.0).lightened(0.3)
 	body_radius = data.body_radius
@@ -67,6 +71,16 @@ func _apply_data() -> void:
 		name_label.modulate = Color("b8f0a0")
 	name_label.position.y = 2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale
 	bar.position.y = name_label.position.y - 0.22
+
+
+## Le modèle (celui de son évolution pour un familier évolué : <modèle>_evoN.glb).
+func _model_scene() -> PackedScene:
+	var evo: int = get_meta("evo", 0) if tamed else 0
+	if evo > 0 and data.model:
+		var path := data.model.resource_path.get_basename() + "_evo%d.glb" % evo
+		if ResourceLoader.exists(path):
+			return load(path)
+	return data.model
 
 
 func base_attack() -> int:
@@ -245,14 +259,19 @@ func _pact_hint(player_dist: float) -> void:
 func _familiar_process(delta: float, player: Node3D) -> void:
 	if player == null:
 		return
+	# monté par le héros : c'est la monture qui le déplace (voir Mounts)
+	if has_meta("ridden"):
+		name_label.visible = false
+		return
+	var stays := familiar_order in ["attendre", "village"] and familiar_home != Vector3.INF
+	var anchor: Vector3 = familiar_home if stays else player.global_position
 	name_label.visible = player.global_position.distance_to(global_position) < 14.0
 	_think -= delta
 	if _think <= 0.0:
 		_think = 0.3
-		home = player.global_position
-		# trop loin (téléportation, voyage rapide) ou bloqué derrière un obstacle : il rejoint le héros
-		var far := player.global_position.distance_to(global_position)
-		# bloqué : il ne s'est pas rapproché du héros d'au moins 1 m en 1,5 s
+		home = anchor
+		var far := anchor.distance_to(global_position)
+		# bloqué (il ne se rapproche pas d'au moins 1 m en 1,5 s) ou trop loin : il rejoint sa place
 		if _target == null and far > 5.0:
 			_stuck_time += 0.3
 			if far < _stuck_from.x - 1.0:
@@ -262,16 +281,24 @@ func _familiar_process(delta: float, player: Node3D) -> void:
 			_stuck_time = 0.0
 			_stuck_from.x = far
 		if far > 35.0 or _stuck_time > 1.5:
-			global_position = player.global_position + Vector3(1.5, 0.5, 1.5)
+			global_position = anchor + Vector3(1.5, 0.5, 1.5)
 			_stuck_time = 0.0
 			_stuck_from.x = 0.0
 			_target = null
+		var reach := {"suivre": 10.0, "attaquer": 14.0, "attendre": 8.0, "village": 18.0}.get(familiar_order, 10.0) as float
 		if _target and (not is_instance_valid(_target) or not _target.is_alive() or not _target.can_be_targeted() \
-				or _target.global_position.distance_to(player.global_position) > 16.0):
+				or _target.global_position.distance_to(anchor) > reach + 6.0):
 			_release_token()
 			_target = null
+			if familiar_order == "attaquer":
+				familiar_order = "suivre"
+		if familiar_order == "attaquer":
+			var lt = player.get("lock_target")
+			if lt and is_instance_valid(lt) and lt.is_alive() and lt != _target:
+				_release_token()
+				_target = lt
 		if _target == null:
-			var t := nearest_hostile(10.0, player.global_position)
+			var t := nearest_hostile(reach, anchor)
 			if t:
 				_target = t
 			elif health.current < health.max_health:
@@ -283,14 +310,16 @@ func _familiar_process(delta: float, player: Node3D) -> void:
 	elif _target:
 		_fight(delta, speed)
 	else:
-		# il suit le héros, chacun à sa place
+		# il rejoint sa place : à côté du héros, à son poste, ou il flâne au village
 		var a := TAU * familiar_slot / 3.0 + 2.4
-		var spot := player.global_position + Vector3(cos(a), 0, sin(a)) * 2.2
+		var spot := anchor + Vector3(cos(a), 0, sin(a)) * (2.2 if not stays else 1.0)
+		if familiar_order == "village":
+			spot = anchor + Vector3(cos(a + Time.get_ticks_msec() * 0.0002), 0, sin(a + Time.get_ticks_msec() * 0.0002)) * 3.0
 		var to := spot - global_position
 		to.y = 0.0
 		if to.length() > 0.8:
 			facing = to.normalized()
-			velocity = facing * speed * (1.25 if to.length() > 5.0 else 0.8)
+			velocity = facing * speed * (1.25 if to.length() > 5.0 else (0.8 if not stays else 0.4))
 	_move_on_ground(delta)
 	visual.animate(delta, velocity, facing)
 
