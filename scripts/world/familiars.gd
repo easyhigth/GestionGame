@@ -6,7 +6,14 @@ extends Node3D
 ## (plus grand, plus fort, nouveau nom : Loup → Loup des tempêtes → Seigneur-loup...).
 ## K.O., il revient auprès du héros au bout de REVIVE secondes.
 
+## Familiers qui suivent le héros, et en tout (les autres vivent au village et le défendent).
 const MAX := 3
+const MAX_TOTAL := 8
+## Ordres (touche P) : suivre, attendre ici, attaquer la cible du héros.
+const ORDERS := ["suivre", "attendre", "attaquer"]
+const ORDER_TEXT := {"suivre": "Suivez-moi !", "attendre": "Attendez ici !", "attaquer": "Attaquez ma cible !"}
+## Familiers que l'on peut monter (E près de lui) : vitesse selon l'évolution.
+const RIDEABLE := ["loup", "loup_alpha", "loup_givre", "sanglier", "ours_neige", "araignee", "scorpion"]
 const SCALE := [1.0, 1.18, 1.38]
 const POWER := [1.1, 1.45, 1.95]
 ## Victoires pour évoluer (1re et 2e évolution) ; un niveau toutes les LEVEL_KILLS victoires.
@@ -31,8 +38,10 @@ const TITLES := {
 
 var world: WorldGenerator
 var player: Player
-## [{data, level, name, evo, kills, down, node}]
+## [{data, level, name, evo, kills, down, node, place}] ; place : « equipe » (suit le héros) ou « village ».
 var list: Array = []
+var order := "suivre"
+var _wait_pos := Vector3.INF
 
 
 func _ready() -> void:
@@ -72,8 +81,8 @@ func try_interact(p: Player) -> bool:
 				best = e
 	if best == null:
 		return false
-	if list.size() >= MAX:
-		p.notify.emit("Tu as déjà %d familiers : le Pacte ne peut pas en lier davantage." % MAX)
+	if list.size() >= MAX_TOTAL:
+		p.notify.emit("Tu as déjà %d familiers : libères-en un (panneau du royaume, U) pour en lier un autre." % MAX_TOTAL)
 		return true
 	tame(best)
 	return true
@@ -82,8 +91,9 @@ func try_interact(p: Player) -> bool:
 func tame(e: Enemy) -> Dictionary:
 	var used := list.map(func(x): return x.name)
 	var free := NAMES.filter(func(n): return not used.has(n))
+	var place := "equipe" if team().size() < MAX else "village"
 	var entry := {"data": e.data.resource_path, "level": e.level, "name": free.pick_random() if not free.is_empty() else "Familier",
-		"evo": 0, "kills": 0, "down": 0.0, "node": null}
+		"evo": 0, "kills": 0, "down": 0.0, "node": null, "place": place}
 	list.append(entry)
 	var pos := e.global_position
 	VoxelBurst.spawn(world, pos + Vector3(0, 0.8, 0), Color("d8c0ff"), 50, 4.5, 0.12, 1.1, "up", 2.0, false)
@@ -93,7 +103,10 @@ func tame(e: Enemy) -> Dictionary:
 	Sound.ui("levelup")
 	if player:
 		player.feat.emit("Pacte : %s devient ton familier « %s » !" % [(load(entry.data) as EnemyData).display_name, entry.name], Color("d8c0ff"))
-		player.notify.emit("%s te suivra partout et combattra avec toi. Chaque victoire le fait progresser : il évoluera." % entry.name)
+		if place == "equipe":
+			player.notify.emit("%s te suivra partout et combattra avec toi. Chaque victoire le fait progresser : il évoluera." % entry.name)
+		else:
+			player.notify.emit("Tu as déjà %d familiers avec toi : %s part vivre au village et le défendra." % [MAX, entry.name])
 	return entry
 
 
@@ -105,12 +118,122 @@ func _spawn(entry: Dictionary, pos: Vector3) -> void:
 	e.power = POWER[clampi(int(entry.evo), 0, 2)] * (1.0 + 0.06 * (int(entry.level) - 1))
 	e.familiar_name = entry.name
 	e.familiar_title = title_of(entry)
-	e.familiar_slot = list.find(entry)
+	e.familiar_slot = (team() if entry.get("place", "equipe") == "equipe" else village_list()).find(entry)
 	e.set_meta("evo", int(entry.evo))
+	_apply_order(entry, e)
 	add_child(e)
+	if entry.get("place", "equipe") == "village":
+		pos = village_spot(e.familiar_slot)
 	e.global_position = pos
 	e.home = pos
 	entry.node = e
+
+
+# ---------------------------------------------------------------- équipe, village, ordres
+
+## Les familiers qui suivent le héros.
+func team() -> Array:
+	return list.filter(func(x): return x.get("place", "equipe") == "equipe")
+
+
+func village_list() -> Array:
+	return list.filter(func(x): return x.get("place", "equipe") == "village")
+
+
+## La place d'un familier au village (en cercle autour du feu de camp).
+func village_spot(i: int) -> Vector3:
+	var c := world.cell_center(world.spawn_cell) if world else Vector3.ZERO
+	var a := TAU * i / 5.0 + 0.8
+	var p := c + Vector3(cos(a), 0, sin(a)) * 7.0
+	if world:
+		p.y = world.ground_height_at(p + Vector3(0, 20, 0))
+	return p
+
+
+func _apply_order(entry: Dictionary, e: Enemy) -> void:
+	if entry.get("place", "equipe") == "village":
+		e.familiar_order = "village"
+		e.familiar_home = village_spot(village_list().find(entry))
+	else:
+		e.familiar_order = order
+		e.familiar_home = _wait_pos
+
+
+## Touche P : l'ordre suivant pour les familiers qui suivent le héros.
+func cycle_order() -> String:
+	order = ORDERS[(ORDERS.find(order) + 1) % ORDERS.size()]
+	_wait_pos = player.global_position if player else Vector3.INF
+	for entry in team():
+		var n = entry.node
+		if n and is_instance_valid(n):
+			_apply_order(entry, n)
+			if order == "attaquer":
+				n.set("_target", null)
+	if player:
+		var who := ", ".join(PackedStringArray(team().map(func(x): return x.name)))
+		player.notify.emit("%s  (%s)" % [ORDER_TEXT[order], who if who != "" else "aucun familier"])
+		Sound.ui("ui_click")
+	return order
+
+
+## Envoie un familier au village, ou le rappelle auprès du héros. Vrai si c'est fait.
+func set_place(entry: Dictionary, place: String) -> bool:
+	if place == "equipe" and team().size() >= MAX:
+		if player:
+			player.notify.emit("Déjà %d familiers avec toi." % MAX)
+		return false
+	entry.place = place
+	_respawn_all()
+	if player:
+		player.notify.emit(("%s part vivre au village et le défendra." if place == "village" else "%s te rejoint.") % entry.name)
+	return true
+
+
+## Rend sa liberté à un familier.
+func release(entry: Dictionary) -> void:
+	var n = entry.node
+	if n and is_instance_valid(n):
+		VoxelBurst.spawn(world, n.global_position + Vector3(0, 1, 0), Color("b8f0a0"), 30, 4.0, 0.1, 0.9, "up", 2.0, false)
+		var mo := get_tree().get_first_node_in_group("mounts")
+		if mo and mo.mount == n:
+			mo.dismount()
+		n.queue_free()
+	list.erase(entry)
+	if player:
+		player.notify.emit("%s retourne à la vie sauvage. Merci pour tout, %s." % [entry.name, entry.name])
+	_respawn_all()
+
+
+## Replace les familiers (places au village et rangs autour du héros).
+func _respawn_all() -> void:
+	for entry in list:
+		var n = entry.node
+		if n and is_instance_valid(n):
+			var pos: Vector3 = n.global_position
+			var mo := get_tree().get_first_node_in_group("mounts")
+			if mo and mo.mount == n:
+				_apply_order(entry, n)
+				continue
+			n.queue_free()
+			entry.node = null
+			_spawn(entry, pos)
+
+
+func rideable(entry: Dictionary) -> bool:
+	return RIDEABLE.has(str(entry.data).get_file().get_basename())
+
+
+func entry_of(node: Node) -> Dictionary:
+	for entry in list:
+		if entry.node == node:
+			return entry
+	return {}
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("familiar_order") and player and not player.ui_open and not team().is_empty():
+		cycle_order()
+		get_viewport().set_input_as_handled()
 
 
 func on_familiar_down(e: Enemy) -> void:
@@ -183,6 +306,8 @@ func _process(delta: float) -> void:
 		if entry.down <= 0.0 and player.is_alive():
 			var a := randf() * TAU
 			var pos := player.global_position + Vector3(cos(a), 0.3, sin(a)) * 2.0
+			if order == "attendre" and _wait_pos != Vector3.INF and entry.get("place", "equipe") == "equipe":
+				pos = _wait_pos + Vector3(cos(a), 0.3, sin(a)) * 1.5
 			_spawn(entry, pos)
 
 
@@ -190,15 +315,15 @@ func _process(delta: float) -> void:
 func summary() -> String:
 	var parts := []
 	for entry in list:
-		parts.append("%s (%s, Nv %d%s)" % [entry.name, title_of(entry), entry.level, ", K.O." if entry.node == null else ""])
+		parts.append("%s (%s, Nv %d%s%s)" % [entry.name, title_of(entry), entry.level, ", au village" if entry.get("place", "equipe") == "village" else "", ", K.O." if entry.node == null else ""])
 	return ", ".join(PackedStringArray(parts))
 
 
 func export_state() -> Dictionary:
 	var out := []
 	for entry in list:
-		out.append({"data": entry.data, "level": entry.level, "name": entry.name, "evo": entry.evo, "kills": entry.kills})
-	return {"list": out}
+		out.append({"data": entry.data, "level": entry.level, "name": entry.name, "evo": entry.evo, "kills": entry.kills, "place": entry.get("place", "equipe")})
+	return {"list": out, "order": order}
 
 
 func import_state(d: Dictionary) -> void:
@@ -209,4 +334,7 @@ func import_state(d: Dictionary) -> void:
 	for e in d.get("list", []):
 		if ResourceLoader.exists(str(e.data)):
 			list.append({"data": str(e.data), "level": int(e.level), "name": str(e.name), "evo": int(e.evo),
-				"kills": int(e.kills), "down": 0.0, "node": null})
+				"kills": int(e.kills), "down": 0.0, "node": null, "place": str(e.get("place", "equipe"))})
+	order = str(d.get("order", "suivre"))
+	if order == "attendre":
+		order = "suivre"

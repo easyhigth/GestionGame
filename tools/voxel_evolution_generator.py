@@ -492,6 +492,99 @@ def evolved_hero(race, style, tier):
     return b['g']
 
 
+# ---------------------------------------------------------------- créatures (familiers)
+# Les monstres apprivoisés évoluent deux fois (voir scripts/world/familiars.gd) : mêmes os, mêmes pattes,
+# avec des cornes, des marques lumineuses, des épines de cristal et (2e évolution) un anneau au sol.
+import voxel_creature_generator as vcg
+
+CREATURE_ACCENT = {
+    'wolf': 0x8ad8ff, 'wolf_alpha': 0xff5a3a, 'wolf_frost': 0x9ae8ff, 'boar': 0xff8a3a, 'bear_snow': 0x7ac8ff,
+    'slime_blue': 0x9ad8ff, 'slime_acid': 0xc8ff5a, 'slime_magma': 0xffd040, 'spider': 0xff3a3a,
+    'scorpion': 0x8aff4a, 'salamander': 0xffb040,
+}
+CREATURE_HORN = {'wolf': 0xd8d8e0, 'wolf_alpha': 0x2a2226, 'wolf_frost': 0xeaf4fc, 'boar': 0xe8e0c8, 'bear_snow': 0xd8cbb0,
+                 'spider': 0x1a1418, 'scorpion': 0x8a6a2a, 'salamander': 0x3a2220}
+
+
+def _find(node, name):
+    if node.name == name:
+        return node
+    for k in node.kids:
+        r = _find(k, name)
+        if r:
+            return r
+    return None
+
+
+def _bbox(node):
+    """Boîte englobante des voxels d'un nœud (dans son repère) : (x0, x1, y0, y1, z0, z1)."""
+    xs = []; ys = []; zs = []
+    for b in node.boxes:
+        xs += [b['x'] - b['w'] / 2, b['x'] + b['w'] / 2]
+        ys += [b['y'] - b['h'] / 2, b['y'] + b['h'] / 2]
+        zs += [b['z'] - b['d'] / 2, b['z'] + b['d'] / 2]
+    if not xs:
+        return (-2, 2, -2, 2, -2, 2)
+    return (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
+
+
+def creature_evo(name, tier):
+    g = vcg.CREATURES[name]()
+    A = CREATURE_ACCENT[name]
+    horn = CREATURE_HORN.get(name, 0xe8e0c8)
+    head = _find(g, 'Head'); top = _find(g, 'Torso')
+    slime = name.startswith('slime')
+    if head is not None and not slime:
+        x0, x1, y0, y1, z0, z1 = _bbox(head)
+        w = x1 - x0
+        # cornes (plus grandes à la 2e évolution)
+        sz = 1.2 + tier * 0.5
+        for s in (-1, 1):
+            px, py, pz = s * w * 0.28, y1, (z0 + z1) / 2 - 0.5
+            for i in range(tier + 1):
+                th = 0.35 * (i + 0.5)
+                L = sz * 1.4
+                dx, dy = s * math.sin(th) * L, math.cos(th) * L
+                V(sz * (1 - i * 0.2), L * 1.15, sz * (1 - i * 0.2), shade(horn, 1 + i * 0.08), px + dx / 2, py + dy / 2, pz - i * 0.6, head, rx=-0.4, rz=-s * th)
+                px += dx; py += dy
+            if tier >= 2:
+                VG(sz * 0.6, sz * 0.8, sz * 0.6, A, px, py + 0.4, pz - (tier) * 0.6, head)
+    if top is not None:
+        x0, x1, y0, y1, z0, z1 = _bbox(top)
+        w = x1 - x0; L = z1 - z0
+        # marques lumineuses sur les flancs
+        for s in (-1, 1):
+            for i in range(3):
+                VG(0.35, min((y1 - y0) * 0.5, 3.4), 1.2, A, s * (w / 2 + 0.2), y0 + min((y1 - y0) * 0.5, 4.5), z0 + L * (0.3 + i * 0.18), top)
+        if tier >= 2:
+            # épines de cristal sur le dos, anneau au sol
+            n = 5
+            for i in range(n):
+                z = z0 + L * (0.2 + i * 0.6 / (n - 1))
+                VG(1.2, 2.4 + (i % 2) * 1.2, 1.2, A if i % 2 else shade(A, 0.8), 0, y1 + 1.2, z, top, rx=-0.3)
+            for i in range(16):
+                a = i / 16.0 * 2 * math.pi
+                VG(3.2, 0.3, 0.9, A, math.cos(a) * max(w, L) * 0.7, -g.t[1] / (g.scale or 1) + 0.3 if hasattr(g, 't') else 0.3, math.sin(a) * max(w, L) * 0.7, g, ry=-a)
+    if slime:
+        # slime : couronne de gel et second noyau
+        x0, x1, y0, y1, z0, z1 = _bbox(g)
+        for i in range(5 + tier):
+            a = i / float(5 + tier) * 2 * math.pi
+            VG(1.2, 2 + tier, 1.2, A, math.cos(a) * 3, y1 + 1, math.sin(a) * 3, g)
+        VG(2.2, 2.2, 2.2, 0xffffff, 2, (y0 + y1) / 2, 1, g, rx=0.6, rz=0.6)
+        if tier >= 2:
+            V(7, 1, 7, GOLD, 0, y1 + 0.4, 0, g)
+    return g
+
+
+def creature_main(out):
+    n = 0
+    for name in CREATURE_ACCENT:
+        for t in (1, 2):
+            export_glb(creature_evo(name, t), os.path.join(out, 'creatures', '%s_evo%d.glb' % (name, t))); n += 1
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default='../assets/characters')
@@ -510,6 +603,8 @@ def main():
             if not a.no_hero:
                 for s in range(len(STYLE_NAMES[r])):
                     export_glb(evolved_hero(r, s, t), os.path.join(hero_dir, '%s_s%d_evo%d.glb' % (r, s, t))); n += 1
+    if a.race == 'all':
+        n += creature_main(a.out)
     print('%d modèle(s) d\'évolution écrit(s) dans %s' % (n, a.out))
 
 

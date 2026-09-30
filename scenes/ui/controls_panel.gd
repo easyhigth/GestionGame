@@ -43,6 +43,7 @@ const PAGES := [
 		["Mode construction", "B", "Croix bas"],
 		["Royaume : habitants, lits, réserve de nourriture, bonheur", "U", "Start → Royaume"],
 		["Journal de l'histoire (objectif, éclats, personnages)", "O", "—"],
+		["Familiers : ordre suivant (suivre, attendre, attaquer)", "P", "—"],
 		["Menu pause (sauvegarde, options)", "Échap", "Start"],
 	]],
 	["Construction", [

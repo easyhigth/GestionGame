@@ -132,10 +132,28 @@ func _refresh() -> void:
 	# familiers
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam and not fam.list.is_empty():
-		var fl := MenuKit.label("Familiers (%d / %d) : %s" % [fam.list.size(), Familiars.MAX, fam.summary()], 11, Color("b8f0a0"))
-		fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		fl.custom_minimum_size = Vector2(660, 0)
-		_box.add_child(fl)
+		_box.add_child(MenuKit.label("Familiers : %d avec toi (max %d), %d en tout (max %d)  ·  P : %s" % [fam.team().size(), Familiars.MAX,
+			fam.list.size(), Familiars.MAX_TOTAL, Familiars.ORDER_TEXT[fam.order]], 11, Color("b8f0a0")))
+		for entry in fam.list.duplicate():
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 6)
+			var at_village: bool = entry.get("place", "equipe") == "village"
+			var l := MenuKit.label("✦ %s · %s · Nv %d%s%s%s" % [entry.name, Familiars.title_of(entry), entry.level,
+				" · au village" if at_village else " · avec toi", " · K.O." if entry.node == null else "",
+				" · monture" if fam.rideable(entry) else ""], 10, MenuKit.C_TEXT)
+			l.custom_minimum_size = Vector2(430, 0)
+			row.add_child(l)
+			var bp := MenuKit.button("Avec moi" if at_village else "Au village", 100, 10)
+			bp.pressed.connect(func():
+				fam.set_place(entry, "equipe" if at_village else "village")
+				_refresh())
+			row.add_child(bp)
+			var br := MenuKit.button("Libérer", 80, 10)
+			br.pressed.connect(func():
+				fam.release(entry)
+				_refresh())
+			row.add_child(br)
+			_box.add_child(row)
 	# commerce
 	var tr := get_tree().get_first_node_in_group("trade") as Trade
 	if tr:
