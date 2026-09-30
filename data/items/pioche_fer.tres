@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "pioche_fer"
+display_name = "Pioche en fer"
+description = "Casse la roche quatre fois plus vite et permet de miner l'or et le marbre. Il suffit de l'avoir dans son sac."
+rarity = 1

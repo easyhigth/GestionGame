@@ -8,39 +8,48 @@ extends RefCounted
 const DECOR_HP := {
 	WorldGenerator.D_OAK: 5, WorldGenerator.D_PINE: 5, WorldGenerator.D_ROCK: 6,
 	WorldGenerator.D_BUSH: 2, WorldGenerator.D_FLOWERS: 1, WorldGenerator.D_GRASS: 1,
+	WorldGenerator.D_IRON: 8, WorldGenerator.D_GOLD: 10,
 }
 ## Ce que lâche un décor : [identifiant, minimum, maximum].
 const DECOR_LOOT := {
 	WorldGenerator.D_OAK: [["wood", 3, 4]], WorldGenerator.D_PINE: [["wood", 3, 5]],
 	WorldGenerator.D_BUSH: [["fiber", 2, 3]], WorldGenerator.D_FLOWERS: [["fiber", 1, 1]], WorldGenerator.D_GRASS: [["fiber", 1, 1]],
 	WorldGenerator.D_ROCK: [["stone", 2, 4]],
+	WorldGenerator.D_IRON: [["iron_ore", 2, 3], ["stone", 1, 2]],
+	WorldGenerator.D_GOLD: [["or_brut", 1, 2], ["stone", 1, 2]],
 }
-## Bonus possibles : [identifiant, chance].
+## Bonus possibles : [identifiant, chance, niveau de pioche requis (0 aucun, 1 bois/pierre, 2 fer)].
 const DECOR_BONUS := {
-	WorldGenerator.D_OAK: [["fiber", 0.3]], WorldGenerator.D_PINE: [["fiber", 0.3]],
-	WorldGenerator.D_ROCK: [["iron_ore", 0.3], ["marbre_brut", 0.1], ["or_brut", 0.05]],
-	WorldGenerator.D_GRASS: [["fiber", 0.25]],
+	WorldGenerator.D_OAK: [["fiber", 0.3, 0]], WorldGenerator.D_PINE: [["fiber", 0.3, 0]],
+	WorldGenerator.D_ROCK: [["iron_ore", 0.3, 1], ["marbre_brut", 0.1, 2], ["or_brut", 0.05, 2]],
+	WorldGenerator.D_IRON: [["iron_ore", 0.4, 1]],
+	WorldGenerator.D_GRASS: [["fiber", 0.25, 0]],
 }
+## Niveau de pioche qu'il faut pour miner un filon (1 : n'importe quelle pioche, 2 : pioche en fer).
+const VEIN_TIER := {WorldGenerator.D_IRON: 1, WorldGenerator.D_GOLD: 2}
 const DECOR_COLOR := {
 	WorldGenerator.D_OAK: Color(0.55, 0.38, 0.22), WorldGenerator.D_PINE: Color(0.5, 0.34, 0.2),
 	WorldGenerator.D_ROCK: Color(0.62, 0.62, 0.6), WorldGenerator.D_BUSH: Color(0.35, 0.62, 0.28),
 	WorldGenerator.D_FLOWERS: Color(0.5, 0.75, 0.35), WorldGenerator.D_GRASS: Color(0.5, 0.75, 0.35),
+	WorldGenerator.D_IRON: Color(0.8, 0.5, 0.3), WorldGenerator.D_GOLD: Color(0.95, 0.8, 0.3),
 }
 ## Points de vie des décors du village (par sorte).
 const PROP_HP := {"hut": 14, "barrel": 3, "crate": 3, "workbench": 5, "rack": 4}
 ## Armes qui vont plus vite : identifiant d'arme -> sortes de décor.
 const TOOL_BONUS := {
 	"axe": [WorldGenerator.D_OAK, WorldGenerator.D_PINE, "prop"],
-	"war_hammer": [WorldGenerator.D_ROCK, "prop"],
+	"war_hammer": [WorldGenerator.D_ROCK, WorldGenerator.D_IRON, WorldGenerator.D_GOLD, "prop"],
 }
 ## Outils du sac (il suffit de les avoir) : sorte -> [[identifiant, multiplicateur], ...] du meilleur au moins bon.
 const TOOLS := {
-	"hache": [["hache_pierre", 3.0], ["hache_bois", 2.0]],
-	"pioche": [["pioche_pierre", 3.0], ["pioche_bois", 2.0]],
+	"hache": [["hache_fer", 4.0], ["hache_pierre", 3.0], ["hache_bois", 2.0]],
+	"pioche": [["pioche_fer", 4.0], ["pioche_pierre", 3.0], ["pioche_bois", 2.0]],
 }
 ## Profondeur retirée à chaque coup de pelle, et profondeur minimale du sol.
 const DIG_STEP := 0.5
 const DIG_FLOOR := -2.5
+
+static var _hint_at := -100000
 
 
 ## Un coup du héros : frappe le décor le plus utile devant lui. Vrai si quelque chose a été touché.
@@ -75,7 +84,7 @@ static func strike(p: Player, reach: float, power: float, with_blocks := false) 
 		return false
 	var target: Vector2i = t.cell
 	var tk := world.decor_at(target)
-	var mult := maxf(2.0 if tk in TOOL_BONUS.get(wid, []) else 1.0, tool_mult(p, "pioche" if tk == WorldGenerator.D_ROCK else "hache"))
+	var mult := maxf(2.0 if tk in TOOL_BONUS.get(wid, []) else 1.0, tool_mult(p, "pioche" if is_stone(tk) else "hache"))
 	hit_decor(world, target, power * mult, p)
 	return true
 
@@ -195,7 +204,7 @@ static func tool_for_target(p: Player, reach: float, with_blocks := false) -> St
 	if t.has("cell"):
 		var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
 		var kind := world.decor_at(t.cell)
-		if kind == WorldGenerator.D_ROCK:
+		if is_stone(kind):
 			return best_tool(p, "pioche")
 		if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE, WorldGenerator.D_BUSH]:
 			return best_tool(p, "hache")
@@ -228,6 +237,14 @@ static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_pare
 		return
 	var at := world.cell_center(cell) + Vector3(0, 0.9 if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE] else 0.4, 0)
 	var col: Color = DECOR_COLOR.get(kind, Color(0.6, 0.5, 0.4))
+	# un filon ne se mine qu'avec la bonne pioche
+	if p and VEIN_TIER.has(kind) and pick_tier(p) < int(VEIN_TIER[kind]):
+		VoxelBurst.spawn(fx_parent, at, Color(0.6, 0.6, 0.6), 4, 1.5, 0.05, 0.2, "sphere", 8.0, false)
+		# un seul rappel toutes les quelques secondes (pas à chaque coup)
+		if Time.get_ticks_msec() - _hint_at > 4000:
+			_hint_at = Time.get_ticks_msec()
+			p.notify.emit("Il te faut une pioche pour miner ce filon." if int(VEIN_TIER[kind]) == 1 else "Il te faut une pioche en fer pour miner l'or.")
+		return
 	var left: float = float(world.decor_damage.get(cell, DECOR_HP.get(kind, 3))) - dmg
 	if left > 0.0:
 		world.decor_damage[cell] = left
@@ -236,9 +253,9 @@ static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_pare
 	world.decor_damage.erase(cell)
 	world.remove_decor(cell)
 	VoxelBurst.spawn(fx_parent, at, col, 26, 4.0, 0.12, 0.7, "sphere", 10.0, false)
-	# sans pioche, un rocher ne donne que des cailloux (comme dans Minecraft)
-	var ore := p == null or kind != WorldGenerator.D_ROCK or tool_mult(p, "pioche") > 1.0 or (p.weapon() != null and p.weapon().id == "war_hammer")
-	for l in loot(kind, ore):
+	# sans pioche, un rocher ne donne que des cailloux ; il faut une pioche en fer pour l'or et le marbre
+	var tier := 2 if p == null else pick_tier(p)
+	for l in loot(kind, tier):
 		_drop(world, l[0], l[1], world.cell_center(cell))
 	if p:
 		p.harvested.emit(_kind_name(kind))
@@ -252,18 +269,37 @@ static func _kind_name(kind: int) -> String:
 			return "rocher"
 		WorldGenerator.D_BUSH:
 			return "buisson"
+		WorldGenerator.D_IRON:
+			return "filon_fer"
+		WorldGenerator.D_GOLD:
+			return "filon_or"
 	return "plante"
 
 
+## Roche : rocher ou filon (on la frappe à la pioche).
+static func is_stone(kind: int) -> bool:
+	return kind == WorldGenerator.D_ROCK or kind == WorldGenerator.D_IRON or kind == WorldGenerator.D_GOLD
+
+
+## Niveau de la meilleure pioche du sac : 0 aucune, 1 bois ou pierre, 2 fer (un marteau de guerre compte comme 1).
+static func pick_tier(p: Player) -> int:
+	var best := best_tool(p, "pioche")
+	if best == "pioche_fer":
+		return 2
+	if best != "" or (p.weapon() != null and p.weapon().id == "war_hammer"):
+		return 1
+	return 0
+
+
 ## Butin d'un décor : [[ItemData, nombre], ...] (aussi utilisé par les habitants).
-static func loot(kind: int, with_ore := true) -> Array:
+static func loot(kind: int, pick := 2) -> Array:
 	var out := []
 	for l in DECOR_LOOT.get(kind, []):
 		var it := Items.get_item(l[0]) as ItemData
 		if it:
 			out.append([it, randi_range(l[1], l[2])])
 	for b in DECOR_BONUS.get(kind, []):
-		if not with_ore and b[0] != "fiber":
+		if pick < int(b[2]):
 			continue
 		if randf() < float(b[1]):
 			var it := Items.get_item(b[0]) as ItemData

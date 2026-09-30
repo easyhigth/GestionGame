@@ -153,6 +153,11 @@ const D_BUSH := 3
 const D_ROCK := 4
 const D_FLOWERS := 5 # petite plante (modèle choisi dans la région)
 const D_GRASS := 6
+## Filons de minerai (dans la roche) : il faut une pioche pour le fer, une pioche en fer pour l'or.
+const D_IRON := 7
+const D_GOLD := 8
+const IRON_CHANCE := 0.018
+const GOLD_CHANCE := 0.004
 
 const CHUNK := 16
 ## Sous cette altitude, on est dans un donjon (le sol est celui de `dungeon_grid`).
@@ -534,6 +539,12 @@ func _pick_decor(x: int, y: int, t: int, h: float, m: float, r: RegionData) -> i
 	var plant := r.small_plant_chance if r else 0.1
 	var tree_ok := x % 2 == 0
 	if t == STONE:
+		# filons : du fer dans toute la roche, de l'or plus rare sur les hauteurs
+		var ore := _rand(x, y, 5)
+		if h > stone_level + 0.12 and ore < GOLD_CHANCE:
+			return D_GOLD
+		if ore < IRON_CHANCE:
+			return D_IRON
 		if a < rock:
 			return D_ROCK
 		if tree_ok and b < scattered * 0.6:
@@ -1300,7 +1311,26 @@ func _models_for(kind: int, cell: Vector2i) -> Array[PackedScene]:
 			return flower_models
 		D_GRASS:
 			return grass_models
+		D_IRON:
+			return _vein_models("iron")
+		D_GOLD:
+			return _vein_models("gold")
 	return []
+
+
+var _veins := {}
+
+
+## Modèles des filons (chargés une seule fois).
+func _vein_models(kind: String) -> Array[PackedScene]:
+	if not _veins.has(kind):
+		var list: Array[PackedScene] = []
+		for n in (["iron_vein_1", "iron_vein_2"] if kind == "iron" else ["gold_vein_1"]):
+			var sc := load("res://assets/environment/models/%s.glb" % n) as PackedScene
+			if sc:
+				list.append(sc)
+		_veins[kind] = list
+	return _veins[kind]
 
 
 func _build_decor_chunk(ch: Vector2i) -> void:
@@ -1358,7 +1388,7 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 				D_BUSH:
 					shape = _bush_shape
 					shape_y = 0.5
-				D_ROCK:
+				D_ROCK, D_IRON, D_GOLD:
 					shape = _rock_shape
 					shape_y = 0.5
 			if shape:
@@ -1452,7 +1482,7 @@ func _on_pickup_gone(cell: Vector2i, holder: Node) -> void:
 func _loot_at(c: Vector2i) -> Array:
 	var i := _idx(c)
 	var d := _decor[i]
-	if d == D_OAK or d == D_PINE or d == D_BUSH or d == D_ROCK:
+	if d == D_OAK or d == D_PINE or d == D_BUSH or d == D_ROCK or d == D_IRON or d == D_GOLD:
 		return []
 	if Vector2(c - spawn_cell).length() < plaza_radius + 1:
 		return []

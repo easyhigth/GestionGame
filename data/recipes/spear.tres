@@ -11,4 +11,4 @@ script = ExtResource("1")
 result = ExtResource("spear")
 ingredients = Array[ExtResource("2")]([ExtResource("iron_ingot"), ExtResource("wood")])
 amounts = PackedInt32Array(1, 3)
-needs_workbench = true
+station = "enclume"

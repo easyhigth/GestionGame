@@ -13,7 +13,15 @@ const STEPS := [
 	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit : pose les blocs à la main (C pour choisir, V pour poser) ou avec le mode construction (B).", 1],
 	["torche", "Pose une torche", "Choisis-la avec C et pose-la avec V. Les monstres n'apparaissent pas près des lumières.", 1],
 	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit (E) ou tiens jusqu'au matin.", 1],
+	# chapitre 2 : l'âge du fer
+	["filon_fer", "Mine 2 filons de fer", "Des rochers piquetés d'orange, dans la roche des collines. Il faut une pioche.", 2],
+	["four", "Fabrique et pose un four", "Près d'un établi : 6 cailloux et 2 blocs de terre (Artisanat → Mobilier). Pose-le avec V.", 1],
+	["lingot", "Fonds 2 lingots de fer", "Près du four : 2 minerais de fer et 1 bois donnent 1 lingot (Artisanat → Matériaux).", 2],
+	["enclume", "Fabrique et pose une enclume", "4 lingots de fer, près d'un établi. Toutes les pièces en fer se forgent à côté d'elle.", 1],
+	["pioche_fer", "Forge une pioche en fer", "À l'enclume : 2 lingots et 2 bois (Artisanat → Outils). Elle mine l'or et le marbre.", 1],
 ]
+## Chapitres : [titre, première étape, étape suivant la dernière].
+const CHAPTERS := [["PREMIERS PAS", 0, 7], ["L'ÂGE DU FER", 7, 12]]
 
 var player: Player
 var step := 0
@@ -111,6 +119,10 @@ func _complete() -> void:
 		player.feat.emit("Objectif : %s ✔" % STEPS[step][1], Color("f2c86a"))
 	step += 1
 	progress = 0
+	if not is_done() and player:
+		for c in CHAPTERS:
+			if step == int(c[1]):
+				player.notify.emit("Chapitre terminé ! Nouveau chapitre : %s." % String(c[0]).capitalize())
 	if is_done():
 		_hide_timer = 8.0
 		if player:
@@ -128,6 +140,10 @@ func _on_crafted(item_id: String) -> void:
 		_advance("outil")
 	elif item_id == "bloc_planches":
 		_advance("planches")
+	elif item_id == "iron_ingot":
+		_advance("lingot")
+	if item_id == "pioche_fer":
+		_advance("pioche_fer")
 
 
 func _on_day(_d: int) -> void:
@@ -152,6 +168,17 @@ func _check_state() -> void:
 					if r.enclosed and r.doors > 0 and r.counts.has("lit"):
 						_advance("abri")
 						return
+		"four", "enclume":
+			var grid2 := get_tree().get_first_node_in_group("build_grid") as BuildGrid
+			if grid2:
+				for key in grid2.furniture:
+					if (grid2.furniture[key].item as ItemData).id == current_id():
+						_advance(current_id())
+						return
+		"pioche_fer":
+			var pf := Items.get_item("pioche_fer")
+			if pf and player.inventory.count(pf) > 0:
+				_advance("pioche_fer")
 		"torche":
 			var grid := get_tree().get_first_node_in_group("build_grid") as BuildGrid
 			if grid:
@@ -175,7 +202,7 @@ func _process(delta: float) -> void:
 
 func _refresh() -> void:
 	if is_done():
-		_title.text = "PREMIERS PAS · terminé"
+		_title.text = "GUIDE · terminé"
 		_task.text = "Bravo !"
 		_hint.text = "Tu sais survivre. À toi de bâtir ton royaume."
 		_bar.size.x = 236.0
@@ -183,11 +210,17 @@ func _refresh() -> void:
 		return
 	show()
 	var s: Array = STEPS[step]
-	_title.text = "PREMIERS PAS · %d / %d" % [step + 1, STEPS.size()]
+	var ch: Array = CHAPTERS[0]
+	for c in CHAPTERS:
+		if step >= int(c[1]) and step < int(c[2]):
+			ch = c
+	var first := int(ch[1])
+	var total := int(ch[2]) - first
+	_title.text = "%s · %d / %d" % [ch[0], step - first + 1, total]
 	var n := int(s[3])
 	_task.text = s[1] + ("  (%d / %d)" % [progress, n] if n > 1 else "")
 	_hint.text = s[2]
-	_bar.size.x = 236.0 * (float(step) + float(progress) / float(n)) / float(STEPS.size())
+	_bar.size.x = 236.0 * (float(step - first) + float(progress) / float(n)) / float(total)
 
 
 func export_state() -> Dictionary:

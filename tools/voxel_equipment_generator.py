@@ -133,6 +133,8 @@ def hache_bois(e): _hand_axe(e, 0xa87848, 0xc89868)
 def hache_pierre(e): _hand_axe(e, 0x8a8a86, 0xb8b8b2)
 def pioche_bois(e): _hand_pick(e, 0xa87848, 0xc89868)
 def pioche_pierre(e): _hand_pick(e, 0x8a8a86, 0xb8b8b2)
+def hache_fer(e): _hand_axe(e, IRON_D, STEEL)
+def pioche_fer(e): _hand_pick(e, IRON_D, STEEL)
 
 
 def spear(e):
@@ -355,6 +357,7 @@ ITEMS = {
     'cape_red': lambda e: cape(e, CLOTH_R), 'cape_blue': lambda e: cape(e, CLOTH_B),
     # outils (tenus en main quand le héros récolte)
     'hache_bois': hache_bois, 'hache_pierre': hache_pierre, 'pioche_bois': pioche_bois, 'pioche_pierre': pioche_pierre,
+    'hache_fer': hache_fer, 'pioche_fer': pioche_fer,
 }
 
 
@@ -436,10 +439,12 @@ def m_hache_bois(): return _axe('hache_bois', 0xa87848, 0xc89868)
 def m_hache_pierre(): return _axe('hache_pierre', 0x8a8a86, 0xb8b8b2)
 def m_pioche_bois(): return _pick('pioche_bois', 0xa87848, 0xc89868)
 def m_pioche_pierre(): return _pick('pioche_pierre', 0x8a8a86, 0xb8b8b2)
+def m_hache_fer(): return _axe('hache_fer', IRON_D, STEEL)
+def m_pioche_fer(): return _pick('pioche_fer', IRON_D, STEEL)
 
 
 MATERIALS = [m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
-             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre]
+             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer]
 
 
 # ---------------------------------------------------------------- export
