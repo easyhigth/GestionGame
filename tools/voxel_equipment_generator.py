@@ -76,6 +76,19 @@ def sword_wood(e):
     V(1.4, 1.4, 0.9, WOOD, 0, 17.2, 0, h)
 
 
+def lame_aube(e):
+    """Lame d'Aube : longue épée dorée, garde en ailes, gemme bleue."""
+    h = e['hand_l']
+    V(1.2, 5, 1.2, 0x5a3a24, 0, 0.5, 0, h)
+    VG(1.8, 1.8, 1.8, 0x6ad8ff, 0, -2.6, 0, h)
+    V(7, 1.4, 1.8, GOLD, 0, 3.6, 0, h)
+    for s in (-1, 1):
+        V(1.6, 2.4, 1.6, GOLD, s * 4, 4.6, 0, h)
+    V(2.4, 20, 0.8, 0xf4ecd0, 0, 14.5, 0, h)
+    V(1.2, 20, 0.9, 0xffe8a0, 0, 14.5, 0, h)
+    V(1.6, 2, 0.8, 0xf4ecd0, 0, 25.4, 0, h)
+
+
 def sword_iron(e):
     h = e['hand_l']
     V(1.2, 5, 1.2, LEATHER_D, 0, 0, 0, h)
@@ -397,7 +410,7 @@ ITEMS = {
     'cape_red': lambda e: cape(e, CLOTH_R), 'cape_blue': lambda e: cape(e, CLOTH_B),
     # outils (tenus en main quand le héros récolte)
     'hache_bois': hache_bois, 'hache_pierre': hache_pierre, 'pioche_bois': pioche_bois, 'pioche_pierre': pioche_pierre,
-    'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe, 'manteau_laine': manteau_laine, 'canne_peche': canne_peche,
+    'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe, 'manteau_laine': manteau_laine, 'canne_peche': canne_peche, 'lame_aube': lame_aube,
 }
 
 

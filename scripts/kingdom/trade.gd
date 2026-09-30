@@ -88,6 +88,12 @@ func is_here() -> bool:
 	return leave_day >= 0
 
 
+## Lysandre s'est installée au village (histoire) : visites plus fréquentes, meilleurs prix.
+func lysandre() -> bool:
+	var st := get_tree().get_first_node_in_group("story")
+	return st != null and st.choices.get("lysandre", "") == "join"
+
+
 func has_market() -> bool:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k == null:
@@ -142,7 +148,7 @@ func depart() -> void:
 	var dc := _day_cycle()
 	var today := dc.day if dc else leave_day
 	leave_day = -1
-	next_day = today + (VISIT_EVERY_MARKET if has_market() else VISIT_EVERY)
+	next_day = today + (VISIT_EVERY_MARKET if has_market() or lysandre() else VISIT_EVERY)
 	_despawn()
 	stock.clear()
 	var p := _player()
@@ -309,7 +315,7 @@ func buy_price(it: ItemData) -> int:
 	if v <= 0.0:
 		return 0
 	# toujours plus cher que ce qu'il en donnerait (pas d'achat-revente gagnant)
-	return maxi(sell_price(it, 0) + 1, ceili(v * BUY_MULT * (MARKET_BUY if has_market() else 1.0)))
+	return maxi(sell_price(it, 0) + 1, ceili(v * BUY_MULT * (MARKET_BUY if has_market() else 1.0) * (0.9 if lysandre() else 1.0)))
 
 
 ## Prix de vente d'un exemplaire au marchand, compte tenu de ce qu'on lui a déjà vendu.
@@ -319,7 +325,7 @@ func sell_price(it: ItemData, already := -1) -> int:
 		return 0
 	var n: int = int(sold_count.get(it.id, 0)) if already < 0 else already
 	var sat := maxf(SATURATION_MIN, 1.0 - SATURATION_STEP * n)
-	var mult := SELL_MULT * (MARKET_SELL if has_market() else 1.0)
+	var mult := SELL_MULT * (MARKET_SELL if has_market() else 1.0) * (1.1 if lysandre() else 1.0)
 	# les objets de moins d'une demi-pièce ne se vendent pas (planches...)
 	if v * mult < 0.5:
 		return 0

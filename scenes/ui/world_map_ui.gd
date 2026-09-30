@@ -213,6 +213,19 @@ func _draw() -> void:
 	draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color.BLACK, false, 2.0)
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	_text_center(k.title() if k else "Village", v + Vector2(0, 30), 11, Color("f2c86a"))
+	# objectif de l'histoire
+	var st := get_tree().get_first_node_in_group("story") as Story
+	var tp := st.target_pos() if st else Vector3.INF
+	if tp != Vector3.INF:
+		var q := cell_to_screen(Vector2(tp.x, tp.z))
+		var pts := PackedVector2Array()
+		for i in 10:
+			var a := -PI / 2.0 + TAU * i / 10.0
+			pts.append(q + Vector2(cos(a), sin(a)) * (11.0 if i % 2 == 0 else 5.0))
+		draw_colored_polygon(pts, Color("ffd24a"))
+		pts.append(pts[0])
+		draw_polyline(pts, Color.BLACK, 1.5)
+		_text_center("Histoire : " + st.current()[2], q + Vector2(0, -20), 12, Color("ffe08a"))
 	# héros
 	if player:
 		var pp := cell_to_screen(Vector2(player.global_position.x, player.global_position.z))

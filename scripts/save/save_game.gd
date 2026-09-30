@@ -52,6 +52,7 @@ var trade_state := {}
 var weather_state := {}
 var livestock_state := {}
 var caves_state := {}
+var story_state := {}
 var _autosave_timer := 300.0
 
 
@@ -220,6 +221,9 @@ func save_game(slot: String) -> bool:
 	var cv := get_tree().get_first_node_in_group("caves") as UnderwaterCaves
 	if cv:
 		d.caves = cv.export_state()
+	var sto := get_tree().get_first_node_in_group("story") as Story
+	if sto:
+		d.story = sto.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -346,6 +350,7 @@ func new_game() -> void:
 	weather_state = {}
 	livestock_state = {}
 	caves_state = {}
+	story_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -482,6 +487,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if fm:
 		fm.import_state(farm_state)
 		farm_state = {}
+	story_state = d.get("story", {})
+	var sto := get_tree().get_first_node_in_group("story") as Story
+	if sto and not story_state.is_empty():
+		sto.import_state(story_state)
+		story_state = {}
 	caves_state = d.get("caves", {})
 	var cv := get_tree().get_first_node_in_group("caves") as UnderwaterCaves
 	if cv and not caves_state.is_empty():

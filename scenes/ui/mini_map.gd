@@ -75,6 +75,17 @@ func _draw() -> void:
 			var q := (Vector2(vg.global_position.x, vg.global_position.z) - src.position) * s
 			if rect.has_point(q):
 				draw_circle(q, 3.0, Color("6aff6a"))
+	# objectif de l'histoire : une étoile dorée (ou une flèche au bord)
+	var st := get_tree().get_first_node_in_group("story") as Story
+	var tp := st.target_pos() if st else Vector3.INF
+	if tp != Vector3.INF:
+		var q := (Vector2(tp.x, tp.z) - src.position) * s
+		if rect.has_point(q):
+			_star(q, 6.0, Color("ffd24a"))
+		else:
+			var dir := (q - rect.get_center()).normalized()
+			var edge := rect.get_center() + dir * (SIZE / 2.0 - 9.0)
+			_star(edge, 4.5, Color("ffd24a"))
 	# héros au centre
 	var c := rect.get_center()
 	var f := Vector2(player.facing.x, player.facing.z).normalized()
@@ -92,6 +103,16 @@ func _draw() -> void:
 		var t: RegionData = z.type
 		_text(z.name, Vector2(SIZE / 2.0, SIZE + 14), 12, t.map_color.lightened(0.5))
 		_text("Nv %d-%d  ·  M : carte" % [z.level.x, z.level.y], Vector2(SIZE / 2.0, SIZE + 28), 10, Color("b8a890"))
+
+
+func _star(p: Vector2, r: float, col: Color) -> void:
+	var pts := PackedVector2Array()
+	for i in 10:
+		var a := -PI / 2.0 + TAU * i / 10.0
+		pts.append(p + Vector2(cos(a), sin(a)) * (r if i % 2 == 0 else r * 0.45))
+	draw_colored_polygon(pts, col)
+	pts.append(pts[0])
+	draw_polyline(pts, Color(0.1, 0.07, 0.02), 1.0)
 
 
 func _text(text: String, pos: Vector2, fs: int, col: Color) -> void:

@@ -194,6 +194,10 @@ func _update(dt: float) -> void:
 				seen[r.type.id] = true
 				comfort += float(AMENITIES.get((r.type as RoomTypeData).id, 0.0))
 		comfort += k.rank * 2.0
+	# le royaume éveillé (fin de l'histoire) : tout le monde est plus heureux
+	var st := get_tree().get_first_node_in_group("story")
+	if st and st.is_done():
+		comfort += 10.0
 	if _safety_left > 0.0:
 		_safety_left -= dt
 		if _safety_left <= 0.0:
