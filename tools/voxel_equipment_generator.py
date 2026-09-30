@@ -265,6 +265,26 @@ def leather_armor(e):
         V(o['aw'] + 1.4, 2.4, o['ad'] + 1.4, LEATHER_L, 0, 0.4, 0, a)
 
 
+WOOL = 0xf0e8d6
+WOOL_D = 0xd8ccb4
+
+
+def manteau_laine(e):
+    """Manteau de laine : épais, col de laine bouclée, boutons de bois."""
+    o = e['o']; T = e['T']; top = e['top']; tH = o['tH']
+    ch = T[2]; wa = T[1]; sh = T[3]
+    V(ch['w'] + 1.2, ch['h'] + 0.4, ch['d'] + 1.2, 0x8a5a3a, 0, ch['cy'], 0, top)
+    V(wa['w'] + 1.2, wa['h'] + 0.4, wa['d'] + 1.2, 0x7a4a2e, 0, wa['cy'], 0, top)
+    V(sh['w'] + 1.4, sh['h'] + 0.6, sh['d'] + 1.4, WOOL, 0, sh['cy'] + 0.4, 0, top)
+    for x in (-2.4, 0, 2.4):
+        V(2.2, 2, 2.2, WOOL_D, x, sh['cy'] + sh['h'] / 2 + 0.8, 0, top)
+    V(wa['w'] + 1.6, 1.4, wa['d'] + 1.6, WOOL, 0, wa['y0'] + 0.2, 0, top)
+    for i in range(3):
+        V(0.9, 0.9, 0.5, WOOD_D, 0, ch['cy'] + 1.6 - i * 1.6, ch['d'] / 2 + 0.9, top)
+    for a in e['arms']:
+        V(o['aw'] + 1.6, 3, o['ad'] + 1.6, WOOL, 0, 0.2, 0, a)
+
+
 def iron_armor(e):
     o = e['o']; T = e['T']; top = e['top']; tH = o['tH']
     ch = T[2]; wa = T[1]; sh = T[3]
@@ -368,7 +388,7 @@ ITEMS = {
     'cape_red': lambda e: cape(e, CLOTH_R), 'cape_blue': lambda e: cape(e, CLOTH_B),
     # outils (tenus en main quand le héros récolte)
     'hache_bois': hache_bois, 'hache_pierre': hache_pierre, 'pioche_bois': pioche_bois, 'pioche_pierre': pioche_pierre,
-    'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe,
+    'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe, 'manteau_laine': manteau_laine,
 }
 
 
@@ -566,7 +586,63 @@ def m_soupe_legumes():
     return g
 
 
-FARM = [m_houe, m_graines_ble, m_ble, m_carotte, m_pomme_de_terre, m_pomme_de_terre_cuite, m_soupe_legumes]
+def m_oeuf():
+    g = Node('oeuf')
+    for i, (x, z) in enumerate(((-3, 0), (3, 1), (0, -3))):
+        V(4, 5, 4, 0xf4ecd8 if i != 1 else 0xd8a878, x, 2.5, z, g)
+        V(3, 1, 3, 0xfff8ec if i != 1 else 0xe8bc90, x, 5.4, z, g)
+    return g
+
+
+def m_lait():
+    g = Node('lait')
+    V(10, 12, 10, 0x9a6a3a, 0, 6, 0, g)          # seau
+    V(10.6, 1.4, 10.6, 0x6a4428, 0, 3, 0, g)
+    V(10.6, 1.4, 10.6, 0x6a4428, 0, 10, 0, g)
+    V(8.4, 1, 8.4, 0xfaf6ee, 0, 12, 0, g)          # lait
+    V(1, 8, 1, 0x4e5258, -5.4, 14, 0, g, rz=-0.5)
+    V(1, 8, 1, 0x4e5258, 5.4, 14, 0, g, rz=0.5)
+    return g
+
+
+def m_laine():
+    g = Node('laine')
+    for x, y, z, s in ((-3, 3, 0, 7), (3, 3.5, 1, 7.4), (0, 7, -0.5, 6.6), (0, 3, -4, 5.4)):
+        V(s, s * 0.8, s, 0xf2eee4, x, y, z, g)
+        V(s * 0.5, s * 0.4, s * 0.5, 0xe0d8c8, x + 1, y + s * 0.4, z + 1, g)
+    return g
+
+
+def m_omelette():
+    g = Node('omelette')
+    V(16, 1.4, 16, 0xe8e0d0, 0, 0.7, 0, g)         # assiette
+    V(12, 2.4, 8, 0xf0d050, 0, 2.4, 0, g)
+    V(9, 1, 6, 0xf8e070, 0, 3.8, 0, g)
+    V(2, 0.6, 1, 0x4a9a3a, -2, 4.4, 1, g)
+    return g
+
+
+def m_fromage():
+    g = Node('fromage')
+    V(14, 7, 10, 0xf0c850, 0, 3.5, 0, g)
+    V(14.4, 1.2, 10.4, 0xd8a838, 0, 7.2, 0, g)
+    for x, y in ((-4, 4), (2, 2.4), (4, 5)):
+        V(2, 2, 0.6, 0xc89830, x, y, 5.2, g)
+    return g
+
+
+def m_gateau():
+    g = Node('gateau')
+    V(16, 1.2, 16, 0xe8e0d0, 0, 0.6, 0, g)
+    V(13, 6, 13, 0xd89a58, 0, 4, 0, g)
+    V(13.6, 2, 13.6, 0xfaf4ec, 0, 7.8, 0, g)
+    for x, z in ((-4, -4), (4, 4), (4, -4), (-4, 4), (0, 0)):
+        V(2, 2, 2, 0xd8283c, x, 9.6, z, g)
+    return g
+
+
+FARM = [m_houe, m_graines_ble, m_ble, m_carotte, m_pomme_de_terre, m_pomme_de_terre_cuite, m_soupe_legumes,
+        m_oeuf, m_lait, m_laine, m_omelette, m_fromage, m_gateau]
 
 
 MATERIALS = [m_baies, m_viande_crue, m_viande_cuite, m_ragout, m_pain, m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,

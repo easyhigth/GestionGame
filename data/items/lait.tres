@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lait"
+display_name = "Lait"
+description = "Un seau de lait frais de vache. Se boit (H), ou devient fromage et gâteau."
+max_stack = 20
+food = 8.0
+food_heal = 2
+food_cooked = false

@@ -55,6 +55,7 @@ var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
 var trade: Trade
 var weather: Weather
+var livestock: Livestock
 var _weather_label: Label
 var _quest_box: VBoxContainer
 var _quest_refresh := 0.0
@@ -661,6 +662,11 @@ func _build_day_and_guide() -> void:
 	weather.world = world
 	weather.player = player
 	get_parent().add_child.call_deferred(weather)
+	livestock = Livestock.new()
+	livestock.name = "Livestock"
+	livestock.world = world
+	livestock.player = player
+	get_parent().add_child.call_deferred(livestock)
 	trade = Trade.new()
 	trade.name = "Trade"
 	trade.world = world
@@ -777,7 +783,9 @@ func _update_hotbar() -> void:
 	if cur and cur.id == "houe":
 		verb = "labourer"
 	elif cur and cur.is_seed():
-		verb = "semer"
+		verb = "semer (les poules te suivent)" if HandBuild.is_lure(cur) else "semer"
+	elif cur and HandBuild.is_lure(cur):
+		verb = "rien (les bêtes te suivent)"
 	_hotbar_name.text = "%s  ·  V / L3 : %s   C / X : changer   (après le dernier : mains nues)" % [cur.display_name if cur else "", verb]
 
 

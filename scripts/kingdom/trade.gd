@@ -32,16 +32,17 @@ const VALUES := {
 	"wood": 1.0, "stone": 1.0, "fiber": 0.6, "leather": 3.0, "iron_ore": 3.0, "or_brut": 8.0, "marbre_brut": 5.0,
 	"baies": 0.6, "viande_crue": 2.0, "bloc_terre": 0.0, "bloc_sable": 0.2, "piece_or": 0.0,
 	"graines_ble": 0.5, "ble": 1.0, "carotte": 1.0, "pomme_de_terre": 1.0,
+	"oeuf": 1.0, "lait": 1.5, "laine": 2.0,
 }
 const CRAFT_BONUS := 1.3
 
 ## Ce que le marchand peut avoir : [catégorie, [identifiant, min, max], ...]
 const GOODS := {
 	"Graines": [["graines_ble", 6, 12], ["carotte", 4, 8], ["pomme_de_terre", 4, 8]],
-	"Nourriture": [["pain", 3, 6], ["viande_cuite", 2, 5], ["soupe_legumes", 1, 3], ["ragout", 1, 3]],
+	"Nourriture": [["oeuf", 4, 8], ["fromage", 2, 4], ["pain", 3, 6], ["viande_cuite", 2, 5], ["soupe_legumes", 1, 3], ["ragout", 1, 3]],
 	"Matériaux": [["iron_ingot", 3, 6], ["leather", 3, 6], ["lingot_or", 1, 2], ["marbre_brut", 3, 6], ["bloc_verre", 6, 12], ["bloc_briques", 10, 20]],
 	"Outils": [["houe", 1, 1], ["pioche_pierre", 1, 1], ["hache_pierre", 1, 1], ["pioche_fer", 1, 1], ["hache_fer", 1, 1]],
-	"Mobilier": [["lit", 1, 2], ["coffre", 1, 2], ["lanterne", 2, 3], ["etal", 2, 2], ["comptoir", 1, 1], ["table", 1, 1]],
+	"Mobilier": [["lit", 1, 2], ["coffre", 1, 2], ["lanterne", 2, 3], ["etal", 2, 2], ["comptoir", 1, 1], ["table", 1, 1], ["mangeoire", 1, 1], ["barriere", 6, 12]],
 }
 
 var world: WorldGenerator

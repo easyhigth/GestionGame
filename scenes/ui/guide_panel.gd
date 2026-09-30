@@ -33,9 +33,13 @@ const STEPS := [
 	["vendre", "Vends 10 objets au marchand", "Un marchand ambulant passe au village tous les 3 jours (le royaume, U, dit quand). E près de lui : vends tes surplus.", 10],
 	["acheter", "Achète quelque chose au marchand", "Graines, outils, lingots, meubles, équipement : son stock change à chaque visite.", 1],
 	["marche", "Construis un marché", "Pièce fermée avec 2 étals et un comptoir (9 cases). Le marchand vient tous les 2 jours et paie mieux ; un marchand du village y gagne de l'or.", 1],
+	# chapitre 6 : l'élevage
+	["mangeoire", "Fabrique et pose une mangeoire", "Près d'un établi : 2 bois et 2 fibres (Artisanat → Mobilier). Pose-la avec V là où sera l'enclos ; des barrières le fermeront.", 1],
+	["apprivoiser", "Mène une bête à la mangeoire", "Poules : graines de blé en main (C). Moutons et vaches : du blé. Elles te suivent : amène-les près de la mangeoire.", 1],
+	["produits", "Obtiens 3 produits de tes bêtes", "Œufs, laine, lait apparaissent près des bêtes nourries par la réserve du village. Un fermier à la grange les ramasse.", 3],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23]]
+const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26]]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
 const VERSION := 2
 
@@ -100,6 +104,7 @@ func _ready() -> void:
 			if it and it.food_cooked:
 				_advance("repas"))
 	_connect_trade.call_deferred()
+	_connect_livestock.call_deferred()
 	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
 	if dc:
 		_connect_day(dc)
@@ -120,6 +125,19 @@ func _connect_trade() -> void:
 	if not tr.sold.is_connected(_on_sold):
 		tr.sold.connect(_on_sold)
 		tr.bought.connect(func(_id, _n, _g): _advance("acheter"))
+
+
+func _connect_livestock() -> void:
+	var ls := get_tree().get_first_node_in_group("livestock") as Livestock
+	if ls == null:
+		get_tree().create_timer(0.5).timeout.connect(_connect_livestock)
+		return
+	if not ls.produced.is_connected(_on_produced):
+		ls.produced.connect(_on_produced)
+
+
+func _on_produced(_id: String) -> void:
+	_advance("produits")
 
 
 func _on_sold(_id: String, n: int, _gold: int) -> void:
@@ -236,6 +254,17 @@ func _check_state() -> void:
 					if (r.type as RoomTypeData).id == "marche":
 						_advance("marche")
 						return
+		"mangeoire":
+			var grid3 := get_tree().get_first_node_in_group("build_grid") as BuildGrid
+			if grid3:
+				for key in grid3.furniture:
+					if (grid3.furniture[key].item as ItemData).id == "mangeoire":
+						_advance("mangeoire")
+						return
+		"apprivoiser":
+			var ls := get_tree().get_first_node_in_group("livestock") as Livestock
+			if ls and not ls.domestic().is_empty():
+				_advance("apprivoiser")
 		"houe":
 			var hoe := Items.get_item("houe")
 			if hoe and player.inventory.count(hoe) > 0:

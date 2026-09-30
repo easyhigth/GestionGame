@@ -221,6 +221,81 @@ def salamander(c, belly, glow_c, eye):
     return g
 
 
+# ---------------------------------------------------------------- animaux de la ferme
+def chicken(c, comb, scale=1.0):
+    """Poule : deux pattes (LegL, LegR), ailes (ArmL, ArmR), tête avec crête et bec."""
+    g = Node('Root', (0, 4 * scale, 0))
+    g.scale = scale
+    for name, x in (('LegL', 1.4), ('LegR', -1.4)):
+        n = g.add(Node(name, (x, 0, -0.5)))
+        V(0.8, 4, 0.8, 0xe8a030, 0, -2, 0, n)
+        V(1.6, 0.5, 2.4, 0xe8a030, 0, -3.8, 0.8, n)
+    top = g.add(Node('Torso'))
+    V(6, 5.6, 7.4, c, 0, 3.4, 0, top)
+    V(5, 2, 5, shade(c, 0.95), 0, 1, 0.4, top)
+    V(4.6, 4.4, 2.6, shade(c, 0.9), 0, 5.4, -4.6, top, rx=-0.5)     # queue
+    for name, x in (('ArmL', 3.2), ('ArmR', -3.2)):
+        n = top.add(Node(name, (x, 4.6, 0)))
+        V(1, 3.6, 5.2, shade(c, 0.88), 0, -1.4, -0.4, n)
+    h = top.add(Node('Head', (0, 6.6, 3.2)))
+    V(3.8, 4.4, 3.6, c, 0, 1.4, 0, h)
+    V(1.2, 2.2, 3.4, comb, 0, 4.4, -0.2, h)                         # crête
+    V(1.6, 1.2, 1.8, 0xf0b030, 0, 1.2, 2.6, h)                      # bec
+    V(1, 1.4, 0.8, comb, 0, -0.4, 2.2, h)                           # barbillon
+    for s in (-1, 1):
+        V(0.6, 0.8, 0.8, 0x1a1414, s * 1.95, 2.2, 1, h)
+    return g
+
+
+def sheep(wool, skin):
+    """Mouton : toison bouclée, tête et pattes sombres."""
+    g = Node('Root', (0, 7, 0))
+    for name, x in (('LegL', 3.2), ('LegR', -3.2)):
+        leg(g, name, x, -6, 0, 7, 2.6, skin, shade(skin, 0.7))
+    top = g.add(Node('Torso'))
+    V(13, 11, 20, wool, 0, 5, 0, top)
+    for x, y, z in ((-5, 10, -6), (5, 10, 4), (0, 11, -1), (-4, 9, 7), (4, 9.5, -8), (0, 1, 8), (6, 4, -3), (-6, 5, 2)):
+        V(4.4, 3.6, 4.4, shade(wool, 0.94), x, y, z, top)
+    V(3, 3, 2.4, wool, 0, 7, -11, top)
+    for name, x in (('ArmL', 3.2), ('ArmR', -3.2)):
+        leg(top, name, x, 6.5, 0.5, 7.5, 2.6, skin, shade(skin, 0.7))
+    h = top.add(Node('Head', (0, 7.5, 11)))
+    V(6, 6.6, 7, skin, 0, 0, 1, h)
+    V(7.4, 3.4, 5, wool, 0, 3.8, -0.6, h)
+    V(4.6, 3, 2, shade(skin, 1.2), 0, -1.6, 4.4, h)
+    for s in (-1, 1):
+        V(0.6, 1, 0.5, 0xf0e6d2, s * 1.9, 1, 4.6, h)
+        V(0.4, 0.6, 0.5, 0x1a1414, s * 1.9, 1, 4.9, h)
+        V(3.4, 1.4, 1.8, skin, s * 4.2, 1.6, -0.6, h, rz=s * 0.3)
+    return g
+
+
+def cow(c, spot, horn):
+    """Vache : grande, taches, cornes courtes, mufle rose, pis."""
+    g = Node('Root', (0, 10, 0))
+    for name, x in (('LegL', 4.4), ('LegR', -4.4)):
+        leg(g, name, x, -9, 0, 10, 3.6, c, 0x3a2a22)
+    top = g.add(Node('Torso'))
+    V(14, 12, 26, c, 0, 6, 0, top)
+    for x, y, z, w, d in ((7.1, 7, -4, 0.6, 8), (-7.1, 5, 5, 0.6, 7), (3, 12.1, 2, 7, 6), (-7.1, 8, -8, 0.6, 5), (7.1, 4, 7, 0.6, 5)):
+        V(w if w < 1 else w, 5 if w < 1 else 0.6, d, spot, x, y, z, top)
+    V(6, 3, 6, 0xf0a8a8, 0, -0.6, -5, top)                          # pis
+    V(1.2, 9, 1.2, c, 0, 5, -13.4, top, rx=0.25)                      # queue
+    V(2, 2.4, 2, spot, 0, 0.6, -14.6, top)
+    for name, x in (('ArmL', 4.4), ('ArmR', -4.4)):
+        leg(top, name, x, 9, 0.5, 10.5, 3.6, c, 0x3a2a22)
+    h = top.add(Node('Head', (0, 9, 14.5)))
+    V(9, 9, 8, c, 0, 0, 1, h)
+    V(8, 4, 3.6, 0xf0b0a8, 0, -2.6, 5.8, h)                           # mufle
+    V(4, 3, 0.6, spot, 1.5, 2.8, 5.1, h)
+    for s in (-1, 1):
+        V(0.8, 0.8, 0.6, 0x5a2a2a, s * 1.8, -2.2, 7.7, h)
+        V(1, 1, 0.6, 0x1a1414, s * 3, 1.4, 5.1, h)
+        V(3.6, 1.8, 2, c, s * 5.6, 2.4, 0.6, h)                       # oreilles
+        V(1.4, 3, 1.4, horn, s * 3.6, 5.6, 0, h, rz=-s * 0.35)        # cornes
+    return g
+
+
 CREATURES = {
     'wolf': lambda: wolf(0x8a8a8e, 0xd8d4cc, 0xffd24a),
     'wolf_alpha': lambda: wolf(0x3a3a40, 0x6a6a70, 0xff5a3a, 1.25, mane=0x24242a),
@@ -233,6 +308,11 @@ CREATURES = {
     'bear_snow': lambda: bear(0xeef0f2, 0xc8ccd0, 0x3a8aff, 1.1),
     'scorpion': lambda: scorpion(0xc8963a, 0x8aff4a, 0x1a1a1a),
     'salamander': lambda: salamander(0x3a2220, 0x6a3a28, 0xff7a20, 0xffd040),
+    'chicken': lambda: chicken(0xf4f0e6, 0xd8302a),
+    'chicken_brown': lambda: chicken(0xb8743a, 0xd8302a),
+    'sheep': lambda: sheep(0xf2eee4, 0x3a3230),
+    'cow': lambda: cow(0xf4f0e8, 0x2a2624, 0xe8dcc0),
+    'cow_brown': lambda: cow(0x9a5a32, 0xf4f0e8, 0xe8dcc0),
 }
 
 
@@ -240,9 +320,13 @@ CREATURES = {
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default='../assets/characters/creatures')
+    ap.add_argument('--only', default='', help='noms séparés par des virgules (par défaut : toutes)')
     a = ap.parse_args()
+    only = [n for n in a.only.split(',') if n]
     os.makedirs(a.out, exist_ok=True)
     for name, fn in CREATURES.items():
+        if only and name not in only:
+            continue
         export_glb(fn(), os.path.join(a.out, name + '.glb'))
     print('%d créature(s) -> %s' % (len(CREATURES), a.out))
 
