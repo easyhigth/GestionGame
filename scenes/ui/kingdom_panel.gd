@@ -249,9 +249,20 @@ func _refresh() -> void:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(600, 0)
 		_box.add_child(l)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	var dip_b := MenuKit.button("Diplomatie (Y)", 200, 13)
+	dip_b.pressed.connect(func():
+		close()
+		var hud := get_parent()
+		if hud and hud.get("diplomacy_panel"):
+			hud.diplomacy_panel.open())
+	row.add_child(dip_b)
 	var close_b := MenuKit.button("Fermer (U)", 200, 13)
 	close_b.pressed.connect(close)
-	_box.add_child(close_b)
+	row.add_child(close_b)
+	_box.add_child(row)
 	close_b.grab_focus.call_deferred()
 
 

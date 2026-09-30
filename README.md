@@ -357,6 +357,13 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Boss vaincu : trésor (or, lingots, équipements rares), portail de sortie, beaucoup d'expérience, et ton héros **absorbe l'âme du boss** : un bonus permanent propre à chaque boss (**Boss Soul**, par exemple « Prédation du Slime Primordial : +2,5 vie/s »). L'entrée du donjon devient verte sur la carte (« Vaincu »).
 - Si tu tombes dans un donjon, tu te réveilles au village comme d'habitude. On ne peut pas construire dans un donjon.
 
+### Fin de jeu : la Brume
+- Quand l'histoire est finie (ou que tous les donjons sont vaincus), **la Brume s'éveille** : les donjons déjà vaincus affichent « Brume : palier N » à leur entrée.
+- 10 paliers par donjon, à franchir l'un après l'autre : monstres « brumeux » (+4 niveaux par palier), boss « Écho de Brume », lumière violette. Dès le palier 4, le boss a les 4 pouvoirs.
+- Aux paliers 3, 6, 9 et 10 : un **Seigneur de Brume** légendaire (plus grand, plus fort). Son âme donne +3 attaque et +2 défense, une fois par région et par palier.
+- Trésors : fragments de Brume, gemmes, larmes d'esprit, orichalque et, sur les Seigneurs, parfois une pièce d'équipement légendaire (Lame de l'Éveil, Lance draconique...).
+- Le journal (O) indique le palier le plus haut et le nombre de Seigneurs vaincus. Les paliers sont sauvegardés.
+
 ## Recrutement, compagnons et raids
 - **Voyageurs** : des campements de voyageurs sont dispersés dans le monde (réglage **Traveler Density** des régions). Leurs races dépendent de la région (**Recruit Races** : nains et ogres en montagne, fées et esprits au bois enchanté, démons et onis dans les cendres...). Chacun a un niveau, un métier où il excelle et un second talent.
 - **E** près d'un voyageur : il se présente et dit ce qu'il demande pour rejoindre ton village (des matériaux selon son métier, et de l'or pour les plus expérimentés). Il faut aussi de la place : la population maximale vaut 8 + les lits de tes maisons et dortoirs. Une fois recruté, il part pour ton village où tu peux lui donner un poste.
@@ -365,6 +372,13 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - **Raids** : de temps en temps (premier raid après 8 minutes, puis toutes les 10 à 14 minutes, réglable dans le nœud **Menaces**), une bande de pillards attaque le village. Le raid est annoncé 45 secondes à l'avance avec sa direction. La bande dépend de ton niveau (gobelins, horde d'orcs, clan des ogres, légion des cendres) et grossit avec le rang de ton royaume.
 - Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
 - Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
+
+## Diplomatie (touche Y)
+- Cinq nations voisines : **Horde de Karg** (orcs), **Cour de Sylvaë** (fées et dryades), **Sultanat des Sables** (hommes-lézards), **Jarls du Givre** (clans du nord), **Principauté des Cendres** (démons). Chacune a une relation de -100 à +100 et un caractère vers lequel elle revient peu à peu.
+- **Présents** (50 or, ou ce que la nation aime, une fois par jour) et **demandes** remplies (de l'or en échange) font monter la relation.
+- **Traités** : paix (relation 0 : elle ne te déclarera jamais la guerre), commerce (20 : une caravane tous les 3 jours et de meilleurs prix chez le marchand), alliance (60, avec paix et commerce : un présent rare tous les 5 jours et un pillard de moins par raid).
+- **Guerre** : une nation hostile (-40 ou moins, sans paix) peut te la déclarer, ou tu la déclares toi-même (les autres nations n'aiment pas ça). Ses armées attaquent alors le village. Repousse-en 3 : elle capitule, signe la paix et paie un tribut. On peut aussi acheter la paix.
+- Panneau : touche Y, ou bouton « Diplomatie » du panneau du royaume (U).
 
 ## Sauvegarde, menus et options
 - **3 emplacements de sauvegarde** et une **sauvegarde automatique** toutes les 5 minutes (désactivable). Menu pause > Sauvegarder ; écran titre > Continuer (la plus récente) ou Charger. Chaque emplacement affiche le héros, son niveau, le rang du royaume, la zone, le temps de jeu et la date.

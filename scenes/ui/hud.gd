@@ -51,6 +51,7 @@ var day_cycle: DayCycle
 var guide: GuidePanel
 var _clock: Label
 var kingdom_panel: KingdomPanel
+var diplomacy_panel: DiplomacyPanel
 var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
 var trade: Trade
@@ -480,6 +481,10 @@ func _build_maps() -> void:
 		dm.boss_awoken.connect(func(b, title): show_banner(b.data.display_name, title, Color("ff6a4a")))
 		dm.boss_defeated.connect(func(_z, soul):
 			show_feat("Boss vaincu !", Color("ffd24a"))
+			if dm.brume_tier > 0:
+				show_banner("La Brume se dissipe", soul, DungeonManager.BRUME_COLOR)
+				show_message(soul + ". Le palier suivant t'attend à l'entrée du donjon.")
+				return
 			show_banner("Âme absorbée", soul, Color("aee8ff"))
 			show_message("Ton héros absorbe l'âme du boss : " + soul))
 	if world:
@@ -803,6 +808,12 @@ func _build_day_and_guide() -> void:
 	kingdom_panel = KingdomPanel.new()
 	kingdom_panel.player = player
 	add_child(kingdom_panel)
+	var dip := Diplomacy.new()
+	dip.name = "Diplomacy"
+	get_parent().add_child.call_deferred(dip)
+	diplomacy_panel = DiplomacyPanel.new()
+	diplomacy_panel.player = player
+	add_child(diplomacy_panel)
 	quest_dialog = QuestDialog.new()
 	quest_dialog.player = player
 	add_child(quest_dialog)

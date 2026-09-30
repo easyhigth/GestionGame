@@ -91,6 +91,10 @@ func announce(story := {}) -> void:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var rank := k.rank if k else 0
 	var count := clampi(3 + rank + lv / 4, 3, 10) + int(story.get("extra", 0))
+	# les alliés (voir Diplomacy) gardent les routes : moins de pillards
+	var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
+	if dip and story.is_empty():
+		count = maxi(2, count - dip.raid_reduction())
 	var angle := randf() * TAU
 	var dir_i := posmod(roundi(angle / (TAU / 8.0)), 8)
 	var center := village_center()

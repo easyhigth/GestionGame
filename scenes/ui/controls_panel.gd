@@ -44,6 +44,7 @@ const PAGES := [
 		["Royaume : habitants, lits, réserve de nourriture, bonheur", "U", "Start → Royaume"],
 		["Journal de l'histoire (objectif, éclats, personnages)", "O", "—"],
 		["Familiers : ordre suivant (suivre, attendre, attaquer)", "P", "—"],
+		["Diplomatie : nations voisines, traités, guerre", "Y", "—"],
 		["Menu pause (sauvegarde, options)", "Échap", "Start"],
 	]],
 	["Construction", [
