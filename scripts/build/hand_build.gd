@@ -5,6 +5,8 @@ extends Node3D
 ## V (L3 à la manette) : poser devant soi. Une case fantôme montre où (verte : possible, rouge : impossible).
 ## Les blocs se posent au niveau des pieds, puis au-dessus s'il y a déjà un bloc (jusqu'à 2 de haut),
 ## ou un cran plus bas devant un trou (pour faire un pont). Casser : frapper le bloc (voir Harvest).
+## Graines (et légumes à planter) : V sème devant soi, sur de la terre labourée (ou sur l'herbe avec une houe
+## dans le sac, qui laboure d'abord). Houe choisie : V laboure la case devant soi.
 
 signal selection_changed
 
@@ -44,7 +46,7 @@ func choices() -> Array[ItemData]:
 		return out
 	for e in player.inventory.entries:
 		var it := e.item as ItemData
-		if it and it.is_placeable() and not out.has(it):
+		if it and (it.is_placeable() or it.is_seed() or it.id == "houe") and not out.has(it):
 			out.append(it)
 	return out
 
@@ -58,7 +60,7 @@ func cycle(dir: int) -> void:
 	var list := choices()
 	if list.is_empty():
 		selected = ""
-		player.notify.emit("Aucun bloc ni meuble dans ton sac.")
+		player.notify.emit("Aucun bloc, meuble ni graine dans ton sac.")
 		selection_changed.emit()
 		return
 	var ids: Array = [""]
@@ -89,12 +91,16 @@ func _process(_delta: float) -> void:
 		_ghost.visible = false
 		return
 	_ghost.visible = true
-	var h := BuildGrid.block_height(it) if it.is_block() else 1.0
+	var h := BuildGrid.block_height(it) if it.is_block() else (0.22 if _is_farm_item(it) else 1.0)
 	_ghost.scale = Vector3(1.0, h, 1.0)
 	var k: Vector3i = _target.key
 	var base: float = _target.get("base", float(k.y))
 	_ghost.global_position = Vector3(k.x + 0.5, base + h * 0.5, k.z + 0.5)
 	_ghost_mat.albedo_color = C_OK if _target.ok else C_BAD
+
+
+static func _is_farm_item(it: ItemData) -> bool:
+	return it.is_seed() or it.id == "houe"
 
 
 ## Case où l'objet serait posé : {"key": Vector3i, "ok": bool, "base": float (meuble), "why": texte}.
@@ -109,6 +115,8 @@ func find_spot(it: ItemData) -> Dictionary:
 	if col == here:
 		col = world.cell_at(player.global_position + fwd * 1.6)
 	var feet := player.global_position.y
+	if _is_farm_item(it):
+		return _farm_spot(world, col, it)
 	var fy := floori(feet + 0.3)
 	if it.is_furniture():
 		var base := world.support_height(Vector3(col.x + 0.5, 0, col.y + 0.5), feet + 1.2)
@@ -131,6 +139,33 @@ func find_spot(it: ItemData) -> Dictionary:
 		var ok := grid.can_place_block(key, it) and _supported(world, key) and world.village_prop_at(col, float(y)) == null
 		return {"key": key, "ok": ok, "why": "" if ok else "Il faut un appui (le sol ou un bloc à côté)"}
 	return {"key": Vector3i(col.x, fy + 2, col.y), "ok": false, "why": "Trop haut"}
+
+
+## Case à labourer ou à semer devant le héros.
+func _farm_spot(world: WorldGenerator, col: Vector2i, it: ItemData) -> Dictionary:
+	var fm := player.get_tree().get_first_node_in_group("farming") as Farming
+	var ground := world.terrain_height(col)
+	var key := Vector3i(col.x, floori(ground), col.y)
+	var out := {"key": key, "base": ground - 0.05, "ok": false, "why": "", "farm": true}
+	if fm == null or absf(ground - player.global_position.y) > 1.3:
+		out.why = "Trop haut ou trop bas."
+		return out
+	var tilled := world.terrain_type(col) == WorldGenerator.FARM
+	var has_hoe := player.inventory.count(Items.get_item("houe")) > 0
+	if it.id == "houe":
+		out.ok = not tilled and fm.can_till(col)
+		out.why = "" if out.ok else ("Déjà labouré." if tilled else "On ne peut labourer que l'herbe ou la terre (sans rien dessus).")
+		return out
+	if tilled:
+		out.ok = fm.crop_at(col).is_empty()
+		out.why = "" if out.ok else "Il y a déjà une culture ici."
+		return out
+	if not has_hoe:
+		out.why = "Il faut de la terre labourée : fabrique une houe (Outils) pour labourer."
+		return out
+	out.ok = fm.can_till(col)
+	out.why = "" if out.ok else "On ne peut labourer que l'herbe ou la terre (sans rien dessus)."
+	return out
 
 
 ## Un bloc tient s'il touche le sol, un bloc dessous ou un bloc à côté, ou s'il prolonge le sol voisin (pont).
@@ -160,6 +195,8 @@ func place() -> bool:
 	var world := player.get_tree().get_first_node_in_group("world") as WorldGenerator
 	var k: Vector3i = _target.key
 	var done := false
+	if _target.get("farm", false):
+		return _farm_use(it, Vector2i(k.x, k.z))
 	if it.is_block():
 		done = world.build.place_block(k, it)
 	else:
@@ -173,6 +210,25 @@ func place() -> bool:
 	VoxelBurst.spawn(player, at, BuildMode.it_color(it) if it.is_block() else Color(0.75, 0.6, 0.4), 8, 1.8, 0.07, 0.3, "up", 6.0, false)
 	player.visual.play_move("punch_1", 1.6)
 	_target = {}
+	return true
+
+
+## Laboure (houe) ou sème (graines) sur la case.
+func _farm_use(it: ItemData, col: Vector2i) -> bool:
+	var fm := player.get_tree().get_first_node_in_group("farming") as Farming
+	if fm == null or not fm.till(col):
+		return false
+	player.visual.play_move("heavy_1" if it.id == "houe" else "punch_1", 1.4)
+	if player.inventory.count(Items.get_item("houe")) > 0:
+		player._show_tool("houe")
+	_target = {}
+	if it.id == "houe":
+		player.tilled.emit()
+		return true
+	if not fm.plant(col, it.crop):
+		return false
+	player.inventory.remove(it, 1)
+	player.planted.emit(it.crop)
 	return true
 
 

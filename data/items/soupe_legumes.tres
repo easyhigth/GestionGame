@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "soupe_legumes"
+display_name = "Soupe de légumes"
+description = "Carottes et pommes de terre mijotées : un repas complet. Se mange (H)."
+max_stack = 10
+food = 40.0
+food_heal = 12
+food_cooked = true

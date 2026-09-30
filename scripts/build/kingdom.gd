@@ -116,7 +116,7 @@ func recompute() -> void:
 	# les habitants gardent leur poste si leur pièce existe toujours
 	for v in get_tree().get_nodes_in_group("villagers"):
 		var wr = v.get("work_room")
-		if wr == null:
+		if wr == null or wr.get("fields", false):
 			continue
 		var found = null
 		for r in rooms:
@@ -339,7 +339,12 @@ func typed_rooms() -> Array:
 
 ## Pièces qui proposent des postes de travail.
 func workplaces() -> Array:
-	return rooms.filter(func(r): return r.type != null and (r.type as RoomTypeData).job_slots > 0)
+	var out := rooms.filter(func(r): return r.type != null and (r.type as RoomTypeData).job_slots > 0)
+	# les champs du village (poste « Champs » des fermiers)
+	var fm := get_tree().get_first_node_in_group("farming") as Farming
+	if fm and fm.has_fields():
+		out.append(fm.fields_room)
+	return out
 
 
 func workers_of(room: Dictionary) -> Array:

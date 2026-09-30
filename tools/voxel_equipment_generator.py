@@ -129,6 +129,17 @@ def _hand_pick(e, head, tip):
         V(2, 1.4, 1.4, tip, s * 4.8, 9.8, 0, h)
 
 
+def _hand_hoe(e, head):
+    """Houe, tenue dans HandL : lame plate d'un seul côté, au bout du manche."""
+    h = e['hand_l']
+    V(1.1, 15, 1.1, WOOD, 0, 4.5, 0, h)
+    V(1.5, 1.3, 1.5, WOOD_D, 0, -2.6, 0, h)
+    V(1.8, 1.8, 1.8, head, 0, 11.4, 0, h)
+    V(3.4, 1.2, 3.2, head, 2.2, 11.2, 0, h)
+    V(1.2, 3.4, 3.4, shade(head, 1.15), 4.3, 10, 0, h)
+
+
+def houe(e): _hand_hoe(e, 0x8a8a86)
 def hache_bois(e): _hand_axe(e, 0xa87848, 0xc89868)
 def hache_pierre(e): _hand_axe(e, 0x8a8a86, 0xb8b8b2)
 def pioche_bois(e): _hand_pick(e, 0xa87848, 0xc89868)
@@ -357,7 +368,7 @@ ITEMS = {
     'cape_red': lambda e: cape(e, CLOTH_R), 'cape_blue': lambda e: cape(e, CLOTH_B),
     # outils (tenus en main quand le héros récolte)
     'hache_bois': hache_bois, 'hache_pierre': hache_pierre, 'pioche_bois': pioche_bois, 'pioche_pierre': pioche_pierre,
-    'hache_fer': hache_fer, 'pioche_fer': pioche_fer,
+    'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe,
 }
 
 
@@ -490,8 +501,76 @@ def m_pain():
     return g
 
 
+def m_houe():
+    g = Node('houe')
+    _tool_handle(g)
+    V(2.4, 2.4, 2.4, 0x8a8a86, 0, 15, 0, g)
+    V(4, 1.6, 3.6, 0x8a8a86, 2.6, 15, 0, g)
+    V(1.4, 4.4, 4, 0xa8a8a2, 5, 13.4, 0, g)
+    return g
+
+
+def m_graines_ble():
+    g = Node('graines_ble')
+    V(10, 7, 8, 0xc8b088, 0, 3.5, 0, g)          # petit sac de toile
+    V(8, 2, 6, 0xb89c74, 0, 7.6, 0, g)
+    V(3, 2, 3, 0x8a6a3a, 0, 9.4, 0, g)
+    for x, z in ((-7, 3), (-6, -2), (7, 2), (6.5, -3), (-8, 0)):
+        V(1.4, 1, 1.4, 0xe0c060, x, 0.5, z, g)
+    return g
+
+
+def m_ble():
+    g = Node('ble')
+    for i in range(7):
+        x = -3 + i
+        V(1, 14, 1, (0xd8b848, 0xc8a840, 0xe0c858)[i % 3], x, 7, 0, g, rz=(i - 3) * 0.07)
+        V(1.8, 4, 1.8, 0xf0d060, x + (i - 3) * 0.5, 15.5, 0, g, rz=(i - 3) * 0.07)
+    V(9, 1.6, 2, 0x8a6a3a, 0, 6, 0, g)
+    return g
+
+
+def m_carotte():
+    g = Node('carotte')
+    for i, (w, y) in enumerate(((4, 6), (3.4, 3.2), (2.6, 0.9), (1.6, -1.1))):
+        V(w, 2.6, w, 0xe8802a if i % 2 == 0 else 0xf09038, 0, y + 2.4, 0, g, rz=1.2)
+    for dx, dz in ((-1, 0), (0, 1), (1, -1)):
+        V(1, 6, 1, 0x4a9a3a, 6 + dx * 0.4, 5.5 + abs(dx) * 0.5, dz, g, rz=1.2 + dx * 0.25)
+    return g
+
+
+def m_pomme_de_terre():
+    g = Node('pomme_de_terre')
+    V(9, 6, 7, 0xb8905a, 0, 3, 0, g)
+    V(7, 2, 5, 0xc8a068, 0.5, 6.4, 0, g)
+    for x, y, z in ((-3, 4, 3.6), (2, 2, 3.6), (4.6, 4, -1)):
+        V(1, 1, 0.4, 0x7a5a32, x, y, z, g)
+    return g
+
+
+def m_pomme_de_terre_cuite():
+    g = Node('pomme_de_terre_cuite')
+    V(9, 6, 7, 0x8a5a2a, 0, 3, 0, g)
+    V(6, 1, 5, 0xf0d890, 0, 6.2, 0, g)
+    V(3, 1, 3, 0xfff0b0, 0, 6.9, 0, g)
+    return g
+
+
+def m_soupe_legumes():
+    g = Node('soupe_legumes')
+    V(14, 5, 14, 0x6a4428, 0, 2.5, 0, g)
+    V(16, 1.5, 16, 0x8a6238, 0, 5.6, 0, g)
+    V(11, 1, 11, 0xd8a040, 0, 5.4, 0, g)
+    for x, z, c in ((-2, -2, 0xe8802a), (3, 1, 0xf0d890), (0, 3, 0xe8802a), (-3, 2, 0x5a9a3a), (2, -3, 0xf0d890)):
+        V(2.4, 1.4, 2.4, c, x, 6.2, z, g)
+    return g
+
+
+FARM = [m_houe, m_graines_ble, m_ble, m_carotte, m_pomme_de_terre, m_pomme_de_terre_cuite, m_soupe_legumes]
+
+
 MATERIALS = [m_baies, m_viande_crue, m_viande_cuite, m_ragout, m_pain, m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
-             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer]
+             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer] + FARM
 
 
 # ---------------------------------------------------------------- export

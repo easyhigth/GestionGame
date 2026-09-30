@@ -23,7 +23,9 @@ const DECOR_BONUS := {
 	WorldGenerator.D_OAK: [["fiber", 0.3, 0]], WorldGenerator.D_PINE: [["fiber", 0.3, 0]],
 	WorldGenerator.D_ROCK: [["iron_ore", 0.3, 1], ["marbre_brut", 0.1, 2], ["or_brut", 0.05, 2]],
 	WorldGenerator.D_IRON: [["iron_ore", 0.4, 1]],
-	WorldGenerator.D_GRASS: [["fiber", 0.25, 0]],
+	WorldGenerator.D_GRASS: [["fiber", 0.25, 0], ["graines_ble", 0.45, 0]],
+	WorldGenerator.D_FLOWERS: [["graines_ble", 0.2, 0]],
+	WorldGenerator.D_BUSH: [["carotte", 0.2, 0], ["pomme_de_terre", 0.15, 0]],
 }
 ## Niveau de pioche qu'il faut pour miner un filon (1 : n'importe quelle pioche, 2 : pioche en fer).
 const VEIN_TIER := {WorldGenerator.D_IRON: 1, WorldGenerator.D_GOLD: 2}
@@ -62,6 +64,9 @@ static func strike(p: Player, reach: float, power: float, with_blocks := false) 
 	var t := find_target(p, reach, with_blocks)
 	if t.has("block") or t.has("furniture"):
 		hit_built(world, t, power, p)
+		return true
+	if t.has("crop"):
+		harvest_crop(p, t.crop)
 		return true
 	# 1) décors du village (cabane, tonneau...)
 	if t.has("prop"):
@@ -130,9 +135,41 @@ static func find_target(p: Player, reach: float, with_blocks := false) -> Dictio
 			if score < best_score:
 				best_score = score
 				target = c
+	# cultures mûres : comme un arbre (avant l'herbe haute)
+	var fm := p.get_tree().get_first_node_in_group("farming") as Farming
+	var crop_cell := Vector2i(-99999, -99999)
+	if fm:
+		for dz in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var c := here + Vector2i(dx, dz)
+				if not fm.is_ripe(c):
+					continue
+				var off: Vector3 = world.cell_center(c) - p.global_position
+				off.y = 0.0
+				var d := off.length()
+				if d > reach + 0.55 or (d > 0.5 and off.normalized().dot(fwd) < 0.35):
+					continue
+				if d < best_score:
+					best_score = d
+					crop_cell = c
+	if crop_cell.x != -99999:
+		return {"crop": crop_cell}
 	if best_score == INF:
 		return _built_target(p, world) if with_blocks else {}
 	return {"cell": target}
+
+
+## Récolte une culture mûre à la main : tout tombe au sol à ramasser.
+static func harvest_crop(p: Player, cell: Vector2i) -> void:
+	var fm := p.get_tree().get_first_node_in_group("farming") as Farming
+	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
+	if fm == null or world == null:
+		return
+	var crop: String = fm.crop_at(cell).get("c", "")
+	for l in fm.harvest(cell):
+		_drop(world, l[0], l[1], world.cell_center(cell) + Vector3(0, 0.2, 0))
+	if crop != "":
+		p.crop_harvested.emit(crop)
 
 
 ## Bloc ou meuble posé juste devant le héros (aux pieds, puis au-dessus, puis le sol posé devant).
@@ -197,6 +234,8 @@ static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Pla
 ## la meilleure hache du sac pour un arbre ou un décor du village, la meilleure pioche pour un rocher.
 static func tool_for_target(p: Player, reach: float, with_blocks := false) -> String:
 	var t := find_target(p, reach, with_blocks)
+	if t.has("crop"):
+		return "houe" if p.inventory.count(Items.get_item("houe")) > 0 else ""
 	if t.has("furniture"):
 		return best_tool(p, "hache")
 	if t.has("block"):
@@ -330,6 +369,13 @@ static func dig(p: Player) -> ItemData:
 	if not world.build.column(cell).is_empty() or not world.build.furniture_in(cell).is_empty():
 		return null
 	if world.village_prop_at(cell, h - 0.5) != null:
+		return null
+	# une culture sur la case : on l'arrache d'abord (la graine revient)
+	var fm := p.get_tree().get_first_node_in_group("farming") as Farming
+	if fm and not fm.crop_at(cell).is_empty():
+		var s := fm.uproot(cell)
+		if s:
+			_drop(world, s, 1, world.cell_center(cell) + Vector3(0, 0.2, 0))
 		return null
 	# un décor sur la case : on le frappe d'abord
 	if world.decor_at(cell) != WorldGenerator.D_NONE:

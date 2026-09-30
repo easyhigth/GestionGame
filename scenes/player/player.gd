@@ -35,6 +35,10 @@ signal quest_talk(villager: Node)
 signal harvested(kind: String)
 ## Un objet a été fabriqué (identifiant de l'objet).
 signal crafted(item_id: String)
+## Agriculture : case labourée, graine semée, culture récoltée (pour le guide).
+signal tilled
+signal planted(crop: String)
+signal crop_harvested(crop: String)
 
 @export var stats: PlayerStats
 @export var race: RaceData

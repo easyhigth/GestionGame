@@ -83,11 +83,41 @@ func _refresh() -> void:
 		player.notify.emit("Réserve du village : +%d points de nourriture." % roundi(got))
 		_refresh())
 	_box.add_child(_deposit)
+	# champs
+	var fm := get_tree().get_first_node_in_group("farming") as Farming
+	if fm and not fm.plots.is_empty():
+		var sm := fm.summary()
+		var crops_txt := []
+		for c in sm.by_crop:
+			crops_txt.append("%s %d" % [Farming.CROPS[c].name.to_lower(), sm.by_crop[c]])
+		var seeds := []
+		for id in fm.seed_store:
+			var it := Items.get_item(id)
+			seeds.append("%s ×%d" % [it.display_name if it else id, fm.seed_store[id]])
+		var line := "Champs : %d cases, %d semées%s, %d mûres  ·  Fermiers : %d / %d  ·  Graines : %s" % [
+			sm.plots, sm.planted, (" (" + ", ".join(PackedStringArray(crops_txt)) + ")") if not crops_txt.is_empty() else "",
+			sm.ripe, fm.farmers().size(), (fm.fields_room.type as RoomTypeData).job_slots,
+			", ".join(PackedStringArray(seeds)) if not seeds.is_empty() else "aucune"]
+		var fl := MenuKit.label(line, 11, MenuKit.C_TEXT)
+		fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		fl.custom_minimum_size = Vector2(660, 0)
+		_box.add_child(fl)
+		var n_seeds := 0
+		for e in player.inventory.entries:
+			if (e.item as ItemData).is_seed():
+				n_seeds += e.count
+		var sb := MenuKit.button("Confier mes graines aux fermiers (%d)" % n_seeds, 420, 13)
+		sb.disabled = n_seeds <= 0
+		sb.pressed.connect(func():
+			var got := fm.deposit_seeds(player)
+			player.notify.emit("Les fermiers ont %d graines de plus à semer." % got)
+			_refresh())
+		_box.add_child(sb)
 	# habitants
 	var sep := MenuKit.label("Habitants", 14, MenuKit.C_GOLD)
 	_box.add_child(sep)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(660, 170)
+	scroll.custom_minimum_size = Vector2(660, 120 if fm and not fm.plots.is_empty() else 170)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_box.add_child(scroll)
 	_list = VBoxContainer.new()
@@ -141,12 +171,18 @@ func _refresh() -> void:
 	if beds < members.size():
 		tips.append("Construis une maison (pièce fermée, porte, un lit et un coffre : 2 lits) ou un dortoir (4 lits et un coffre : 6 lits).")
 	if n.meals() < members.size():
-		tips.append("Remplis la réserve : dépose de la nourriture, ou fais travailler une boulangerie ou une grange.")
+		tips.append("Remplis la réserve : dépose de la nourriture, ou fais travailler des fermiers, une boulangerie ou une grange.")
 	var have := {}
 	if k:
 		for r in k.rooms:
 			if r.type:
 				have[(r.type as RoomTypeData).id] = true
+	if fm and not fm.has_fields():
+		tips.append("Laboure au moins %d cases avec une houe pour ouvrir le poste « Champs » : des fermiers sèmeront et récolteront pour la réserve." % Farming.MIN_PLOTS)
+	elif fm and fm.farmers().is_empty():
+		tips.append("Nomme un fermier (E près d'un habitant → Poste de travail → Champs) : il récoltera pour la réserve.")
+	elif fm and fm.seeds_count() == 0 and fm.summary().planted < fm.plots.size():
+		tips.append("Des cases de champ sont vides : confie des graines aux fermiers.")
 	if not have.has("taverne"):
 		tips.append("Une taverne rendrait les habitants plus heureux (+10).")
 	elif not have.has("temple"):

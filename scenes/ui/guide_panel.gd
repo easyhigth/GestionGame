@@ -24,9 +24,14 @@ const STEPS := [
 	["reserve", "Remplis la réserve du village", "Ouvre le royaume (U) et dépose de la nourriture. Une boulangerie ou une grange la remplissent aussi.", 1],
 	["lits", "Un lit pour chaque habitant", "Une maison (pièce fermée, porte, un lit et un coffre) donne 2 lits ; un dortoir (4 lits et un coffre) en donne 6.", 1],
 	["bonheur", "Rends ton village heureux", "Bonheur moyen de 70 % : nourriture, lits, taverne, temple... Le royaume (U) dit ce qui manque.", 1],
+	# chapitre 4 : les champs
+	["houe", "Fabrique une houe", "Inventaire (I) → Artisanat → Outils : 2 bois et 2 cailloux. Elle laboure l'herbe et la terre.", 1],
+	["semer", "Sème 6 graines", "Coupe les hautes herbes pour trouver des graines de blé. Choisis-les (C) et sème devant toi (V).", 6],
+	["recolte", "Récolte 3 cultures mûres", "Frappe une culture mûre (épis dorés, carottes sorties) pour la récolter. Près de l'eau, ça pousse plus vite.", 3],
+	["fermier", "Nomme un fermier", "E près d'un habitant → Poste de travail → Champs (4 cases labourées au moins). Confie-lui des graines dans le royaume (U).", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16]]
+const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20]]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
 const VERSION := 2
 
@@ -82,6 +87,8 @@ func _ready() -> void:
 			if vn1:
 				vn1.deposited.connect(func(_p): _advance("reserve"))).call_deferred()
 	if player:
+		player.planted.connect(func(_c): _advance("semer"))
+		player.crop_harvested.connect(func(_c): _advance("recolte"))
 		player.harvested.connect(_on_harvested)
 		player.crafted.connect(_on_crafted)
 		player.ate.connect(func(id: String):
@@ -202,6 +209,14 @@ func _check_state() -> void:
 					_advance("lits")
 				elif current_id() == "bonheur" and m > 0 and vn.average_happiness() >= 70.0:
 					_advance("bonheur")
+		"houe":
+			var hoe := Items.get_item("houe")
+			if hoe and player.inventory.count(hoe) > 0:
+				_advance("houe")
+		"fermier":
+			var fm := get_tree().get_first_node_in_group("farming") as Farming
+			if fm and not fm.farmers().is_empty():
+				_advance("fermier")
 		"pioche_fer":
 			var pf := Items.get_item("pioche_fer")
 			if pf and player.inventory.count(pf) > 0:

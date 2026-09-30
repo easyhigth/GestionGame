@@ -144,6 +144,8 @@ const STONE := 4
 const PLAZA := 5
 ## Sol remué par le joueur (terrassement).
 const DIRT := 6
+## Terre labourée (houe) : on peut y semer.
+const FARM := 7
 
 # décors
 const D_NONE := 0
@@ -918,12 +920,31 @@ func set_terrain_height(cell: Vector2i, h: float) -> void:
 	var t := _types[i]
 	if (t == WATER or t == DEEP) and h > water_surface:
 		_types[i] = DIRT
-	elif t == GRASS or t == PLAZA:
+	elif t == GRASS or t == PLAZA or t == FARM:
 		_types[i] = DIRT
 	_heights[i] = h
 	if _decor[i] != D_NONE:
 		_decor[i] = D_NONE
 	_edits[cell] = [h, _types[i], D_NONE]
+
+
+## Change le type de sol d'une case (ex. terre labourée). Penser à appeler refresh_cells ensuite.
+func set_terrain_type(cell: Vector2i, t: int) -> void:
+	if not _inside(cell):
+		return
+	var i := _idx(cell)
+	_types[i] = t
+	_edits[cell] = [_heights[i], t, _decor[i]]
+
+
+## Vrai s'il y a de l'eau à moins de `r` cases (champ arrosé).
+func near_water(cell: Vector2i, r := 4) -> bool:
+	for dz in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var t := _type(cell + Vector2i(dx, dz))
+			if t == WATER or t == DEEP:
+				return true
+	return false
 
 
 ## Redessine le terrain (et les décors) autour de ces cases.
@@ -1075,6 +1096,10 @@ func _top_color(cell: Vector2i) -> Color:
 			c = plaza_color if (cell.x + cell.y) % 2 == 0 else plaza_color.darkened(0.08)
 		DIRT:
 			c = _zone_color(cell, &"dirt_color", dirt_color).lightened(0.12)
+		FARM:
+			# sillons : une bande sur deux plus sombre ; plus foncée si le champ est arrosé
+			c = _zone_color(cell, &"dirt_color", dirt_color).darkened(0.18 if near_water(cell) else 0.02)
+			return c.darkened(0.1) if (cell.x % 2 == 0) else c.lightened(0.04)
 		_:
 			c = _zone_color(cell, &"grass_color", grass_color).lerp(_zone_color(cell, &"grass_dark_color", grass_dark_color), v)
 	return c.darkened(v * 0.07) if t != GRASS else c
@@ -1086,7 +1111,7 @@ func _side_color(cell: Vector2i) -> Color:
 			return _zone_color(cell, &"sand_color", sand_color).darkened(0.1)
 		STONE, PLAZA:
 			return _zone_color(cell, &"stone_color", stone_color).darkened(0.08)
-		DIRT:
+		DIRT, FARM:
 			return _zone_color(cell, &"dirt_color", dirt_color).darkened(0.05)
 	return _zone_color(cell, &"dirt_color", dirt_color)
 

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ble"
+display_name = "Blé"
+description = "Des épis dorés. Se cuisent en pain près du feu, ou se battent pour en tirer des graines."
+max_stack = 50
