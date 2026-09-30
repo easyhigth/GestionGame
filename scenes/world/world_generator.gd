@@ -287,6 +287,7 @@ func generate(seed_value: int) -> void:
 	_chunk_ready.fill(0)
 	_taken.clear()
 	_edits.clear()
+	_island_cache.clear()
 	_recruited.clear()
 	removed_props.clear()
 	decor_damage.clear()
@@ -500,6 +501,10 @@ func _gen_chunk_data(ch: Vector2i) -> void:
 			var d := (Vector2(x, y) - center) / center
 			var edge := maxf(absf(d.x), absf(d.y))
 			var h := height_noise.get_noise_2d(x, y) * relief + bias - pow(edge, 4.0) * island_falloff + land_bias
+			# îles au trésor, au large
+			var isl := _island_height(x, y)
+			if isl > h:
+				h = isl
 			var m := moisture_noise.get_noise_2d(x, y)
 			var t: int
 			if h < deep_water_level:
@@ -515,6 +520,83 @@ func _gen_chunk_data(ch: Vector2i) -> void:
 			_types[i] = t
 			_heights[i] = _terrain_height(t, h)
 			_decor[i] = _pick_decor(x, y, t, h, m, r1)
+			if isl > -INF and _island_center_cell(x, y):
+				_decor[i] = D_NONE
+
+
+# ---------------------------------------------------------------- îles au trésor
+
+## Une île possible par carré de ISLAND_GRID cases, au milieu des eaux profondes.
+const ISLAND_GRID := 48
+const ISLAND_CHANCE := 0.4
+var _island_cache := {}
+
+
+## Hauteur « brute » d'une case (sans les îles), comme à la génération.
+func _base_height(x: int, y: int) -> float:
+	var nz := _nearest_zones(x, y)
+	var r1 := _zone_type(nz[0])
+	var r2 := _zone_type(nz[1])
+	var f: float = nz[2]
+	var bias := lerpf(r1.height_bias if r1 else 0.0, r2.height_bias if r2 else 0.0, f)
+	var relief := lerpf(r1.relief if r1 else 1.0, r2.relief if r2 else 1.0, f)
+	var center := Vector2(world_size) / 2.0
+	var d := (Vector2(x, y) - center) / center
+	var edge := maxf(absf(d.x), absf(d.y))
+	return height_noise.get_noise_2d(x, y) * relief + bias - pow(edge, 4.0) * island_falloff + land_bias
+
+
+## L'île d'un carré : {"id", "cell", "pos", "r"} ou {} s'il n'y en a pas.
+func island_of(g: Vector2i) -> Dictionary:
+	if _island_cache.has(g):
+		return _island_cache[g]
+	var out := {}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector3i(world_seed, g.x * 131 + g.y, 9191))
+	if rng.randf() < ISLAND_CHANCE:
+		var c := Vector2i(g.x * ISLAND_GRID + rng.randi_range(10, ISLAND_GRID - 10), g.y * ISLAND_GRID + rng.randi_range(10, ISLAND_GRID - 10))
+		var r := rng.randi_range(4, 7)
+		# seulement en pleine mer : le centre et le tour doivent être profonds
+		if _inside(c) and _base_height(c.x, c.y) < deep_water_level - 0.08 \
+				and _base_height(c.x + r + 4, c.y) < deep_water_level and _base_height(c.x - r - 4, c.y) < deep_water_level \
+				and _base_height(c.x, c.y + r + 4) < deep_water_level and _base_height(c.x, c.y - r - 4) < deep_water_level:
+			out = {"id": "%d_%d" % [g.x, g.y], "cell": c, "r": float(r)}
+	_island_cache[g] = out
+	return out
+
+
+## Hauteur apportée par une île proche (-INF s'il n'y en a pas).
+func _island_height(x: int, y: int) -> float:
+	var g := Vector2i(x / ISLAND_GRID, y / ISLAND_GRID)
+	var best := -INF
+	for dz in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			var isl := island_of(g + Vector2i(dx, dz))
+			if isl.is_empty():
+				continue
+			var d := Vector2(x, y).distance_to(Vector2(isl.cell))
+			if d > isl.r:
+				continue
+			# sable au bord, herbe au milieu
+			best = maxf(best, sand_level - 0.03 + (1.0 - d / isl.r) * 0.2)
+	return best
+
+
+func _island_center_cell(x: int, y: int) -> bool:
+	var isl := island_of(Vector2i(x / ISLAND_GRID, y / ISLAND_GRID))
+	return not isl.is_empty() and isl.cell == Vector2i(x, y)
+
+
+## Îles proches d'une position (rayon en carrés d'îles) : [{"id", "pos"}, ...].
+func islands_near(pos: Vector3, radius := 2) -> Array:
+	var out := []
+	var g := Vector2i(floori(pos.x) / ISLAND_GRID, floori(pos.z) / ISLAND_GRID)
+	for dz in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var isl := island_of(g + Vector2i(dx, dz))
+			if not isl.is_empty():
+				out.append({"id": isl.id, "pos": cell_center(isl.cell)})
+	return out
 
 
 func _terrain_height(t: int, h: float) -> float:

@@ -296,6 +296,33 @@ def cow(c, spot, horn):
     return g
 
 
+def horse(c, mane, hoof=0x2a2220, saddle=None):
+    """Cheval : grand, long cou, crinière et queue ; selle en option (cheval apprivoisé)."""
+    g = Node('Root', (0, 14, 0))
+    for name, x in (('LegL', 3.6), ('LegR', -3.6)):
+        leg(g, name, x, -10, 0, 14, 3.2, c, hoof)
+    top = g.add(Node('Torso'))
+    V(11, 11, 28, c, 0, 5, 0, top)
+    V(10, 2, 24, shade(c, 1.08), 0, 10.4, 0, top)
+    V(1.6, 12, 3, mane, 0, 3, -15, top, rx=0.35)                      # queue
+    V(2.4, 5, 3.4, mane, 0, 8.5, -14.6, top)
+    if saddle:
+        V(11.6, 2, 9, saddle, 0, 11, 2, top)
+        V(12, 5, 1, shade(saddle, 0.8), 0, 8, 2, top)
+    for name, x in (('ArmL', 3.6), ('ArmR', -3.6)):
+        leg(top, name, x, 10.5, 0.5, 14.5, 3.2, c, hoof)
+    neck = top.add(Node('Head', (0, 10, 13)))
+    V(6, 12, 6, c, 0, 4, 1, neck, rx=-0.45)
+    V(1.8, 12, 4, mane, 0, 5.5, -1.6, neck, rx=-0.45)
+    V(6, 6, 11, c, 0, 10, 6.5, neck)
+    V(5, 4, 4, shade(c, 0.85), 0, 8.6, 11.4, neck)
+    for s in (-1, 1):
+        V(0.8, 0.8, 0.6, 0x1a1414, s * 3.05, 11, 7, neck)
+        V(1.4, 3, 1.2, c, s * 1.8, 14.5, 3, neck)
+        V(0.6, 0.6, 0.4, 0x3a2a22, s * 1.4, 8.4, 13.5, neck)
+    return g
+
+
 CREATURES = {
     'wolf': lambda: wolf(0x8a8a8e, 0xd8d4cc, 0xffd24a),
     'wolf_alpha': lambda: wolf(0x3a3a40, 0x6a6a70, 0xff5a3a, 1.25, mane=0x24242a),
@@ -313,6 +340,12 @@ CREATURES = {
     'sheep': lambda: sheep(0xf2eee4, 0x3a3230),
     'cow': lambda: cow(0xf4f0e8, 0x2a2624, 0xe8dcc0),
     'cow_brown': lambda: cow(0x9a5a32, 0xf4f0e8, 0xe8dcc0),
+    'horse_brown': lambda: horse(0x8a5a32, 0x3a2418),
+    'horse_white': lambda: horse(0xe8e4dc, 0xb8b0a0, 0x5a5048),
+    'horse_black': lambda: horse(0x2e2a2a, 0x141212),
+    'horse_brown_saddle': lambda: horse(0x8a5a32, 0x3a2418, saddle=0x8a2a2a),
+    'horse_white_saddle': lambda: horse(0xe8e4dc, 0xb8b0a0, 0x5a5048, saddle=0x2a4a9a),
+    'horse_black_saddle': lambda: horse(0x2e2a2a, 0x141212, saddle=0xc8a040),
 }
 
 

@@ -58,6 +58,7 @@ var weather: Weather
 var livestock: Livestock
 var story: Story
 var seasons: Seasons
+var mounts: Mounts
 var story_dialog: StoryDialog
 var journal: JournalPanel
 var fishing: Fishing
@@ -719,6 +720,11 @@ func _build_day_and_guide() -> void:
 	weather.world = world
 	weather.player = player
 	get_parent().add_child.call_deferred(weather)
+	mounts = Mounts.new()
+	mounts.name = "Mounts"
+	mounts.world = world
+	mounts.player = player
+	get_parent().add_child.call_deferred(mounts)
 	seasons = Seasons.new()
 	seasons.name = "Seasons"
 	seasons.world = world
@@ -869,6 +875,8 @@ func _update_hotbar() -> void:
 		verb = "labourer"
 	elif cur and cur.is_seed():
 		verb = "semer (les poules te suivent)" if HandBuild.is_lure(cur) else "semer"
+	elif cur and cur.id == "barque":
+		verb = "mettre à l'eau (face à l'eau)"
 	elif cur and cur.id == "canne_peche":
 		verb = "pêcher (face à l'eau)"
 	elif cur and HandBuild.is_lure(cur):

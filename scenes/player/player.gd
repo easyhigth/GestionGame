@@ -562,7 +562,7 @@ func _physics_process(delta: float) -> void:
 			dig()
 	if input.length() > 1.0:
 		input = input.normalized()
-	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0) * (0.85 if hunger <= 0.0 else 1.0) * _weather_speed()
+	var speed: float = stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0) * (0.85 if hunger <= 0.0 else 1.0) * _weather_speed() * (_mounts_node().speed_mult() if _mounts_node() else 1.0)
 
 	if can_input and can_act() and not building:
 		_handle_combat_input(input, delta)
@@ -601,7 +601,8 @@ func _physics_process(delta: float) -> void:
 	if TimeFX.is_slowed() and in_move() and move_name == "flurry":
 		_spawn_ghosts(delta)
 	_move_on_ground(delta)
-	visual.animate(delta, velocity, facing)
+	# à cheval ou en barque, le héros est assis : pas de pas
+	visual.animate(delta, velocity if not is_mounted() else Vector3.ZERO, facing)
 	_update_camera(delta)
 	_update_reticle(delta)
 
@@ -1031,7 +1032,28 @@ var _caves: Node
 
 
 func _can_swim() -> bool:
-	return true
+	# à cheval, on ne va pas dans l'eau
+	return not _riding()
+
+
+var _mounts: Node
+
+
+func _mounts_node() -> Node:
+	if _mounts == null or not is_instance_valid(_mounts):
+		_mounts = get_tree().get_first_node_in_group("mounts")
+	return _mounts
+
+
+func _riding() -> bool:
+	var m := _mounts_node()
+	return m != null and m.is_riding()
+
+
+## À cheval ou en barque.
+func is_mounted() -> bool:
+	var m := _mounts_node()
+	return m != null and m.mount != null and is_instance_valid(m.mount)
 
 
 ## Surface de l'eau au-dessus de cette position (-INF s'il n'y a pas d'eau) : lacs et mers, grottes inondées.
@@ -1075,6 +1097,12 @@ func in_water() -> bool:
 func _move_on_ground(delta: float) -> void:
 	if _world == null:
 		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+	# en barque : on glisse sur l'eau
+	var mo := _mounts_node()
+	if mo and mo.sail_move(delta):
+		swimming = false
+		breath = BREATH_MAX
+		return
 	var top := water_top()
 	var floor_h := _water_floor(global_position) if top > -INF else -INF
 	if top > -INF and top - floor_h >= SWIM_DEPTH:
@@ -1248,6 +1276,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("interact"):
+		# monter, descendre, embarquer, apprivoiser un cheval, coffre d'île
+		var mo := _mounts_node()
+		if mo and mo.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
 		var dm := get_tree().get_first_node_in_group("dungeons")
 		if dm and dm.try_interact(self):
 			get_viewport().set_input_as_handled()

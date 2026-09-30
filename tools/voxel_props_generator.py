@@ -411,6 +411,24 @@ def merchant_cart(seed=1):
     return g
 
 
+def boat(seed=1):
+    """Barque : coque en planches, bancs, deux rames. L'avant est vers +Z."""
+    g = Node('Boat')
+    V(18, 3, 40, 0x7a5030, 0, 1.5, 0, g)                    # fond
+    for s in (-1, 1):
+        V(2, 7, 38, 0x8a6038, s * 9, 5, 0, g)               # flancs
+        V(2.4, 1.4, 38, 0xa87848, s * 9, 8.8, 0, g)         # plat-bord
+    V(18, 7, 2, 0x8a6038, 0, 5, -19, g)                     # arrière
+    V(12, 7, 3, 0x8a6038, 0, 5.5, 20, g)                    # proue
+    V(6, 6, 3, 0x8a6038, 0, 7, 22, g)
+    for z in (-8, 6):
+        V(16, 1.6, 4, 0xa87848, 0, 6, z, g)                 # bancs
+    for s in (-1, 1):
+        V(1.2, 1.2, 26, 0xb88a50, s * 11, 8, -2, g, rx=0.15)   # rames
+        V(3.6, 0.8, 6, 0xb88a50, s * 11, 6.3, -15, g)
+    return g
+
+
 PROPS = {
     'workbench': workbench, 'weapon_rack': weapon_rack,
     'oak_1': lambda: oak(1), 'oak_2': lambda: oak(2), 'oak_3': lambda: oak(3), 'oak_autumn': lambda: oak(4, True),
@@ -418,7 +436,7 @@ PROPS = {
     'bush_1': lambda: bush(1), 'bush_2': lambda: bush(2),
     'rock_1': lambda: rock(1), 'rock_2': lambda: rock(2), 'rock_big': lambda: rock(3, True),
     'flowers_1': lambda: flowers(1), 'flowers_2': lambda: flowers(2), 'grass_1': lambda: grass(1),
-    'hut': hut, 'campfire': campfire, 'merchant_cart': merchant_cart, 'barrel': barrel, 'crate': crate,
+    'hut': hut, 'campfire': campfire, 'merchant_cart': merchant_cart, 'boat': boat, 'barrel': barrel, 'crate': crate,
     'iron_vein_1': lambda: vein(1, 0xc8743a, 0xe89a5a), 'iron_vein_2': lambda: vein(2, 0xc8743a, 0xe89a5a),
     'gold_vein_1': lambda: vein(3, 0xe0b030, 0xfff080),
 }

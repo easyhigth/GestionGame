@@ -229,6 +229,9 @@ func save_game(slot: String) -> bool:
 	var sea := get_tree().get_first_node_in_group("seasons") as Seasons
 	if sea:
 		d.seasons = sea.export_state()
+	var mnt := get_tree().get_first_node_in_group("mounts") as Mounts
+	if mnt:
+		d.mounts = mnt.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -260,6 +263,9 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 	if pos.y < WorldGenerator.UNDERGROUND and dm and dm.active:
 		# sauvegarde dans un donjon : on reprendra devant son entrée
 		pos = world.cell_center(dm.zone.gate) + Vector3(0, 0, 2.6)
+	var mo := get_tree().get_first_node_in_group("mounts") as Mounts
+	if mo and mo.is_sailing():
+		pos = mo.mount.global_position + Vector3(0, 0.3, 0)
 	var cv := get_tree().get_first_node_in_group("caves") as UnderwaterCaves
 	if pos.y < WorldGenerator.UNDERGROUND and cv and cv.active:
 		# dans une grotte sous-marine : on reprendra au-dessus de son entrée
@@ -494,6 +500,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if fm:
 		fm.import_state(farm_state)
 		farm_state = {}
+	mounts_state = d.get("mounts", {})
+	var mnt := get_tree().get_first_node_in_group("mounts") as Mounts
+	if mnt and not mounts_state.is_empty():
+		mnt.import_state(mounts_state)
+		mounts_state = {}
 	seasons_state = d.get("seasons", {})
 	var sea := get_tree().get_first_node_in_group("seasons") as Seasons
 	if sea and not seasons_state.is_empty():

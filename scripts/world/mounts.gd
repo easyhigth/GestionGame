@@ -1,0 +1,367 @@
+class_name Mounts
+extends Node
+## Montures et bateaux : chevaux sauvages dans les prés (on les apprivoise avec des carottes, E pour
+## monter et descendre), barques posées sur l'eau (V face à l'eau avec une barque en main, E pour monter,
+## E près d'une berge pour débarquer), et îles au trésor au large (un coffre sur chacune).
+
+signal tamed(horse: Horse)
+signal boarded(what: String)
+signal island_chest_opened(id: String)
+
+const MAX_WILD := 3
+const SPAWN_MIN := 30.0
+const SPAWN_MAX := 50.0
+const DESPAWN := 100.0
+const WILD := {"prairie": 3, "foret": 1, "montagnes": 1}
+## Vitesse en barque (multiplicateur de la marche) et hauteur du héros assis.
+const BOAT_SPEED := 1.5
+const BOAT_SEAT := 0.35
+const BOAT_MODEL := preload("res://assets/environment/models/boat.glb")
+const CHEST_MODEL := preload("res://assets/furniture/coffre.glb")
+
+var world: WorldGenerator
+var player: Player
+## Ce que monte le héros : un cheval, une barque, ou null.
+var mount: Node3D
+var boats: Array = []
+## Coffres des îles déjà ouverts (identifiant de l'île -> vrai).
+var opened := {}
+var _island_nodes := {}
+var _tick := 0.0
+var _spawn_tick := 3.0
+
+
+func _ready() -> void:
+	add_to_group("mounts")
+	if not SaveGame.mounts_state.is_empty():
+		import_state.call_deferred(SaveGame.mounts_state)
+		SaveGame.mounts_state = {}
+
+
+func horses() -> Array:
+	return get_tree().get_nodes_in_group("horses").filter(func(h): return is_instance_valid(h) and not h.is_queued_for_deletion())
+
+
+func is_riding() -> bool:
+	return mount != null and is_instance_valid(mount) and mount is Horse
+
+
+func is_sailing() -> bool:
+	return mount != null and is_instance_valid(mount) and not (mount is Horse)
+
+
+# ---------------------------------------------------------------- E
+
+## E : descendre, monter, donner une carotte, embarquer. Vrai si quelque chose a été fait.
+func try_interact(p: Player) -> bool:
+	player = p
+	if mount != null and is_instance_valid(mount):
+		return dismount()
+	if p.global_position.y < WorldGenerator.UNDERGROUND:
+		return false
+	# une barque tout près (depuis la berge ou en nageant)
+	for b in boats:
+		if is_instance_valid(b) and Vector2(b.global_position.x - p.global_position.x, b.global_position.z - p.global_position.z).length() < 2.6:
+			board(b)
+			return true
+	for h in horses():
+		if h.global_position.distance_to(p.global_position) > 2.4:
+			continue
+		if h.tamed:
+			ride(h)
+			return true
+		if h.following:
+			var carrot := Items.get_item("carotte")
+			if p.inventory.count(carrot) <= 0:
+				p.notify.emit("Il te faut des carottes.")
+				return true
+			p.inventory.remove(carrot, 1)
+			Sound.play("eat", h.global_position)
+			if h.feed():
+				p.feat.emit("Cheval apprivoisé !", Color("ffe08a"))
+				p.notify.emit("Le cheval porte maintenant une selle : E pour monter, E pour descendre.")
+				tamed.emit(h)
+			else:
+				p.notify.emit("Le cheval mange la carotte (%d / %d)." % [h.trust, Horse.TAME_CARROTS])
+			return true
+	# un coffre d'île
+	for id in _island_nodes:
+		var n: Node3D = _island_nodes[id]
+		if is_instance_valid(n) and not opened.has(id) and n.global_position.distance_to(p.global_position) < 2.4:
+			_open_island_chest(id, n)
+			return true
+	return false
+
+
+func ride(h: Horse) -> void:
+	mount = h
+	h.ridden = true
+	h.following = false
+	player.global_position = h.global_position
+	player.visual.position.y = Horse.SADDLE_Y
+	Sound.play("step_grass", h.global_position)
+	boarded.emit("cheval")
+
+
+func board(b: Node3D) -> void:
+	mount = b
+	player.global_position = Vector3(b.global_position.x, world.water_surface, b.global_position.z)
+	player.visual.position.y = BOAT_SEAT
+	player.swimming = false
+	Sound.play("door", b.global_position)
+	boarded.emit("barque")
+
+
+## Descendre du cheval, ou débarquer sur la berge la plus proche. Vrai si fait.
+func dismount() -> bool:
+	if mount is Horse:
+		var h := mount as Horse
+		h.ridden = false
+		h.home = h.global_position
+		mount = null
+		player.visual.position.y = 0.0
+		var side := Vector3(player.facing.z, 0, -player.facing.x).normalized() * 1.1
+		player.global_position = world.constrain_move(player.global_position, player.global_position + side)
+		return true
+	# barque : on cherche une berge tout près
+	var here := player.global_position
+	var best := Vector3.INF
+	var bd := INF
+	for dz in range(-2, 3):
+		for dx in range(-2, 3):
+			var c := world.cell_at(here) + Vector2i(dx, dz)
+			var t := world.terrain_type(c)
+			if t == WorldGenerator.WATER or t == WorldGenerator.DEEP:
+				continue
+			var p := world.cell_center(c)
+			if p.y - world.water_surface > 1.2 or not world.build.column(c).is_empty():
+				continue
+			var d := p.distance_to(here)
+			if d < bd:
+				bd = d
+				best = p
+	if best == Vector3.INF:
+		player.notify.emit("Approche-toi d'une berge pour débarquer.")
+		return true
+	mount = null
+	player.visual.position.y = 0.0
+	player.global_position = best
+	return true
+
+
+# ---------------------------------------------------------------- chaque image
+
+## Déplacement du héros en barque : seulement sur l'eau. Renvoie vrai s'il a été géré.
+func sail_move(delta: float) -> bool:
+	if not is_sailing():
+		return false
+	var from := player.global_position
+	var to := from + Vector3(player.velocity.x, 0, player.velocity.z) * BOAT_SPEED * delta
+	var ok := func(p: Vector3) -> bool:
+		var c := world.cell_at(p)
+		var t := world.terrain_type(c)
+		return (t == WorldGenerator.WATER or t == WorldGenerator.DEEP) and world.build.column(c).is_empty()
+	if not ok.call(to):
+		to = Vector3(to.x, to.y, from.z)
+		if not ok.call(to):
+			to = Vector3(from.x, to.y, player.global_position.z + player.velocity.z * BOAT_SPEED * delta)
+			if not ok.call(to):
+				to = from
+	to.y = world.water_surface + sin(Time.get_ticks_msec() * 0.002) * 0.04
+	player.global_position = to
+	mount.global_position = to - Vector3(0, 0.05, 0)
+	var f := Vector3(player.facing.x, 0, player.facing.z)
+	if f.length() > 0.1:
+		mount.rotation.y = lerp_angle(mount.rotation.y, atan2(f.x, f.z), clampf(delta * 5.0, 0.0, 1.0))
+	return true
+
+
+func _process(delta: float) -> void:
+	if world == null:
+		return
+	if player == null:
+		player = get_tree().get_first_node_in_group("player") as Player
+		return
+	if is_riding():
+		var h := mount as Horse
+		h.global_position = player.global_position
+		h.facing = player.facing
+		h.visual.animate(delta, Vector3(player.velocity.x, 0, player.velocity.z), player.facing)
+		if not player.is_alive() or player.global_position.y < WorldGenerator.UNDERGROUND:
+			dismount()
+	elif is_sailing() and (not player.is_alive() or player.global_position.y < WorldGenerator.UNDERGROUND):
+		mount = null
+		player.visual.position.y = 0.0
+	_tick -= delta
+	if _tick > 0.0:
+		return
+	_tick = 1.0
+	_spawn_tick -= 1.0
+	if _spawn_tick <= 0.0:
+		_spawn_tick = 6.0
+		_wild_spawns()
+	_update_islands()
+
+
+## Vitesse du héros (à cheval : bien plus vite).
+func speed_mult() -> float:
+	return Horse.RIDE_SPEED if is_riding() else 1.0
+
+
+# ---------------------------------------------------------------- chevaux sauvages
+
+func spawn_horse(pos: Vector3, tame := false, index := -1) -> Horse:
+	var h := Horse.new()
+	h.setup("cheval", index)
+	h.world = world
+	h.tamed = tame
+	world.get_node("Village").add_child(h)
+	pos.y = world.ground_height_at(pos + Vector3(0, 3, 0))
+	h.global_position = pos
+	h.home = pos
+	return h
+
+
+func _wild_spawns() -> void:
+	if player.global_position.y < WorldGenerator.UNDERGROUND:
+		return
+	var wild := horses().filter(func(h): return not h.tamed)
+	for h in wild:
+		if not h.following and h.global_position.distance_to(player.global_position) > DESPAWN:
+			h.queue_free()
+	wild = wild.filter(func(h): return is_instance_valid(h) and not h.is_queued_for_deletion())
+	if wild.size() >= MAX_WILD:
+		return
+	for i in 8:
+		var a := randf() * TAU
+		var p := player.global_position + Vector3(cos(a), 0, sin(a)) * randf_range(SPAWN_MIN, SPAWN_MAX)
+		var c := world.cell_at(p)
+		if world.terrain_type(c) != WorldGenerator.GRASS:
+			continue
+		var r := world.region_at(p)
+		if r == null or not WILD.has(r.id) or randi() % 4 >= int(WILD[r.id]) + 1:
+			continue
+		spawn_horse(world.cell_center(c))
+		return
+
+
+# ---------------------------------------------------------------- barques
+
+## Pose une barque sur l'eau devant le héros. Renvoie le texte d'erreur (« » si c'est fait).
+func place_boat(p: Player) -> String:
+	var fwd := Vector3(p.facing.x, 0, p.facing.z).normalized()
+	for d in [1.6, 2.4, 3.2]:
+		var at: Vector3 = p.global_position + fwd * d
+		var c := world.cell_at(at)
+		var t := world.terrain_type(c)
+		if t == WorldGenerator.WATER or t == WorldGenerator.DEEP:
+			spawn_boat(Vector3(at.x, world.water_surface, at.z), atan2(fwd.x, fwd.z))
+			VoxelBurst.spawn(world, at, Color(0.75, 0.9, 1.0), 14, 2.5, 0.08, 0.4, "up", 8.0, false)
+			Sound.play("dig", at)
+			return ""
+	return "Il faut être face à l'eau pour mettre la barque à l'eau."
+
+
+func spawn_boat(pos: Vector3, rot := 0.0) -> Node3D:
+	var b := BOAT_MODEL.instantiate() as Node3D
+	b.name = "Barque"
+	world.add_child(b)
+	b.global_position = pos - Vector3(0, 0.05, 0)
+	b.rotation.y = rot
+	var lab := Label3D.new()
+	lab.text = "Barque\nE : monter"
+	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lab.font_size = 28
+	lab.pixel_size = 0.006
+	lab.outline_size = 8
+	lab.modulate = Color("e8d8b0")
+	lab.position.y = 1.2
+	b.add_child(lab)
+	b.set_meta("label", lab)
+	boats.append(b)
+	return b
+
+
+# ---------------------------------------------------------------- îles au trésor
+
+## Coffres des îles proches (les îles elles-mêmes sont créées avec le monde).
+func _update_islands() -> void:
+	if player.global_position.y < WorldGenerator.UNDERGROUND:
+		return
+	var near := {}
+	for isl in world.islands_near(player.global_position, 3):
+		near[isl.id] = true
+		if not _island_nodes.has(isl.id):
+			var n := CHEST_MODEL.instantiate() as Node3D
+			world.add_child(n)
+			var pos: Vector3 = isl.pos
+			pos.y = world.ground_height_at(pos + Vector3(0, 5, 0))
+			n.global_position = pos
+			var lab := Label3D.new()
+			lab.text = "Coffre vide" if opened.has(isl.id) else "Trésor de l'île\nE : ouvrir"
+			lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			lab.font_size = 30
+			lab.pixel_size = 0.007
+			lab.outline_size = 8
+			lab.modulate = Color(0.7, 0.7, 0.7) if opened.has(isl.id) else Color("ffd24a")
+			lab.position.y = 1.4
+			n.add_child(lab)
+			n.set_meta("label", lab)
+			_island_nodes[isl.id] = n
+	for id in _island_nodes.keys():
+		if not near.has(id):
+			if is_instance_valid(_island_nodes[id]):
+				_island_nodes[id].queue_free()
+			_island_nodes.erase(id)
+
+
+func _open_island_chest(id: String, n: Node3D) -> void:
+	opened[id] = true
+	var loot := [[Items.get_item("perle"), randi_range(1, 3)], [Items.get_item("piece_or"), randi_range(20, 45)]]
+	if randf() < 0.5:
+		loot.append([Items.get_item("lingot_or"), randi_range(1, 2)])
+	if not world.wild_loot.is_empty():
+		loot.append([world.wild_loot.pick_random(), 1])
+	for i in loot.size():
+		var a := TAU * i / loot.size()
+		if loot[i][0]:
+			world.spawn_pickup(loot[i][0], n.global_position + Vector3(cos(a), 0, sin(a)) * 1.2, loot[i][1])
+	VoxelBurst.spawn(world, n.global_position + Vector3(0, 0.8, 0), Color("ffd24a"), 24, 4.0, 0.1, 0.7, "up", 4.0)
+	var lab := n.get_meta("label") as Label3D
+	if lab:
+		lab.text = "Coffre vide"
+		lab.modulate = Color(0.7, 0.7, 0.7)
+	player.notify.emit("Trésor de l'île : %d trésors !" % loot.size())
+	island_chest_opened.emit(id)
+
+
+# ---------------------------------------------------------------- sauvegarde
+
+func export_state() -> Dictionary:
+	var hs := []
+	for h in horses():
+		if h.tamed:
+			hs.append(h.export_state())
+	var bs := []
+	for b in boats:
+		if is_instance_valid(b):
+			bs.append([b.global_position.x, b.global_position.y, b.global_position.z, b.rotation.y])
+	return {"horses": hs, "boats": bs, "opened": opened.keys()}
+
+
+func import_state(d: Dictionary) -> void:
+	if mount:
+		dismount()
+	for h in horses():
+		h.queue_free()
+	for b in boats:
+		if is_instance_valid(b):
+			b.queue_free()
+	boats.clear()
+	for h in d.get("horses", []):
+		spawn_horse(Vector3(h.pos[0], h.pos[1], h.pos[2]), true, int(h.m))
+	for b in d.get("boats", []):
+		spawn_boat(Vector3(b[0], b[1], b[2]), float(b[3]))
+	opened = {}
+	for k in d.get("opened", []):
+		opened[str(k)] = true
