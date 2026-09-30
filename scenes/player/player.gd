@@ -25,6 +25,10 @@ signal xp_changed(xp: int, needed: int, level: int)
 signal skill_changed(skill: HeroSkill)
 ## L'arbre de talents a changé (talent débloqué, emplacements modifiés).
 signal talents_changed
+## La faim a changé (0 à 100).
+signal hunger_changed(value: float)
+## Le héros a mangé (identifiant de l'objet).
+signal ate(item_id: String)
 ## Un décor a été récolté à la main (« arbre », « rocher », « buisson », « plante »).
 signal harvested(kind: String)
 ## Un objet a été fabriqué (identifiant de l'objet).
@@ -76,6 +80,15 @@ var ability_slots: Array = ["", "", "", ""]
 var abilities := {}      # id -> HeroSkill (talents actifs)
 var selected_slot := 0
 var _double_used := false
+## Faim : 100 = rassasié, 0 = affamé. Elle baisse en ~15 min, plus vite en courant et en se battant.
+const HUNGER_MAX := 100.0
+const HUNGER_PER_SECOND := 100.0 / 900.0
+## Au-dessus : « rassasié » (régénération bonus) ; en dessous : « affamé » (pas de régénération).
+const WELL_FED := 70.0
+const HUNGRY := 25.0
+var hunger := HUNGER_MAX
+var _starve_timer := 0.0
+var _hunger_state := 1
 ## Bruits de pas : temps avant le prochain.
 var _step_left := 0.0
 ## Récolte à la main : délai entre deux coups de pelle.
@@ -206,7 +219,10 @@ func _update_max_health(refill := false) -> void:
 	if skill:
 		regen += skill.p("regen")
 		parry_window = _base_parry_window + skill.p("parry")
+	regen += hunger_regen_bonus()
 	health.regen_per_second = regen + _kingdom_bonus("regen") if is_inside_tree() else regen
+	if hunger < HUNGRY:
+		health.regen_per_second = 0.0
 
 
 ## Recalcule les caractéristiques (après une absorption, un renforcement...).
@@ -492,6 +508,7 @@ func snap_camera() -> void:
 func _physics_process(delta: float) -> void:
 	_combat_step(delta)
 	_footsteps(delta)
+	_update_hunger(delta)
 	_update_tool(delta)
 	if skill:
 		skill.process(delta)
@@ -539,7 +556,7 @@ func _physics_process(delta: float) -> void:
 			dig()
 	if input.length() > 1.0:
 		input = input.normalized()
-	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0)
+	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0) * (0.85 if hunger <= 0.0 else 1.0)
 
 	if can_input and can_act() and not building:
 		_handle_combat_input(input, delta)
@@ -667,6 +684,7 @@ func _next_combo() -> void:
 	_combo_reset = 0.7
 	_aim_assist()
 	_ready_tool_for_swing()
+	spend_hunger(0.2)
 	_do_move(name, attack_speed(), 1.0)
 
 
@@ -734,6 +752,96 @@ func dig() -> ItemData:
 	if pick != "":
 		_show_tool(pick)
 	return Harvest.dig(self)
+
+
+# ---------------------------------------------------------------- faim
+
+func spend_hunger(amount: float) -> void:
+	hunger = maxf(0.0, hunger - amount)
+
+
+func hunger_regen_bonus() -> float:
+	return 1.5 if hunger >= WELL_FED else 0.0
+
+
+## 2 : rassasié, 1 : normal, 0 : affamé, -1 : meurt de faim.
+func hunger_state() -> int:
+	if hunger <= 0.0:
+		return -1
+	if hunger < HUNGRY:
+		return 0
+	return 2 if hunger >= WELL_FED else 1
+
+
+func _update_hunger(delta: float) -> void:
+	if not is_alive() or building or ui_open:
+		return
+	var rate := HUNGER_PER_SECOND
+	if Vector2(velocity.x, velocity.z).length() > 2.5:
+		rate *= 1.4
+	var before := hunger
+	hunger = maxf(0.0, hunger - rate * delta)
+	if int(before) != int(hunger):
+		hunger_changed.emit(hunger)
+	_on_hunger_state()
+	# affamé : on perd de la vie petit à petit (sans descendre sous 10 %)
+	if hunger <= 0.0:
+		_starve_timer -= delta
+		if _starve_timer <= 0.0:
+			_starve_timer = 3.0
+			if health.current > health.max_health * 0.1:
+				health.current = maxi(1, health.current - 2)
+				health.changed.emit(health.current, health.max_health)
+
+
+func _on_hunger_state() -> void:
+	var st := hunger_state()
+	if st == _hunger_state:
+		return
+	var old := _hunger_state
+	_hunger_state = st
+	refresh_stats()
+	hunger_changed.emit(hunger)
+	if st == 0 and old > 0:
+		notify.emit("Tu as faim : mange quelque chose (H). Plus de régénération de vie.")
+	elif st == -1:
+		notify.emit("Tu meurs de faim ! Mange vite (H).")
+
+
+## Mange la nourriture du sac la mieux adaptée à sa faim. Renvoie l'objet mangé (null sinon).
+func eat(item: ItemData = null) -> ItemData:
+	if item == null:
+		var need := HUNGER_MAX - hunger
+		var best: ItemData = null
+		var smallest: ItemData = null
+		for e in inventory.entries:
+			var it := e.item as ItemData
+			if it == null or not it.is_food():
+				continue
+			if smallest == null or it.food < smallest.food:
+				smallest = it
+			# le plus nourrissant qui ne gaspille pas trop
+			if it.food <= need + 10.0 and (best == null or it.food > best.food):
+				best = it
+		item = best if best else smallest
+	if item == null:
+		notify.emit("Tu n'as rien à manger. Cueille des baies (buissons) ou chasse des animaux.")
+		return null
+	if hunger >= HUNGER_MAX - 2.0:
+		notify.emit("Tu n'as pas faim.")
+		return null
+	if not inventory.remove(item, 1):
+		return null
+	hunger = minf(HUNGER_MAX, hunger + item.food)
+	if item.food_heal > 0:
+		health.heal(item.food_heal)
+	Sound.play("eat", Vector3.INF, -2.0)
+	VoxelBurst.spawn(self, global_position + Vector3(0, 1.4, 0) + facing * 0.3, Color(0.9, 0.6, 0.3), 8, 1.6, 0.05, 0.3, "up", 4.0, false)
+	notify.emit("Tu manges : %s." % item.display_name)
+	_on_hunger_state()
+	hunger_changed.emit(hunger)
+	ate.emit(item.id)
+	return item
 
 
 # ---------------------------------------------------------------- bruits de pas
@@ -892,6 +1000,9 @@ func _respawn() -> void:
 		_world.load_area(home)
 		global_position = home
 	health.revive(1.0)
+	# on se réveille au village avec un peu à manger dans le ventre
+	hunger = maxf(hunger, 50.0)
+	_on_hunger_state()
 	visual.set_downed(false)
 	_knockback = Vector3.ZERO
 	_invulnerable_left = 2.0
@@ -916,6 +1027,7 @@ func _start_dash(direction: Vector3) -> void:
 	_dash_elapsed = 0.0
 	_dash_cooldown_left = stats.dash_cooldown * (1.0 - clampf(talent_bonus("dash_cd"), 0.0, 0.7))
 	visual.play_roll(stats.dash_duration)
+	spend_hunger(0.5)
 	Sound.play("dash", global_position, -4.0)
 	dashed.emit()
 
@@ -930,6 +1042,10 @@ func _input(event: InputEvent) -> void:
 			and event.button_index in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_RIGHT]:
 		hand.cycle(1 if event.button_index == JOY_BUTTON_DPAD_RIGHT else -1)
 		get_viewport().set_input_as_handled()
+	# LB + croix haut : manger
+	elif event is InputEventJoypadButton and event.pressed and Input.is_action_pressed("block") and event.button_index == JOY_BUTTON_DPAD_UP:
+		eat()
+		get_viewport().set_input_as_handled()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -943,6 +1059,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			cast_ability(i)
 			get_viewport().set_input_as_handled()
 			return
+	if event.is_action_pressed("eat"):
+		eat()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("place_block"):
 		hand.place()
 		get_viewport().set_input_as_handled()
@@ -1187,6 +1307,11 @@ func nearby_stations() -> Array:
 	for w in get_tree().get_nodes_in_group("workbench"):
 		if (w as Node3D).global_position.distance_to(global_position) < interact_distance + 1.2 and not out.has("etabli"):
 			out.append("etabli")
+	# « feu » pour cuisiner : le feu de camp du village, ou un four / une forge posés
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if out.has("four") or out.has("four_pain") or out.has("foyer_forge") \
+			or (world and global_position.distance_to(world.cell_center(world.spawn_cell)) < 4.5):
+		out.append("feu")
 	return out
 
 

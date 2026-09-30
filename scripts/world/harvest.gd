@@ -13,7 +13,7 @@ const DECOR_HP := {
 ## Ce que lâche un décor : [identifiant, minimum, maximum].
 const DECOR_LOOT := {
 	WorldGenerator.D_OAK: [["wood", 3, 4]], WorldGenerator.D_PINE: [["wood", 3, 5]],
-	WorldGenerator.D_BUSH: [["fiber", 2, 3]], WorldGenerator.D_FLOWERS: [["fiber", 1, 1]], WorldGenerator.D_GRASS: [["fiber", 1, 1]],
+	WorldGenerator.D_BUSH: [["fiber", 1, 2], ["baies", 1, 3]], WorldGenerator.D_FLOWERS: [["fiber", 1, 1]], WorldGenerator.D_GRASS: [["fiber", 1, 1]],
 	WorldGenerator.D_ROCK: [["stone", 2, 4]],
 	WorldGenerator.D_IRON: [["iron_ore", 2, 3], ["stone", 1, 2]],
 	WorldGenerator.D_GOLD: [["or_brut", 1, 2], ["stone", 1, 2]],

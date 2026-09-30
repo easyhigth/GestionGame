@@ -59,6 +59,15 @@ const RARITY_COLORS := {
 @export var projectile: bool = false
 
 
+@export_group("Nourriture")
+## Faim rendue en mangeant (0 = ne se mange pas ; la jauge va de 0 à 100).
+@export var food: float = 0.0
+## Vie rendue en mangeant.
+@export var food_heal: int = 0
+## Plat cuisiné (compte pour le guide, rassasie mieux).
+@export var food_cooked: bool = false
+
+
 @export_group("Construction")
 ## Texture du bloc : si elle est renseignée, l'objet est un bloc de construction à poser.
 @export var block_texture: Texture2D
@@ -84,6 +93,10 @@ func is_block() -> bool:
 
 func is_furniture() -> bool:
 	return furniture_model != null
+
+
+func is_food() -> bool:
+	return food > 0.0
 
 
 func is_placeable() -> bool:

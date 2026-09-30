@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "baies"
+display_name = "Baies"
+description = "Des baies sucrées cueillies dans les buissons. Calment un peu la faim."
+max_stack = 30
+food = 8.0
+food_heal = 2
+food_cooked = false

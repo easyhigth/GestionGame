@@ -15,6 +15,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Clic molette simple, F, L ou gâchette gauche : viser la cible la plus proche
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage ; frapper un arbre, un rocher, un buisson ou un décor du village le récolte
 - G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux)
+- H (LB + croix haut à la manette) : manger ; cliquer sur une nourriture dans le sac la mange aussi
 - C / X (LB + croix gauche/droite à la manette) : choisir un bloc ou un meuble du sac ; V (L3) : le poser devant soi
 - Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
 - T (ou croix gauche à la manette) : arbre de talents
@@ -93,6 +94,13 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Pioches** : sans pioche, un rocher ne donne que des cailloux ; avec une pioche en bois ou en pierre, parfois du minerai de fer ; avec une pioche en fer, aussi du marbre et de l'or.
 - **Chaîne du fer** : four (6 cailloux + 2 terre, près d'un établi) → lingot de fer (2 minerais + 1 bois, près du four) → enclume (4 lingots, près d'un établi) → à côté de l'enclume : hache et pioche en fer (2 lingots + 2 bois, ×4), épée, hache de guerre, marteau, lance, dague, bouclier, casques, armure, gantelets et jambières en fer.
 - Le guide continue avec un 2e chapitre, « L'âge du fer » : miner 2 filons, poser un four, fondre 2 lingots, poser une enclume, forger une pioche en fer.
+
+## Faim et nourriture
+- **Jauge de faim** sous l'expérience : elle se vide en 15 minutes environ (plus vite en courant, en frappant, en roulant). **Rassasié** (70 et plus) : +1,5 vie par seconde. **Affamé** (moins de 25) : plus de régénération de vie. **À 0** : on perd de la vie peu à peu (jamais sous 10 %) et on marche 15 % moins vite. On se réveille au village à moitié rassasié.
+- **Manger** : H choisit tout seul le plat le plus nourrissant qui ne gaspille pas (ou clic sur la nourriture dans le sac).
+- **Nourriture** : baies (buissons, 8), viande crue (sangliers, loups, ours, 10), viande cuite (32, +15 vie), pain (boulangerie du village, 26, +8 vie), ragoût (viande + 3 baies, 55, +40 vie).
+- **Cuisine** (inventaire → Artisanat → Cuisine) : près du feu de camp du village, d'un four, d'un four à pain ou d'une forge.
+- Le guide a une nouvelle étape : « Mange un repas cuit » (avant la première nuit).
 
 ## Sons et musique
 - **Bruitages** : coups d'épée et impacts (plus forts pour un coup critique), garde, parade, roulade, dégâts reçus, monstre vaincu, défaite du héros, pas (herbe, pierre, bois, sable), coupe du bois, coups de pioche, blocs cassés et posés, creusage, objets ramassés, niveau gagné, talent appris, sorts, cri du boss en 2e phase, cor du raid, tombée de la nuit, lever du jour, sommeil, artisanat, porte, boutons et fenêtres. Les bruits du monde sont en 3D (plus faibles de loin).

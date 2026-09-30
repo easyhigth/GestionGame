@@ -327,6 +327,13 @@ def sfx_sleep():
     return out
 
 
+def sfx_eat():
+    out = silence(0.55)
+    for i in range(3):
+        place(out, expdecay(bandpass(noise(0.1, 90 + i), 500, 3500), 0.03), i * 0.15, 0.9 - i * 0.2)
+    return out
+
+
 def sfx_door():
     return mix(expdecay(osc('saw', lambda t: 180 + 80 * math.sin(t * 40), 0.4), 0.15), gain(expdecay(lowpass(noise(0.2, 81), 900), 0.05), 0.5))
 

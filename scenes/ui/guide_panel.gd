@@ -12,6 +12,7 @@ const STEPS := [
 	["planches", "Fabrique des planches", "Inventaire (I) → Artisanat → Construction : 1 bois donne 4 planches.", 1],
 	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit : pose les blocs à la main (C pour choisir, V pour poser) ou avec le mode construction (B).", 1],
 	["torche", "Pose une torche", "Choisis-la avec C et pose-la avec V. Les monstres n'apparaissent pas près des lumières.", 1],
+	["repas", "Mange un repas cuit", "Baies (buissons) ou viande (animaux) : cuis-les près du feu de camp ou d'un four (Artisanat → Cuisine), puis mange avec H.", 1],
 	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit (E) ou tiens jusqu'au matin.", 1],
 	# chapitre 2 : l'âge du fer
 	["filon_fer", "Mine 2 filons de fer", "Des rochers piquetés d'orange, dans la roche des collines. Il faut une pioche.", 2],
@@ -21,7 +22,9 @@ const STEPS := [
 	["pioche_fer", "Forge une pioche en fer", "À l'enclume : 2 lingots et 2 bois (Artisanat → Outils). Elle mine l'or et le marbre.", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 7], ["L'ÂGE DU FER", 7, 12]]
+const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13]]
+## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
+const VERSION := 2
 
 var player: Player
 var step := 0
@@ -69,6 +72,10 @@ func _ready() -> void:
 	if player:
 		player.harvested.connect(_on_harvested)
 		player.crafted.connect(_on_crafted)
+		player.ate.connect(func(id: String):
+			var it := Items.get_item(id)
+			if it and it.food_cooked:
+				_advance("repas"))
 	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
 	if dc:
 		_connect_day(dc)
@@ -224,11 +231,14 @@ func _refresh() -> void:
 
 
 func export_state() -> Dictionary:
-	return {"step": step, "progress": progress}
+	return {"step": step, "progress": progress, "v": VERSION}
 
 
 func import_state(d: Dictionary) -> void:
 	step = int(d.get("step", 0))
 	progress = int(d.get("progress", 0))
+	# version 1 : l'étape « repas » n'existait pas (elle est avant « nuit », 7e étape)
+	if int(d.get("v", 1)) < 2 and step >= 6 and step < 99:
+		step += 1
 	_hide_timer = -1.0
 	_refresh()

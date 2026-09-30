@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1")
-id = "pain"
-display_name = "Pain"
-description = "Du bon pain frais, cuit à la boulangerie. Se mange (H)."
-max_stack = 50
-food = 26.0
-food_heal = 8
+id = "ragout"
+display_name = "Ragoût"
+description = "Viande et baies mijotées : le meilleur repas, il rend beaucoup de vie."
+max_stack = 20
+food = 55.0
+food_heal = 40
 food_cooked = true

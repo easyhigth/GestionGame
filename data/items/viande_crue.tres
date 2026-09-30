@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "viande_crue"
+display_name = "Viande crue"
+description = "À cuire près d'un feu ou d'un four. Crue, elle nourrit peu."
+max_stack = 30
+food = 10.0
+food_heal = 0
+food_cooked = false

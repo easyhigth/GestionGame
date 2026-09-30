@@ -36,6 +36,7 @@ const PAGES := [
 		["Poser devant soi · frapper un bloc le casse", "V", "L3"],
 		["Parler · équiper un habitant · recruter", "E", "Y"],
 		["Dormir dans un lit (la nuit)", "E", "Y"],
+		["Manger (la meilleure nourriture du sac)", "H", "LB + croix haut"],
 		["Entrer dans un donjon · ouvrir un coffre", "E", "Y"],
 		["Inventaire, équipement, artisanat", "I / Tab", "Back"],
 		["Carte du monde · voyage rapide", "M", "Croix haut"],

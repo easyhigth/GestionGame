@@ -203,7 +203,7 @@ func _build() -> void:
 	var c3 := _column("Artisanat", 330, cols)
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 2)
-	for cname in ["Outils", "Équipement", "Construction", "Mobilier", "Matériaux"]:
+	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux"]:
 		var tb := Button.new()
 		tb.text = cname
 		tb.toggle_mode = true
@@ -435,6 +435,10 @@ func _show_info(item: ItemData) -> void:
 
 
 func _use_item(item: ItemData) -> void:
+	if item.is_food() and target == player:
+		player.eat(item)
+		_refresh()
+		return
 	if not item.is_equipment():
 		return
 	var eq := target.get_node("Equipment") as CharacterEquipment

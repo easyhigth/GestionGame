@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
 [ext_resource type="PackedScene" path="res://assets/characters/creatures/bear_snow.glb" id="r2"]
 [ext_resource type="Resource" path="res://data/items/leather.tres" id="r3"]
+[ext_resource type="Resource" path="res://data/items/viande_crue.tres" id="it_viande"]
 
 [resource]
 script = ExtResource("1")
@@ -24,5 +25,5 @@ poise = 60
 attack_cooldown = 1.0
 knockback = 7.0
 body_radius = 0.8
-loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r3")])
-loot_chances = PackedFloat32Array(0.9, 0.6)
+loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r3"), ExtResource("it_viande"), ExtResource("it_viande")])
+loot_chances = PackedFloat32Array(0.9, 0.6, 1.0, 0.8)

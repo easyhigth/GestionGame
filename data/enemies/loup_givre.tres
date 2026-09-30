@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://assets/characters/creatures/wolf_frost.glb" id="r2"]
 [ext_resource type="Resource" path="res://data/items/leather.tres" id="r3"]
 [ext_resource type="Resource" path="res://data/items/fiber.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/viande_crue.tres" id="it_viande"]
 
 [resource]
 script = ExtResource("1")
@@ -25,5 +26,5 @@ poise = 15
 attack_cooldown = 1.0
 knockback = 4.0
 body_radius = 0.5
-loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r4")])
-loot_chances = PackedFloat32Array(0.8, 0.3)
+loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r4"), ExtResource("it_viande")])
+loot_chances = PackedFloat32Array(0.8, 0.3, 0.8)
