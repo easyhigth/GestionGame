@@ -76,6 +76,8 @@ var ability_slots: Array = ["", "", "", ""]
 var abilities := {}      # id -> HeroSkill (talents actifs)
 var selected_slot := 0
 var _double_used := false
+## Bruits de pas : temps avant le prochain.
+var _step_left := 0.0
 ## Récolte à la main : délai entre deux coups de pelle.
 const DIG_TIME := 0.5
 var _dig_timer := 0.0
@@ -326,6 +328,7 @@ func unlock_talent(id: String) -> bool:
 		if free >= 0:
 			ability_slots[free] = id
 	_apply_talents()
+	Sound.ui("talent")
 	feat.emit("Talent : %s" % n.name, TalentTree.branch(n.branch).color.lightened(0.3))
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), TalentTree.branch(n.branch).color, 40, 3.5, 0.1, 1.0, "up", -1.5)
 	return true
@@ -464,6 +467,7 @@ func gain_xp(amount: int) -> void:
 		for id in abilities:
 			abilities[id].set_level(level)
 		feat.emit("Niveau %d !" % level, Color("ffd24a"))
+		Sound.ui("levelup")
 		notify.emit("+1 point de talent (T : arbre de talents).")
 		talents_changed.emit()
 		notify.emit("Niveau %d : vie, attaque et magie augmentent." % level)
@@ -487,6 +491,7 @@ func snap_camera() -> void:
 
 func _physics_process(delta: float) -> void:
 	_combat_step(delta)
+	_footsteps(delta)
 	_update_tool(delta)
 	if skill:
 		skill.process(delta)
@@ -731,6 +736,36 @@ func dig() -> ItemData:
 	return Harvest.dig(self)
 
 
+# ---------------------------------------------------------------- bruits de pas
+
+## Un bruit de pas selon le sol : herbe, pierre, bois (plancher posé), sable.
+func _footsteps(delta: float) -> void:
+	var v := Vector2(velocity.x, velocity.z).length()
+	if airborne or v < 1.2 or is_dashing() or building:
+		_step_left = minf(_step_left, 0.1)
+		return
+	_step_left -= delta
+	if _step_left > 0.0:
+		return
+	_step_left = clampf(1.6 / v, 0.24, 0.45)
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+	var surf := "grass"
+	if world:
+		var cell := world.cell_at(global_position)
+		var under := world.build.block_at(Vector3i(cell.x, floori(global_position.y - 0.2), cell.y)) if global_position.y > WorldGenerator.UNDERGROUND else null
+		if under:
+			surf = "stone" if under.block_tier >= 1 else "wood"
+		elif global_position.y < WorldGenerator.UNDERGROUND:
+			surf = "stone"
+		else:
+			match world.terrain_type(cell):
+				WorldGenerator.STONE, WorldGenerator.PLAZA:
+					surf = "stone"
+				WorldGenerator.SAND:
+					surf = "sand"
+	Sound.play("step_" + surf, global_position, -14.0, 0.12)
+
+
 # ---------------------------------------------------------------- outil en main
 
 ## Avant un coup : la hache pour un arbre, la pioche pour un rocher ; l'arme s'il y a un ennemi tout près.
@@ -881,6 +916,7 @@ func _start_dash(direction: Vector3) -> void:
 	_dash_elapsed = 0.0
 	_dash_cooldown_left = stats.dash_cooldown * (1.0 - clampf(talent_bonus("dash_cd"), 0.0, 0.7))
 	visual.play_roll(stats.dash_duration)
+	Sound.play("dash", global_position, -4.0)
 	dashed.emit()
 
 
@@ -1193,6 +1229,7 @@ func try_pickup(pickup: ItemPickup) -> void:
 	else:
 		inventory.add(item, pickup.count)
 		notify.emit("+%d %s" % [pickup.count, item.display_name])
+	Sound.play("pickup", Vector3.INF, -8.0, 0.05)
 
 
 ## Attaque, défense et magie totales (race + équipement).

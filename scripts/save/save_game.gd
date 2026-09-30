@@ -32,6 +32,8 @@ var options := {
 	"show_help": true,
 	"autosave": true,
 	"volume": 0.8,
+	"music_volume": 0.6,
+	"sfx_volume": 0.9,
 }
 
 ## Partie à charger au prochain lancement de la scène de jeu (vide = nouvelle partie).
@@ -102,6 +104,8 @@ func apply_options() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
 	var bus := AudioServer.get_bus_index("Master")
 	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(0.001, float(options.volume))))
+	Sound.set_volume("Music", float(options.get("music_volume", 0.6)))
+	Sound.set_volume("Sfx", float(options.get("sfx_volume", 0.9)))
 	var p := _player()
 	if p:
 		p.camera_zoom = float(options.camera_distance)

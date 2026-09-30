@@ -177,6 +177,8 @@ func perform(name: String, speed := 1.0, damage := 1.0) -> bool:
 	_move_damage = damage
 	blocking = false
 	visual.play_move(name, speed)
+	if not m.get("hits", []).is_empty():
+		Sound.play("swing", global_position + Vector3(0, 1, 0), -3.0 if is_in_group("player") else -8.0)
 	_on_move_started(name)
 	return true
 
@@ -336,6 +338,9 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 		color = Color("ff9a2a")
 	var top := global_position + Vector3(0, 1.9 * visual.scale.y, 0)
 	Combat.popup(self, top, str(dmg) + ("!" if crit else ""), color, dmg >= 15 or crit)
+	Sound.play("hit_heavy" if crit or dmg >= 15 else "hit", global_position + Vector3(0, 1, 0))
+	if is_in_group("player"):
+		Sound.play("hurt", Vector3.INF, -4.0)
 	if attacker:
 		attacker._on_damage_dealt(self, dmg)
 	VoxelBurst.spawn(self, global_position + Vector3(0, 1.0 * visual.scale.y, 0), Color(1.0, 0.95, 0.7), 10, 4.5, 0.07, 0.3)
@@ -387,6 +392,7 @@ func _on_blocked(attack: int, source: Node3D, knockback: float) -> void:
 	var spark_pos := global_position + Vector3(facing.x, 0, facing.z).normalized() * 0.45 + Vector3(0, 1.0, 0)
 	VoxelBurst.spawn(self, spark_pos, Color(1.0, 0.85, 0.4), 14, 5.0, 0.06, 0.25)
 	Combat.popup(self, global_position + Vector3(0, 2.0, 0), "Bloqué" if dmg == 0 else str(dmg), Color("c8d8ff"))
+	Sound.play("block", global_position + Vector3(0, 1, 0))
 	visual.flash(Color(0.8, 0.9, 1.0, 0.4), 0.08)
 
 
@@ -397,6 +403,7 @@ func _on_parry(attacker: Combatant) -> void:
 	VoxelBurst.spawn(self, pos, Color(1.0, 0.8, 0.3), 18, 3.5, 0.12, 0.45, "ring", 0.0)
 	blocking = false
 	visual.play_move("parry")
+	Sound.play("parry", pos, 2.0, 0.02)
 	if attacker and attacker.is_alive():
 		attacker.cancel_move()
 		attacker.stagger(1.6, true)
@@ -517,6 +524,10 @@ func _on_died() -> void:
 	_stagger_left = 0.0
 	blocking = false
 	visual.set_downed(true)
+	if is_in_group("player"):
+		Sound.play("player_die", Vector3.INF, 0.0, 0.0)
+	else:
+		Sound.play("enemy_die", global_position + Vector3(0, 1, 0), -2.0)
 	defeated.emit()
 
 

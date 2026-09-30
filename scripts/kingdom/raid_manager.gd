@@ -106,6 +106,7 @@ func announce() -> void:
 
 func _start() -> void:
 	raid.state = "active"
+	Sound.play("horn", Vector3.INF, 0.0, 0.0)
 	raid.timer = raid_duration
 	var scene := load("res://scenes/enemies/enemy.tscn") as PackedScene
 	var center := village_center()

@@ -208,6 +208,7 @@ func activate() -> bool:
 		kind = pick[0]
 		prm = pick[1]
 	call("_a_" + kind, prm)
+	Sound.play("cast", owner.global_position + Vector3(0, 1, 0), -2.0)
 	cooldown_left = data.cooldown * SkillData.CD_SCALE[tier] * (1.0 - clampf(p("cdr_pct"), 0.0, 0.6))
 	owner.visual.flash(Color(data.color, 0.4), 0.15)
 	owner.feat.emit(current_name() + " !", data.color.lightened(0.25))

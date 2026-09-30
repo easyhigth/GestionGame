@@ -52,6 +52,7 @@ static func button(text: String, width := 260.0, size := 15) -> Button:
 	b.add_theme_stylebox_override("focus", style(Color("4a3a30"), C_GOLD, 2, 4, 6))
 	b.add_theme_stylebox_override("pressed", style(Color("5a4636"), C_GOLD, 2, 4, 6))
 	b.add_theme_stylebox_override("disabled", style(Color("2a221e"), Color("3a3028"), 2, 4, 6))
+	b.pressed.connect(func(): Sound.ui("ui_click"))
 	return b
 
 

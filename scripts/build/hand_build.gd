@@ -168,6 +168,7 @@ func place() -> bool:
 	if not done:
 		return false
 	player.inventory.remove(it, 1)
+	Sound.play("door" if it.furniture_door else "place", Vector3(k.x + 0.5, float(k.y) + 0.5, k.z + 0.5))
 	var at := Vector3(k.x + 0.5, float(_target.get("base", k.y)) + 0.5, k.z + 0.5)
 	VoxelBurst.spawn(player, at, BuildMode.it_color(it) if it.is_block() else Color(0.75, 0.6, 0.4), 8, 1.8, 0.07, 0.3, "up", 6.0, false)
 	player.visual.play_move("punch_1", 1.6)

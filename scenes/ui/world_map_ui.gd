@@ -29,6 +29,7 @@ func _ready() -> void:
 
 
 func open() -> void:
+	Sound.ui("ui_open")
 	if world == null or world.map_texture == null:
 		return
 	if player and player.global_position.y < WorldGenerator.UNDERGROUND:

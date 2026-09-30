@@ -21,6 +21,7 @@ func _ready() -> void:
 
 
 func open() -> void:
+	Sound.ui("ui_open")
 	get_parent().move_child(self, get_parent().get_child_count() - 1)
 	for c in _box.get_children():
 		c.queue_free()
