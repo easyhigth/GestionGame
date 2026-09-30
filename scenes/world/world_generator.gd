@@ -1927,6 +1927,8 @@ var _village_props := {}
 var decor_damage := {}
 ## Dégâts en cours sur les décors du village : identifiant -> points de vie restants.
 var prop_damage := {}
+## Dégâts en cours sur les blocs et meubles posés (cassés à la main) : clé -> points de vie restants.
+var block_damage := {}
 ## Décors du village déjà démolis (sauvegardés).
 var removed_props := {}
 

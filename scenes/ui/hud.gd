@@ -48,6 +48,9 @@ var talent_ui: TalentTreeUI
 var day_cycle: DayCycle
 var guide: GuidePanel
 var _clock: Label
+var _hotbar: VBoxContainer
+var _hotbar_row: HBoxContainer
+var _hotbar_name: Label
 const HP_WIDTH := 220.0
 
 
@@ -72,6 +75,7 @@ func _ready() -> void:
 	_build_maps()
 	_build_ability_bar()
 	_build_day_and_guide()
+	_build_hotbar()
 	if player:
 		player.feat.connect(show_feat)
 		player.lock_changed.connect(func(t): _target = t)
@@ -501,6 +505,8 @@ func _process(delta: float) -> void:
 		info.visible = bool(SaveGame.options.show_help) and not b and not player.ui_open
 		if _skill_box:
 			_skill_box.visible = not b
+		if _hotbar:
+			_hotbar.visible = not b and player.hand.selected != ""
 		if _ability_bar:
 			_ability_bar.visible = not b and player.ability_slots.any(func(x): return x != "")
 			_process_abilities()
@@ -595,6 +601,71 @@ func _build_day_and_guide() -> void:
 	guide = GuidePanel.new()
 	guide.player = player
 	add_child(guide)
+
+
+## Barre des objets à poser à la main (C / X pour choisir, V pour poser), au-dessus de la compétence.
+func _build_hotbar() -> void:
+	if player == null or player.hand == null:
+		return
+	_hotbar = VBoxContainer.new()
+	_hotbar.alignment = BoxContainer.ALIGNMENT_END
+	_hotbar.add_theme_constant_override("separation", 2)
+	_hotbar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_hotbar.position = Vector2(-240, -112)
+	_hotbar.custom_minimum_size = Vector2(480, 50)
+	_hotbar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_hotbar)
+	_hotbar_name = _outlined("", 12)
+	_hotbar_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hotbar.add_child(_hotbar_name)
+	_hotbar_row = HBoxContainer.new()
+	_hotbar_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_hotbar_row.add_theme_constant_override("separation", 3)
+	_hotbar.add_child(_hotbar_row)
+	player.hand.selection_changed.connect(_update_hotbar)
+	player.inventory.changed.connect(_update_hotbar)
+	_update_hotbar()
+
+
+func _update_hotbar() -> void:
+	if _hotbar == null:
+		return
+	var sel := player.hand.selected
+	_hotbar.visible = sel != ""
+	for c in _hotbar_row.get_children():
+		c.queue_free()
+	if sel == "":
+		return
+	var list := player.hand.choices()
+	# on montre au plus 9 objets, centrés sur celui qui est choisi
+	var i0 := 0
+	for i in list.size():
+		if list[i].id == sel:
+			i0 = clampi(i - 4, 0, maxi(0, list.size() - 9))
+	for i in range(i0, mini(list.size(), i0 + 9)):
+		var it: ItemData = list[i]
+		var on := it.id == sel
+		var cell := Panel.new()
+		cell.custom_minimum_size = Vector2(36, 36)
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(0.1, 0.08, 0.06, 0.85) if not on else Color(0.3, 0.24, 0.14, 0.95)
+		st.border_color = Color("f0d890") if on else Color("6a5030")
+		st.set_border_width_all(3 if on else 1)
+		st.set_corner_radius_all(3)
+		cell.add_theme_stylebox_override("panel", st)
+		var icon := TextureRect.new()
+		icon.texture = Items.get_icon(it)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.position = Vector2(3, 3)
+		icon.size = Vector2(30, 30)
+		cell.add_child(icon)
+		var n := _outlined(str(player.inventory.count(it)), 9)
+		n.position = Vector2(20, 22)
+		cell.add_child(n)
+		_hotbar_row.add_child(cell)
+	var cur := Items.get_item(sel)
+	_hotbar_name.text = "%s  ·  V / L3 : poser   C / X : changer   (après le dernier : mains nues)" % (cur.display_name if cur else "")
 
 
 func _place_help() -> void:

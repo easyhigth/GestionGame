@@ -15,6 +15,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Clic molette simple, F, L ou gâchette gauche : viser la cible la plus proche
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage ; frapper un arbre, un rocher, un buisson ou un décor du village le récolte
 - G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux)
+- C / X (LB + croix gauche/droite à la manette) : choisir un bloc ou un meuble du sac ; V (L3) : le poser devant soi
 - Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
 - T (ou croix gauche à la manette) : arbre de talents
 - I (ou Tab) : inventaire, équipement et artisanat
@@ -79,6 +80,13 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Ensuite on fabrique (inventaire, I) : bois → planches, rondins, portes, torches ; fibre → chaume ; cailloux → blocs de pierre...
 - **Outils** (inventaire → Artisanat → Outils) : hache et pioche en bois (3 bois), en pierre (2 bois + 3 cailloux, près d'un établi). Il suffit de les avoir dans son sac, le meilleur est utilisé tout seul : ×2 en bois, ×3 en pierre. Le héros le sort et le tient en main quand il récolte (la hache pour un arbre, un buisson ou un décor du village, la pioche pour un rocher ou pour creuser), puis reprend son arme 3 secondes après, ou tout de suite si un ennemi approche. Sans pioche, un rocher ne donne que des cailloux (pas de minerai) et on ne peut pas creuser la roche.
 - Les réglages sont dans `scripts/world/harvest.gd` (points de vie des décors, butin, outils).
+
+## Poser et casser à la main
+- Sans passer par le mode construction : **C** (ou X pour revenir en arrière) choisit un bloc ou un meuble du sac, **V** le pose devant soi. Une barre d'objets s'affiche au-dessus de la compétence ; après le dernier objet, on revient aux mains nues (plus rien ne s'affiche).
+- Une case fantôme montre où l'objet ira : verte si c'est possible, rouge sinon. Un bloc se pose au niveau des pieds, puis au-dessus s'il y en a déjà un (jusqu'à 3 de haut) ; devant un trou ou de l'eau, il se pose un cran plus bas pour faire un pont. Il lui faut un appui : le sol, un bloc dessous ou à côté.
+- Les meubles (porte, lit, torche, coffre...) se posent pareil et regardent le héros.
+- **Casser** : frapper un bloc ou un meuble posé devant soi (quand aucun arbre, rocher ou décor n'est plus proche). Bois : 2 coups, pierre 3,5 coups, marbre 8, verre 1 ; la hache aide pour le bois et les meubles, la pioche pour la pierre. L'objet revient à ramasser. Les blocs ne se cassent pas si un ennemi est tout près (on ne démolit pas sa maison en se battant).
+- Code : `scripts/build/hand_build.gd` (pose), `scripts/world/harvest.gd` (casse).
 
 ## Jour et nuit
 - Un jour dure 10 minutes (6 h → 20 h) et une nuit 4 minutes (20 h → 6 h). L'heure et le jour s'affichent sous la mini-carte ; le ciel, le soleil et la lune changent avec l'heure.
