@@ -27,7 +27,8 @@ func _ready() -> void:
 
 
 func spawn_group() -> void:
-	if enemy_types.is_empty() or enemy_scene == null:
+	# le camp a pu être retiré (morceau du monde déchargé) avant l'appel différé
+	if not is_inside_tree() or enemy_types.is_empty() or enemy_scene == null:
 		return
 	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
 	for i in count:
