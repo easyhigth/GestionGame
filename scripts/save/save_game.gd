@@ -237,6 +237,9 @@ func save_game(slot: String) -> bool:
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam:
 		d.familiars = fam.export_state()
+	var sq := get_tree().get_first_node_in_group("side_quests") as SideQuests
+	if sq:
+		d.side_quests = sq.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -372,6 +375,7 @@ func new_game() -> void:
 	seasons_state = {}
 	mounts_state = {}
 	familiars_state = {}
+	side_quests_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -514,6 +518,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if fm:
 		fm.import_state(farm_state)
 		farm_state = {}
+	side_quests_state = d.get("side_quests", {})
+	var sq := get_tree().get_first_node_in_group("side_quests") as SideQuests
+	if sq and not side_quests_state.is_empty():
+		sq.import_state(side_quests_state)
+		side_quests_state = {}
 	familiars_state = d.get("familiars", {})
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam and not familiars_state.is_empty():

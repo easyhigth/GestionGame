@@ -107,6 +107,14 @@ func _refresh() -> void:
 			names.append(("✔ " if st.shards.has(r.id) else "· ") + r.display_name)
 	_add_foot(_label("Éclats du Cœur d'Aube : %d / %d" % [st.shards.size(), st.shards_total()], 13, MenuKit.C_GOLD))
 	_add_foot(_label("   " + "    ".join(PackedStringArray(names)), 11, MenuKit.C_TEXT))
+	# quêtes des personnages
+	var sq := get_tree().get_first_node_in_group("side_quests") as SideQuests
+	if sq:
+		var act := sq.active()
+		var head := "Quêtes des personnages : %d en cours, %d / %d terminées" % [act.size(), sq.done_count(), SideQuests.QUESTS.size()]
+		_add_foot(_label(head, 13, Color("b8f0a0")))
+		for q in act:
+			_add_foot(_label("   ➤ %s (%s) : %s  ·  %s" % [q.title, Story.NPCS[q.npc].name, q.text, sq.progress_text(q)], 10, MenuKit.C_TEXT))
 	# personnages rencontrés
 	var people := []
 	for id in Story.NPCS:

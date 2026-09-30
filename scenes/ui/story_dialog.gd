@@ -17,7 +17,9 @@ var _portrait_rect: TextureRect
 var _vp: SubViewport
 var _cam: Camera3D
 var _char: VoxelCharacter
-var _portraits := {}   # qui -> [modèle, bibliothèque, objets affichés, couleurs]
+var _portraits := {}
+## Dialogue « libre » (quêtes secondaires) : appelé à la fermeture avec le choix, au lieu de l'histoire.
+var _on_done: Callable   # qui -> [modèle, bibliothèque, objets affichés, couleurs]
 
 
 func _ready() -> void:
@@ -109,11 +111,34 @@ func open(id: String, npc: Node3D) -> void:
 	_show_page()
 
 
+## Ouvre un dialogue qui ne vient pas de l'histoire : data = {pages, choices}.
+func open_custom(id: String, data: Dictionary, npc: Node3D, on_done: Callable) -> void:
+	if player == null or player.ui_open:
+		return
+	_id = id
+	_npc = npc
+	_pages = data.pages
+	_choices = data.get("choices", [])
+	_page = 0
+	_on_done = on_done
+	get_parent().move_child(self, get_parent().get_child_count() - 1)
+	Sound.ui("ui_open")
+	show()
+	player.ui_open = true
+	get_tree().paused = true
+	_show_page()
+
+
 func _close(choice: String) -> void:
 	hide()
 	get_tree().paused = false
 	if player:
 		player.ui_open = false
+	if _on_done.is_valid():
+		var cb := _on_done
+		_on_done = Callable()
+		cb.call(choice)
+		return
 	var st := _story()
 	if st:
 		st.dialog_done(_id, choice)
