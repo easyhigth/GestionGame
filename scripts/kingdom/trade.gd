@@ -33,6 +33,8 @@ const VALUES := {
 	"baies": 0.6, "viande_crue": 2.0, "bloc_terre": 0.0, "bloc_sable": 0.2, "piece_or": 0.0,
 	"graines_ble": 0.5, "ble": 1.0, "carotte": 1.0, "pomme_de_terre": 1.0,
 	"oeuf": 1.0, "lait": 1.5, "laine": 2.0,
+	"gardon": 1.5, "carpe": 2.5, "truite": 3.0, "saumon": 4.0, "brochet": 6.0, "anguille": 6.0, "omble": 6.0,
+	"poisson_scorpion": 8.0, "poisson_lave": 20.0, "poisson_lune": 25.0, "perle": 15.0, "vieille_botte": 0.5,
 }
 const CRAFT_BONUS := 1.3
 
@@ -41,7 +43,7 @@ const GOODS := {
 	"Graines": [["graines_ble", 6, 12], ["carotte", 4, 8], ["pomme_de_terre", 4, 8]],
 	"Nourriture": [["oeuf", 4, 8], ["fromage", 2, 4], ["pain", 3, 6], ["viande_cuite", 2, 5], ["soupe_legumes", 1, 3], ["ragout", 1, 3]],
 	"Matériaux": [["iron_ingot", 3, 6], ["leather", 3, 6], ["lingot_or", 1, 2], ["marbre_brut", 3, 6], ["bloc_verre", 6, 12], ["bloc_briques", 10, 20]],
-	"Outils": [["houe", 1, 1], ["pioche_pierre", 1, 1], ["hache_pierre", 1, 1], ["pioche_fer", 1, 1], ["hache_fer", 1, 1]],
+	"Outils": [["houe", 1, 1], ["canne_peche", 1, 1], ["pioche_pierre", 1, 1], ["hache_pierre", 1, 1], ["pioche_fer", 1, 1], ["hache_fer", 1, 1]],
 	"Mobilier": [["lit", 1, 2], ["coffre", 1, 2], ["lanterne", 2, 3], ["etal", 2, 2], ["comptoir", 1, 1], ["table", 1, 1], ["mangeoire", 1, 1], ["barriere", 6, 12]],
 }
 

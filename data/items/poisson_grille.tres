@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "poisson_grille"
+display_name = "Poisson grillé"
+description = "Un poisson grillé au feu de bois. Se mange (H)."
+max_stack = 20
+food = 22.0
+food_heal = 6
+food_cooked = true

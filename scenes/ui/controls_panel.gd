@@ -31,7 +31,7 @@ const PAGES := [
 	]],
 	["Monde et royaume", [
 		["Récolter : frapper arbres, rochers, buissons, décors", "Clic gauche / J", "X"],
-		["Creuser le sol devant soi (maintenir)", "G", "RT"],
+		["Creuser le sol devant soi (maintenir) · dans l'eau : plonger", "G", "RT"],
 		["Choisir un bloc, un meuble, des graines ou la houe", "C / X", "LB + croix gauche/droite"],
 		["Poser, semer ou labourer devant soi · frapper un bloc le casse", "V", "L3"],
 		["Parler · équiper un habitant · recruter", "E", "Y"],

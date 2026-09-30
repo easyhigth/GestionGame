@@ -1013,7 +1013,155 @@ func _on_died() -> void:
 
 
 ## Se relève au village, avec toute sa vie.
+# ---------------------------------------------------------------- nage
+
+## Souffle (secondes sous l'eau) ; à zéro, on se noie petit à petit.
+const BREATH_MAX := 15.0
+const SWIM_SPEED := 0.62
+## Profondeur d'eau à partir de laquelle on nage (sinon on marche dans l'eau).
+const SWIM_DEPTH := 1.2
+## Hauteur des yeux au-dessus des pieds, et des pieds sous la surface quand on nage en surface.
+const EYES := 1.55
+const FLOAT_DEPTH := 1.3
+signal breath_changed(value: float)
+var swimming := false
+var breath := BREATH_MAX
+var _drown_timer := 0.0
+var _caves: Node
+
+
+func _can_swim() -> bool:
+	return true
+
+
+## Surface de l'eau au-dessus de cette position (-INF s'il n'y a pas d'eau) : lacs et mers, grottes inondées.
+func water_top(pos := Vector3.INF) -> float:
+	if pos == Vector3.INF:
+		pos = global_position
+	if _world == null:
+		return -INF
+	if pos.y < WorldGenerator.UNDERGROUND:
+		if _caves == null or not is_instance_valid(_caves):
+			_caves = get_tree().get_first_node_in_group("caves")
+		return _caves.water_top(pos) if _caves else -INF
+	var t := _world.terrain_type(_world.cell_at(pos))
+	if t == WorldGenerator.WATER or t == WorldGenerator.DEEP:
+		if _world.build and _world.build.support(_world.cell_at(pos), 1000.0) > _world.water_surface:
+			return -INF
+		return _world.water_surface
+	return -INF
+
+
+## Fond sous l'eau (terrain, ou sol de la grotte).
+func _water_floor(pos: Vector3) -> float:
+	if pos.y < WorldGenerator.UNDERGROUND:
+		var g := _world.dungeon_grid.support(_world.cell_at(pos), pos.y + 0.6) if _world.dungeon_grid else -INF
+		return g if g > -INF else pos.y
+	return _world.terrain_height(_world.cell_at(pos))
+
+
+## La tête est sous l'eau.
+func is_underwater() -> bool:
+	var top := water_top()
+	return top > -INF and global_position.y + EYES < top - 0.05
+
+
+## Dans l'eau (qu'on nage ou qu'on y marche).
+func in_water() -> bool:
+	var top := water_top()
+	return top > -INF and global_position.y < top
+
+
+func _move_on_ground(delta: float) -> void:
+	if _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+	var top := water_top()
+	var floor_h := _water_floor(global_position) if top > -INF else -INF
+	if top > -INF and top - floor_h >= SWIM_DEPTH:
+		_swim_move(delta, top, floor_h)
+	else:
+		if swimming:
+			swimming = false
+		super(delta)
+		# on marche dans l'eau peu profonde : on avance moins vite (le sol est sous l'eau)
+		if top > -INF and not airborne:
+			global_position.y = floor_h
+	_update_breath(delta, top)
+
+
+func _swim_move(delta: float, top: float, floor_h: float) -> void:
+	if not swimming:
+		swimming = true
+		airborne = false
+		air_vy = 0.0
+		visual.airborne = false
+		Sound.play("dig", global_position)
+		VoxelBurst.spawn(self, Vector3(global_position.x, top, global_position.z), Color(0.75, 0.9, 1.0), 16, 3.0, 0.08, 0.5, "up", 8.0, false)
+	var base := velocity * SWIM_SPEED
+	var from := global_position
+	var to := from + (base + _knockback) * delta
+	to = _swim_constrain(from, to, top)
+	# monter (saut) / plonger (creuser) ; sinon on reste à la même profondeur
+	var vy := 0.0
+	if not ui_open and not building:
+		if Input.is_action_pressed("jump"):
+			vy = 2.8
+		elif Input.is_action_pressed("dig"):
+			vy = -2.8
+	var cave := from.y < WorldGenerator.UNDERGROUND
+	var ceiling := top - (FLOAT_DEPTH if not cave else EYES + 0.3)
+	to.y = clampf(from.y + vy * delta, floor_h, maxf(floor_h, ceiling))
+	global_position = to
+	velocity = Vector3(velocity.x, 0, velocity.z)
+	# sortie de l'eau sur la berge
+	var ground := _world.ground_height_at(Vector3(to.x, top + 1.0, to.z)) if not cave else floor_h
+	if water_top(to) == -INF and ground > -INF:
+		global_position.y = ground
+		swimming = false
+
+
+## Peut-on nager jusque-là ? L'eau, ou une berge pas plus haute que la surface + 0,7 m.
+func _swim_constrain(from: Vector3, to: Vector3, top: float) -> Vector3:
+	for cand in [to, Vector3(to.x, to.y, from.z), Vector3(from.x, to.y, to.z)]:
+		var cell := _world.cell_at(cand)
+		if from.y < WorldGenerator.UNDERGROUND:
+			var g := _world.dungeon_grid.support(cell, from.y + 0.6) if _world.dungeon_grid else -INF
+			if g > -INF and not _world.dungeon_grid.body_blocked(cell, maxf(g, from.y)):
+				return cand
+			continue
+		if water_top(cand) > -INF:
+			if not _world.build.body_blocked(cell, from.y):
+				return cand
+			continue
+		var land := _world.support_height(cand, top + 1.0)
+		if land - top <= 0.7 and not _world.build.body_blocked(cell, land):
+			return cand
+	return Vector3(from.x, to.y, from.z)
+
+
+func _update_breath(delta: float, top: float) -> void:
+	var before := breath
+	var under := top > -INF and global_position.y + EYES < top - 0.05
+	if under and _caves and is_instance_valid(_caves) and _caves.in_air_pocket(global_position):
+		under = false
+	if under and is_alive():
+		breath = maxf(0.0, breath - delta)
+		if breath <= 0.0:
+			_drown_timer -= delta
+			if _drown_timer <= 0.0:
+				_drown_timer = 1.0
+				health.take_damage(maxi(1, roundi(health.max_health * 0.08)))
+				notify.emit("Tu te noies ! Remonte respirer.")
+	else:
+		breath = minf(BREATH_MAX, breath + delta * 5.0)
+		_drown_timer = 0.0
+	if int(before * 4.0) != int(breath * 4.0):
+		breath_changed.emit(breath)
+
+
 func _respawn() -> void:
+	swimming = false
+	breath = BREATH_MAX
 	if _world:
 		var home := _world.cell_center(_world.spawn_cell) + Vector3(0, 0, 3)
 		_world.load_area(home)
@@ -1102,6 +1250,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
 		var dm := get_tree().get_first_node_in_group("dungeons")
 		if dm and dm.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
+		var cv := get_tree().get_first_node_in_group("caves")
+		if cv and cv.try_interact(self):
 			get_viewport().set_input_as_handled()
 			return
 		var s := nearest_stranger()

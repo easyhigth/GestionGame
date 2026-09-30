@@ -56,6 +56,11 @@ var shop_dialog: ShopDialog
 var trade: Trade
 var weather: Weather
 var livestock: Livestock
+var fishing: Fishing
+var caves: UnderwaterCaves
+var _breath_box: Control
+var _breath_fill: ColorRect
+var _underwater: ColorRect
 var _weather_label: Label
 var _quest_box: VBoxContainer
 var _quest_refresh := 0.0
@@ -185,6 +190,49 @@ func _update_hunger() -> void:
 	_hunger_fill.color = [Color(0.85, 0.2, 0.15), Color(0.95, 0.45, 0.2), Color(0.9, 0.6, 0.25), Color(0.55, 0.85, 0.35)][st + 1]
 	_hunger_text.text = ["Meurt de faim ! (H : manger)", "Affamé (H : manger)", "Faim %d %%" % roundi(player.hunger), "Rassasié · vie +1,5/s"][st + 1]
 	_hunger_text.add_theme_color_override("font_color", _hunger_fill.color.lightened(0.3))
+
+
+## Souffle (sous l'eau) au milieu de l'écran, et teinte bleue quand la tête est sous l'eau.
+func _build_breath() -> void:
+	_underwater = ColorRect.new()
+	_underwater.color = Color(0.1, 0.35, 0.6, 0.3)
+	_underwater.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_underwater.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_underwater.hide()
+	add_child(_underwater)
+	move_child(_underwater, 0)
+	_breath_box = Control.new()
+	_breath_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_breath_box.offset_left = -80
+	_breath_box.offset_right = 80
+	_breath_box.offset_top = -214
+	_breath_box.offset_bottom = -190
+	_breath_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_breath_box)
+	var t := _outlined("Souffle", 10)
+	t.position = Vector2(0, -2)
+	_breath_box.add_child(t)
+	var bg := ColorRect.new()
+	bg.color = Color(0.03, 0.06, 0.12, 0.85)
+	bg.position = Vector2(0, 14)
+	bg.size = Vector2(160, 8)
+	_breath_box.add_child(bg)
+	_breath_fill = ColorRect.new()
+	_breath_fill.color = Color(0.55, 0.85, 1.0)
+	_breath_fill.position = Vector2(2, 16)
+	_breath_fill.size = Vector2(156, 4)
+	_breath_box.add_child(_breath_fill)
+	_breath_box.hide()
+
+
+func _update_breath() -> void:
+	if player == null or _breath_box == null:
+		return
+	var r := player.breath / Player.BREATH_MAX
+	_breath_box.visible = r < 0.999
+	_breath_fill.size.x = 156.0 * r
+	_breath_fill.color = Color(0.55, 0.85, 1.0) if r > 0.3 else Color(1.0, 0.45, 0.35)
+	_underwater.visible = player.is_underwater()
 
 
 func _build_death_screen() -> void:
@@ -576,6 +624,7 @@ func _process(delta: float) -> void:
 		_clock.add_theme_color_override("font_color", Color("b8c8ff") if day_cycle.is_night() else Color("fff2c8"))
 	if guide:
 		guide.modulate.a = 0.35 if player and player.ui_open else 1.0
+	_update_breath()
 	if player and player.skill and _skill_cd:
 		var r := player.skill.cooldown_ratio()
 		_skill_cd.size.y = 36.0 * r
@@ -662,6 +711,18 @@ func _build_day_and_guide() -> void:
 	weather.world = world
 	weather.player = player
 	get_parent().add_child.call_deferred(weather)
+	fishing = Fishing.new()
+	fishing.name = "Fishing"
+	fishing.world = world
+	fishing.player = player
+	get_parent().add_child.call_deferred(fishing)
+	caves = UnderwaterCaves.new()
+	caves.name = "UnderwaterCaves"
+	caves.world = world
+	caves.player = player
+	get_parent().add_child.call_deferred(caves)
+	add_child(FishingBar.new())
+	_build_breath()
 	livestock = Livestock.new()
 	livestock.name = "Livestock"
 	livestock.world = world
@@ -784,6 +845,8 @@ func _update_hotbar() -> void:
 		verb = "labourer"
 	elif cur and cur.is_seed():
 		verb = "semer (les poules te suivent)" if HandBuild.is_lure(cur) else "semer"
+	elif cur and cur.id == "canne_peche":
+		verb = "pêcher (face à l'eau)"
 	elif cur and HandBuild.is_lure(cur):
 		verb = "rien (les bêtes te suivent)"
 	_hotbar_name.text = "%s  ·  V / L3 : %s   C / X : changer   (après le dernier : mains nues)" % [cur.display_name if cur else "", verb]

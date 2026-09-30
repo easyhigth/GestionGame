@@ -579,7 +579,7 @@ func _move_on_ground(delta: float) -> void:
 	move_and_slide()
 	velocity = base
 	if _world:
-		global_position = _world.constrain_move(before, global_position)
+		global_position = _world.constrain_move(before, global_position, _can_swim())
 		var ground := _world.ground_height_at(global_position)
 		if airborne:
 			air_vy -= GRAVITY * delta
@@ -601,6 +601,11 @@ func _move_on_ground(delta: float) -> void:
 
 func _on_landed() -> void:
 	pass
+
+
+## Peut entrer dans l'eau (seul le héros sait nager).
+func _can_swim() -> bool:
+	return false
 
 
 ## Le combattant ennemi vivant le plus proche dans un rayon (ou null).

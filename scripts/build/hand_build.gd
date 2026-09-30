@@ -46,7 +46,7 @@ func choices() -> Array[ItemData]:
 		return out
 	for e in player.inventory.entries:
 		var it := e.item as ItemData
-		if it and (it.is_placeable() or it.is_seed() or it.id == "houe" or is_lure(it)) and not out.has(it):
+		if it and (it.is_placeable() or it.is_seed() or it.id == "houe" or it.id == "canne_peche" or is_lure(it)) and not out.has(it):
 			out.append(it)
 	return out
 
@@ -199,6 +199,13 @@ func place() -> bool:
 	var it := selected_item()
 	if it == null:
 		cycle(1)
+		return false
+	if it.id == "canne_peche":
+		var fi := player.get_tree().get_first_node_in_group("fishing") as Fishing
+		if fi:
+			var msg := fi.use()
+			if msg != "":
+				player.notify.emit(msg)
 		return false
 	if not it.is_placeable() and not _is_farm_item(it):
 		player.notify.emit("Garde-le en main : les bêtes qui l'aiment te suivent. Mène-les à une mangeoire.")
