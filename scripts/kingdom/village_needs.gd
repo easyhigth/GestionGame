@@ -53,6 +53,43 @@ func members() -> Array:
 	return get_tree().get_nodes_in_group("villagers").filter(func(v): return not v.companion)
 
 
+## Places pour dormir : [[position, sorte], ...] — les lits des maisons et dortoirs (sur le meuble « lit »),
+## puis 2 places par cabane du village (devant sa porte : on dort à l'intérieur).
+func bed_spots() -> Array:
+	var out := []
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if world == null:
+		return out
+	if k:
+		for r in k.typed_rooms():
+			var n: int = (r.type as RoomTypeData).beds
+			if n <= 0:
+				continue
+			var lits := []
+			for c in r.cells:
+				for f in world.build.furniture_in(c):
+					if (f.item as ItemData).id == "lit" and absf(float(f.base) - float(r.floor)) < 1.3:
+						lits.append(Vector3(c.x + 0.5, float(f.base) + 0.55, c.y + 0.5))
+			for i in n:
+				if lits.is_empty():
+					var cell: Vector2i = r.cells.keys()[i % r.cells.size()]
+					out.append([Vector3(cell.x + 0.5, float(r.floor), cell.y + 0.5), "lit"])
+				else:
+					var p: Vector3 = lits[i % lits.size()]
+					out.append([p + Vector3(0.22 * (i / lits.size()), 0, 0), "lit"])
+	var center := world.cell_center(world.spawn_cell)
+	for id in ["hut_1", "hut_2", "hut_3"]:
+		var hut := world.village_prop(id)
+		if hut == null:
+			continue
+		var door: Vector3 = hut.global_position + (center - hut.global_position).normalized() * 2.4
+		door.y = world.ground_height_at(door + Vector3(0, 3, 0))
+		for i in HUT_BEDS:
+			out.append([door, "cabane"])
+	return out
+
+
 func total_beds() -> int:
 	var n := 0
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
@@ -143,8 +180,10 @@ func _process(delta: float) -> void:
 
 func _update(dt: float) -> void:
 	var list := members()
-	list.sort_custom(func(a, b): return a.villager_name < b.villager_name)
-	var beds := total_beds()
+	# ordre stable (deux habitants peuvent porter le même nom) : sinon les lits s'échangeraient sans cesse
+	list.sort_custom(func(a, b): return a.villager_name < b.villager_name or (a.villager_name == b.villager_name and a.get_instance_id() < b.get_instance_id()))
+	var spots := bed_spots()
+	var beds := spots.size()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	# confort des pièces du royaume
 	var comfort := 0.0
@@ -169,6 +208,14 @@ func _update(dt: float) -> void:
 			food_stock -= eat
 			v.food = minf(100.0, v.food + eat)
 		v.has_bed = i < beds
+		var spot: Vector3 = spots[i][0] if v.has_bed else Vector3.INF
+		var kind: String = spots[i][1] if v.has_bed else ""
+		if spot != v.bed_spot or kind != v.bed_kind:
+			v.bed_spot = spot
+			v.bed_kind = kind
+			# le lit a changé pendant la nuit : il y retourne
+			if v.activity == "sommeil" and not v.is_sleeping():
+				v._start_activity("sommeil")
 		# bonheur visé et raisons
 		# nourri et logé : content ; il faut un peu de confort (taverne, temple...) pour être heureux
 		var target := 42.0 + comfort + _safety
@@ -182,7 +229,8 @@ func _update(dt: float) -> void:
 			target -= 40.0
 			reasons.append("meurt de faim")
 		if v.has_bed:
-			target += 10.0
+			# un vrai lit dans une maison vaut mieux qu'une place dans une cabane
+			target += 15.0 if v.bed_kind == "lit" else 10.0
 		else:
 			target -= 20.0
 			reasons.append("pas de lit")

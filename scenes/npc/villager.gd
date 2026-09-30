@@ -73,6 +73,22 @@ var has_bed := true
 var work_mult := 1.0
 var unhappy_time := 0.0
 var mood_reasons: Array = []
+## Vie quotidienne : lit attribué (VillageNeeds), activité du moment, bulle au-dessus de la tête.
+var bed_spot := Vector3.INF
+## « lit » (maison, dortoir), « cabane » (cabane du village) ou « » (par terre, près du feu).
+var bed_kind := ""
+## « travail », « repas », « détente », « sommeil » ou « ronde » (gardes, la nuit).
+var activity := "travail"
+var _act_spot := Vector3.INF
+var _act_stuck := 0.0
+## Temps de marche vers le lieu de l'activité (au-delà de 9 s, on y arrive quand même).
+var _act_walk := 0.0
+var _act_anim := 0.0
+var _sleeping := false
+var _patrol_i := 0
+var _bubble: Label3D
+var _bubble_left := 0.0
+const ACTIVITY_NAMES := {"travail": "", "repas": "mange", "détente": "se détend", "sommeil": "dort", "ronde": "fait sa ronde"}
 const JOB_NAMES := {"forgeron": "Forgeron", "boulanger": "Boulanger", "garde": "Garde", "fermier": "Fermier",
 	"bucheron": "Bûcheron", "macon": "Maçon", "verrier": "Verrier", "aubergiste": "Aubergiste", "marchand": "Marchand",
 	"erudit": "Érudit", "pretre": "Prêtre", "mage": "Mage", "tisserand": "Tisserand"}
@@ -96,6 +112,14 @@ func _ready() -> void:
 	_pause = randf_range(0.0, max_pause)
 	facing = Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
 	set_race(race)
+	_bubble = Label3D.new()
+	_bubble.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_bubble.font_size = 56
+	_bubble.pixel_size = 0.008
+	_bubble.outline_size = 10
+	_bubble.position.y = 2.35
+	_bubble.visible = false
+	add_child(_bubble)
 
 
 func set_race(new_race: RaceData) -> void:
@@ -233,11 +257,22 @@ func _physics_process(delta: float) -> void:
 		_threat_timer = 0.4
 		_update_threat()
 	if _threat:
+		if _sleeping:
+			_wake()
 		_fight_or_flee(delta)
 		return
 	if companion and _follow_step(delta):
 		_update_label()
 		return
+	# vie quotidienne : repas, détente, sommeil (et rondes des gardes la nuit)
+	var act := routine_activity()
+	if act != activity:
+		_start_activity(act)
+	if act != "travail" and _routine_step(delta):
+		_update_label()
+		return
+	if _sleeping:
+		_wake()
 	if work_room != null and _work_step(delta):
 		_update_label()
 		return
@@ -280,6 +315,210 @@ func _physics_process(delta: float) -> void:
 		_fetch = null
 	visual.animate(delta, velocity, facing)
 	_update_label()
+
+
+# ---------------------------------------------------------------- vie quotidienne
+
+## Activité selon l'heure : travail 6 h - 12 h et 13 h - 18 h, repas 12 h - 13 h, détente 18 h - 21 h,
+## sommeil 21 h - 6 h (les gardes font leur ronde).
+func routine_activity() -> String:
+	var dc := get_tree().get_first_node_in_group("day_cycle")
+	if dc == null or stranger or companion:
+		return "travail"
+	var h: float = dc.hour
+	if h >= 21.0 or h < 6.0:
+		return "ronde" if is_guard() else "sommeil"
+	if h >= 12.0 and h < 13.0:
+		return "repas"
+	if h >= 18.0:
+		return "détente"
+	return "travail"
+
+
+func is_guard() -> bool:
+	return work_room != null and work_room.type != null and (work_room.type as RoomTypeData).job_id == "garde"
+
+
+func _start_activity(act: String) -> void:
+	activity = act
+	if _bubble:
+		_bubble.visible = false
+	_act_spot = _pick_spot(act)
+	_act_stuck = 0.0
+	_act_walk = 0.0
+	_path.clear()
+	_repath = 0.0
+	if act != "sommeil" and _sleeping:
+		_wake()
+
+
+## Où aller pour cette activité.
+func _pick_spot(act: String) -> Vector3:
+	if _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+		if _world == null:
+			return Vector3.INF
+	var center := _world.cell_center(_world.spawn_cell)
+	var seed := float(hash(villager_name) % 1000) / 1000.0
+	match act:
+		"sommeil":
+			if bed_spot != Vector3.INF:
+				return bed_spot
+			# pas de lit : par terre, près du feu
+			var a := seed * TAU
+			return _ground(center + Vector3(cos(a), 0, sin(a)) * 3.0)
+		"repas":
+			var r := _room_spot(["taverne"])
+			if r != Vector3.INF:
+				return r
+			var a := seed * TAU
+			return _ground(center + Vector3(cos(a), 0, sin(a)) * 2.3)
+		"détente":
+			var r := _room_spot(["taverne", "temple", "marche", "bibliotheque"])
+			if r != Vector3.INF and randf() < 0.7:
+				return r
+			var a := randf() * TAU
+			return _ground(center + Vector3(cos(a), 0, sin(a)) * randf_range(2.5, 4.5))
+		"ronde":
+			return center
+	return Vector3.INF
+
+
+func _ground(p: Vector3) -> Vector3:
+	p.y = _world.ground_height_at(p + Vector3(0, 3, 0))
+	return p
+
+
+## Une case libre d'une pièce du royaume de l'un de ces types (INF s'il n'y en a pas).
+func _room_spot(types: Array) -> Vector3:
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k == null:
+		return Vector3.INF
+	var rooms := k.typed_rooms().filter(func(r): return (r.type as RoomTypeData).id in types)
+	if rooms.is_empty():
+		return Vector3.INF
+	var r: Dictionary = rooms[randi() % rooms.size()]
+	var cells: Array = r.cells.keys()
+	for i in 6:
+		var c: Vector2i = cells[randi() % cells.size()]
+		if _world.build.furniture_in(c).is_empty():
+			return Vector3(c.x + 0.5, float(r.floor), c.y + 0.5)
+	return Vector3.INF
+
+
+## Va vers le lieu de l'activité, puis la fait (mange, se détend, dort). Faux si impossible.
+func _routine_step(delta: float) -> bool:
+	if _act_spot == Vector3.INF:
+		return false
+	var dest := _act_spot
+	if activity == "ronde":
+		var center := _act_spot
+		var a := TAU * float(_patrol_i % 4) / 4.0 + 0.4
+		dest = _ground(center + Vector3(cos(a), 0, sin(a)) * 9.0)
+	var to := dest - global_position
+	to.y = 0.0
+	# un lit (meuble plein) : on s'arrête à côté, puis on s'y couche
+	var reach := 1.3 if activity == "sommeil" and bed_kind == "lit" else (1.6 if activity == "sommeil" and bed_kind == "cabane" else 0.45)
+	if _sleeping:
+		velocity = Vector3.ZERO
+		_bubble_tick(delta, "Zzz", Color("b8c8ff"))
+		visual.animate(delta, Vector3.ZERO, facing)
+		return true
+	if to.length() > reach:
+		if activity == "ronde" and to.length() < 1.0:
+			_patrol_i += 1
+		var before := global_position
+		_path_move(dest, delta, walk_speed * 1.25 * (race.speed_multiplier if race else 1.0))
+		_act_walk += delta
+		if global_position.distance_to(before) < walk_speed * delta * 0.2:
+			_act_stuck += delta
+		else:
+			_act_stuck = 0.0
+		# coincé contre un mur ou trop long : il y arrive quand même (les habitants connaissent les raccourcis)
+		if _act_stuck > 3.0 or (_act_walk > 9.0 and activity != "ronde"):
+			global_position = dest
+			_act_stuck = 0.0
+			_act_walk = 0.0
+		elif activity == "ronde" and _act_walk > 9.0:
+			_patrol_i += 1
+			_act_walk = 0.0
+		return true
+	if activity == "ronde":
+		_patrol_i += 1
+		_bubble.visible = false
+		return true
+	velocity = Vector3.ZERO
+	match activity:
+		"sommeil":
+			_sleep()
+		"repas":
+			_face_center()
+			_act_anim -= delta
+			if _act_anim <= 0.0:
+				_act_anim = randf_range(2.0, 3.5)
+				visual.play_move("punch_1", 0.45)
+				_show_bubble("♨", Color("f0c080"), 1.2)
+		"détente":
+			_face_center()
+			_act_anim -= delta
+			if _act_anim <= 0.0:
+				_act_anim = randf_range(3.0, 6.0)
+				_show_bubble(["♪", "♫", "…", "!"][randi() % 4], Color("fff0a0"), 1.5)
+	_move_on_ground(delta)
+	visual.animate(delta, velocity, facing)
+	_bubble_tick(delta, "", Color.WHITE)
+	return true
+
+
+func _face_center() -> void:
+	var center := _world.cell_center(_world.spawn_cell)
+	var d := center - global_position
+	d.y = 0.0
+	if d.length() > 0.1:
+		facing = d.normalized()
+
+
+## S'endort : dans une cabane on disparaît à l'intérieur, sur un lit on s'allonge, sinon par terre.
+func _sleep() -> void:
+	_sleeping = true
+	_at_work = false
+	if bed_kind == "cabane":
+		visual.visible = false
+	else:
+		if bed_kind == "lit":
+			global_position = bed_spot
+		visual.set_downed(true)
+	_show_bubble("Zzz", Color("b8c8ff"), 999.0)
+
+
+func _wake() -> void:
+	_sleeping = false
+	visual.visible = true
+	visual.set_downed(false)
+	_bubble.visible = false
+	if bed_kind == "lit" and _world:
+		# on se relève à côté du lit
+		global_position = _world.constrain_move(global_position, global_position + Vector3(0.9, 0, 0))
+
+
+func is_sleeping() -> bool:
+	return _sleeping
+
+
+func _show_bubble(text: String, col: Color, seconds: float) -> void:
+	_bubble.text = text
+	_bubble.modulate = col
+	_bubble.visible = true
+	_bubble_left = seconds
+
+
+func _bubble_tick(delta: float, _text: String, _col: Color) -> void:
+	if _bubble_left > 0.0 and _bubble_left < 900.0:
+		_bubble_left -= delta
+		if _bubble_left <= 0.0:
+			_bubble.visible = false
+	if _bubble.visible:
+		_bubble.position.y = 2.35 + sin(Time.get_ticks_msec() * 0.003) * 0.06
 
 
 ## Vrai quand l'habitant est à son poste (la pièce produit).
@@ -667,6 +906,9 @@ func _update_label() -> void:
 			var mood := VillageNeeds.mood_name(happiness)
 			if not mood_reasons.is_empty():
 				mood += " : " + ", ".join(PackedStringArray(mood_reasons))
+			var doing: String = ACTIVITY_NAMES.get(activity, "")
+			if doing != "":
+				mood += " · " + doing
 			label.text = "%s (%s)%s\n%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job, mood]
 			label.modulate = VillageNeeds.mood_color(happiness).lerp(Color.WHITE, 0.35)
 

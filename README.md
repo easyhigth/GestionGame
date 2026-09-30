@@ -113,6 +113,13 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Le guide a un 3e chapitre, « Le village » : remplir la réserve, un lit pour chaque habitant, un village heureux.
 - Code : `scripts/kingdom/village_needs.gd`, `scenes/ui/kingdom_panel.gd`.
 
+## Vie quotidienne des habitants
+- **Emploi du temps** (selon l'horloge du jeu) : travail 6 h - 12 h et 13 h - 18 h ; **repas** 12 h - 13 h (à la taverne, sinon en cercle autour du feu de camp) ; **détente** 18 h - 21 h (taverne, temple, marché, bibliothèque, ou la place du village) ; **sommeil** 21 h - 6 h.
+- **Sommeil** : chacun a sa place (panneau du royaume) : un lit dans une maison ou un dortoir (il s'y allonge), une place dans une cabane du village (il rentre à l'intérieur), ou par terre près du feu s'il n'a pas de lit. Dormir dans un vrai lit rend plus heureux (+15 au lieu de +10).
+- **Gardes** (poste au camp d'entraînement) : la nuit, ils font leur ronde autour du village au lieu de dormir.
+- **Bulles** au-dessus des têtes : « Zzz » (dort), « ♨ » (mange), « ♪ ♫ … ! » (se détend). L'étiquette et le panneau du royaume disent aussi ce que fait chacun et où il dort.
+- La nuit et pendant les repas, les ateliers ne produisent pas et les chantiers s'arrêtent. Un habitant menacé se réveille pour se défendre ou fuir.
+
 ## Sons et musique
 - **Bruitages** : coups d'épée et impacts (plus forts pour un coup critique), garde, parade, roulade, dégâts reçus, monstre vaincu, défaite du héros, pas (herbe, pierre, bois, sable), coupe du bois, coups de pioche, blocs cassés et posés, creusage, objets ramassés, niveau gagné, talent appris, sorts, cri du boss en 2e phase, cor du raid, tombée de la nuit, lever du jour, sommeil, artisanat, porte, boutons et fenêtres. Les bruits du monde sont en 3D (plus faibles de loin).
 - **Ambiances** : oiseaux et vent le jour, grillons la nuit, crépitement du feu de camp en s'approchant.

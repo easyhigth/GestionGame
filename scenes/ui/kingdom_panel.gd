@@ -18,7 +18,7 @@ func _ready() -> void:
 	dim.color = Color(0, 0, 0, 0.55)
 	add_child(dim)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_box = MenuKit.panel(self, 640)
+	_box = MenuKit.panel(self, 700)
 
 
 func open() -> void:
@@ -87,7 +87,7 @@ func _refresh() -> void:
 	var sep := MenuKit.label("Habitants", 14, MenuKit.C_GOLD)
 	_box.add_child(sep)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(600, 170)
+	scroll.custom_minimum_size = Vector2(660, 170)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_box.add_child(scroll)
 	_list = VBoxContainer.new()
@@ -102,19 +102,24 @@ func _refresh() -> void:
 		if v.work_room != null and v.work_room.type:
 			job = (v.work_room.type as RoomTypeData).job_name
 		var name_l := MenuKit.label("%s (%s)" % [v.villager_name, v.race.display_name if v.race else "?"], 12)
-		name_l.custom_minimum_size.x = 190
+		name_l.custom_minimum_size.x = 165
 		h.add_child(name_l)
-		var job_l := MenuKit.label(job, 11, MenuKit.C_DIM)
-		job_l.custom_minimum_size.x = 110
+		var doing: String = v.ACTIVITY_NAMES.get(v.activity, "")
+		var job_l := MenuKit.label(job + ((" · " + doing) if doing != "" else ""), 11, MenuKit.C_DIM)
+		job_l.custom_minimum_size.x = 140
 		h.add_child(job_l)
+		var bed_l := MenuKit.label({"lit": "Lit", "cabane": "Cabane"}.get(v.bed_kind, "Par terre"), 11,
+			MenuKit.C_OK if v.bed_kind == "lit" else (MenuKit.C_TEXT if v.bed_kind == "cabane" else MenuKit.C_BAD))
+		bed_l.custom_minimum_size.x = 64
+		h.add_child(bed_l)
 		var bar_bg := ColorRect.new()
 		bar_bg.color = Color(0, 0, 0, 0.5)
-		bar_bg.custom_minimum_size = Vector2(80, 8)
+		bar_bg.custom_minimum_size = Vector2(60, 8)
 		bar_bg.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		h.add_child(bar_bg)
 		var bar := ColorRect.new()
 		bar.color = VillageNeeds.mood_color(v.happiness)
-		bar.size = Vector2(80.0 * v.happiness / 100.0, 8)
+		bar.size = Vector2(60.0 * v.happiness / 100.0, 8)
 		bar_bg.add_child(bar)
 		var mood := VillageNeeds.mood_name(v.happiness)
 		if not v.mood_reasons.is_empty():
