@@ -14,7 +14,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Clic molette maintenu + glisser (joystick droit) : tourner la caméra à 360° autour du héros et changer sa hauteur ; molette : zoom
 - Clic molette simple, F, L ou gâchette gauche : viser la cible la plus proche
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage ; frapper un arbre, un rocher, un buisson ou un décor du village le récolte
-- G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux)
+- G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux) ; dans l'eau : plonger (Espace : remonter)
 - H (LB + croix haut à la manette) : manger ; cliquer sur une nourriture dans le sac la mange aussi
 - C / X (LB + croix gauche/droite à la manette) : choisir un bloc, un meuble, des graines ou la houe du sac ; V (L3) : le poser, semer ou labourer devant soi
 - Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
@@ -132,6 +132,14 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Petits** : chaque matin, une espèce qui a au moins un couple dans l'enclos a un petit (s'il y a assez de nourriture en réserve), qui grandit en un jour. 6 bêtes au plus par espèce.
 - **Recettes** : omelette (2 œufs), fromage (2 laits), gâteau (2 blés, 1 lait, 2 œufs) près du feu ; **manteau de laine** (4 laines, 1 cuir, établi) : une armure de torse qui tient chaud dans la neige.
 - Le royaume (U) résume l'élevage ; le guide a un 6e chapitre « L'élevage ». Les bêtes de l'enclos sont sauvegardées. Réglages : `scripts/world/farm_animal.gd` (`SPECIES` : nourriture, produit, fréquence, consommation) et `scripts/kingdom/livestock.gd` (bêtes sauvages par région, petits).
+
+## Nage, grottes sous-marines et pêche
+- **Nager** : le héros entre dans l'eau. Là où elle est profonde, il nage, la tête hors de l'eau (plus lentement). **G** (gâchette droite) pour plonger, **Espace** (A) pour remonter ; sans rien toucher, il reste à sa profondeur. On ressort sur une berge basse. Les mers et les grands lacs sont plus profonds au large (jusqu'à 6 m).
+- **Souffle** : sous l'eau, une jauge « Souffle » apparaît (15 s) et l'écran se teinte de bleu ; à zéro, on se noie petit à petit. On reprend son souffle à la surface.
+- **Grottes sous-marines** : au fond des eaux profondes, des rochers, des cristaux bleus et une colonne de bulles marquent l'entrée d'une grotte. Plonge jusqu'à elle et appuie sur **E** : une grotte inondée (salles et galeries, algues, cristaux) avec des **coffres engloutis** (perles, or, parfois un lingot d'or ou une pièce d'équipement rare) et des **poches d'air** pour respirer. E devant l'anneau de sortie : on remonte au-dessus de l'entrée. Les coffres ouverts sont sauvegardés.
+- **Pêche** : fabrique une **canne à pêche** (3 bois, 2 fibres, Outils), choisis-la avec C et appuie sur **V face à l'eau** pour lancer. Quand ça mord (« ! »), V ; puis V quand le curseur est dans la **zone verte** (deux essais). Les gros poissons ont une zone plus petite et un curseur plus rapide. La pluie les fait mordre plus vite.
+- **Poissons** selon la région et la profondeur : gardon, truite, carpe, brochet, anguille, saumon, omble, poisson-scorpion (désert), poisson de lave (volcan), poisson-lune (bois enchanté) ; en eau profonde, parfois une **perle** (et parfois une vieille botte...). Se mangent crus, ou en **poisson grillé** près du feu ; les rares se vendent cher au marchand.
+- Le guide a un 7e chapitre « L'eau ». Réglages : `scripts/world/fishing.gd` (liste `FISH`), `scripts/dungeon/underwater_caves.gd`, et dans `scenes/player/player.gd` : `BREATH_MAX`, `SWIM_SPEED`.
 
 ## Commerce
 - Un **marchand ambulant** arrive au village avec sa charrette tous les **3 jours** (le premier le jour 2), à 8 h, et repart le lendemain matin. Son arrivée est annoncée (cor) ; « Marchand au village » s'affiche sous l'horloge, et le royaume (**U**) dit quand il repasse.
@@ -299,6 +307,6 @@ Choix de conception :
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville : voyageurs et prisonniers à recruter, 2 compagnons, raids de pillards qui assiègent le village. **(fait)**
 7. Sauvegarde, menus, équilibrage : écran titre, menu pause, 3 emplacements + sauvegarde automatique, options, 3 niveaux de difficulté, réglage des boss. **(fait)**
 
-Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : pêche et nage, personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
+Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
 
 Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la Going Medieval (plans bâtis par les habitants), **arbre de talents du héros** (27 talents, 15 nouvelles attaques et nouveaux sorts).

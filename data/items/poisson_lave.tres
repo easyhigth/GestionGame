@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "poisson_lave"
+display_name = "Poisson de lave"
+description = "Il nage dans la lave du volcan et reste brûlant. Très recherché. Se mange cru (H) ou grillé près du feu."
+max_stack = 20
+food = 10.0
+food_heal = 6
+food_cooked = false
+rarity = 2

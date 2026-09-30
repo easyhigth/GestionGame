@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/canne_peche.tres" id="result"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="wood"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="fiber"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("result")
+result_count = 1
+ingredients = Array[ExtResource("2")]([ExtResource("wood"), ExtResource("fiber")])
+amounts = PackedInt32Array(3, 2)
+category = "Outils"

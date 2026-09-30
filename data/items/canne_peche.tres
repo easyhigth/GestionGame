@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "canne_peche"
+display_name = "Canne à pêche"
+description = "Choisis-la (C) et appuie sur V face à l'eau pour lancer. Quand ça mord, V ; puis V quand le curseur est dans le vert."
+max_stack = 1

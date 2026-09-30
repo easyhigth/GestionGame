@@ -520,7 +520,8 @@ func _gen_chunk_data(ch: Vector2i) -> void:
 func _terrain_height(t: int, h: float) -> float:
 	match t:
 		DEEP:
-			return -1.5
+			# plus on s'éloigne du rivage, plus c'est profond (jusqu'à 6 m) : on peut y plonger
+			return -1.5 - floorf(clampf((deep_water_level - h) * 30.0, 0.0, 9.0)) * 0.5
 		WATER:
 			return -0.75
 		SAND:
@@ -760,19 +761,20 @@ func is_walkable(pos: Vector3) -> bool:
 
 ## Empêche d'entrer dans l'eau, de monter une marche trop haute ou de traverser un mur.
 ## Glisse le long de l'obstacle si possible.
-func constrain_move(from: Vector3, to: Vector3) -> Vector3:
-	if _can_step(from, to):
+## `swim` : on peut entrer dans l'eau (le héros sait nager).
+func constrain_move(from: Vector3, to: Vector3, swim := false) -> Vector3:
+	if _can_step(from, to, swim):
 		return to
 	var only_x := Vector3(to.x, to.y, from.z)
-	if _can_step(from, only_x):
+	if _can_step(from, only_x, swim):
 		return only_x
 	var only_z := Vector3(from.x, to.y, to.z)
-	if _can_step(from, only_z):
+	if _can_step(from, only_z, swim):
 		return only_z
 	return Vector3(from.x, to.y, from.z)
 
 
-func _can_step(from: Vector3, to: Vector3) -> bool:
+func _can_step(from: Vector3, to: Vector3, swim := false) -> bool:
 	var dir := Vector3(to.x - from.x, 0, to.z - from.z)
 	var probe := to
 	if dir.length_squared() > 0.000001:
@@ -783,13 +785,13 @@ func _can_step(from: Vector3, to: Vector3) -> bool:
 		var cell := cell_at(p)
 		if not _inside(cell):
 			return false
-		if not step_ok(cell, h_from):
+		if not step_ok(cell, h_from, swim):
 			return false
 	return true
 
 
 ## Peut-on aller sur la case `cell` en partant d'une hauteur `h_from` ?
-func step_ok(cell: Vector2i, h_from: float) -> bool:
+func step_ok(cell: Vector2i, h_from: float, swim := false) -> bool:
 	if h_from < UNDERGROUND:
 		if dungeon_grid == null:
 			return false
@@ -798,7 +800,7 @@ func step_ok(cell: Vector2i, h_from: float) -> bool:
 	var hs := support_height(Vector3(cell.x + 0.5, 0, cell.y + 0.5), h_from)
 	var t := _type(cell)
 	if (t == WATER or t == DEEP) and hs <= water_surface + 0.01:
-		return false
+		return swim
 	if hs - h_from > max_step:
 		return false
 	if build and build.body_blocked(cell, hs):
@@ -1087,7 +1089,7 @@ func _top_color(cell: Vector2i) -> Color:
 	var c: Color
 	match t:
 		DEEP, WATER:
-			c = _zone_color(cell, &"water_floor_color", water_floor_color).darkened(0.25 if t == DEEP else 0.0)
+			c = _zone_color(cell, &"water_floor_color", water_floor_color).darkened(0.0 if t == WATER else clampf(0.25 + (-1.5 - _h(cell)) * 0.08, 0.25, 0.6))
 		SAND:
 			c = _zone_color(cell, &"sand_color", sand_color)
 		STONE:

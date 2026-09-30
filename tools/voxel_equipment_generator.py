@@ -140,6 +140,15 @@ def _hand_hoe(e, head):
 
 
 def houe(e): _hand_hoe(e, 0x8a8a86)
+
+
+def canne_peche(e):
+    """Canne à pêche tenue dans HandL : long bâton fin, moulinet, fil."""
+    h = e['hand_l']
+    V(1.0, 30, 1.0, WOOD, 0, 11, 0, h)
+    V(0.7, 12, 0.7, 0xc8a070, 0, 32, 0, h)
+    V(2.4, 2.4, 1.4, 0x6a6e76, 0.9, 3, 0, h)
+    V(1.2, 1.2, 1.8, 0x3a3e46, 1.9, 3, 0, h)
 def hache_bois(e): _hand_axe(e, 0xa87848, 0xc89868)
 def hache_pierre(e): _hand_axe(e, 0x8a8a86, 0xb8b8b2)
 def pioche_bois(e): _hand_pick(e, 0xa87848, 0xc89868)
@@ -388,7 +397,7 @@ ITEMS = {
     'cape_red': lambda e: cape(e, CLOTH_R), 'cape_blue': lambda e: cape(e, CLOTH_B),
     # outils (tenus en main quand le héros récolte)
     'hache_bois': hache_bois, 'hache_pierre': hache_pierre, 'pioche_bois': pioche_bois, 'pioche_pierre': pioche_pierre,
-    'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe, 'manteau_laine': manteau_laine,
+    'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe, 'manteau_laine': manteau_laine, 'canne_peche': canne_peche,
 }
 
 
@@ -641,8 +650,72 @@ def m_gateau():
     return g
 
 
+def _fish(name, body, belly, fin, length=14, height=6, glow=False):
+    g = Node(name)
+    Vf = VG if glow else V
+    Vf(length, height, 4, body, 0, height / 2 + 0.5, 0, g)
+    V(length - 2, height * 0.35, 4.2, belly, 0, 1.4, 0, g)
+    V(3, height + 2, 1.2, fin, -length / 2 - 1.2, height / 2 + 0.5, 0, g)           # queue
+    V(4, 1.6, 1, fin, -1, height + 1.2, 0, g)                                     # nageoire
+    for s in (-1, 1):
+        V(1.2, 1.2, 0.4, 0x1a1414, length / 2 - 2.4, height * 0.62 + 0.5, s * 2.1, g)
+    return g
+
+
+def m_gardon(): return _fish('gardon', 0xb8c0c8, 0xe8ecf0, 0xd05a3a)
+def m_truite(): return _fish('truite', 0x7a9a6a, 0xe8d0b0, 0x5a7a4a)
+def m_brochet(): return _fish('brochet', 0x5a7a3a, 0xd8d8a0, 0x4a6a2a, 20, 6)
+def m_carpe(): return _fish('carpe', 0xc89a3a, 0xf0d890, 0xa87a2a, 15, 8)
+def m_anguille(): return _fish('anguille', 0x3a4a3a, 0x8a9a6a, 0x2a3a2a, 22, 3)
+def m_saumon(): return _fish('saumon', 0x9aa4b0, 0xf08a6a, 0x6a7480, 17, 7)
+def m_omble(): return _fish('omble', 0x4a6a7a, 0xf0a060, 0x3a5a6a, 15, 6)
+def m_poisson_scorpion(): return _fish('poisson_scorpion', 0xc8502a, 0xf0c8a0, 0x8a2a1a, 13, 7)
+def m_poisson_lave(): return _fish('poisson_lave', 0xff6a1a, 0xffd040, 0x3a1a10, 14, 6, True)
+def m_poisson_lune(): return _fish('poisson_lune', 0xb8d8ff, 0xf4f8ff, 0x8aa8ff, 12, 9, True)
+
+
+def m_poisson_grille():
+    g = Node('poisson_grille')
+    V(18, 1.2, 12, 0xe8e0d0, 0, 0.6, 0, g)
+    V(14, 4, 5, 0xa8642a, 0, 3.2, 0, g)
+    V(12, 1.4, 4, 0x6a3a1a, 0, 5.4, 0, g)
+    V(3, 5, 1.2, 0x7a4a2a, -8, 3.4, 0, g)
+    V(2, 0.8, 2, 0xf0d060, 5, 5.6, 1.5, g)
+    return g
+
+
+def m_perle():
+    g = Node('perle')
+    V(10, 2.4, 9, 0x8a8a9a, 0, 1.2, 0, g)          # coquille
+    V(9, 2, 8, 0xc8c8d8, -1, 4.4, -2, g, rx=-0.6)
+    VG(3.4, 3.4, 3.4, 0xf8f4ff, 0, 3.4, 1, g)
+    return g
+
+
+def m_vieille_botte():
+    g = Node('vieille_botte')
+    V(6, 12, 6, 0x5a3a24, 0, 6, 0, g)
+    V(6, 4, 11, 0x4a2e1c, 0, 2, 2.5, g)
+    V(6.4, 1.2, 11.4, 0x2a1a10, 0, 0.6, 2.5, g)
+    V(2, 2, 1, 0x3a6a2a, 2, 10, 3.1, g)
+    return g
+
+
+def m_canne_peche():
+    g = Node('canne_peche')
+    V(1.2, 26, 1.2, WOOD, 0, 13, 0, g, rz=0.35)
+    V(2.6, 2.6, 1.6, 0x6a6e76, 1.8, 4, 0, g)
+    V(0.3, 14, 0.3, 0xe8e8e0, -7, 18, 0, g)
+    V(1.6, 1.6, 1.6, 0xd83a2a, -7, 10.5, 0, g)
+    return g
+
+
+FISH = [m_gardon, m_truite, m_brochet, m_carpe, m_anguille, m_saumon, m_omble, m_poisson_scorpion, m_poisson_lave,
+        m_poisson_lune, m_poisson_grille, m_perle, m_vieille_botte, m_canne_peche]
+
+
 FARM = [m_houe, m_graines_ble, m_ble, m_carotte, m_pomme_de_terre, m_pomme_de_terre_cuite, m_soupe_legumes,
-        m_oeuf, m_lait, m_laine, m_omelette, m_fromage, m_gateau]
+        m_oeuf, m_lait, m_laine, m_omelette, m_fromage, m_gateau] + FISH
 
 
 MATERIALS = [m_baies, m_viande_crue, m_viande_cuite, m_ragout, m_pain, m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,

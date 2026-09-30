@@ -37,9 +37,13 @@ const STEPS := [
 	["mangeoire", "Fabrique et pose une mangeoire", "Près d'un établi : 2 bois et 2 fibres (Artisanat → Mobilier). Pose-la avec V là où sera l'enclos ; des barrières le fermeront.", 1],
 	["apprivoiser", "Mène une bête à la mangeoire", "Poules : graines de blé en main (C). Moutons et vaches : du blé. Elles te suivent : amène-les près de la mangeoire.", 1],
 	["produits", "Obtiens 3 produits de tes bêtes", "Œufs, laine, lait apparaissent près des bêtes nourries par la réserve du village. Un fermier à la grange les ramasse.", 3],
+	# chapitre 7 : l'eau
+	["canne", "Fabrique une canne à pêche", "Inventaire (I) → Artisanat → Outils : 3 bois et 2 fibres.", 1],
+	["pecher", "Pêche 3 poissons", "Canne en main (C), V face à l'eau pour lancer. Quand ça mord : V, puis V quand le curseur est dans le vert.", 3],
+	["grotte", "Ouvre un coffre englouti", "Nage (entre dans l'eau), plonge avec G et remonte avec Espace. Au fond des eaux profondes, des cristaux bleus marquent l'entrée d'une grotte (E).", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26]]
+const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26], ["L'EAU", 26, 29]]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
 const VERSION := 2
 
@@ -105,6 +109,7 @@ func _ready() -> void:
 				_advance("repas"))
 	_connect_trade.call_deferred()
 	_connect_livestock.call_deferred()
+	_connect_water.call_deferred()
 	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
 	if dc:
 		_connect_day(dc)
@@ -134,6 +139,21 @@ func _connect_livestock() -> void:
 		return
 	if not ls.produced.is_connected(_on_produced):
 		ls.produced.connect(_on_produced)
+
+
+func _connect_water() -> void:
+	var fi := get_tree().get_first_node_in_group("fishing") as Fishing
+	var cv := get_tree().get_first_node_in_group("caves") as UnderwaterCaves
+	if fi == null or cv == null:
+		get_tree().create_timer(0.5).timeout.connect(_connect_water)
+		return
+	if not fi.caught.is_connected(_on_caught):
+		fi.caught.connect(_on_caught)
+		cv.chest_opened.connect(func(_id): _advance("grotte"))
+
+
+func _on_caught(_id: String) -> void:
+	_advance("pecher")
 
 
 func _on_produced(_id: String) -> void:
@@ -265,6 +285,10 @@ func _check_state() -> void:
 			var ls := get_tree().get_first_node_in_group("livestock") as Livestock
 			if ls and not ls.domestic().is_empty():
 				_advance("apprivoiser")
+		"canne":
+			var rod := Items.get_item("canne_peche")
+			if rod and player.inventory.count(rod) > 0:
+				_advance("canne")
 		"houe":
 			var hoe := Items.get_item("houe")
 			if hoe and player.inventory.count(hoe) > 0:
