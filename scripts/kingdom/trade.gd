@@ -314,13 +314,21 @@ func _recipe_of(it: ItemData) -> RecipeData:
 	return null
 
 
+## Traités de commerce (voir Diplomacy) : meilleurs prix.
+func _dip_mult(buying: bool) -> float:
+	var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy if is_inside_tree() else null
+	if dip == null:
+		return 1.0
+	return dip.buy_mult() if buying else dip.sell_mult()
+
+
 ## Prix d'achat au marchand (pièces d'or).
 func buy_price(it: ItemData) -> int:
 	var v := value_of(it)
 	if v <= 0.0:
 		return 0
 	# toujours plus cher que ce qu'il en donnerait (pas d'achat-revente gagnant)
-	return maxi(sell_price(it, 0) + 1, ceili(v * BUY_MULT * (MARKET_BUY if has_market() else 1.0) * (0.9 if lysandre() else 1.0)))
+	return maxi(sell_price(it, 0) + 1, ceili(v * BUY_MULT * (MARKET_BUY if has_market() else 1.0) * (0.9 if lysandre() else 1.0) * _dip_mult(true)))
 
 
 ## Prix de vente d'un exemplaire au marchand, compte tenu de ce qu'on lui a déjà vendu.
@@ -330,7 +338,7 @@ func sell_price(it: ItemData, already := -1) -> int:
 		return 0
 	var n: int = int(sold_count.get(it.id, 0)) if already < 0 else already
 	var sat := maxf(SATURATION_MIN, 1.0 - SATURATION_STEP * n)
-	var mult := SELL_MULT * (MARKET_SELL if has_market() else 1.0) * (1.1 if lysandre() else 1.0)
+	var mult := SELL_MULT * (MARKET_SELL if has_market() else 1.0) * (1.1 if lysandre() else 1.0) * _dip_mult(false)
 	# les objets de moins d'une demi-pièce ne se vendent pas (planches...)
 	if v * mult < 0.5:
 		return 0

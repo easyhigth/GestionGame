@@ -115,6 +115,10 @@ func _refresh() -> void:
 		_add_foot(_label(head, 13, Color("b8f0a0")))
 		for q in act:
 			_add_foot(_label("   ➤ %s (%s) : %s  ·  %s" % [q.title, Story.NPCS[q.npc].name, q.text, sq.progress_text(q)], 10, MenuKit.C_TEXT))
+	# fin de jeu : la Brume
+	var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
+	if dm and dm.brume_unlocked():
+		_add_foot(_label("Fin de jeu — " + dm.brume_summary(), 13, DungeonManager.BRUME_COLOR))
 	# personnages rencontrés
 	var people := []
 	for id in Story.NPCS:

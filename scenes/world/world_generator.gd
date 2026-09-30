@@ -1785,12 +1785,14 @@ func _add_gate(holder: Node3D, z: Dictionary) -> void:
 	if dungeon_gate_model:
 		body.add_child(dungeon_gate_model.instantiate())
 	var label := Label3D.new()
-	label.text = ("Donjon de %s\nVaincu ✔" if z.get("cleared", false) else "Donjon de %s\nE : entrer") % z.name
+	var dm := get_node_or_null("Donjons") as DungeonManager
+	var gt: Array = dm.gate_text(z) if dm else [("Donjon de %s\nVaincu ✔" if z.get("cleared", false) else "Donjon de %s\nE : entrer") % z.name, Color("b0ffb0") if z.get("cleared", false) else Color("ffb0a0")]
+	label.text = gt[0]
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.font_size = 36
 	label.pixel_size = 0.006
 	label.outline_size = 10
-	label.modulate = Color("b0ffb0") if z.get("cleared", false) else Color("ffb0a0")
+	label.modulate = gt[1]
 	label.position.y = 3.0
 	body.add_child(label)
 	holder.add_child(body)
@@ -1868,7 +1870,7 @@ func export_state() -> Dictionary:
 		taken.append([c.x, c.y])
 	var zs := []
 	for z in zones:
-		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0])
+		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0))])
 	return {
 		"seed": world_seed, "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
 		"removed_props": removed_props.keys(),
@@ -1903,6 +1905,7 @@ func import_state(d: Dictionary) -> void:
 		zones[i].discovered = int(zs[i][0]) == 1
 		zones[i].obelisk_on = int(zs[i][1]) == 1
 		zones[i].cleared = int(zs[i][2]) == 1
+		zones[i].brume = int(zs[i][3]) if (zs[i] as Array).size() > 3 else 0
 	if d.has("revealed"):
 		var raw := Marshalls.base64_to_raw(d.revealed).decompress(_revealed.size(), FileAccess.COMPRESSION_ZSTD)
 		if raw.size() == _revealed.size():

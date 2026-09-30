@@ -34,6 +34,8 @@ var familiar_slot := 0
 var familiar_order := "suivre"
 var familiar_home := Vector3.INF
 var _stuck_time := 0.0
+## Monstre de la Brume (donjons de fin de jeu) : nom « Brumeux », couleur violette.
+var brume := false
 var _stuck_from := Vector3.ZERO
 
 @onready var name_label: Label3D = $Name
@@ -63,14 +65,22 @@ func _apply_data() -> void:
 	for it in data.equipment:
 		equipment.equip(it)
 	health.set_max(roundi(data.max_health * power * (1.0 if tamed else SaveGame.enemy_hp_mult())), true)
-	name_label.text = "%s · Nv %d" % [data.display_name, level]
-	name_label.modulate = data.color
+	name_label.text = _label_base()
+	name_label.modulate = _label_color()
 	if tamed:
 		visual.scale = Vector3.ONE * data.model_scale * Familiars.SCALE[clampi(get_meta("evo", 0), 0, 2)]
 		name_label.text = "✦ %s · %s · Nv %d" % [familiar_name, familiar_title if familiar_title != "" else data.display_name, level]
 		name_label.modulate = Color("b8f0a0")
 	name_label.position.y = 2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale
 	bar.position.y = name_label.position.y - 0.22
+
+
+func _label_base() -> String:
+	return ("Brumeux · " if brume and not has_method("wake") else "") + "%s · Nv %d" % [data.display_name, level]
+
+
+func _label_color() -> Color:
+	return Color("b48cff") if brume else data.color
 
 
 ## Le modèle (celui de son évolution pour un familier évolué : <modèle>_evoN.glb).
@@ -247,13 +257,13 @@ func _choose_target() -> void:
 func _pact_hint(player_dist: float) -> void:
 	if data == null:
 		return
-	var base := "%s · Nv %d" % [data.display_name, level]
+	var base := _label_base()
 	if player_dist < 4.0 and Familiars.can_tame(self):
 		name_label.text = base + "\n[E] Pacte (apprivoiser)"
 		name_label.modulate = Color("d8c0ff")
 	elif name_label.text != base:
 		name_label.text = base
-		name_label.modulate = data.color
+		name_label.modulate = _label_color()
 
 
 func _familiar_process(delta: float, player: Node3D) -> void:

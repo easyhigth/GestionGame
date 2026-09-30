@@ -6,6 +6,12 @@ extends Node3D
 ## Quand le héros entre dans la salle du boss, elle se ferme derrière lui jusqu'à la fin du combat.
 ## Boss vaincu : coffre au trésor, portail de sortie, et le héros absorbe l'âme du boss (bonus permanent).
 ## Le sol du donjon est une grille de blocs (BuildGrid) posée à FLOOR_Y, bien sous le terrain.
+##
+## Fin de jeu, la Brume : une fois l'histoire finie (ou tous les donjons vaincus), les donjons déjà vaincus
+## sont envahis par la Brume. On peut y redescendre, palier après palier (1 à 10) : monstres « brumeux »
+## plus forts, boss « Écho de Brume » et, aux paliers 3, 6, 9 et 10, un Seigneur de Brume légendaire
+## (plus grand, tous les pouvoirs) dont l'âme donne un bonus permanent. Trésors : fragments de Brume,
+## gemmes, larmes d'esprit, orichalque et, sur les Seigneurs, une pièce d'équipement légendaire.
 
 signal entered(zone: Dictionary)
 signal exited(zone: Dictionary)
@@ -23,6 +29,13 @@ const BARREL_MODEL := preload("res://assets/furniture/tonneau.glb")
 const STATUE_MODEL := preload("res://assets/furniture/statue.glb")
 const PORTAL_MODEL := preload("res://assets/environment/models/obelisk.glb")
 const BOSS_SCENE := preload("res://scenes/enemies/boss.tscn")
+const BRUME_MAX := 10
+const BRUME_LORD_TIERS := [3, 6, 9, 10]
+const BRUME_COLOR := Color("b48cff")
+## Âme d'un Seigneur de Brume (une par région et par palier).
+const BRUME_LORD_SOUL := {"attack": 3.0, "defense": 2.0}
+## Équipement légendaire que peut laisser un Seigneur de Brume.
+const BRUME_LORD_LOOT := ["lame_eveil", "lance_draconique", "armure_draconique", "baton_larmes", "cape_brume", "couronne_pactes"]
 
 var world: WorldGenerator
 var player: Player
@@ -43,6 +56,10 @@ var _saved := {}
 var _player_light: OmniLight3D
 var _fade: ColorRect
 var _busy := false
+## Palier de Brume du donjon en cours (0 : donjon normal).
+var brume_tier := 0
+var _brume_known := -1
+var _brume_check := 0.0
 
 
 func _ready() -> void:
@@ -74,6 +91,78 @@ func _find_player() -> void:
 
 func is_inside() -> bool:
 	return active
+
+
+# ---------------------------------------------------------------- la Brume (fin de jeu)
+
+## La Brume est éveillée : histoire finie, ou tous les donjons vaincus.
+func brume_unlocked() -> bool:
+	var st := get_tree().get_first_node_in_group("story") as Story
+	if st and st.is_done():
+		return true
+	if world == null:
+		return false
+	var gates := 0
+	for z in world.zones:
+		if (z.gate as Vector2i).x < 0:
+			continue
+		gates += 1
+		if not z.get("cleared", false):
+			return false
+	return gates > 0
+
+
+## Palier de Brume qui attend dans ce donjon (0 : donjon normal).
+func next_tier(z: Dictionary) -> int:
+	if not z.get("cleared", false) or not brume_unlocked():
+		return 0
+	return mini(int(z.get("brume", 0)) + 1, BRUME_MAX)
+
+
+static func is_lord_tier(t: int) -> bool:
+	return BRUME_LORD_TIERS.has(t)
+
+
+## Texte et couleur de l'étiquette au-dessus de l'entrée.
+func gate_text(z: Dictionary) -> Array:
+	if not z.get("cleared", false):
+		return ["Donjon de %s\nE : entrer" % z.name, Color("ffb0a0")]
+	var t := next_tier(z)
+	if t > 0:
+		return ["Donjon de %s\nBrume : palier %d%s\nE : entrer" % [z.name, t, "  ★ Seigneur" if is_lord_tier(t) else ""], BRUME_COLOR]
+	return ["Donjon de %s\nVaincu ✔" % z.name, Color("b0ffb0")]
+
+
+## Résumé pour le journal.
+func brume_summary() -> String:
+	var best := 0
+	if world:
+		for z in world.zones:
+			best = maxi(best, int(z.get("brume", 0)))
+	var lords := 0
+	if player:
+		lords = player.souls.keys().filter(func(k): return str(k).begins_with("brume_")).size()
+	return "La Brume : palier %d / %d franchi au plus haut  ·  %d Seigneur%s de Brume vaincu%s" % [best, BRUME_MAX, lords, "s" if lords > 1 else "", "s" if lords > 1 else ""]
+
+
+func _check_brume() -> void:
+	_find_player()
+	var u := brume_unlocked()
+	if _brume_known == 0 and u:
+		if player:
+			player.feat.emit("La Brume s'éveille !", BRUME_COLOR)
+			player.notify.emit("Les donjons vaincus sont envahis par la Brume : redescends-y pour des paliers plus durs et des Seigneurs légendaires.")
+		if world:
+			for z in world.zones:
+				if z.get("cleared", false) and (z.gate as Vector2i).x >= 0:
+					world.refresh_content(z.gate)
+	_brume_known = 1 if u else 0
+
+
+## Un monstre du donjon devient « brumeux ».
+func _brumify(n: Node) -> void:
+	if n is Enemy:
+		(n as Enemy).brume = true
 
 
 # ---------------------------------------------------------------- interaction (E)
@@ -153,7 +242,11 @@ func leave(instant := false) -> void:
 	tw.tween_property(_fade, "color:a", 0.0, 0.5)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_brume_check -= delta
+	if _brume_check <= 0.0:
+		_brume_check = 2.0
+		_check_brume()
 	if not active or player == null:
 		return
 	# mort dans le donjon : le héros s'est réveillé au village
@@ -173,6 +266,7 @@ func _process(_delta: float) -> void:
 
 func _build(z: Dictionary) -> void:
 	zone = z
+	brume_tier = next_tier(z)
 	active = true
 	_boss_state = 0
 	_sealed.clear()
@@ -336,6 +430,8 @@ func _label(parent: Node3D, text: String, y: float, col: Color) -> Label3D:
 
 func _decorate(rng: RandomNumberGenerator, r: RegionData) -> void:
 	var light_col := r.dungeon_light if r else Color(1, 0.7, 0.4)
+	if brume_tier > 0:
+		light_col = BRUME_COLOR
 	for room in rooms:
 		# torches dans deux coins opposés
 		for corner in [room.position + Vector2i(1, 1), room.end - Vector2i(2, 2)]:
@@ -376,6 +472,9 @@ func _add_chest(c: Vector2i, boss_chest := false) -> void:
 
 func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void:
 	var lv: Vector2i = z.level
+	# la Brume : +4 niveaux par palier (+4 de plus dès le premier)
+	var up := 4 * brume_tier + (4 if brume_tier > 0 else 0)
+	var lord := is_lord_tier(brume_tier)
 	var middle := rooms.slice(1, rooms.size() - 1)
 	middle.shuffle()
 	var elite_done := false
@@ -384,7 +483,9 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 		var camp := EnemyCamp.new()
 		camp.respawn_time = 1.0e9
 		camp.radius = minf(room.size.x, room.size.y) * 0.3
-		camp.levels = Vector2i(lv.y, lv.y + 1)
+		camp.levels = Vector2i(lv.y + up, lv.y + 1 + up)
+		if brume_tier > 0:
+			camp.child_entered_tree.connect(_brumify)
 		camp.base_level = r.level_range.x if r else 1
 		var pool: Array[EnemyData] = []
 		if r and not elite_done and not r.elite_enemies.is_empty() and i == 0:
@@ -408,12 +509,31 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 	if r and r.boss:
 		boss = BOSS_SCENE.instantiate() as Boss
 		boss.data = r.boss
-		boss.level = lv.y + 2
+		boss.level = lv.y + 2 + up
 		boss.power = 1.0 + 0.09 * maxi(0, boss.level - r.level_range.x)
 		boss.powers = r.boss_powers
 		boss.summons = r.enemies
 		boss.title = r.boss_title
+		if brume_tier > 0:
+			boss.brume = true
+			boss.title = ("Seigneur de Brume" if lord else "Écho de Brume") + " — palier %d" % brume_tier
+			if lord or brume_tier >= 4:
+				var pw := PackedStringArray(r.boss_powers)
+				for p in ["onde", "pluie", "invocation", "charge"]:
+					if not pw.has(p):
+						pw.append(p)
+				boss.powers = pw
+			if lord:
+				boss.power *= 1.5
 		_content.add_child(boss)
+		if lord:
+			boss.visual.scale *= 1.3
+			var aura := OmniLight3D.new()
+			aura.light_color = BRUME_COLOR
+			aura.light_energy = 2.2
+			aura.omni_range = 7.0
+			aura.position.y = 2.0
+			boss.add_child(aura)
 		boss.global_position = _floor_pos(boss_room.get_center())
 		boss.home = boss.global_position
 		boss.facing = Vector3(0, 0, 1)
@@ -486,7 +606,17 @@ func _on_boss_died(_pos: Vector3) -> void:
 	world.refresh_content(zone.gate)
 	var r: RegionData = zone.type
 	var text := ""
-	if r and player:
+	if brume_tier > 0:
+		zone["brume"] = maxi(int(zone.get("brume", 0)), brume_tier)
+		text = "Palier %d de la Brume dissipé" % brume_tier
+		if r and player:
+			if is_lord_tier(brume_tier):
+				var id := "brume_%s_%d" % [r.id, brume_tier]
+				if not player.souls.has(id):
+					player.absorb_soul(id, BRUME_LORD_SOUL)
+					text = "Âme légendaire du Seigneur de Brume : +3 attaque, +2 défense"
+			player.gain_xp(150 + 40 * (zone.level as Vector2i).y + 120 * brume_tier)
+	elif r and player:
 		text = r.boss_soul_name
 		player.absorb_soul(r.id, r.boss_soul)
 		player.gain_xp(150 + 40 * (zone.level as Vector2i).y)
@@ -508,6 +638,10 @@ func _open_chest(it: Dictionary, boss_chest: bool) -> void:
 		var rare_boss := RareDrops.roll_chest("donjon_boss")
 		loot.append_array(rare_boss)
 		RareDrops.announce(get_tree().get_first_node_in_group("player") as Player, rare_boss)
+		if brume_tier > 0:
+			var bl := _brume_loot()
+			loot.append_array(bl)
+			RareDrops.announce(get_tree().get_first_node_in_group("player") as Player, bl)
 	var rare: int = 2 if boss_chest else (1 if randf() < 0.5 else 0)
 	for i in rare:
 		if not world.wild_loot.is_empty():
@@ -522,6 +656,24 @@ func _open_chest(it: Dictionary, boss_chest: bool) -> void:
 		it.label.modulate = Color(0.7, 0.7, 0.7)
 	if player:
 		player.notify.emit("Coffre ouvert : %d objets." % loot.size())
+
+
+## Trésor d'un boss de la Brume : [[ItemData, nombre], ...].
+func _brume_loot() -> Array:
+	var t := brume_tier
+	var out := [[Items.get_item("fragment_brume"), 2 + t]]
+	for i in 1 + t / 3:
+		out.append([Items.get_item(RareDrops.GEM_IDS.pick_random()), 1])
+	if randf() < 0.3 + 0.05 * t:
+		out.append([Items.get_item("larme_esprit"), 1])
+	if randf() < 0.1 + 0.06 * t:
+		out.append([Items.get_item("orichalque"), 1])
+	if is_lord_tier(t):
+		out.append([Items.get_item("orichalque"), 1])
+		out.append([Items.get_item(RareDrops.GEM_IDS.pick_random()), 2])
+		if randf() < 0.5:
+			out.append([Items.get_item(BRUME_LORD_LOOT.pick_random()), 1])
+	return out.filter(func(p): return p[0] != null)
 
 
 # ---------------------------------------------------------------- ambiance
@@ -541,6 +693,8 @@ func _set_lighting(dark: bool, r: RegionData) -> void:
 			_saved["env"] = [env.background_color, env.ambient_light_color, env.ambient_light_energy]
 			env.background_color = Color(0.02, 0.015, 0.03)
 			env.ambient_light_color = (r.dungeon_ambient if r else Color(0.12, 0.1, 0.14)).lightened(0.25)
+			if brume_tier > 0:
+				env.ambient_light_color = env.ambient_light_color.lerp(BRUME_COLOR, 0.45)
 			env.ambient_light_energy = 0.9
 		if player and _player_light == null:
 			_player_light = OmniLight3D.new()
@@ -565,6 +719,7 @@ func _set_lighting(dark: bool, r: RegionData) -> void:
 
 func _cleanup() -> void:
 	active = false
+	brume_tier = 0
 	_set_lighting(false, null)
 	grid.clear()
 	for c in _content.get_children():
