@@ -48,21 +48,12 @@ static func strike(p: Player, reach: float, power: float) -> bool:
 	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
 	if world == null or p.global_position.y < WorldGenerator.UNDERGROUND:
 		return false
-	var fwd := Vector3(p.facing.x, 0, p.facing.z).normalized()
 	var w := p.weapon()
 	var wid: String = w.id if w else ""
+	var t := find_target(p, reach)
 	# 1) décors du village (cabane, tonneau...)
-	var best_prop: Node3D = null
-	var best_d := INF
-	for n in world.village_props_in(Rect2i(world.cell_at(p.global_position) - Vector2i(4, 4), Vector2i(9, 9))):
-		var box := WorldGenerator.prop_box(n)
-		var off: Vector3 = n.global_position - p.global_position
-		off.y = 0.0
-		var d := maxf(0.0, off.length() - maxf(box.size.x, box.size.z) * 0.45)
-		if d <= reach and (off.length() < 0.3 or off.normalized().dot(fwd) > 0.2) and d < best_d:
-			best_d = d
-			best_prop = n
-	if best_prop:
+	if t.has("prop"):
+		var best_prop: Node3D = t.prop
 		var id: String = best_prop.get_meta("prop_id")
 		var kind := id.get_slice("_", 0)
 		var dmg := power * maxf(2.0 if "prop" in TOOL_BONUS.get(wid, []) else 1.0, tool_mult(p, "hache"))
@@ -76,7 +67,35 @@ static func strike(p: Player, reach: float, power: float) -> bool:
 		for l in world.remove_village_prop(id):
 			_drop(world, l[0], l[1], at)
 		return true
-	# 2) décors naturels : arbres et rochers d'abord, herbes ensuite
+	# 2) décors naturels
+	if not t.has("cell"):
+		return false
+	var target: Vector2i = t.cell
+	var tk := world.decor_at(target)
+	var mult := maxf(2.0 if tk in TOOL_BONUS.get(wid, []) else 1.0, tool_mult(p, "pioche" if tk == WorldGenerator.D_ROCK else "hache"))
+	hit_decor(world, target, power * mult, p)
+	return true
+
+
+## Ce que le héros frapperait devant lui : {"prop": décor du village} ou {"cell": case d'un décor}, ou {}.
+## Les décors du village d'abord, puis arbres et rochers, puis les petites plantes.
+static func find_target(p: Player, reach: float) -> Dictionary:
+	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
+	if world == null or p.global_position.y < WorldGenerator.UNDERGROUND:
+		return {}
+	var fwd := Vector3(p.facing.x, 0, p.facing.z).normalized()
+	var best_prop: Node3D = null
+	var best_d := INF
+	for n in world.village_props_in(Rect2i(world.cell_at(p.global_position) - Vector2i(4, 4), Vector2i(9, 9))):
+		var box := WorldGenerator.prop_box(n)
+		var off: Vector3 = n.global_position - p.global_position
+		off.y = 0.0
+		var d := maxf(0.0, off.length() - maxf(box.size.x, box.size.z) * 0.45)
+		if d <= reach and (off.length() < 0.3 or off.normalized().dot(fwd) > 0.2) and d < best_d:
+			best_d = d
+			best_prop = n
+	if best_prop:
+		return {"prop": best_prop}
 	var here := world.cell_at(p.global_position)
 	var target := Vector2i(-99999, -99999)
 	var best_score := INF
@@ -98,11 +117,33 @@ static func strike(p: Player, reach: float, power: float) -> bool:
 				best_score = score
 				target = c
 	if best_score == INF:
-		return false
-	var tk := world.decor_at(target)
-	var mult := maxf(2.0 if tk in TOOL_BONUS.get(wid, []) else 1.0, tool_mult(p, "pioche" if tk == WorldGenerator.D_ROCK else "hache"))
-	hit_decor(world, target, power * mult, p)
-	return true
+		return {}
+	return {"cell": target}
+
+
+## Outil à tenir en main pour frapper ce qui est devant le héros (« » s'il n'y en a pas) :
+## la meilleure hache du sac pour un arbre ou un décor du village, la meilleure pioche pour un rocher.
+static func tool_for_target(p: Player, reach: float) -> String:
+	var t := find_target(p, reach)
+	if t.has("prop"):
+		return best_tool(p, "hache")
+	if t.has("cell"):
+		var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
+		var kind := world.decor_at(t.cell)
+		if kind == WorldGenerator.D_ROCK:
+			return best_tool(p, "pioche")
+		if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE, WorldGenerator.D_BUSH]:
+			return best_tool(p, "hache")
+	return ""
+
+
+## Identifiant du meilleur outil de cette sorte dans le sac (« » s'il n'y en a pas).
+static func best_tool(p: Player, kind: String) -> String:
+	for t in TOOLS.get(kind, []):
+		var it := Items.get_item(t[0]) as ItemData
+		if it and p.inventory.count(it) > 0:
+			return t[0]
+	return ""
 
 
 ## Multiplicateur du meilleur outil de cette sorte (« hache », « pioche ») présent dans le sac.

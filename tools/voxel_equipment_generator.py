@@ -108,6 +108,33 @@ def war_hammer(e):
     V(1.6, 1.6, 1.6, GOLD, 0, 15.2, 0, h)
 
 
+def _hand_axe(e, head, edge):
+    """Hache d'outil (plus petite que la hache de guerre), tenue dans HandL."""
+    h = e['hand_l']
+    V(1.1, 14, 1.1, WOOD, 0, 4, 0, h)
+    V(1.5, 1.3, 1.5, WOOD_D, 0, -2.6, 0, h)
+    V(1.8, 4, 1.9, head, 1.2, 9.5, 0, h)
+    V(2.8, 5, 1.6, head, 3, 9.5, 0, h)
+    V(0.8, 6, 1.7, edge, 4.7, 9.5, 0, h)
+
+
+def _hand_pick(e, head, tip):
+    """Pioche d'outil, tenue dans HandL : fer horizontal au bout du manche."""
+    h = e['hand_l']
+    V(1.1, 14, 1.1, WOOD, 0, 4, 0, h)
+    V(1.5, 1.3, 1.5, WOOD_D, 0, -2.6, 0, h)
+    V(2.4, 2.4, 2, head, 0, 11, 0, h)
+    for s in (-1, 1):
+        V(3, 1.8, 1.7, head, s * 2.6, 10.6, 0, h)
+        V(2, 1.4, 1.4, tip, s * 4.8, 9.8, 0, h)
+
+
+def hache_bois(e): _hand_axe(e, 0xa87848, 0xc89868)
+def hache_pierre(e): _hand_axe(e, 0x8a8a86, 0xb8b8b2)
+def pioche_bois(e): _hand_pick(e, 0xa87848, 0xc89868)
+def pioche_pierre(e): _hand_pick(e, 0x8a8a86, 0xb8b8b2)
+
+
 def spear(e):
     h = e['hand_l']
     V(1, 30, 1, WOOD, 0, 9, 0, h)
@@ -326,6 +353,8 @@ ITEMS = {
     'leather_bracers': leather_bracers, 'iron_gauntlets': iron_gauntlets,
     'leather_pants': leather_pants, 'iron_greaves': iron_greaves,
     'cape_red': lambda e: cape(e, CLOTH_R), 'cape_blue': lambda e: cape(e, CLOTH_B),
+    # outils (tenus en main quand le héros récolte)
+    'hache_bois': hache_bois, 'hache_pierre': hache_pierre, 'pioche_bois': pioche_bois, 'pioche_pierre': pioche_pierre,
 }
 
 

@@ -79,6 +79,11 @@ var _double_used := false
 ## Récolte à la main : délai entre deux coups de pelle.
 const DIG_TIME := 0.5
 var _dig_timer := 0.0
+## Outil sorti du sac et tenu en main pour récolter (« » = l'arme est en main).
+var tool_in_hand := ""
+var _tool_hold := 0.0
+## Temps pendant lequel l'outil reste en main après le dernier coup de récolte.
+const TOOL_HOLD := 3.0
 ## Distance de la caméra (option du joueur : 1 = normale ; molette pour zoomer).
 var camera_zoom := 1.0
 ## Rotation de la caméra autour du héros (clic molette maintenu + glisser, ou joystick droit).
@@ -122,6 +127,8 @@ func _ready() -> void:
 	if stats == null:
 		stats = PlayerStats.new()
 	camera.top_level = true
+	# l'équipement changé remet l'arme en main
+	equipment.changed.connect(func(): tool_in_hand = "")
 	# le héros créé dans l'écran de création, sinon un héros par défaut de la race choisie
 	var hero: HeroProfile = GameState.hero
 	if hero == null:
@@ -474,6 +481,7 @@ func snap_camera() -> void:
 
 func _physics_process(delta: float) -> void:
 	_combat_step(delta)
+	_update_tool(delta)
 	if skill:
 		skill.process(delta)
 	for id in abilities:
@@ -647,6 +655,7 @@ func _next_combo() -> void:
 	_combo += 1
 	_combo_reset = 0.7
 	_aim_assist()
+	_ready_tool_for_swing()
 	_do_move(name, attack_speed(), 1.0)
 
 
@@ -709,7 +718,56 @@ func _harvest_swing(h: Dictionary) -> bool:
 
 ## Un coup de pelle dans la case devant le héros (renvoie ce qui a été obtenu, ou null).
 func dig() -> ItemData:
+	var pick := Harvest.best_tool(self, "pioche")
+	if pick != "":
+		_show_tool(pick)
 	return Harvest.dig(self)
+
+
+# ---------------------------------------------------------------- outil en main
+
+## Avant un coup : la hache pour un arbre, la pioche pour un rocher ; l'arme s'il y a un ennemi tout près.
+func _ready_tool_for_swing() -> void:
+	if _enemy_close(4.5):
+		_put_tool_away()
+		return
+	var id := Harvest.tool_for_target(self, clampf(attack_reach(), 1.6, 2.6))
+	if id != "":
+		_show_tool(id)
+	else:
+		_put_tool_away()
+
+
+func _show_tool(id: String) -> void:
+	_tool_hold = TOOL_HOLD
+	if id == tool_in_hand:
+		return
+	tool_in_hand = id
+	visual.show_equipment(ItemData.Slot.MAIN_HAND, id)
+
+
+## Range l'outil et reprend l'arme équipée.
+func _put_tool_away() -> void:
+	if tool_in_hand == "":
+		return
+	tool_in_hand = ""
+	var w := weapon()
+	visual.show_equipment(ItemData.Slot.MAIN_HAND, w.id if w else "")
+
+
+func _update_tool(delta: float) -> void:
+	if tool_in_hand == "":
+		return
+	_tool_hold -= delta
+	if _tool_hold <= 0.0 or _enemy_close(6.0) or building:
+		_put_tool_away()
+
+
+func _enemy_close(radius: float) -> bool:
+	for e in get_tree().get_nodes_in_group("enemy_units"):
+		if e is Combatant and (e as Combatant).is_alive() and (e as Node3D).global_position.distance_to(global_position) < radius:
+			return true
+	return false
 
 
 # ---------------------------------------------------------------- défense
