@@ -126,6 +126,16 @@ func _refresh() -> void:
 			mood += " : " + ", ".join(PackedStringArray(v.mood_reasons))
 		h.add_child(MenuKit.label(mood, 11, VillageNeeds.mood_color(v.happiness)))
 		_list.add_child(h)
+	# quêtes
+	var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
+	if qb and not qb.quests.is_empty():
+		_box.add_child(MenuKit.label("Quêtes", 14, MenuKit.C_GOLD))
+		for q in qb.quests:
+			var st: String = {"offer": "proposée (parle à %s)" % q.giver_name, "active": qb.progress_text(q), "ready": "à rendre à %s" % q.giver_name}[q.state]
+			var l := MenuKit.label("%s  —  %s" % [q.title, st], 11, Color("8ad66a") if q.state == "ready" else (MenuKit.C_TEXT if q.state == "active" else MenuKit.C_DIM))
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			l.custom_minimum_size = Vector2(660, 0)
+			_box.add_child(l)
 	# conseils
 	var tips := []
 	if beds < members.size():

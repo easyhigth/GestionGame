@@ -20,7 +20,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
 - T (ou croix gauche à la manette) : arbre de talents
 - I (ou Tab) : inventaire, équipement et artisanat
-- E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures
+- E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures (s'il a une quête « ! » ou « ? », c'est d'abord la quête qui s'ouvre)
 - E près d'un voyageur : lui parler pour le recruter
 - E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
 - B (ou croix bas à la manette) : mode construction (voir plus bas)
@@ -119,6 +119,14 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Gardes** (poste au camp d'entraînement) : la nuit, ils font leur ronde autour du village au lieu de dormir.
 - **Bulles** au-dessus des têtes : « Zzz » (dort), « ♨ » (mange), « ♪ ♫ … ! » (se détend). L'étiquette et le panneau du royaume disent aussi ce que fait chacun et où il dort.
 - La nuit et pendant les repas, les ateliers ne produisent pas et les chantiers s'arrêtent. Un habitant menacé se réveille pour se défendre ou fuir.
+
+## Quêtes des habitants
+- De temps en temps (environ toutes les 75 s), un habitant a quelque chose à te demander : un **« ! »** doré flotte au-dessus de sa tête. **E** près de lui : il explique sa demande et la récompense ; **Accepter**, **Plus tard**, ou ouvrir son équipement.
+- **5 sortes de quêtes** : **apporter** des objets (planches, bûches, cailloux, nourriture, lingots...), **chasser** une bête marquée « ★ Cible de quête » apparue loin du village, **explorer** en éveillant l'obélisque d'une zone, **défendre** le village en vainquant des créatures de la nuit, **construire** une pièce qui manque (taverne, temple, maison...).
+- **Marques** : « ! » quête proposée, « … » quête en cours, « ? » c'est fait, reviens le voir. Au plus **4 quêtes en cours** et 3 propositions à la fois.
+- **Suivi à l'écran** (en haut à droite) : chaque quête en cours et son avancement (objets dans le sac, distance et direction de la cible, créatures vaincues...). Le panneau du royaume (**U**) a aussi une section **Quêtes**.
+- **Récompenses** : pièces d'or (selon la difficulté), expérience, et l'habitant est bien plus heureux pendant un moment. Après **3 quêtes réussies** pour le même habitant, il devient ton **ami** (« · Ami » sur son étiquette, meilleur moral) et t'offre un **cadeau rare** (arme, armure ou outil en fer, cape).
+- Une quête peut être abandonnée (E près de l'habitant). Si l'habitant quitte le village, sa quête disparaît. Les quêtes et l'amitié sont sauvegardées. Le code est dans `scripts/kingdom/quests.gd` (listes `FETCH`, `BUILD`, `RARE_GIFTS` à modifier facilement) et `scenes/ui/quest_dialog.gd`.
 
 ## Sons et musique
 - **Bruitages** : coups d'épée et impacts (plus forts pour un coup critique), garde, parade, roulade, dégâts reçus, monstre vaincu, défaite du héros, pas (herbe, pierre, bois, sable), coupe du bois, coups de pioche, blocs cassés et posés, creusage, objets ramassés, niveau gagné, talent appris, sorts, cri du boss en 2e phase, cor du raid, tombée de la nuit, lever du jour, sommeil, artisanat, porte, boutons et fenêtres. Les bruits du monde sont en 3D (plus faibles de loin).
