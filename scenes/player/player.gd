@@ -513,7 +513,7 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_pressed("dig") and can_act() and not in_move() and not is_dashing() and not airborne and _dig_timer <= 0.0:
 			_dig_timer = DIG_TIME
 			visual.play_move("heavy_1", 1.4)
-			Harvest.dig(self)
+			dig()
 	if input.length() > 1.0:
 		input = input.normalized()
 	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0)
@@ -701,6 +701,11 @@ func _harvest_swing(h: Dictionary) -> bool:
 	var reach := clampf(attack_reach() * float(h.get("reach", 1.0)), 1.6, 2.6)
 	var power := 2.0 if float(h.get("dmg", 1.0)) * _move_damage >= 1.8 else 1.0
 	return Harvest.strike(self, reach, power)
+
+
+## Un coup de pelle dans la case devant le héros (renvoie ce qui a été obtenu, ou null).
+func dig() -> ItemData:
+	return Harvest.dig(self)
 
 
 # ---------------------------------------------------------------- défense
