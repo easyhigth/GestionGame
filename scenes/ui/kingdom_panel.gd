@@ -113,6 +113,15 @@ func _refresh() -> void:
 			player.notify.emit("Les fermiers ont %d graines de plus à semer." % got)
 			_refresh())
 		_box.add_child(sb)
+	# saison et prochaine fête
+	var sea := get_tree().get_first_node_in_group("seasons") as Seasons
+	if sea:
+		var fest: String = Seasons.FESTIVALS[sea.season()][0]
+		var st_txt := "Saison : %s (an %d, jour %d / %d)  ·  %s" % [sea.season_name(), sea.year(), sea.day_in_season(), Seasons.SEASON_DAYS,
+			("aujourd'hui : %s ! (+12 de bonheur)" % fest) if sea.is_festival() else "prochaine fête : %s, jour %d" % [Seasons.FESTIVALS[sea.season() if sea.day_in_season() < Seasons.FESTIVAL_DAY else (sea.season() + 1) % 4][0], sea.next_festival_day()]]
+		if sea.is_winter():
+			st_txt += "  ·  rien ne pousse dans les champs"
+		_box.add_child(MenuKit.label(st_txt, 11, Color("c8e0ff") if sea.is_winter() else MenuKit.C_TEXT))
 	# élevage
 	var ls := get_tree().get_first_node_in_group("livestock") as Livestock
 	if ls and ls.summary_text() != "":

@@ -124,6 +124,14 @@ Jadis, le **Cœur d'Aube** nourrissait les obélisques et protégeait le royaume
 - Un petit champ de blé est déjà semé au village au début de la partie. Le panneau du royaume résume les champs (cases, cultures, mûres, fermiers, graines). Tout est sauvegardé. Le guide a un 4e chapitre « Les champs ».
 - Réglages dans `scripts/world/farming.gd` (liste `CROPS` : durée, récolte, valeur pour la réserve) ; objets dans `data/items/` (champ « Culture » d'un objet = ce qu'il fait pousser) ; modèles des cultures créés par `tools/voxel_props_generator.py` (`crop_<culture>_<stade>.glb`).
 
+## Saisons
+- Une année = **4 saisons de 4 jours** : printemps, été, automne, hiver. La saison et le jour s'affichent sous l'horloge ; le royaume (U) donne la prochaine fête.
+- **Couleurs du monde** : herbe fraîche au printemps, plus dorée en été, feuillages orange et rouges et herbe rousse en automne, **neige au sol et sur les arbres** l'hiver (pas dans le désert ni au volcan). Les couleurs glissent doucement d'une saison à l'autre.
+- **Météo** : plus de pluie au printemps, beau temps et orages en été, brouillard et pluie en automne ; l'hiver, la pluie tombe en **neige** partout (sauf contrées chaudes), et il fait froid (cape ou armure !).
+- **Cultures** : elles poussent plus vite au printemps (×1,25) et **pas du tout l'hiver** (elles attendent le printemps).
+- **Fêtes** (2e jour de chaque saison) : fête des semailles, du solstice, des moissons, des lumières. Lanternes et fanions autour du feu de camp, **cadeaux** de saison près du feu (semences, poisson grillé, pain et gâteau, lanternes et manteau de laine...), **feux d'artifice** le soir, et des habitants plus heureux (+12) toute la journée.
+- Réglages : `scripts/world/seasons.gd` (durée, couleurs, météo, cultures, fêtes et cadeaux).
+
 ## Météo
 - Le temps change toutes les quelques heures : **beau temps, nuageux, pluie, orage, brouillard**. Chaque jour a un temps dominant, **annoncé la veille** : sous l'horloge, « Pluie · demain : beau temps ».
 - **Climat des régions** : le désert est surtout ensoleillé (et sans orage), le marais souvent dans le brouillard... Ce qui tombe dépend de la région où tu es : **pluie**, **neige** (toundra, montagnes), **vent ou tempête de sable** (désert), **pluie de cendres** (volcan).

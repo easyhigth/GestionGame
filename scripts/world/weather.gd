@@ -86,12 +86,13 @@ func _village_region() -> RegionData:
 func _roll(region: RegionData = null) -> String:
 	var r := region if region else _village_region()
 	var w: Dictionary = r.weather_weights if r else {"clair": 4, "nuageux": 3, "pluie": 2, "orage": 1, "brouillard": 1}
+	var se := get_tree().get_first_node_in_group("seasons") if is_inside_tree() else null
 	var total := 0.0
 	for k in KINDS:
-		total += float(w.get(k, 0))
+		total += float(w.get(k, 0)) * (se.weather_mult(k) if se else 1.0)
 	var x := randf() * total
 	for k in KINDS:
-		x -= float(w.get(k, 0))
+		x -= float(w.get(k, 0)) * (se.weather_mult(k) if se else 1.0)
 		if x <= 0.0:
 			return k
 	return "clair"
@@ -166,7 +167,11 @@ func display_name(k := "", precip := "") -> String:
 ## Ligne pour le HUD : « Pluie · demain : beau temps ».
 func hud_text() -> String:
 	var r := _village_region()
-	var t := "%s  ·  demain : %s" % [display_name(), display_name(tomorrow, r.precipitation if r else "pluie").to_lower()]
+	var se := get_tree().get_first_node_in_group("seasons")
+	var pr: String = r.precipitation if r else "pluie"
+	if pr == "pluie" and se and se.is_winter():
+		pr = "neige"
+	var t := "%s  ·  demain : %s" % [display_name(), display_name(tomorrow, pr).to_lower()]
 	if drought() and not is_wet():
 		t += "  ·  sécheresse"
 	if cold:
@@ -185,6 +190,10 @@ func _process(delta: float) -> void:
 	var underground := player.global_position.y < WorldGenerator.UNDERGROUND
 	var r := world.region_at(player.global_position) if not underground else null
 	_precip = r.precipitation if r else "pluie"
+	# l'hiver, la pluie devient de la neige
+	var se := get_tree().get_first_node_in_group("seasons")
+	if _precip == "pluie" and se and se.is_winter():
+		_precip = "neige"
 	# valeurs visées (rien sous terre)
 	var goal: Array = LOOK[kind] if not underground else [0.0, 0.0, 0.0]
 	for i in 3:

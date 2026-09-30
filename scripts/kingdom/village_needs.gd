@@ -198,6 +198,10 @@ func _update(dt: float) -> void:
 	var st := get_tree().get_first_node_in_group("story")
 	if st and st.is_done():
 		comfort += 10.0
+	# jour de fête
+	var se := get_tree().get_first_node_in_group("seasons")
+	if se and se.is_festival():
+		comfort += 12.0
 	if _safety_left > 0.0:
 		_safety_left -= dt
 		if _safety_left <= 0.0:

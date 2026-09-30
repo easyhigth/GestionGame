@@ -202,7 +202,7 @@ var _decor_nodes := {}     # morceau -> Node3D
 var _content_nodes := {}   # morceau -> Node3D (camps, objets, lieux)
 var _taken := {}           # objets déjà ramassés (case -> true)
 var _camp_cells: Array[Vector2i] = []
-var _terrain_mat: StandardMaterial3D
+var _terrain_mat: ShaderMaterial
 var _liquid_mat: StandardMaterial3D
 var _lava_mat: StandardMaterial3D
 var _trunk_shape: CylinderShape3D
@@ -1123,12 +1123,12 @@ func _side_color(cell: Vector2i) -> Color:
 func _ensure_materials() -> void:
 	if _terrain_mat:
 		return
-	_terrain_mat = StandardMaterial3D.new()
-	_terrain_mat.vertex_color_use_as_albedo = true
-	_terrain_mat.vertex_color_is_srgb = true
-	_terrain_mat.albedo_texture = GRAIN
-	_terrain_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
-	_terrain_mat.roughness = 1.0
+	_terrain_mat = ShaderMaterial.new()
+	var sh := Shader.new()
+	sh.code = TERRAIN_SHADER
+	_terrain_mat.shader = sh
+	_terrain_mat.set_shader_parameter("grain", GRAIN)
+	_terrain_mat.set_shader_parameter("water_y", water_surface)
 	_liquid_mat = StandardMaterial3D.new()
 	_liquid_mat.vertex_color_use_as_albedo = true
 	_liquid_mat.vertex_color_is_srgb = true
@@ -1206,6 +1206,9 @@ func _add_column(st: SurfaceTool, cell: Vector2i) -> void:
 	var x0 := float(cell.x)
 	var z0 := float(cell.y)
 	var top := _top_color(cell)
+	# l'alpha dit au shader si la neige peut tenir ici (pas dans les contrées chaudes)
+	var zr := _zone_type(_zone[_idx(cell)])
+	top.a = 0.0 if zr and zr.precipitation in ["sable", "cendres"] else 1.0
 	_quad(st, Vector3(x0, h, z0 + 1), Vector3(x0 + 1, h, z0 + 1), Vector3(x0 + 1, h, z0), Vector3(x0, h, z0),
 		Vector3.UP, top, Vector2(x0, z0), true)
 	var side := _side_color(cell)
@@ -1880,8 +1883,10 @@ uniform vec3 emission = vec3(0.0);
 global uniform vec3 see_from;
 global uniform vec3 see_to;
 global uniform float see_radius;
+global uniform vec4 season_leaf;
 varying vec3 wpos;
 void vertex() { wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
 void fragment() {
 	// les feuillages entre la caméra et le héros deviennent transparents
 	vec3 d = see_to - see_from;
@@ -1891,9 +1896,47 @@ void fragment() {
 		float dither = fract(sin(dot(floor(FRAGCOORD.xy), vec2(12.9898, 78.233))) * 43758.5453);
 		if (r < 0.7 + 0.3 * dither) { discard; }
 	}
-	ALBEDO = albedo.rgb * texture(tex, UV).rgb;
+	vec3 col = albedo.rgb * texture(tex, UV).rgb;
+	// saisons : les feuillages (couleurs vertes) jaunissent, rougissent ou se couvrent de neige
+	float green = clamp((col.g - max(col.r, col.b)) * 6.0, 0.0, 1.0);
+	if (green > 0.0 && season_leaf.a > 0.0) {
+		float n = fract(sin(dot(floor(wpos.xz * 0.35), vec2(12.9898, 78.233))) * 43758.5453);
+		float lum = dot(col, vec3(0.3, 0.59, 0.11));
+		vec3 target = lin(season_leaf.rgb) * mix(0.7, 1.15, n) * clamp(lum * 3.2, 0.45, 1.3);
+		col = mix(col, target, green * season_leaf.a);
+	}
+	ALBEDO = col;
 	EMISSION = emission;
 	ROUGHNESS = 0.95;
+}
+"""
+
+## Sol : couleurs des sommets (sRGB) et grain, avec la teinte de la saison sur l'herbe et la neige l'hiver.
+const TERRAIN_SHADER := """
+shader_type spatial;
+render_mode cull_back;
+uniform sampler2D grain : source_color, filter_nearest_mipmap, repeat_enable;
+uniform float water_y = -0.2;
+global uniform vec4 season_ground;
+global uniform float season_snow;
+varying vec3 wpos;
+varying float up;
+void vertex() {
+	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	up = (MODEL_MATRIX * vec4(NORMAL, 0.0)).y;
+}
+vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
+void fragment() {
+	vec3 c = lin(COLOR.rgb);
+	if (up > 0.7 && wpos.y > water_y + 0.05) {
+		float green = clamp((COLOR.g - max(COLOR.r, COLOR.b)) * 6.0, 0.0, 1.0);
+		float lum = dot(c, vec3(0.3, 0.59, 0.11));
+		c = mix(c, lin(season_ground.rgb) * clamp(lum * 3.0, 0.5, 1.2), green * season_ground.a);
+		float n = fract(sin(dot(floor(wpos.xz), vec2(12.9898, 78.233))) * 43758.5453);
+		c = mix(c, vec3(0.86, 0.9, 0.96) * (0.92 + 0.08 * n), season_snow * COLOR.a);
+	}
+	ALBEDO = c * texture(grain, UV).rgb;
+	ROUGHNESS = 1.0;
 }
 """
 var _decor_shader: Shader
