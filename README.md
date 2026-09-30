@@ -16,7 +16,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage ; frapper un arbre, un rocher, un buisson ou un décor du village le récolte
 - G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux)
 - H (LB + croix haut à la manette) : manger ; cliquer sur une nourriture dans le sac la mange aussi
-- C / X (LB + croix gauche/droite à la manette) : choisir un bloc ou un meuble du sac ; V (L3) : le poser devant soi
+- C / X (LB + croix gauche/droite à la manette) : choisir un bloc, un meuble, des graines ou la houe du sac ; V (L3) : le poser, semer ou labourer devant soi
 - Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
 - T (ou croix gauche à la manette) : arbre de talents
 - I (ou Tab) : inventaire, équipement et artisanat
@@ -103,6 +103,17 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Cuisine** (inventaire → Artisanat → Cuisine) : près du feu de camp du village, d'un four, d'un four à pain ou d'une forge.
 - Le guide a une nouvelle étape : « Mange un repas cuit » (avant la première nuit).
 
+## Agriculture
+- **Houe** (Artisanat → Outils : 2 bois, 2 cailloux) : choisis-la avec C et appuie sur V pour **labourer** l'herbe ou la terre devant toi (sillons bruns).
+- **Semer** : choisis des graines avec C et appuie sur V devant de la terre labourée. Avec une houe dans le sac, V laboure l'herbe et sème d'un coup. Une case fantôme verte montre où.
+- **Graines** : les hautes herbes donnent des graines de blé (près d'une fois sur deux), les buissons parfois des carottes et des pommes de terre (elles se replantent). On peut aussi battre 1 blé pour 2 graines.
+- **Cultures** : blé (5 min), carottes (4 min), pommes de terre (6 min), en 4 stades (semé, pousse, en herbe, mûr). Elles poussent **1,5 fois plus vite près de l'eau** (sillons plus foncés) et moitié moins vite la nuit.
+- **Récolter** : frappe une culture mûre (épis dorés, carottes sorties de terre) : blé et graines, carottes, pommes de terre. Creuser (G) une culture pas mûre l'arrache et rend la graine.
+- **Cuisine** (près du feu) : pain (3 blé), pomme de terre cuite, soupe de légumes (2 carottes et 2 pommes de terre : le repas le plus nourrissant).
+- **Fermiers** : dès 4 cases labourées, le poste **Champs** apparaît (E près d'un habitant → Poste de travail), 1 fermier pour 8 cases. Pendant les heures de travail, il récolte les cultures mûres (tout va dans la **réserve du village**), ressème aussitôt et sème les cases vides avec les graines que tu lui confies (royaume **U** → « Confier mes graines aux fermiers »). Il garde une partie des récoltes comme semence.
+- Un petit champ de blé est déjà semé au village au début de la partie. Le panneau du royaume résume les champs (cases, cultures, mûres, fermiers, graines). Tout est sauvegardé. Le guide a un 4e chapitre « Les champs ».
+- Réglages dans `scripts/world/farming.gd` (liste `CROPS` : durée, récolte, valeur pour la réserve) ; objets dans `data/items/` (champ « Culture » d'un objet = ce qu'il fait pousser) ; modèles des cultures créés par `tools/voxel_props_generator.py` (`crop_<culture>_<stade>.glb`).
+
 ## Besoins des habitants
 - **Réserve de nourriture du village** : la boulangerie (pain) et la grange (viande) la remplissent, et tu y déposes la nourriture de ton sac (panneau du royaume, **U**). Chaque habitant y prend un repas quand il a faim (sa faim se vide en 20 minutes). Au début : 5 repas.
 - **Lits** : 2 par maison (pièce fermée, porte, un lit et un coffre), 6 par dortoir (4 lits et un coffre), et 2 par cabane du village encore debout. Un habitant sans lit est moins heureux.
@@ -142,7 +153,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - L'heure et le jour sont sauvegardés. Réglages dans `scripts/world/day_cycle.gd`.
 
 ## Guide des premiers pas
-Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, casser 2 rochers, fabriquer un outil, fabriquer des planches, construire un abri (pièce fermée avec une porte et un lit), poser une torche, survivre à la première nuit. Chaque objectif atteint est annoncé ; l'avancement est sauvegardé et le panneau disparaît à la fin (`scenes/ui/guide_panel.gd`).
+Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, casser 2 rochers, fabriquer un outil, fabriquer des planches, construire un abri (pièce fermée avec une porte et un lit), poser une torche, survivre à la première nuit. Puis viennent les chapitres « L'âge du fer », « Le village » et « Les champs » (houe, semer, récolter, nommer un fermier). Chaque objectif atteint est annoncé ; l'avancement est sauvegardé et le panneau disparaît à la fin (`scenes/ui/guide_panel.gd`).
 
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.

@@ -47,6 +47,7 @@ var day_state := {}
 var guide_state := {}
 var village_state := {}
 var quest_state := {}
+var farm_state := {}
 var _autosave_timer := 300.0
 
 
@@ -200,6 +201,9 @@ func save_game(slot: String) -> bool:
 	var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
 	if qb:
 		d.quests = qb.export_state()
+	var fm := get_tree().get_first_node_in_group("farming") as Farming
+	if fm:
+		d.farm = fm.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -269,7 +273,7 @@ func _save_villagers() -> Array:
 	for v in get_tree().get_nodes_in_group("villagers"):
 		var vv := v as Villager
 		var work := {}
-		if vv.work_room != null and vv.work_room.type:
+		if vv.work_room != null and vv.work_room.type and not vv.work_room.get("fields", false) and not vv.work_room.cells.is_empty():
 			var cell: Vector2i = vv.work_room.cells.keys()[0]
 			work = {"type": (vv.work_room.type as RoomTypeData).id, "x": cell.x, "z": cell.y, "floor": vv.work_room.floor}
 		out.append({"name": vv.villager_name, "race": _res(vv.race), "talents": vv.talents, "level": vv.level,
@@ -317,6 +321,7 @@ func new_game() -> void:
 	guide_state = {}
 	village_state = {}
 	quest_state = {}
+	farm_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -447,6 +452,12 @@ func apply_pending(world: WorldGenerator) -> void:
 	if qb and not quest_state.is_empty():
 		qb.import_state(quest_state)
 		quest_state = {}
+	# champs (une ancienne partie sans champs : rien, pas de champ de départ)
+	farm_state = d.get("farm", {"plots": []})
+	var fm := get_tree().get_first_node_in_group("farming") as Farming
+	if fm:
+		fm.import_state(farm_state)
+		farm_state = {}
 	# une ancienne partie sans guide : le guide est considéré comme fini
 	guide_state = d.get("guide", {"step": 99})
 	var gd := get_tree().get_first_node_in_group("guide") as GuidePanel

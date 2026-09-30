@@ -552,6 +552,8 @@ func is_at_work() -> bool:
 
 ## Va à son poste de travail (en passant par la porte) et y travaille. Renvoie faux s'il ne peut pas.
 func _work_step(delta: float) -> bool:
+	if work_room.get("fields", false):
+		return _farm_step(delta)
 	if _work_for != work_room:
 		_work_for = work_room
 		_choose_work_spot()
@@ -607,6 +609,81 @@ func _work_step(delta: float) -> bool:
 	else:
 		_stuck = 0.0
 	visual.animate(delta, velocity, facing)
+	return true
+
+
+var _farm_task := {}
+var _farm_timer := 0.0
+var _farm_work := 0.0
+
+
+## Fermier : récolte les cultures mûres et sème les cases vides (avec les graines confiées au village).
+func _farm_step(delta: float) -> bool:
+	var fm := get_tree().get_first_node_in_group("farming") as Farming
+	if fm == null or not fm.has_fields():
+		return false
+	if _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+		if _world == null:
+			return false
+	if not _farm_task.is_empty() and not fm.plots.has(_farm_task.cell):
+		_farm_task = {}
+	if _farm_task.is_empty():
+		_farm_timer -= delta
+		if _farm_timer <= 0.0:
+			_farm_timer = 1.0
+			_farm_task = fm.claim_task(self)
+			_path.clear()
+			_repath = 0.0
+			_stuck = 0.0
+			_farm_work = 0.0
+	var speed := walk_speed * 1.8 * (race.speed_multiplier if race else 1.0)
+	if _farm_task.is_empty():
+		# rien à faire : il attend au bord du champ
+		var c := fm.fields_center()
+		if Vector2(c.x - global_position.x, c.z - global_position.z).length() > 4.0:
+			_at_work = false
+			_path_move(c, delta, speed)
+			return true
+		_at_work = true
+		velocity = Vector3.ZERO
+		_move_on_ground(delta)
+		visual.animate(delta, velocity, facing)
+		return true
+	var cell: Vector2i = _farm_task.cell
+	var dest := _world.cell_center(cell)
+	var to := dest - global_position
+	to.y = 0.0
+	if to.length() < 0.55:
+		_at_work = true
+		velocity = Vector3.ZERO
+		if to.length() > 0.05:
+			facing = to.normalized()
+		_farm_work += delta * Kingdom.affinity(self, "fermier")
+		_work_anim -= delta
+		if _work_anim <= 0.0:
+			_work_anim = 0.9
+			visual.play_move("punch_1", 0.8)
+		if _farm_work >= 1.6:
+			fm.do_task(self, _farm_task)
+			_farm_task = {}
+			_farm_timer = 0.3
+		_move_on_ground(delta)
+		visual.animate(delta, velocity, facing)
+		return true
+	_at_work = false
+	var before := global_position
+	_path_move(dest, delta, speed)
+	if before.distance_to(global_position) < speed * delta * 0.2:
+		_stuck += delta
+		if _stuck > 4.0:
+			# impossible d'y arriver : il laisse cette case à un autre
+			fm.release(cell)
+			_farm_task = {}
+			_farm_timer = 2.0
+			_stuck = 0.0
+	else:
+		_stuck = 0.0
 	return true
 
 

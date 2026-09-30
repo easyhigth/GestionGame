@@ -176,6 +176,43 @@ def grass(seed):
     return g
 
 
+# ---------------------------------------------------------------- cultures (4 stades : 0 semé ... 3 mûr)
+CROP_SPOTS = [(-5, -5), (5, -5), (-5, 5), (5, 5), (0, 0)]
+
+
+def crop(kind, stage, seed=1):
+    rnd = mk(seed * 31 + stage * 7 + len(kind))
+    g = Node('Crop')
+    for i, (x, z) in enumerate(CROP_SPOTS):
+        x += (rnd() - 0.5) * 2; z += (rnd() - 0.5) * 2
+        if stage == 0:
+            # graines dans la terre, deux petites pousses
+            V(1.2, 1.5, 1.2, 0x6aaa44, x, 0.75, z, g)
+            V(1, 0.6, 1, 0xd0b070, x + 1.5, 0.3, z - 1, g)
+            continue
+        if kind == 'ble':
+            h = (0, 5, 11, 15)[stage] + int(rnd() * 3)
+            stem = 0x6aaa44 if stage < 3 else pick(rnd, [0xd8b848, 0xc8a840, 0xe0c858])
+            for dx in (-1.2, 0, 1.2):
+                V(0.8, h, 0.8, stem, x + dx, h / 2, z + dx * 0.5, g, rz=dx * 0.06)
+                if stage >= 2:
+                    V(1.4, 3.4, 1.4, 0x9ac858 if stage == 2 else 0xf0d060, x + dx * 1.2, h + 1.5, z + dx * 0.5, g, rz=dx * 0.06)
+        elif kind == 'carotte':
+            h = (0, 3, 5, 7)[stage]
+            for dx, dz in ((-1, 0), (1, 0), (0, 1), (0, -1)):
+                V(1, h, 1, pick(rnd, [0x4a9a3a, 0x5aaa44]), x + dx * 0.9, h / 2, z + dz * 0.9, g, rx=dz * 0.35, rz=-dx * 0.35)
+            if stage == 3:
+                V(3, 2.4, 3, 0xe8802a, x, 0.9, z, g)
+        else:  # pomme de terre
+            s = (0, 3, 5, 6.5)[stage]
+            V(s, s * 0.8, s, pick(rnd, [0x3f7a34, 0x4a8a3a]), x, s * 0.4, z, g)
+            V(s * 0.6, s * 0.5, s * 0.6, 0x5a9a44, x + 0.5, s * 0.8 + s * 0.2, z, g)
+            if stage == 3:
+                V(1.2, 1.2, 1.2, 0xf4f0e0, x + 1.5, s + 0.6, z + 1, g)
+                V(2.4, 1.6, 2.2, 0xb8905a, x - 2.4, 0.5, z + 1.8, g)
+    return g
+
+
 # ---------------------------------------------------------------- village
 WOOD = 0x8a6038
 WOOD_D = 0x6a4428
@@ -355,6 +392,9 @@ PROPS = {
     'iron_vein_1': lambda: vein(1, 0xc8743a, 0xe89a5a), 'iron_vein_2': lambda: vein(2, 0xc8743a, 0xe89a5a),
     'gold_vein_1': lambda: vein(3, 0xe0b030, 0xfff080),
 }
+for _k in ('ble', 'carotte', 'pomme_de_terre'):
+    for _s in range(4):
+        PROPS['crop_%s_%d' % (_k, _s)] = (lambda k, st: (lambda: crop(k, st)))(_k, _s)
 
 
 def main():

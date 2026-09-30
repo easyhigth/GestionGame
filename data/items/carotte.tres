@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "carotte"
+display_name = "Carotte"
+description = "Croquante et sucrée. Se mange (H) ou se plante (C puis V sur de la terre labourée)."
+max_stack = 30
+food = 10.0
+food_heal = 2
+food_cooked = false
+crop = "carotte"

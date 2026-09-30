@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "pomme_de_terre"
+display_name = "Pomme de terre"
+description = "Se plante (C puis V sur de la terre labourée). Crue, elle ne nourrit guère : cuis-la près du feu."
+max_stack = 30
+food = 4.0
+food_heal = 0
+food_cooked = false
+crop = "pomme_de_terre"

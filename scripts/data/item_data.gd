@@ -67,6 +67,10 @@ const RARITY_COLORS := {
 ## Plat cuisiné (compte pour le guide, rassasie mieux).
 @export var food_cooked: bool = false
 
+@export_group("Agriculture")
+## Culture qu'on obtient en semant cet objet sur de la terre labourée (« ble », « carotte »...). Vide = ne se sème pas.
+@export var crop: String = ""
+
 
 @export_group("Construction")
 ## Texture du bloc : si elle est renseignée, l'objet est un bloc de construction à poser.
@@ -97,6 +101,10 @@ func is_furniture() -> bool:
 
 func is_food() -> bool:
 	return food > 0.0
+
+
+func is_seed() -> bool:
+	return crop != ""
 
 
 func is_placeable() -> bool:

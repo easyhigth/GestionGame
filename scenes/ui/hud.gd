@@ -638,6 +638,10 @@ func _build_day_and_guide() -> void:
 	needs.name = "VillageNeeds"
 	get_parent().add_child.call_deferred(needs)
 	needs.changed.connect(_update_kingdom)
+	var farming := Farming.new()
+	farming.name = "Farming"
+	farming.world = world
+	get_parent().add_child.call_deferred(farming)
 	var board := QuestBoard.new()
 	board.name = "QuestBoard"
 	get_parent().add_child.call_deferred(board)
@@ -735,7 +739,12 @@ func _update_hotbar() -> void:
 		cell.add_child(n)
 		_hotbar_row.add_child(cell)
 	var cur := Items.get_item(sel)
-	_hotbar_name.text = "%s  ·  V / L3 : poser   C / X : changer   (après le dernier : mains nues)" % (cur.display_name if cur else "")
+	var verb := "poser"
+	if cur and cur.id == "houe":
+		verb = "labourer"
+	elif cur and cur.is_seed():
+		verb = "semer"
+	_hotbar_name.text = "%s  ·  V / L3 : %s   C / X : changer   (après le dernier : mains nues)" % [cur.display_name if cur else "", verb]
 
 
 ## Suivi des quêtes en cours (en haut à droite) : titre et avancement.
