@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "couronne_pactes"
+display_name = "Couronne des Pactes"
+description = "Une gemme pour chaque peuple allié. Celui qui la porte ne se bat jamais seul."
+slot = 3
+rarity = 4
+attack = 4
+defense = 6
+magic = 6
+speed_bonus = 0.03

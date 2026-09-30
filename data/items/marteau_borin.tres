@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "marteau_borin"
+display_name = "Marteau de Borin"
+description = "La masse de forge du maître nain, gravée de runes d'or. Elle écrase tout."
+slot = 1
+rarity = 3
+two_handed = true
+attack = 30
+defense = 3
+speed_bonus = -0.06
+reach = 2.1
+attack_speed = 0.7
+knockback = 5.0
+weapon_style = 2

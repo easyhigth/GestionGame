@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/epee_mithril.tres" id="result"]
+[ext_resource type="Resource" path="res://data/items/lingot_mithril.tres" id="lingot_mithril"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="leather"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("result")
+result_count = 1
+ingredients = Array[ExtResource("2")]([ExtResource("lingot_mithril"), ExtResource("leather")])
+amounts = PackedInt32Array(4, 2)
+station = "enclume"
+category = "Légendaire"

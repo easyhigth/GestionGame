@@ -505,6 +505,9 @@ func _open_chest(it: Dictionary) -> void:
 		loot.append([Items.get_item("lingot_or"), 1])
 	if randf() < 0.45 and not world.wild_loot.is_empty():
 		loot.append([world.wild_loot.pick_random(), 1])
+	var rare := RareDrops.roll_chest("grotte")
+	loot.append_array(rare)
+	RareDrops.announce(get_tree().get_first_node_in_group("player") as Player, rare)
 	var pos: Vector3 = it.pos
 	for i in loot.size():
 		var a := TAU * i / loot.size()

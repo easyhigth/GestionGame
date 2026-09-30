@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sceptre_parjure"
+display_name = "Sceptre du Parjure"
+description = "Le sceptre de Morvain. La Brume y dort encore, domptée."
+slot = 1
+rarity = 3
+two_handed = true
+attack = 3
+magic = 26
+reach = 11.0
+attack_speed = 0.95
+projectile = true
+weapon_style = 3

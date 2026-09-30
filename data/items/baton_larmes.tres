@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "baton_larmes"
+display_name = "Bâton des Larmes"
+description = "Des larmes d'esprit y chantent. La magie la plus pure du royaume."
+slot = 1
+rarity = 4
+two_handed = true
+attack = 4
+magic = 34
+reach = 12.0
+attack_speed = 1.0
+projectile = true
+weapon_style = 3

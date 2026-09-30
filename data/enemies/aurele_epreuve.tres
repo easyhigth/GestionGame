@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/models/base/angel_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/equipment/angel_equipment.glb" id="r3"]
+[ext_resource type="Resource" path="res://data/items/lame_aube.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/iron_armor.tres" id="r5"]
+[ext_resource type="Resource" path="res://data/items/iron_helmet.tres" id="r6"]
+[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r7"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Aurèle, Séraphin"
+model = ExtResource("r2")
+equipment_library = ExtResource("r3")
+equipment = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r6")])
+model_scale = 1.5
+color = Color(1.0, 0.95, 0.75, 1)
+max_health = 1000
+attack = 40
+defense = 18
+magic = 20
+move_speed = 3.6
+aggro_range = 11
+leash_range = 22
+attack_range = 2.2
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 0.95
+poise = 160
+attack_cooldown = 0.9
+knockback = 7.0
+body_radius = 0.6
+loot = Array[ExtResource("2")]([ExtResource("r7")])
+loot_chances = PackedFloat32Array(1.0)

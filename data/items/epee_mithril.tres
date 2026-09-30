@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "epee_mithril"
+display_name = "Épée de mithril"
+description = "Une lame bleu pâle, légère et tranchante."
+slot = 1
+rarity = 3
+attack = 28
+reach = 1.95
+attack_speed = 1.1
+knockback = 0.8

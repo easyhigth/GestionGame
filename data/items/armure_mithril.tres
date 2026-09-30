@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "armure_mithril"
+display_name = "Armure de mithril"
+description = "Un plastron de mithril, solide comme l'acier et léger comme le cuir."
+slot = 4
+rarity = 3
+defense = 16
+speed_bonus = -0.02

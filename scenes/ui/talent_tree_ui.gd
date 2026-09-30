@@ -13,11 +13,14 @@ const NODE := 42.0
 const COL_W := 72.0
 const ROW_H := 64.0
 const INFO_W := 196.0
+## Colonnes plus larges pour la branche Pacte (noms plus longs), affichée seule dans son onglet.
+const PACT_COL_W := 118.0
 
 var player: Player
 var _selected := ""
 var _views := []
 var _buttons := {}
+var _caps := {}
 var _points: Label
 var _info_name: Label
 var _info_kind: Label
@@ -26,6 +29,9 @@ var _info_state: Label
 var _learn: Button
 var _slot_row: HBoxContainer
 var _bar: HBoxContainer
+var _branch_panels := {}
+var _show_pacte := false
+var _tab: Button
 
 
 class BranchView extends Control:
@@ -73,6 +79,13 @@ func _ready() -> void:
 	_points.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	head.add_child(_points)
+	# onglet : talents (3 branches) / compétences uniques de l'histoire (Pacte)
+	_tab = MenuKit.button("", 190, 11)
+	_tab.pressed.connect(func():
+		_show_pacte = not _show_pacte
+		_selected = ""
+		_refresh())
+	head.add_child(_tab)
 	var mid := HBoxContainer.new()
 	mid.add_theme_constant_override("separation", 10)
 	v.add_child(mid)
@@ -83,20 +96,22 @@ func _ready() -> void:
 		var bp := PanelContainer.new()
 		bp.add_theme_stylebox_override("panel", MenuKit.style(Color(b.color.darkened(0.8), 0.6), b.color.darkened(0.3), 1, 5, 6))
 		branches.add_child(bp)
+		_branch_panels[b.id] = bp
+		var cw := _col_w(b.id)
 		var bv := VBoxContainer.new()
 		bp.add_child(bv)
 		var bt := MenuKit.label(b.name, 14, b.color.lightened(0.3))
 		bt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		bv.add_child(bt)
-		var bd := MenuKit.label(b.desc, 8, C_DIM)
+		var bd := MenuKit.label(b.desc, 8, C_DIM if not b.get("story", false) else b.color)
 		bd.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		bd.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		bd.custom_minimum_size = Vector2(COL_W * 3, 0)
+		bd.custom_minimum_size = Vector2(cw * 3, 0)
 		bv.add_child(bd)
 		var view := BranchView.new()
 		view.ui = self
 		view.branch = b
-		view.custom_minimum_size = Vector2(COL_W * 3, ROW_H * 5)
+		view.custom_minimum_size = Vector2(cw * 3, ROW_H * 5)
 		bv.add_child(view)
 		_views.append(view)
 		for n in TalentTree.NODES:
@@ -114,9 +129,10 @@ func _ready() -> void:
 			view.add_child(btn)
 			var cap := MenuKit.label(n.name, 8, C_DIM)
 			cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			cap.size = Vector2(COL_W + 8, 12)
-			cap.position = node_center(n) + Vector2(-COL_W / 2.0 - 4, NODE / 2.0)
+			cap.size = Vector2(cw + 8, 12)
+			cap.position = node_center(n) + Vector2(-cw / 2.0 - 4, NODE / 2.0)
 			view.add_child(cap)
+			_caps[n.id] = cap
 			var lv := MenuKit.label("", 8, C_DIM)
 			lv.position = Vector2(NODE - 16, -3)
 			lv.name = "Lv"
@@ -178,8 +194,12 @@ func _ready() -> void:
 	foot.add_child(close)
 
 
+func _col_w(branch_id: String) -> float:
+	return PACT_COL_W if branch_id == "pacte" else COL_W
+
+
 func node_center(n: Dictionary) -> Vector2:
-	return Vector2((n.col + 0.5) * COL_W, (n.row + 0.5) * ROW_H - 8.0)
+	return Vector2((n.col + 0.5) * _col_w(n.branch), (n.row + 0.5) * ROW_H - 8.0)
 
 
 func open() -> void:
@@ -191,6 +211,7 @@ func open() -> void:
 	player.ui_open = true
 	get_tree().paused = true
 	_selected = ""
+	_show_pacte = false
 	_refresh()
 	var first: Button = _buttons.values()[0]
 	first.grab_focus.call_deferred()
@@ -240,11 +261,18 @@ func _show(id: String) -> void:
 		return
 	var b := TalentTree.branch(n.branch)
 	_info_name.text = n.name
+	var hidden: bool = n.get("story", false) and not player.talents.has(id)
 	_info_name.add_theme_color_override("font_color", b.color.lightened(0.35))
 	var kind := "Actif (recharge %d s)" % roundi(n.cooldown) if n.kind == "active" else "Passif (bonus permanent)"
-	_info_kind.text = "%s  ·  %s\nRang %d (niveau %d)  ·  coût %d point%s" % [b.name, kind, n.row + 1, TalentTree.ROW_LEVEL[n.row],
-		TalentTree.cost(id), "s" if TalentTree.cost(id) > 1 else ""]
+	if n.get("story", false):
+		_info_kind.text = "Compétence unique de l'histoire  ·  %s" % kind
+	else:
+		_info_kind.text = "%s  ·  %s\nRang %d (niveau %d)  ·  coût %d point%s" % [b.name, kind, n.row + 1, TalentTree.ROW_LEVEL[n.row],
+			TalentTree.cost(id), "s" if TalentTree.cost(id) > 1 else ""]
 	_info_desc.text = n.desc
+	if hidden:
+		_info_name.text = "Compétence inconnue"
+		_info_desc.text = "Une compétence unique t'attend quelque part dans l'histoire principale. Avance dans ta quête (O : journal) pour la découvrir."
 	var reason := player.talent_block_reason(id)
 	if player.talents.has(id):
 		_info_state.text = "Appris" + ("  ·  offert par ta classe" if id == player.class_talent() else "")
@@ -277,6 +305,11 @@ func _refresh() -> void:
 	if player == null:
 		return
 	_points.text = "Points de talent : %d   ·   Niveau %d" % [player.talent_points(), player.level]
+	var known := player.talents.keys().filter(func(t): return TalentTree.is_story(t)).size()
+	var total := TalentTree.NODES.filter(func(n): return n.get("story", false)).size()
+	_tab.text = "← Talents de combat" if _show_pacte else "✦ Pacte : %d / %d" % [known, total]
+	for bid in _branch_panels:
+		(_branch_panels[bid] as Control).visible = (bid == "pacte") == _show_pacte
 	for id in _buttons:
 		var n := TalentTree.node(id)
 		var b := TalentTree.branch(n.branch)
@@ -294,7 +327,12 @@ func _refresh() -> void:
 		btn.add_theme_stylebox_override("focus", MenuKit.style(bg.lightened(0.1), Color.WHITE, 3, 6 if n.kind == "active" else 21, 2))
 		btn.add_theme_color_override("font_color", Color.WHITE if learned else (b.color.lightened(0.2) if can else Color(0.45, 0.4, 0.36)))
 		var lv := btn.get_node("Lv") as Label
-		lv.text = "" if learned or player.level >= TalentTree.ROW_LEVEL[n.row] else "N%d" % TalentTree.ROW_LEVEL[n.row]
+		(_caps[id] as Label).text = "???" if n.get("story", false) and not learned else n.name
+		lv.text = "" if learned or n.get("story", false) or player.level >= TalentTree.ROW_LEVEL[n.row] else "N%d" % TalentTree.ROW_LEVEL[n.row]
+		if n.get("story", false) and not learned:
+			btn.text = "?"
+		elif n.get("story", false):
+			btn.text = n.glyph
 	for v in _views:
 		v.queue_redraw()
 	for c in _bar.get_children():

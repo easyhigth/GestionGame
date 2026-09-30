@@ -4,7 +4,7 @@ extends Resource
 ## Chaque objet est un fichier .tres dans data/items/ : duplique-en un pour en créer un nouveau.
 
 enum Slot { NONE, MAIN_HAND, OFF_HAND, HEAD, CHEST, ARMS, LEGS, BACK }
-enum Rarity { COMMON, UNCOMMON, RARE, EPIC }
+enum Rarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY }
 ## Façon de se battre avec l'arme (choisit la suite de coups du combo).
 enum WeaponStyle { SWORD, SPEAR, HEAVY, STAFF, UNARMED }
 
@@ -24,6 +24,7 @@ const RARITY_COLORS := {
 	Rarity.UNCOMMON: Color("7ad66a"),
 	Rarity.RARE: Color("6aa8ff"),
 	Rarity.EPIC: Color("c88aff"),
+	Rarity.LEGENDARY: Color("ffa640"),
 }
 
 ## Identifiant unique (sert aussi de nom du modèle 3D dans les fichiers <race>_equipment.glb

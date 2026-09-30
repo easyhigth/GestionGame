@@ -244,6 +244,10 @@ func _update_age_rank() -> void:
 
 
 func title() -> String:
+	# la nation nommée à la fin de l'histoire
+	var st := get_tree().get_first_node_in_group("story") if is_inside_tree() else null
+	if st and st.nation_name() != "":
+		return "%s · %s" % [st.nation_name(), AGE_NAMES[age]]
 	return "%s · %s" % [RANK_NAMES[rank], AGE_NAMES[age]]
 
 

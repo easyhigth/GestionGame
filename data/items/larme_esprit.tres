@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "larme_esprit"
+display_name = "Larme d'esprit"
+description = "Une larme de lumière pleurée par un esprit ou une fée. Elle chante doucement."
+rarity = 3
+max_stack = 50

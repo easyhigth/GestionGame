@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "katana_cornes"
+display_name = "Lame des Cornes-Rouges"
+description = "La lame du clan oni de Kaede, fine et tranchante comme un serment."
+slot = 1
+rarity = 3
+attack = 22
+speed_bonus = 0.03
+reach = 2.0
+attack_speed = 1.25
+knockback = 0.5

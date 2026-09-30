@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "orichalque"
+display_name = "Orichalque"
+description = "Le métal des légendes, couleur de soleil couchant. Les grands boss et les trésors des îles en cachent, très rarement."
+rarity = 4
+max_stack = 50
