@@ -322,6 +322,9 @@ func _open_island_chest(id: String, n: Node3D) -> void:
 		loot.append([Items.get_item("lingot_or"), randi_range(1, 2)])
 	if not world.wild_loot.is_empty():
 		loot.append([world.wild_loot.pick_random(), 1])
+	var rare := RareDrops.roll_chest("ile")
+	loot.append_array(rare)
+	RareDrops.announce(get_tree().get_first_node_in_group("player") as Player, rare)
 	for i in loot.size():
 		var a := TAU * i / loot.size()
 		if loot[i][0]:

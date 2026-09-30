@@ -260,3 +260,11 @@ func _drop_loot() -> void:
 			var a := TAU * n / 5.0 + randf() * 0.5
 			world.spawn_pickup(data.loot[i], global_position + Vector3(cos(a), 0, sin(a)) * 0.9, 1, get_parent())
 			n += 1
+	# ressources ultra-rares
+	var rare := RareDrops.roll_enemy(self, mult)
+	for pair in rare:
+		var a := TAU * n / 5.0 + randf() * 0.5
+		world.spawn_pickup(pair[0], global_position + Vector3(cos(a), 0, sin(a)) * 1.1, pair[1], get_parent())
+		n += 1
+	if not rare.is_empty():
+		RareDrops.announce(player as Player, rare)

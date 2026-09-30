@@ -329,6 +329,8 @@ func talent_block_reason(id: String) -> String:
 		return "?"
 	if talents.has(id):
 		return "Déjà appris"
+	if n.get("story", false):
+		return "Se débloque en avançant dans l'histoire principale"
 	var need: int = TalentTree.ROW_LEVEL[n.row]
 	if level < need:
 		return "Niveau %d requis" % need
@@ -338,6 +340,25 @@ func talent_block_reason(id: String) -> String:
 	if talent_points() < TalentTree.cost(id):
 		return "Pas assez de points"
 	return ""
+
+
+## Compétence unique offerte par l'histoire (sans point, sans condition).
+func grant_story_talent(id: String) -> void:
+	var n := TalentTree.node(id)
+	if n.is_empty() or talents.has(id):
+		return
+	talents[id] = true
+	if n.kind == "active":
+		var free := ability_slots.find("")
+		if free >= 0:
+			ability_slots[free] = id
+	_apply_talents()
+	Sound.ui("levelup")
+	feat.emit("Compétence unique : %s !" % n.name, Color("d8c0ff"))
+	notify.emit("Nouvelle compétence unique : %s. %s (T : arbre de talents%s)" % [n.name, n.desc,
+		", touches 1-4" if n.kind == "active" else ""])
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), Color("c8a8ff"), 60, 4.5, 0.12, 1.3, "up", -1.5)
+	SkillFX.ring(self, global_position, 4.0, Color("c8a8ff"), 0.7)
 
 
 func unlock_talent(id: String) -> bool:
@@ -358,7 +379,11 @@ func unlock_talent(id: String) -> bool:
 
 ## Oublie tous les talents (sauf celui de la classe) et rend les points.
 func reset_talents() -> void:
+	# les compétences de l'histoire restent
+	var keep := talents.keys().filter(func(id): return TalentTree.is_story(id))
 	talents.clear()
+	for id in keep:
+		talents[id] = true
 	ability_slots = ["", "", "", ""]
 	_give_class_talent()
 	_apply_talents()

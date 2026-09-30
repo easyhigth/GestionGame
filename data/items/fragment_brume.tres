@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "fragment_brume"
+display_name = "Fragment de Brume"
+description = "Un éclat violet de Brume solidifiée. Froid, et il murmure."
+rarity = 2
+max_stack = 50

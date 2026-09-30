@@ -26,7 +26,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - E près d'un cheval apprivoisé ou d'une barque : monter / descendre (carottes en main près d'un cheval sauvage : l'apprivoiser)
 - B (ou croix bas à la manette) : mode construction (voir plus bas)
 - U : panneau du royaume (habitants, lits, réserve de nourriture, bonheur)
-- O : journal de l'histoire (actes, objectif en cours, éclats, personnages)
+- O : journal de l'histoire (16 actes, objectif en cours, éclats, personnages)
 - M (ou croix haut à la manette) : carte du monde et voyage rapide
 - Échap (ou Start à la manette) : pause (sauvegarder, charger, options, menu principal)
 - Touches de test, seulement quand le jeu est lancé depuis l'éditeur Godot : R (changer de race), N (nouveau monde)
@@ -65,7 +65,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Les compétences sont décrites dans `tools/skills_database.py` (qui génère `data/skills/*.tres`) : pour en ajouter une, écris une ligne `S(...)` et relance le script. Leur fonctionnement est dans `scripts/hero/hero_skill.gd`.
 
 ## Arbre de talents
-- Touche **T** : trois branches de 9 talents, sur 5 rangs (niveaux 1, 3, 6, 10, 14).
+- Touche **T** : trois branches de 9 talents, sur 5 rangs (niveaux 1, 3, 6, 10, 14), plus l'onglet **✦ Pacte** (compétences uniques données par l'histoire, voir plus bas).
   - **Lame** (corps à corps) : Tourbillon, Charge du taureau, Frappe sismique, Onde tranchante, ultime Tempête de lames ; passifs d'attaque, de vitesse, de critiques, d'exécution.
   - **Arcanes** (sorts) : Boule de feu, Éclair en chaîne, Nova de givre, Bouclier arcanique, Lumière guérisseuse, ultime Pluie de météores ; passifs de magie et de recharge.
   - **Ombre** (agilité et survie) : Double saut, Pas de l'ombre (téléportation), Lames empoisonnées, Terreur, ultime Frénésie ; passifs de roulade, de vie, de régénération, de vol de vie.
@@ -106,13 +106,38 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Le guide a une nouvelle étape : « Mange un repas cuit » (avant la première nuit).
 
 ## Histoire principale : L'Éveil du Royaume
-Jadis, le **Cœur d'Aube** nourrissait les obélisques et protégeait le royaume. Le **Seigneur de la Brume** l'a brisé ; ses éclats ont été avalés par les grandes bêtes des régions (les boss des donjons). Tu es « l'Éveillé » que les anciens textes annonçaient.
-- **Acte I — Le réveil** : Maëlle l'Érudite t'attend près du feu ; éveille 3 obélisques ; trouve **Sire Aldéric**, chevalier déchu, à son camp près du donjon voisin ; vaincs la bête de ce donjon. Choix : Aldéric rejoint ton village (garde ou compagnon redoutable) ou te confie la **Lame d'Aube** (épée épique).
-- **Acte II — Les éclats** : rassemble 4 éclats du Cœur (un par région : bats les boss de régions différentes) ; Maëlle t'envoie vers **Lysandre la marchande**, dans une contrée lointaine ; elle veut 5 perles des eaux profondes. Choix : elle s'installe au village (le marchand ambulant vient tous les 2 jours, 10 % moins cher, 10 % mieux payé) ou te donne sa **carte des anciens** (tous les obélisques révélés) et 300 pièces d'or.
-- **Acte III — Le Cœur d'Aube** : rassemble tous les éclats, construis un **temple**, et Maëlle reforme le Cœur ; porte-le au **Sanctuaire de l'Éveil**, au bout du monde, et affronte le **Seigneur de la Brume** (4 pouvoirs, invocations, orage). Épilogue : tous les obélisques brillent, les habitants sont plus heureux (+10), grosse récompense.
-- **Dialogues** avec portrait du personnage qui parle (E ou Espace pour la suite), et choix qui changent la suite. Un **« ! »** au-dessus de la personne à qui parler.
-- **Suivi** : l'objectif en cours en haut à droite (avec la distance et la direction), une **étoile dorée** sur la mini-carte et la carte (M) ; le **journal (O)** récapitule les actes, les éclats (région par région) et les personnages. Grands titres à chaque acte.
-- Tout est sauvegardé (étape, choix, éclats, personnages). Les étapes et les dialogues sont dans `scripts/story/story.gd` (listes `STEPS`, `NPCS`, `DIALOGS`) ; faciles à modifier ou à compléter.
+Une longue histoire originale en **16 actes (84 étapes, 5 ou 6 par acte)** et **23 personnages**, dans l'esprit des récits de réincarnation où l'on bâtit une nation de monstres. Tu es mort dans un autre monde (une ville de verre, un soir de pluie, des phares...) et tu renais ici. Seul **Orvane**, un ancien esprit enchaîné dans un cristal près du village, t'entend : vous faites un **Pacte**. De pacte en pacte, ton petit village devient une nation où tous les peuples vivent ensemble.
+- **I — Une autre vie** : Orvane, et **Glou** le petit slime affamé ; 2 obélisques ; premières compétences uniques.
+- **II — Les gobelins et le loup** : **Grik** l'ancien, **Pip** le jeune chasseur ; une meute à chasser... et son chef, **Ulric** le seigneur loup, qui chassait par faim. Pacte des gobelins (ils viennent au village, ou restent alliés dans leurs bois), 2 maisons.
+- **III — L'érudite et la fée** : **Maëlle** l'érudite elfe, 5 obélisques, **Liora** la fée gourmande de pain, qui révèle que le Cœur a été brisé *de l'intérieur*.
+- **IV — La dernière lame oni** : **Kaede**, son clan détruit ; la bête du donjon... puis **Ren**, son frère, possédé par un cristal de Brume (duel). Bûcher funéraire ; Kaede te rejoint ou part sur les routes.
+- **V — Le serment des nains** : **Kaïa** la harpie messagère, **Borin** le forgeron, les araignées de la mine, la reine **Brunhild** (on trouve un cristal noir... et un nom : l'Ordre de l'Aube Pure). Borin t'apprend le **mithril**.
+- **VI — Les routes de Lysandre** : **Lysandre** la marchande (5 perles), **Zzar** la reine de la Ruche et ses scorpions, un marché.
+- **VII — La Horde affamée** : camp d'entraînement, siège de la Horde, **Gorvak** le fils du chef (accueillir ou éloigner son peuple), le cristal noir de l'Ordre.
+- **VIII — Nourrir un peuple** : 15 bottes de blé, 10 habitants, **Pip évolue en hobgobelin** grâce au Pacte, le festin des peuples, **Sylve** la dryade.
+- **IX — La couronne d'Hauterive** : **Aldéric** le chevalier, sa bête, le roi **Edmond** et le traité (3 lingots d'or).
+- **X — Le Grand Inquisiteur** : **Morvain** veut « purifier » les éclats ; Orvane se méfie ; **Lysandre avoue t'avoir espionné pour lui**.
+- **XI — La trahison** : la Croisade de l'Aube Pure attaque le village, **Maëlle est enlevée** ; Kaïa suit les ravisseurs ; **Séléné**, reine vampire, propose une alliance.
+- **XII — Le Parjure** : les templiers morts-vivants, **duel contre Morvain**, Maëlle libérée... et la vérité : **le Seigneur de la Brume, Caël, était le premier Éveillé**, un réincarné comme toi, fiancé de Séléné — et **Orvane était son ami**, celui qui a brisé le Cœur pour l'arrêter.
+- **XIII — Le conseil des pactes** : salle du trône, conseil de tous les peuples, Edmond demande pardon, **Vharok** le dernier dragonide et la bête du nid.
+- **XIV — Les dragons et l'ange** : l'héritage des dragons, tous les éclats, un temple, **Aurèle** le Séraphin veut détruire le Cœur : **duel-épreuve**.
+- **XV — Le Cœur d'Aube** : le Cœur reformé, **Orvane libéré**, une armée de 15 habitants, **forger une pièce légendaire**, la veille de la bataille avec Séléné.
+- **XVI — L'Éveil** : les Veilleurs du Sanctuaire, le **Seigneur de la Brume**, puis **l'âme de Caël** (la libérer ou la porter en toi), la fondation de ta nation (tu choisis son nom : il remplace le rang du royaume) et la grande fête.
+- **Récompenses** : à chaque pacte, une **compétence unique** (branche Pacte de l'arbre de talents) et souvent une **arme ou pièce d'équipement unique** : Croc de la Meute, Lame des Cornes-Rouges, Marteau de Borin, Cape des Routes, Hache de la Horde, Bouclier d'Hauterive, Sceptre du Parjure, Lame d'Aube, **Couronne des Pactes** (légendaire), plus des ressources ultra-rares.
+- **Dialogues** avec portrait du personnage qui parle (E ou Espace pour la suite), et choix qui changent la suite (qui rejoint le village, qui part, quels objets on reçoit). Un **« ! »** au-dessus de la personne à qui parler.
+- **Étapes variées** : parler, apporter des objets, éveiller des obélisques, chasser une meute autour d'un camp, vaincre le boss d'un donjon, repousser un siège, duel contre un boss de l'histoire, construire une pièce, réunir des habitants, forger du légendaire.
+- **Suivi** : l'objectif en cours en haut à droite (avec avancement, distance et direction), une **étoile dorée** sur la mini-carte et la carte (M) ; le **journal (O)** récapitule les 16 actes, les éclats et les 23 personnages (où ils sont). Grands titres à chaque acte.
+- Tout est sauvegardé (étape, choix, éclats, meute, personnages). Les données sont dans `scripts/story/story_data.gd` (`STEPS`, `NPCS`, `RAIDS`, `DUELS`), les dialogues dans `scripts/story/story_dialogs.gd`, le déroulement dans `scripts/story/story.gd`. Une sauvegarde de l'ancienne histoire recommence la nouvelle au premier acte (les éclats sont gardés).
+
+## Compétences uniques de l'histoire (branche Pacte)
+- Dans l'arbre de talents (**T**), l'onglet **✦ Pacte** montre les **15 compétences uniques** que seule l'histoire donne (sans points, jamais oubliées) : Voix d'Outre-Monde (+XP, +butin), Estomac sans fond (absorbe la force des vaincus), Hurlement de la Meute (terreur), Œil des Fées (critiques), Ruée écarlate (ruée de feu), Peau d'acier, Carapace de la Ruche (barrière qui renvoie les coups), Lien d'évolution, Pacte des Racines (soin de groupe), Brume inversée (drain de vie), Souffle du dragon, Ailes du Séraphin (survit à un coup mortel), Chaînes brisées (tourbillon), **Éveil** (ultime : pluie de lumière) et **Roi des Pactes** (gros bonus à tout).
+- Tant qu'elles ne sont pas découvertes, elles s'affichent en « ??? ». Les actives se rangent dans les emplacements 1-4 comme les autres talents.
+
+## Équipement légendaire et ressources ultra-rares
+- Nouvelle rareté **Légendaire** (orange) et nouvel onglet **Légendaire** dans l'artisanat.
+- **Ressources ultra-rares** : **mithril brut** (boss 70 %, pioche de fer sur la roche ou les filons : très rare), **écailles de dragon** (Seigneur Ignarok, salamandres, coffres des îles), **larmes d'esprit** (fées, esprits, dryades), **sang de démon** (démons), **fragments de Brume** (morts-vivants, démons, boss de l'histoire), **cristaux d'aube** et **orichalque** (les plus rares : boss finaux, trésors des îles, bosses très rarement). Un message doré annonce chaque trouvaille.
+- **Forge légendaire** : lingots de mithril (four) → épée, casque, armure, gantelets et jambières de mithril (enclume) ; **Lance draconique** et **Armure draconique** (écailles + sang de démon) ; **Bâton des Larmes** et **Cape de Brume** (à l'autel) ; et l'arme ultime, la **Lame de l'Éveil** (orichalque + cristaux d'aube + mithril, attaque 46).
+- Les tables de butin rare sont dans `scripts/items/rare_drops.gd`, les modèles dans `tools/voxel_equipment_generator.py`.
 
 ## Agriculture
 - **Houe** (Artisanat → Outils : 2 bois, 2 cailloux) : choisis-la avec C et appuie sur V pour **labourer** l'herbe ou la terre devant toi (sillons bruns).

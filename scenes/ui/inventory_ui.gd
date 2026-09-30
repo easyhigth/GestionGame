@@ -201,9 +201,11 @@ func _build() -> void:
 
 	# 3. artisanat
 	var c3 := _column("Artisanat", 330, cols)
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 2)
-	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux"]:
+	var tabs := HFlowContainer.new()
+	tabs.add_theme_constant_override("h_separation", 2)
+	tabs.add_theme_constant_override("v_separation", 2)
+	tabs.custom_minimum_size.x = 320
+	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire"]:
 		var tb := Button.new()
 		tb.text = cname
 		tb.toggle_mode = true

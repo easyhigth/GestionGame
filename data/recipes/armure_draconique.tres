@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/armure_draconique.tres" id="result"]
+[ext_resource type="Resource" path="res://data/items/ecaille_dragon.tres" id="ecaille_dragon"]
+[ext_resource type="Resource" path="res://data/items/lingot_mithril.tres" id="lingot_mithril"]
+[ext_resource type="Resource" path="res://data/items/sang_demon.tres" id="sang_demon"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("result")
+result_count = 1
+ingredients = Array[ExtResource("2")]([ExtResource("ecaille_dragon"), ExtResource("lingot_mithril"), ExtResource("sang_demon")])
+amounts = PackedInt32Array(8, 4, 2)
+station = "enclume"
+category = "Légendaire"

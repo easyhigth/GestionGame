@@ -399,6 +399,221 @@ def cape(e, col):
     V(1.3, 1.3, 0.7, GOLD, 0, tH - 0.4, T[3]['d'] / 2 + 0.9, top)
 
 
+# ---------------------------------------------------------------- équipement légendaire et unique (histoire)
+MITH = 0xbfe6f0
+MITH_D = 0x7fb0c4
+MITH_L = 0xe8f8ff
+DRAG = 0x9a2a1a
+DRAG_L = 0xd8582a
+DRAG_D = 0x5a1810
+TEAR = 0x9ae8ff
+ORI = 0xffb040
+ORI_L = 0xffe08a
+BRUME = 0x6a4a9a
+BRUME_D = 0x3a2858
+
+
+def epee_mithril(e):
+    """Épée de mithril : lame bleu pâle, garde d'argent, gemme bleue."""
+    h = e['hand_l']
+    V(1.2, 5, 1.2, 0x2a3a5a, 0, 0, 0, h)
+    VG(1.6, 1.6, 1.6, TEAR, 0, -3.2, 0, h)
+    V(7, 1.4, 2, MITH_D, 0, 3.2, 0, h)
+    for s in (-1, 1):
+        V(1.4, 2, 1.4, MITH, s * 3.8, 4, 0, h)
+    V(2.4, 19, 0.8, MITH, 0, 13.2, 0, h)
+    V(0.8, 17, 0.9, MITH_L, 0, 12.6, 0, h)
+    V(1.4, 1.8, 0.8, MITH, 0, 23.6, 0, h)
+
+
+def lame_eveil(e):
+    """Lame de l'Éveil : épée d'orichalque, lame de lumière blanche."""
+    h = e['hand_l']
+    V(1.3, 6, 1.3, 0x3a2a1a, 0, 0.5, 0, h)
+    VG(2, 2, 2, ORI_L, 0, -3.2, 0, h)
+    V(8.4, 1.6, 2.2, ORI, 0, 4.2, 0, h)
+    for s in (-1, 1):
+        V(2, 3.2, 1.6, ORI, s * 4.8, 5.6, 0, h, rz=s * 0.4)
+        VG(1, 1, 1, 0xffffff, s * 5.4, 7.2, 0, h)
+    VG(2.8, 23, 0.8, 0xfff8e0, 0, 17.4, 0, h)
+    V(1, 21, 1, ORI_L, 0, 16.8, 0, h)
+    VG(1.8, 2.4, 0.8, 0xffffff, 0, 30, 0, h)
+
+
+def croc_meute(e):
+    """Croc de la Meute : poignard taillé dans un croc de loup géant."""
+    h = e['hand_l']
+    V(1.1, 3.6, 1.1, 0x4a3a2a, 0, 0, 0, h)
+    V(1.6, 0.8, 1.6, 0x8a8a8a, 0, 2, 0, h)
+    V(1.8, 4, 1, 0xf0e8d0, 0, 4.6, 0, h)
+    V(1.3, 3, 0.9, 0xe8dcc0, 0.2, 7.8, 0, h, rz=-0.15)
+    V(0.8, 2, 0.8, 0xfff8e8, 0.5, 10, 0, h, rz=-0.3)
+
+
+def katana_cornes(e):
+    """Lame des Cornes-Rouges : longue lame fine, poignée rouge, garde ronde."""
+    h = e['hand_l']
+    V(1.1, 7, 1.1, 0xa02020, 0, 0.5, 0, h)
+    for i in range(3):
+        V(1.3, 0.5, 1.3, 0x1a1a1a, 0, -1.6 + i * 2.2, 0, h)
+    V(3.4, 0.8, 3.4, GOLD, 0, 4.4, 0, h)
+    for i in range(5):
+        V(1.4, 4.4, 0.5, 0xe8eef4, i * 0.18, 7 + i * 4.2, 0, h, rz=-0.03 * i)
+    V(1.1, 2, 0.5, 0xffffff, 0.95, 28, 0, h, rz=-0.2)
+
+
+def marteau_borin(e):
+    """Marteau de Borin : masse de forge naine gravée de runes d'or."""
+    h = e['hand_l']
+    V(1.3, 18, 1.3, WOOD_D, 0, 5, 0, h)
+    V(1.8, 1.4, 1.8, GOLD, 0, 0, 0, h)
+    V(8, 5, 4.4, IRON_D, 0, 14.4, 0, h)
+    for s in (-1, 1):
+        V(1.2, 5.8, 5, IRON, s * 4.4, 14.4, 0, h)
+    for x in (-2, 0, 2):
+        VG(0.8, 2.6, 0.4, ORI_L, x, 14.4, 2.3, h)
+    V(2, 2, 2, GOLD, 0, 17.6, 0, h)
+
+
+def hache_horde(e):
+    """Hache de la Horde : grande hache d'os et de fer noirci."""
+    h = e['hand_l']
+    V(1.4, 20, 1.4, 0x5a4a3a, 0, 5.5, 0, h)
+    for i in range(3):
+        V(1.8, 0.8, 1.8, 0xe8dcc0, 0, 2 + i * 3, 0, h)
+    V(2.2, 6, 2.2, 0x3a3a3a, 0, 14, 0, h)
+    V(6, 8, 1, 0x4a4a4e, 3.6, 14, 0, h)
+    V(1.4, 10, 1.2, 0xc8c8c8, 6.8, 14, 0, h)
+    V(3, 3, 1, 0xe8dcc0, -2.4, 15, 0, h, rz=0.5)
+
+
+def lance_draconique(e):
+    """Lance draconique : hampe de mithril, fer en écailles de dragon."""
+    h = e['hand_l']
+    V(1.1, 30, 1.1, MITH_D, 0, 9, 0, h)
+    for i in range(3):
+        V(1.6, 0.8, 1.6, DRAG, 0, 2 + i * 7, 0, h)
+    V(2.4, 1.6, 1.6, GOLD, 0, 24, 0, h)
+    V(3, 3, 1.2, DRAG, 0, 26.4, 0, h)
+    V(2, 3, 1.2, DRAG_L, 0, 29, 0, h)
+    VG(0.9, 2.4, 0.9, 0xffd08a, 0, 31.4, 0, h)
+    for s in (-1, 1):
+        V(1.2, 2.4, 0.8, DRAG_D, s * 2, 25.4, 0, h, rz=s * 0.6)
+
+
+def baton_larmes(e):
+    """Bâton des Larmes : bois blanc, larme d'esprit lumineuse au sommet."""
+    h = e['hand_l']
+    V(1, 30, 1, 0xe8e0d0, 0, 9, 0, h)
+    for s in (-1, 1):
+        V(0.8, 5, 0.8, 0xe8e0d0, s * 1.4, 25, 0, h, rz=-s * 0.5)
+    VG(2.6, 3.6, 2.6, TEAR, 0, 28, 0, h)
+    VG(1.2, 1.6, 1.2, 0xffffff, 0, 28.4, 0, h)
+    V(1.6, 1.2, 1.6, MITH, 0, 23.4, 0, h)
+    for y in (10, 16):
+        V(1.4, 0.8, 1.4, MITH_D, 0, y, 0, h)
+
+
+def sceptre_parjure(e):
+    """Sceptre du Parjure : bâton noir, orbe violet de Brume."""
+    h = e['hand_l']
+    V(1, 28, 1, 0x2a2030, 0, 8, 0, h)
+    for s in (-1, 1):
+        V(0.8, 4, 0.8, 0x4a3a58, s * 1.4, 23, 0, h, rz=s * 0.5)
+    VG(3, 3, 3, 0xa060ff, 0, 26, 0, h, rx=0.7, rz=0.7)
+    VG(1.2, 1.2, 1.2, 0x2a0a40, 0, 26, 0, h)
+    V(1.8, 1.2, 1.8, GOLD, 0, 21.4, 0, h)
+
+
+def bouclier_hauterive(e):
+    """Bouclier d'Hauterive : blanc et or, soleil au centre."""
+    A, sy, sz = shield_parts(e)
+    V(9.6, 11.4, 1.3, 0xf0ece0, -1, sy, sz, A)
+    V(10.4, 12.2, 0.8, GOLD, -1, sy, sz - 0.4, A)
+    V(7.4, 2.4, 1.3, 0xf0ece0, -1, sy - 6.8, sz, A)
+    V(4, 2, 1.3, 0xf0ece0, -1, sy - 8.8, sz, A)
+    VG(3, 3, 0.9, ORI_L, -1, sy + 1, sz + 0.9, A)
+    for dx, dy in ((0, 2.6), (0, -2.6), (2.6, 0), (-2.6, 0)):
+        V(1, 1, 0.6, GOLD, -1 + dx, sy + 1 + dy, sz + 0.8, A)
+
+
+def couronne_pactes(e):
+    """Couronne des Pactes : or, une gemme par peuple allié."""
+    o = e['o']; h = e['head']; hw = o['hw']; hh = o['hh']; hd = o['hd']; HT = hh / 2
+    V(hw + 1.4, 1.8, hd + 1.4, GOLD, 0, HT + 0.4, 0, h)
+    gems = (0xff5a5a, 0x5ad8ff, 0x7ae05a, 0xffd24a, 0xc88aff, 0xffffff)
+    for i in range(6):
+        x = -hw / 2 + i * hw / 5
+        V(1.2, 2.4, 1, GOLD, x, HT + 2.2, hd / 2 + 0.4, h)
+        V(1.2, 2.4, 1, GOLD, x, HT + 2.2, -hd / 2 - 0.4, h)
+        VG(0.9, 0.9, 0.6, gems[i], x, HT + 0.6, hd / 2 + 0.9, h)
+
+
+def casque_mithril(e):
+    o = e['o']; h = e['head']; hw = o['hw']; hh = o['hh']; hd = o['hd']; HT = hh / 2
+    V(hw + 1.6, 4, hd + 1.6, MITH, 0, HT - 0.4, 0, h)
+    V(hw + 2.2, 0.8, hd + 2.2, MITH_L, 0, HT - 2.4, 0, h)
+    for s in (-1, 1):
+        V(1, 4.4, 2.6, MITH_D, s * (hw / 2 + 0.9), -1.5, hd / 2 - 1.6, h)
+        V(0.8, 3, 1.6, MITH_L, s * (hw / 2 + 1.2), HT + 1, -1, h, rz=-s * 0.5)
+    V(1, 4.4, 0.8, MITH_D, 0, -1.2, hd / 2 + 0.7, h)
+    VG(1, 1, 0.5, TEAR, 0, HT - 0.4, hd / 2 + 0.9, h)
+    for i in range(4):
+        V(1.4, 2.4 - i * 0.3, 1.6, 0x2a6ad8, 0, HT + 2.4, -hd / 2 + 1.6 + i * 1.8, h)
+
+
+def armure_mithril(e):
+    o = e['o']; T = e['T']; top = e['top']
+    ch = T[2]; wa = T[1]; sh = T[3]
+    V(ch['w'] + 0.8, ch['h'] + 0.2, ch['d'] + 0.8, MITH, 0, ch['cy'], 0, top)
+    V(sh['w'] + 0.6, sh['h'] + 0.2, sh['d'] + 0.8, MITH_D, 0, sh['cy'], 0, top)
+    V(0.8, ch['h'] * 0.9, 0.6, MITH_L, 0, ch['cy'], ch['d'] / 2 + 0.6, top)
+    VG(2, 2, 0.6, TEAR, 0, ch['cy'] + 0.4, ch['d'] / 2 + 0.9, top)
+    for i in range(3):
+        V(wa['w'] + 0.8 + i * 0.2, 1.1, wa['d'] + 0.8, shade(MITH, 1 - i * 0.06), 0, wa['y0'] + wa['h'] - 0.6 - i * 1.0, 0, top)
+    V(wa['w'] * 0.9, 6, 0.7, 0x2a6ad8, 0, -1.8, wa['d'] / 2 + 1, top)
+    V(wa['w'] * 0.9, 6, 0.7, shade(0x2a6ad8, 0.85), 0, -1.8, -wa['d'] / 2 - 1, top)
+    for a in e['arms']:
+        V(o['aw'] + 2.6, 1.4, o['ad'] + 2.6, MITH, 0, 0.9, 0, a)
+        V(o['aw'] + 2.2, 1.2, o['ad'] + 2.2, MITH_D, 0, -0.3, 0, a)
+
+
+def gantelets_mithril(e):
+    o = e['o']
+    for a in e['arms']:
+        V(o['aw'] + 0.9, o['al'] * 0.3, o['ad'] + 0.9, MITH, 0, -o['al'] * 0.72, 0, a)
+        V(o['aw'] + 1.4, 1.6, o['ad'] + 1.4, MITH_L, 0, -o['al'] * 0.46 - 0.4, 0, a)
+        V(o['aw'] + 1, o['aw'] + 0.8, o['ad'] + 1, MITH_D, 0, -o['al'] + o['aw'] * 0.35, 0.2, a)
+        VG(o['aw'] + 1.2, 0.6, o['ad'] + 1.2, TEAR, 0, -o['al'] * 0.58, 0, a)
+
+
+def jambieres_mithril(e):
+    legs_common(e, 0x3a4a62, MITH_D, MITH_D, knee=MITH)
+
+
+def armure_draconique(e):
+    """Armure draconique : écailles rouges superposées, épaulières en cornes."""
+    o = e['o']; T = e['T']; top = e['top']
+    ch = T[2]; wa = T[1]; sh = T[3]
+    V(ch['w'] + 0.9, ch['h'] + 0.2, ch['d'] + 0.9, DRAG, 0, ch['cy'], 0, top)
+    V(wa['w'] + 0.8, wa['h'], wa['d'] + 0.8, DRAG_D, 0, wa['cy'], 0, top)
+    V(sh['w'] + 0.8, sh['h'] + 0.4, sh['d'] + 1, DRAG, 0, sh['cy'], 0, top)
+    for r in range(3):
+        for c in range(3):
+            V(1.8, 1.4, 0.6, DRAG_L if (r + c) % 2 else shade(DRAG_L, 0.85), -2.2 + c * 2.2, ch['cy'] + 1.8 - r * 1.8, ch['d'] / 2 + 0.7, top)
+    VG(1.6, 1.6, 0.6, 0xffc040, 0, ch['cy'] + 2.4, ch['d'] / 2 + 1.1, top)
+    for a in e['arms']:
+        V(o['aw'] + 2.8, 1.8, o['ad'] + 2.8, DRAG, 0, 0.9, 0, a)
+        V(1.2, 3, 1.2, 0xe8dcc0, 0, 2.6, 0, a, rz=0.3)
+
+
+def cape_brume(e):
+    cape(e, BRUME)
+    o = e['o']; T = e['T']; top = e['top']; tH = o['tH']
+    VG(1.2, 1.2, 0.6, 0xa060ff, 0, tH - 0.4, T[3]['d'] / 2 + 1.1, top)
+
+
+
 ITEMS = {
     'sword_wood': sword_wood, 'sword_iron': sword_iron, 'axe': axe, 'war_hammer': war_hammer,
     'spear': spear, 'dagger': dagger, 'staff': staff,
@@ -411,6 +626,13 @@ ITEMS = {
     # outils (tenus en main quand le héros récolte)
     'hache_bois': hache_bois, 'hache_pierre': hache_pierre, 'pioche_bois': pioche_bois, 'pioche_pierre': pioche_pierre,
     'hache_fer': hache_fer, 'pioche_fer': pioche_fer, 'houe': houe, 'manteau_laine': manteau_laine, 'canne_peche': canne_peche, 'lame_aube': lame_aube,
+    # équipement légendaire et unique (histoire)
+    'epee_mithril': epee_mithril, 'lame_eveil': lame_eveil, 'croc_meute': croc_meute, 'katana_cornes': katana_cornes,
+    'marteau_borin': marteau_borin, 'hache_horde': hache_horde, 'lance_draconique': lance_draconique,
+    'baton_larmes': baton_larmes, 'sceptre_parjure': sceptre_parjure, 'bouclier_hauterive': bouclier_hauterive,
+    'couronne_pactes': couronne_pactes, 'casque_mithril': casque_mithril, 'armure_mithril': armure_mithril,
+    'gantelets_mithril': gantelets_mithril, 'jambieres_mithril': jambieres_mithril, 'armure_draconique': armure_draconique,
+    'cape_brume': cape_brume, 'cape_routes': lambda e: cape(e, 0x3a8a4a),
 }
 
 
@@ -731,8 +953,81 @@ FARM = [m_houe, m_graines_ble, m_ble, m_carotte, m_pomme_de_terre, m_pomme_de_te
         m_oeuf, m_lait, m_laine, m_omelette, m_fromage, m_gateau] + FISH
 
 
+# ---------------------------------------------------------------- ressources ultra-rares
+def m_mithril_brut():
+    g = Node('mithril_brut')
+    V(10, 7, 9, 0x5e6a74, 0, 3.5, 0, g)
+    V(6, 4, 6, 0x6e7a84, 1, 8, -1, g)
+    for x, y, z in ((-3, 5, 4.6), (2, 3, 4.6), (5.1, 5, 0), (0, 10.1, -1)):
+        VG(2.4, 2.4, 2.4, MITH, x, y, z, g)
+    return g
+
+
+def m_lingot_mithril():
+    g = Node('lingot_mithril')
+    for i, (x, y) in enumerate(((-3, 1.5), (3, 1.5), (0, 4.5))):
+        V(5, 3, 12, MITH_L if i == 2 else MITH, x, y, 0, g)
+        VG(3.6, 0.6, 10, MITH_L, x, y + 1.7, 0, g)
+    return g
+
+
+def m_ecaille_dragon():
+    g = Node('ecaille_dragon')
+    for i, (x, z, r) in enumerate(((-3, 0, 0.3), (3, 1, -0.2), (0, -2, 0.1))):
+        V(7, 1.4, 8, DRAG if i % 2 else DRAG_L, x, 0.8 + i * 1.2, z, g, ry=r)
+        V(5, 1, 3, DRAG_D, x, 1.6 + i * 1.2, z - 2.6, g, ry=r)
+    VG(1.4, 1.4, 1.4, 0xffc040, 0, 4.6, -2, g)
+    return g
+
+
+def m_larme_esprit():
+    g = Node('larme_esprit')
+    VG(4, 5, 4, TEAR, 0, 3, 0, g)
+    VG(2.6, 3, 2.6, TEAR, 0, 7, 0, g)
+    VG(1.4, 2, 1.4, 0xffffff, 0, 9.6, 0, g)
+    VG(1.6, 1.6, 1.6, 0xffffff, 0.8, 3.6, 1.6, g)
+    return g
+
+
+def m_sang_demon():
+    g = Node('sang_demon')
+    V(5, 8, 5, 0x3a2a2a, 0, 4, 0, g)
+    VG(4, 6, 4, 0xd01a2a, 0, 4.4, 0, g)
+    V(2.4, 2, 2.4, 0x6a4a2a, 0, 9, 0, g)
+    return g
+
+
+def m_cristal_aube():
+    g = Node('cristal_aube')
+    VG(4, 12, 4, ORI_L, 0, 6, 0, g, ry=0.4)
+    VG(3, 8, 3, 0xfff4d0, 3, 4, 1, g, rz=-0.35)
+    VG(2.4, 6, 2.4, 0xffe08a, -3, 3, -1, g, rz=0.4)
+    V(9, 1.4, 7, 0x8a8a86, 0, 0.7, 0, g)
+    return g
+
+
+def m_orichalque():
+    g = Node('orichalque')
+    V(9, 6, 8, 0x5a3a2a, 0, 3, 0, g)
+    for x, y, z in ((-2.6, 4.2, 4.2), (2.4, 2.6, 4.2), (4.6, 4.4, 0), (0, 6.6, -1)):
+        VG(2.8, 2.8, 2.8, ORI, x, y, z, g)
+    VG(1.4, 1.4, 1.4, ORI_L, 0, 7.8, 1, g)
+    return g
+
+
+def m_fragment_brume():
+    g = Node('fragment_brume')
+    VG(3.4, 9, 3.4, 0x8a5ad8, 0, 4.5, 0, g, rx=0.3, rz=0.3)
+    VG(2.4, 6, 2.4, BRUME, 2.6, 3, 1, g, rz=-0.5)
+    VG(2, 5, 2, 0x4a2a7a, -2.4, 2.5, -1, g, rz=0.5)
+    return g
+
+
+RARE = [m_mithril_brut, m_lingot_mithril, m_ecaille_dragon, m_larme_esprit, m_sang_demon, m_cristal_aube, m_orichalque, m_fragment_brume]
+
+
 MATERIALS = [m_baies, m_viande_crue, m_viande_cuite, m_ragout, m_pain, m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
-             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer] + FARM
+             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer] + FARM + RARE
 
 
 # ---------------------------------------------------------------- export

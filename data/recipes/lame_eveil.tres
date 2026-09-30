@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/lame_eveil.tres" id="result"]
+[ext_resource type="Resource" path="res://data/items/orichalque.tres" id="orichalque"]
+[ext_resource type="Resource" path="res://data/items/cristal_aube.tres" id="cristal_aube"]
+[ext_resource type="Resource" path="res://data/items/lingot_mithril.tres" id="lingot_mithril"]
+[ext_resource type="Resource" path="res://data/items/larme_esprit.tres" id="larme_esprit"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("result")
+result_count = 1
+ingredients = Array[ExtResource("2")]([ExtResource("orichalque"), ExtResource("cristal_aube"), ExtResource("lingot_mithril"), ExtResource("larme_esprit")])
+amounts = PackedInt32Array(2, 3, 4, 1)
+station = "enclume"
+category = "Légendaire"

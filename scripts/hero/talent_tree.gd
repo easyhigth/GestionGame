@@ -13,6 +13,7 @@ const BRANCHES := [
 	{"id": "lame", "name": "Lame", "desc": "Attaques au corps à corps, charges et tourbillons.", "color": Color("e8703a")},
 	{"id": "arcanes", "name": "Arcanes", "desc": "Sorts de feu, de foudre et de givre, protections et soins.", "color": Color("6a8aff")},
 	{"id": "ombre", "name": "Ombre", "desc": "Agilité, survie, poisons et frénésie.", "color": Color("5ac870")},
+	{"id": "pacte", "name": "Pacte", "desc": "Compétences uniques de l'Éveillé : offertes par l'histoire, sans points.", "color": Color("c8a8ff"), "story": true},
 ]
 ## Niveau du héros requis pour chaque rang.
 const ROW_LEVEL := [1, 3, 6, 10, 14]
@@ -93,6 +94,46 @@ const NODES := [
 	{"id": "omb_frenesie", "branch": "ombre", "row": 4, "col": 1, "glyph": "✹", "name": "Frénésie", "kind": "active", "cost": 2,
 		"requires": ["omb_sang", "omb_terreur"], "active": "buff", "params": {"atk": 0.35, "aspd": 0.35, "lifesteal": 0.1, "spd": 0.2, "dur": 10.0}, "cooldown": 40.0,
 		"desc": "Ultime : 10 secondes de rage (+35 % d'attaque et de vitesse d'attaque, vol de vie)."},
+	# ---------------- Pacte (compétences uniques, débloquées par l'histoire principale)
+	{"id": "pac_voix", "branch": "pacte", "row": 0, "col": 0, "glyph": "✺", "name": "Voix d'Outre-Monde", "kind": "passive", "story": true,
+		"bonus": {"xp": 0.15, "loot": 0.1}, "desc": "Ton âme venue d'ailleurs apprend plus vite : +15 % d'expérience, +10 % de butin. (Pacte avec Orvane)"},
+	{"id": "pac_estomac", "branch": "pacte", "row": 0, "col": 1, "glyph": "◉", "name": "Estomac sans fond", "kind": "passive", "story": true,
+		"bonus": {"absorb": 0.1, "kill_heal": 4.0}, "desc": "Comme Glou, tu dévores la force des vaincus : 10 % de chances d'absorber de la force, +4 vie par ennemi vaincu. (Glou)"},
+	{"id": "pac_hurlement", "branch": "pacte", "row": 0, "col": 2, "glyph": "☾", "name": "Hurlement de la Meute", "kind": "active", "story": true,
+		"active": "fear", "params": {"radius": 7.0, "dur": 3.5, "dmg": 0.8}, "cooldown": 16.0,
+		"desc": "Un hurlement de loup blesse et terrifie les ennemis autour de toi. (Ulric)"},
+	{"id": "pac_oeil_fees", "branch": "pacte", "row": 1, "col": 0, "glyph": "✧", "name": "Œil des Fées", "kind": "passive", "story": true,
+		"bonus": {"crit": 0.07, "dodge": 0.05, "crit_mult": 0.2}, "desc": "Tu vois les failles : +7 % de coups critiques, +20 % de dégâts critiques, esquive plus facile. (Liora)"},
+	{"id": "pac_ruee", "branch": "pacte", "row": 1, "col": 1, "glyph": "➹", "name": "Ruée écarlate", "kind": "active", "story": true,
+		"active": "dash", "params": {"dist": 8.0, "dmg": 2.0, "burn": 0.6}, "cooldown": 9.0,
+		"desc": "L'art des Cornes-Rouges : tu traverses les ennemis dans une traînée de feu. (Kaede)"},
+	{"id": "pac_acier", "branch": "pacte", "row": 1, "col": 2, "glyph": "⬢", "name": "Peau d'acier", "kind": "passive", "story": true,
+		"bonus": {"def_flat": 6.0, "poise": 0.25, "hp_pct": 0.08}, "desc": "Le serment des nains : +6 défense, +8 % de vie, coups plus lourds. (Borin)"},
+	{"id": "pac_carapace", "branch": "pacte", "row": 2, "col": 0, "glyph": "⬡", "name": "Carapace de la Ruche", "kind": "active", "story": true,
+		"active": "barrier", "params": {"dur": 6.0, "reduce": 0.6, "reflect": 1}, "cooldown": 20.0,
+		"desc": "Une carapace de chitine absorbe 60 % des dégâts et renvoie les coups. (Zzar)"},
+	{"id": "pac_evolution", "branch": "pacte", "row": 2, "col": 1, "glyph": "⇮", "name": "Lien d'évolution", "kind": "passive", "story": true,
+		"bonus": {"atk_pct": 0.1, "mag_pct": 0.1, "hp_pct": 0.1}, "desc": "Tes pactes font évoluer tes alliés, et toi avec eux : +10 % d'attaque, de magie et de vie. (Pip)"},
+	{"id": "pac_racines", "branch": "pacte", "row": 2, "col": 2, "glyph": "❦", "name": "Pacte des Racines", "kind": "active", "story": true,
+		"active": "heal", "params": {"pct": 0.45, "allies": 1}, "cooldown": 22.0,
+		"desc": "Les racines du monde te soignent de 45 %, toi et tes alliés proches. (Sylve)"},
+	{"id": "pac_brume", "branch": "pacte", "row": 3, "col": 0, "glyph": "♆", "name": "Brume inversée", "kind": "active", "story": true,
+		"active": "drain", "params": {"radius": 5.5, "dmg": 1.8, "ratio": 0.6}, "cooldown": 14.0,
+		"desc": "Tu retournes la Brume contre tes ennemis : elle aspire leur vie pour te la rendre. (Séléné)"},
+	{"id": "pac_souffle", "branch": "pacte", "row": 3, "col": 1, "glyph": "☄", "name": "Souffle du dragon", "kind": "active", "story": true,
+		"active": "cone", "params": {"range": 8.0, "dmg": 2.4, "kb": 12, "angle": 80, "burn": 0.8}, "cooldown": 12.0,
+		"desc": "Un torrent de flammes draconiques embrase tout devant toi. (Vharok)"},
+	{"id": "pac_seraphin", "branch": "pacte", "row": 3, "col": 2, "glyph": "✚", "name": "Ailes du Séraphin", "kind": "passive", "story": true,
+		"bonus": {"last_stand": 1.0, "regen": 2.5}, "desc": "Tu refuses de tomber (survit à un coup mortel toutes les 60 s), +2,5 vie par seconde. (Aurèle)"},
+	{"id": "pac_chaines", "branch": "pacte", "row": 4, "col": 0, "glyph": "⛓", "name": "Chaînes brisées", "kind": "active", "story": true,
+		"active": "vortex", "params": {"radius": 7.0, "dmg": 2.6}, "cooldown": 24.0,
+		"desc": "Les chaînes d'Orvane, brisées, deviennent tiennes : elles attirent et broient les ennemis. (Orvane libéré)"},
+	{"id": "pac_eveil", "branch": "pacte", "row": 4, "col": 1, "glyph": "☀", "name": "Éveil", "kind": "active", "story": true,
+		"active": "meteor", "params": {"radius": 3.6, "dmg": 3.0, "count": 6, "burn": 0.6}, "cooldown": 30.0,
+		"desc": "Ultime : la lumière du Cœur d'Aube s'abat du ciel sur tous tes ennemis. (Caël)"},
+	{"id": "pac_roi", "branch": "pacte", "row": 4, "col": 2, "glyph": "♛", "name": "Roi des Pactes", "kind": "passive", "story": true,
+		"bonus": {"atk_pct": 0.15, "mag_pct": 0.15, "def_flat": 5.0, "cdr_pct": 0.15, "spd_pct": 0.08},
+		"desc": "Tous les peuples te prêtent leur force : +15 % d'attaque et de magie, +5 défense, recharges -15 %, +8 % de vitesse. (Fondation de la nation)"},
 ]
 
 ## Talent offert au départ selon la classe (il ne coûte pas de point).
@@ -118,7 +159,14 @@ static func branch(id: String) -> Dictionary:
 
 
 static func cost(id: String) -> int:
+	# les compétences de l'histoire ne coûtent pas de points
+	if node(id).get("story", false):
+		return 0
 	return int(node(id).get("cost", 1))
+
+
+static func is_story(id: String) -> bool:
+	return node(id).get("story", false)
 
 
 ## Somme des bonus des talents passifs débloqués.

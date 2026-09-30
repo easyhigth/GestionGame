@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lame_eveil"
+display_name = "Lame de l'Éveil"
+description = "La lame d'orichalque forgée avec les cristaux du Cœur d'Aube. L'arme ultime du royaume."
+slot = 1
+rarity = 4
+attack = 46
+magic = 10
+reach = 2.1
+attack_speed = 1.15
+knockback = 1.2

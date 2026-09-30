@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lance_draconique"
+display_name = "Lance draconique"
+description = "Hampe de mithril, fer en écailles de dragon. Elle transperce les boss."
+slot = 1
+rarity = 4
+attack = 34
+defense = 2
+reach = 2.7
+attack_speed = 0.95
+knockback = 1.5
+weapon_style = 1

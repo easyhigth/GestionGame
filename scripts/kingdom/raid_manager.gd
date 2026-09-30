@@ -78,16 +78,19 @@ func _process(delta: float) -> void:
 
 
 ## Annonce un raid (appelé automatiquement ; utilisable pour tester).
-func announce() -> void:
+## `story` : raid de l'histoire {key, name, types, leader, extra} (bande imposée, plus nombreuse).
+func announce(story := {}) -> void:
 	var p := _player()
 	var lv := p.level if p else 1
 	var tier: Array = TIERS[0]
 	for t in TIERS:
 		if lv >= int(t[0]):
 			tier = t
+	if not story.is_empty():
+		tier = [0, story.name, story.types, story.leader, maxi(1, lv - 1)]
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var rank := k.rank if k else 0
-	var count := clampi(3 + rank + lv / 4, 3, 10)
+	var count := clampi(3 + rank + lv / 4, 3, 10) + int(story.get("extra", 0))
 	var angle := randf() * TAU
 	var dir_i := posmod(roundi(angle / (TAU / 8.0)), 8)
 	var center := village_center()
@@ -100,7 +103,9 @@ func announce() -> void:
 		spot.y = world.ground_height_at(spot + Vector3(0, 3, 0))
 	raid = {"state": "warning", "name": tier[1], "types": tier[2], "leader": tier[3], "base": tier[4],
 		"count": count, "level": lv, "dir_text": DIRECTIONS[dir_i], "spawn": spot, "timer": warning_time,
-		"raiders": [], "broken": 0, "angle": angle}
+		"raiders": [], "broken": 0, "angle": angle, "story": story.get("key", "")}
+	if not story.is_empty():
+		raid.timer = 30.0
 	raid_warning.emit(raid)
 
 

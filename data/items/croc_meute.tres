@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "croc_meute"
+display_name = "Croc de la Meute"
+description = "Un poignard taillé dans un croc du grand loup Ulric. Rapide comme la meute."
+slot = 1
+rarity = 2
+attack = 12
+speed_bonus = 0.06
+reach = 1.4
+attack_speed = 1.6

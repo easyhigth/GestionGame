@@ -505,6 +505,9 @@ func _open_chest(it: Dictionary, boss_chest: bool) -> void:
 	loot.append([Items.get_item("piece_or"), randi_range(2, 5) * (3 if boss_chest else 1)])
 	if boss_chest:
 		loot.append([Items.get_item("lingot_or"), 2])
+		var rare_boss := RareDrops.roll_chest("donjon_boss")
+		loot.append_array(rare_boss)
+		RareDrops.announce(get_tree().get_first_node_in_group("player") as Player, rare_boss)
 	var rare: int = 2 if boss_chest else (1 if randf() < 0.5 else 0)
 	for i in rare:
 		if not world.wild_loot.is_empty():
