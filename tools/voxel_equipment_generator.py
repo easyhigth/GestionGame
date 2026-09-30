@@ -443,7 +443,54 @@ def m_hache_fer(): return _axe('hache_fer', IRON_D, STEEL)
 def m_pioche_fer(): return _pick('pioche_fer', IRON_D, STEEL)
 
 
-MATERIALS = [m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
+def m_baies():
+    g = Node('baies')
+    for i, (x, z) in enumerate(((-3, -2), (2, -3), (0, 2), (4, 2), (-4, 3), (1, -0.5))):
+        V(3.4, 3.4, 3.4, 0xc8283c if i % 2 else 0x8a1a5a, x, 1.7 + (2.2 if i == 5 else 0), z, g)
+    V(1, 2, 1, 0x3a7a2a, 1, 6.2, -0.5, g)
+    V(4, 0.6, 2, 0x4a9a3a, 2.5, 6.8, -0.5, g)
+    return g
+
+
+def m_viande_crue():
+    g = Node('viande_crue')
+    V(12, 5, 8, 0xc8505a, 0, 2.5, 0, g)
+    V(8, 4, 6, 0xe07078, 1, 5.5, 0, g)
+    V(3, 3, 3, 0xf0e6d2, -7, 2.5, 0, g)
+    V(2, 1, 6, 0xf0c8c8, 2, 4.6, 0, g)
+    return g
+
+
+def m_viande_cuite():
+    g = Node('viande_cuite')
+    V(12, 5, 8, 0x8a4a22, 0, 2.5, 0, g)
+    V(8, 4, 6, 0xa85a2a, 1, 5.5, 0, g)
+    V(3, 3, 3, 0xf0e6d2, -7, 2.5, 0, g)
+    V(6, 1, 1, 0x5a2a12, 1, 7.6, -1.5, g)
+    V(6, 1, 1, 0x5a2a12, 1, 7.6, 1.5, g)
+    return g
+
+
+def m_ragout():
+    g = Node('ragout')
+    V(14, 5, 14, 0x6a4428, 0, 2.5, 0, g)
+    V(16, 1.5, 16, 0x8a6238, 0, 5.6, 0, g)
+    V(11, 1, 11, 0xa85a2a, 0, 5.4, 0, g)
+    for x, z, c in ((-2, -2, 0xc8283c), (3, 1, 0x8a1a5a), (0, 3, 0xe0a060), (-3, 2, 0x5a8a3a)):
+        V(2.4, 1.4, 2.4, c, x, 6.2, z, g)
+    return g
+
+
+def m_pain():
+    g = Node('pain')
+    V(14, 6, 8, 0xc88a3a, 0, 3, 0, g)
+    V(12, 2, 6, 0xe0a860, 0, 6.6, 0, g)
+    for x in (-4, 0, 4):
+        V(1.2, 0.8, 5, 0xf0d090, x, 7.8, 0, g)
+    return g
+
+
+MATERIALS = [m_baies, m_viande_crue, m_viande_cuite, m_ragout, m_pain, m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
              m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer]
 
 

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://assets/characters/creatures/wolf.glb" id="model"]
 [ext_resource type="Resource" path="res://data/items/leather.tres" id="it_leather"]
 [ext_resource type="Resource" path="res://data/items/fiber.tres" id="it_fiber"]
+[ext_resource type="Resource" path="res://data/items/viande_crue.tres" id="it_viande"]
 
 [resource]
 script = ExtResource("1")
@@ -21,8 +22,8 @@ attack_range = 1.5
 attack_cooldown = 0.9
 knockback = 3.5
 body_radius = 0.45
-loot = Array[ExtResource("2")]([ExtResource("it_leather"), ExtResource("it_leather"), ExtResource("it_fiber")])
-loot_chances = PackedFloat32Array(0.7, 0.3, 0.2)
+loot = Array[ExtResource("2")]([ExtResource("it_leather"), ExtResource("it_leather"), ExtResource("it_fiber"), ExtResource("it_viande")])
+loot_chances = PackedFloat32Array(0.7, 0.3, 0.2, 0.7)
 attack_moves = PackedStringArray("bite")
 attack_speed = 1.1
 poise = 10

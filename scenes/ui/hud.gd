@@ -26,6 +26,8 @@ var _target: Combatant
 var _xp_fill: ColorRect
 var _xp_text: Label
 var _kingdom_text: Label
+var _hunger_fill: ColorRect
+var _hunger_text: Label
 var _skill_box: PanelContainer
 var _skill_icon: ColorRect
 var _skill_cd: ColorRect
@@ -137,8 +139,25 @@ func _build_health_bar() -> void:
 	_xp_text = _outlined("", 10)
 	_xp_text.position = Vector2(HP_WIDTH + 12, 16)
 	box.add_child(_xp_text)
+	# jauge de faim
+	var hb := ColorRect.new()
+	hb.color = Color(0.05, 0.04, 0.04, 0.85)
+	hb.position = Vector2(0, 30)
+	hb.size = Vector2(HP_WIDTH * 0.6 + 4, 8)
+	box.add_child(hb)
+	_hunger_fill = ColorRect.new()
+	_hunger_fill.color = Color(0.9, 0.6, 0.25)
+	_hunger_fill.position = Vector2(2, 32)
+	_hunger_fill.size = Vector2(HP_WIDTH * 0.6, 4)
+	box.add_child(_hunger_fill)
+	_hunger_text = _outlined("", 9)
+	_hunger_text.position = Vector2(HP_WIDTH * 0.6 + 10, 26)
+	box.add_child(_hunger_text)
+	if player:
+		player.hunger_changed.connect(func(_v): _update_hunger())
+	_update_hunger.call_deferred()
 	_kingdom_text = _outlined("", 11)
-	_kingdom_text.position = Vector2(0, 30)
+	_kingdom_text.position = Vector2(0, 40)
 	box.add_child(_kingdom_text)
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k:
@@ -146,6 +165,17 @@ func _build_health_bar() -> void:
 		k.age_changed.connect(func(a): show_feat("Nouvel âge : %s !" % Kingdom.AGE_NAMES[a], Kingdom.AGE_COLORS[a]))
 		k.rank_changed.connect(func(r): show_feat("Votre royaume devient : %s !" % Kingdom.RANK_NAMES[r], Color("f2c86a")))
 	_update_kingdom.call_deferred()
+
+
+func _update_hunger() -> void:
+	if player == null or _hunger_fill == null:
+		return
+	var r := player.hunger / Player.HUNGER_MAX
+	_hunger_fill.size.x = HP_WIDTH * 0.6 * r
+	var st: int = player.hunger_state()
+	_hunger_fill.color = [Color(0.85, 0.2, 0.15), Color(0.95, 0.45, 0.2), Color(0.9, 0.6, 0.25), Color(0.55, 0.85, 0.35)][st + 1]
+	_hunger_text.text = ["Meurt de faim ! (H : manger)", "Affamé (H : manger)", "Faim %d %%" % roundi(player.hunger), "Rassasié · vie +1,5/s"][st + 1]
+	_hunger_text.add_theme_color_override("font_color", _hunger_fill.color.lightened(0.3))
 
 
 func _build_death_screen() -> void:
@@ -354,7 +384,7 @@ func _build_maps() -> void:
 	add_child(map_ui)
 	_build_boss_bar()
 	_raid_label = _outlined("", 14)
-	_raid_label.position = Vector2(14, 98)
+	_raid_label.position = Vector2(14, 100)
 	_raid_label.add_theme_color_override("font_color", Color("ff8a6a"))
 	add_child(_raid_label)
 	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
