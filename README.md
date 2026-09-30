@@ -133,6 +133,18 @@ Une longue histoire originale en **16 actes (84 étapes, 5 ou 6 par acte)** et *
 - Dans l'arbre de talents (**T**), l'onglet **✦ Pacte** montre les **15 compétences uniques** que seule l'histoire donne (sans points, jamais oubliées) : Voix d'Outre-Monde (+XP, +butin), Estomac sans fond (absorbe la force des vaincus), Hurlement de la Meute (terreur), Œil des Fées (critiques), Ruée écarlate (ruée de feu), Peau d'acier, Carapace de la Ruche (barrière qui renvoie les coups), Lien d'évolution, Pacte des Racines (soin de groupe), Brume inversée (drain de vie), Souffle du dragon, Ailes du Séraphin (survit à un coup mortel), Chaînes brisées (tourbillon), **Éveil** (ultime : pluie de lumière) et **Roi des Pactes** (gros bonus à tout).
 - Tant qu'elles ne sont pas découvertes, elles s'affichent en « ??? ». Les actives se rangent dans les emplacements 1-4 comme les autres talents.
 
+## Évolutions par le Pacte
+Une fois le Pacte conclu avec Orvane (acte I de l'histoire), les liens font **évoluer** ceux qui les partagent.
+- **Nommer un habitant** : dans sa fiche (E près de lui), zone « ✦ Pacte : nommer pour évoluer » ; écris le nom que tu veux lui donner et clique « Nommer ». Deux évolutions par habitant :
+  - 1re : niveau 3 et 50 pièces d'or ; 2e : niveau 8, 150 pièces d'or et 1 larme d'esprit ;
+  - chaînes d'évolution : gobelin → **hobgobelin** → chef hobgobelin ; ogre → **oni** → grand oni ; homme-lézard → guerrier → **dragonide** ; fée → grande fée → **fée céleste** (ange) ; mort-vivant → spectre → **vampire** ; dryade → **esprit sylvestre** ; orc → orc noble → seigneur orc ; slime → slime éveillé → slime royal ; lycan, harpie, insecte, homme-bête, démon... (les autres races deviennent « nommées » puis « éveillées ») ;
+  - à chaque évolution : nouvelle race ou nouveau titre, **+3 niveaux**, force ×1,25 puis ×1,6, un peu plus grand, et une gerbe de lumière.
+- **Familiers** : un monstre affaibli (moins de 30 % de vie, pas un boss) affiche « [E] Pacte » : appuie sur E pour l'apprivoiser. Il reçoit un nom, te suit partout et **combat à tes côtés** (3 familiers au plus, liste dans le panneau du royaume, U).
+  - Chaque victoire près de toi le fait progresser : +1 niveau toutes les 4 victoires, **1re évolution à 12 victoires, 2e à 35** (loup → Loup des tempêtes → Seigneur-loup, sanglier → Sanglier de guerre → Roi sanglier, slime → Slime géant → Slime royal, gobelin → Hobgobelin → Chef hobgobelin, ogre → Oni → Grand oni...), plus grand et bien plus fort.
+  - K.O., il revient auprès de toi au bout de 40 secondes ; trop loin, il te rejoint. Les familiers sont sauvegardés.
+- **Évolution du héros** : l'histoire principale fait évoluer ton âme trois fois (fin des actes IV, XII et XVI) : titre selon ta race (homme-bête éveillé → Seigneur-bête → **Roi des Bêtes** ; humain éveillé → Héros → Saint ; slime éveillé → Slime primordial → Slime divin...), vie, attaque, magie, défense et régénération en hausse, un peu plus grand, puis une aura lumineuse. Le titre s'affiche à côté de ton nom.
+- Les règles sont dans `scripts/kingdom/evolution.gd` (habitants et héros) et `scripts/world/familiars.gd` (familiers).
+
 ## Équipement légendaire et ressources ultra-rares
 - Nouvelle rareté **Légendaire** (orange) et nouvel onglet **Légendaire** dans l'artisanat.
 - **Ressources ultra-rares** : **mithril brut** (boss 70 %, pioche de fer sur la roche ou les filons : très rare), **écailles de dragon** (Seigneur Ignarok, salamandres, coffres des îles), **larmes d'esprit** (fées, esprits, dryades), **sang de démon** (démons), **fragments de Brume** (morts-vivants, démons, boss de l'histoire), **cristaux d'aube** et **orichalque** (les plus rares : boss finaux, trésors des îles, bosses très rarement). Un message doré annonce chaque trouvaille.

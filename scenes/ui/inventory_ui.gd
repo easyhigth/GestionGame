@@ -334,6 +334,7 @@ func _refresh_job() -> void:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k == null:
 		return
+	_evolution_box()
 	# compagnon d'expédition (2 au plus)
 	var n_comp := get_tree().get_nodes_in_group("villagers").filter(func(v): return v.get("companion")).size()
 	var comp := CheckButton.new()
@@ -384,6 +385,44 @@ func _refresh_job() -> void:
 			best.append(jid)
 		var l2 := _label("Doué pour : %s" % ", ".join(best), 9, C_DIM)
 		_job_box.add_child(l2)
+
+
+## Pacte : donner un nom à l'habitant pour le faire évoluer.
+func _evolution_box() -> void:
+	if target.has_meta("story") or not Evolution.pact_known(get_tree()):
+		return
+	var nxt := Evolution.next_villager_evo(target)
+	var evo: int = target.get("evo")
+	if nxt.is_empty():
+		_job_box.add_child(_label("✦ Évolution finale : %s" % target.call("race_title"), 11, Color("d8c0ff")))
+		return
+	_job_box.add_child(_label("✦ Pacte : nommer pour évoluer", 12, Color("d8c0ff")))
+	var info := _label("→ %s (%s)" % [nxt[1], Evolution.cost_text(evo)], 9, C_DIM)
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.custom_minimum_size = Vector2(230, 0)
+	_job_box.add_child(info)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	var name_edit := LineEdit.new()
+	name_edit.text = target.get("villager_name")
+	name_edit.max_length = 18
+	name_edit.custom_minimum_size = Vector2(120, 0)
+	name_edit.add_theme_font_size_override("font_size", 10)
+	row.add_child(name_edit)
+	var why := Evolution.villager_block_reason(target, player)
+	var b := MenuKit.button("Nommer", 90, 10)
+	b.disabled = why != ""
+	b.tooltip_text = why if why != "" else "Donne ce nom par le Pacte : il évolue en %s." % nxt[1]
+	b.pressed.connect(func():
+		if Evolution.evolve_villager(target, player, name_edit.text):
+			_refresh())
+	row.add_child(b)
+	_job_box.add_child(row)
+	if why != "":
+		var l := _label(why, 9, MenuKit.C_BAD)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(230, 0)
+		_job_box.add_child(l)
 
 
 func _recipe_row(r: RecipeData, near: bool) -> Control:

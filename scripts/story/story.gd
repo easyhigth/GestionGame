@@ -641,6 +641,8 @@ func _advance() -> void:
 		_give(reward.get("items", []))
 		if reward.has("skill"):
 			player.grant_story_talent(reward.skill)
+		if reward.get("evolve", false):
+			player.evolve_hero()
 	if is_done():
 		banner("Épilogue", nation_name() if nation_name() != "" else "Le royaume s'éveille")
 		_finish()

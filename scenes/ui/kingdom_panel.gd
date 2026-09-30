@@ -129,6 +129,13 @@ func _refresh() -> void:
 		ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		ll.custom_minimum_size = Vector2(660, 0)
 		_box.add_child(ll)
+	# familiers
+	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
+	if fam and not fam.list.is_empty():
+		var fl := MenuKit.label("Familiers (%d / %d) : %s" % [fam.list.size(), Familiars.MAX, fam.summary()], 11, Color("b8f0a0"))
+		fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		fl.custom_minimum_size = Vector2(660, 0)
+		_box.add_child(fl)
 	# commerce
 	var tr := get_tree().get_first_node_in_group("trade") as Trade
 	if tr:

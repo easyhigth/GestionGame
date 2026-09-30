@@ -64,6 +64,9 @@ var recruit_offer := {}
 var companion := false
 ## Niveau de l'habitant (un compagnon progresse avec le héros).
 var level := 1
+## Évolution par le Pacte (0 à 2) et son nom (« Hobgobelin », « Orc noble »...).
+var evo := 0
+var evo_title := ""
 ## Bonus d'attaque des gardes pendant un raid.
 var guard_bonus := 0.0
 ## Besoins (voir VillageNeeds) : faim (100 = rassasié), bonheur (0 à 100), lit, raisons de mécontentement.
@@ -118,6 +121,8 @@ func _ready() -> void:
 	_pause = randf_range(0.0, max_pause)
 	facing = Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
 	set_race(race)
+	if evo > 0:
+		apply_evolution()
 	_bubble = Label3D.new()
 	_bubble.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_bubble.font_size = 56
@@ -157,7 +162,26 @@ func _apply_level(refill := false) -> void:
 
 
 func _level_mult() -> float:
-	return 1.0 + 0.1 * (level - 1)
+	return (1.0 + 0.1 * (level - 1)) * Evolution.POWER[clampi(evo, 0, 2)]
+
+
+## Taille et éclat selon l'évolution ; `fx` : effet de transformation.
+func apply_evolution(fx := false) -> void:
+	var vis := get_node_or_null("Visual") as VoxelCharacter
+	if vis:
+		vis.scale = Vector3.ONE * Evolution.SCALE[clampi(evo, 0, 2)]
+	_apply_level(true)
+	if fx and is_inside_tree():
+		VoxelBurst.spawn(self, global_position + Vector3(0, 1, 0), Color("c8a8ff"), 60, 5.0, 0.12, 1.2, "up", 2.0, false)
+		SkillFX.ring(self, global_position, 3.5, Color("c8a8ff"), 0.7)
+		Sound.play("cast", global_position + Vector3(0, 1, 0))
+
+
+## Nom de sa race, ou de son évolution.
+func race_title() -> String:
+	if evo_title != "":
+		return evo_title
+	return race.display_name if race else "?"
 
 
 func set_level(lv: int) -> void:
@@ -1040,12 +1064,12 @@ func _update_label() -> void:
 			label.text = "%s %s%s" % [villager_name, info.get("title", ""), "\n[E] Parler" if d < 3.0 else ""]
 			label.modulate = info.get("color", Color.WHITE)
 		elif stranger and has_meta("merchant"):
-			label.text = "%s (%s)\nMarchand ambulant%s" % [villager_name, race.display_name if race else "?", "\n[E] Commercer" if d < 3.0 else ""]
+			label.text = "%s (%s)\nMarchand ambulant%s" % [villager_name, race_title(), "\n[E] Commercer" if d < 3.0 else ""]
 		elif stranger:
-			label.text = "%s (%s) · Nv %d\nVoyageur · %s%s" % [villager_name, race.display_name if race else "?", level,
+			label.text = "%s (%s) · Nv %d\nVoyageur · %s%s" % [villager_name, race_title(), level,
 				JOB_NAMES.get(best_job(), "?"), "\n[E] Parler" if d < 3.0 else ""]
 		elif companion:
-			label.text = "%s (%s) · Nv %d\nCompagnon d'expédition\n[E] Équipement" % [villager_name, race.display_name if race else "?", level]
+			label.text = "%s (%s) · Nv %d\nCompagnon d'expédition\n[E] Équipement" % [villager_name, race_title(), level]
 		else:
 			var mood := VillageNeeds.mood_name(happiness)
 			if not mood_reasons.is_empty():
@@ -1055,7 +1079,7 @@ func _update_label() -> void:
 				mood += " · " + doing
 			var friend := " · Ami" if friendship >= QuestBoard.FRIEND_AT else ""
 			var talk := "[E] Parler (quête)" if _mark and _mark.visible else "[E] Équipement et poste"
-			label.text = "%s (%s)%s%s\n%s\n%s" % [villager_name, race.display_name if race else "?", friend, job, mood, talk]
+			label.text = "%s (%s)%s%s\n%s\n%s" % [villager_name, race_title(), friend, job, mood, talk]
 			label.modulate = VillageNeeds.mood_color(happiness).lerp(Color.WHITE, 0.35)
 
 
@@ -1073,4 +1097,4 @@ func total_stats() -> Dictionary:
 
 
 func display_title() -> String:
-	return "%s (%s)" % [villager_name, race.display_name if race else "?"]
+	return "%s (%s)" % [villager_name, race_title()]

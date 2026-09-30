@@ -40,7 +40,7 @@ const STEPS := [
 	["kaede_bete", 4, "Venge le clan de Kaede", "La bête qui a dévasté son clan dort dans le donjon près de son camp (carré rouge sur la carte).", "boss_of", "kaede"],
 	["duel_ren", 4, "Affronte l'oni masqué", "Quelqu'un attend près du camp de Kaede. Il porte les cornes rouges du clan.", "duel", "ren"],
 	["kaede_2", 4, "Retourne auprès de Kaede", "À son camp.", "talk", "kaede"],
-	["kaede_3", 4, "Rapporte 10 bûches pour le bûcher de Ren", "Chez les oni, un guerrier part dans les flammes.", "talk", "kaede", {"item": "wood", "n": 10, "reward": {"skill": "pac_ruee", "items": [["katana_cornes", 1]]}}],
+	["kaede_3", 4, "Rapporte 10 bûches pour le bûcher de Ren", "Chez les oni, un guerrier part dans les flammes.", "talk", "kaede", {"item": "wood", "n": 10, "reward": {"skill": "pac_ruee", "items": [["katana_cornes", 1]], "evolve": true}}],
 	# ---------------------------------------------------------------- V
 	["kaia", 5, "Écoute la messagère des cimes", "Une harpie s'est posée au village.", "talk", "kaia"],
 	["borin", 5, "Rejoins les forgerons nains", "Borin, maître forgeron, campe dans les hauteurs (étoile sur la carte).", "talk", "borin"],
@@ -90,7 +90,7 @@ const STEPS := [
 	["duel_morvain", 12, "Affronte Morvain le Parjure", "Il t'attend dans son repaire.", "duel", "morvain", {"reward": {"items": [["sceptre_parjure", 1]]}}],
 	["maelle_sauvee", 12, "Libère Maëlle", "Elle est enchaînée dans le repaire de Morvain.", "talk", "maelle"],
 	["selene_2", 12, "Écoute la vérité de Séléné", "La reine de la Nuit est retournée à son camp.", "talk", "selene", {"reward": {"skill": "pac_brume"}}],
-	["orvane_verite", 12, "Exige la vérité d'Orvane", "Le cristal près du village. Il te doit des réponses.", "talk", "orvane"],
+	["orvane_verite", 12, "Exige la vérité d'Orvane", "Le cristal près du village. Il te doit des réponses.", "talk", "orvane", {"reward": {"evolve": true}}],
 	# ---------------------------------------------------------------- XIII
 	["salle_trone", 13, "Bâtis une salle du trône", "La salle où les peuples alliés tiendront conseil.", "room", "salle_trone"],
 	["conseil", 13, "Réunis le conseil des pactes", "Grik, le plus ancien de tes alliés, l'a convoqué.", "talk", "grik"],
@@ -114,7 +114,7 @@ const STEPS := [
 	# ---------------------------------------------------------------- XVI
 	["veilleurs", 16, "Brise le cercle des Veilleurs", "Des démons gardent le Sanctuaire de l'Éveil (étoile sur la carte).", "pack", "sanctuaire", {"types": ["demon", "demon", "esprit_follet"], "n": 6}],
 	["sanctuaire", 16, "Affronte le Seigneur de la Brume", "Au cœur du Sanctuaire de l'Éveil.", "duel", "brume"],
-	["cael", 16, "Écoute l'âme de Caël", "Une silhouette pâle flotte au milieu du Sanctuaire.", "talk", "cael", {"reward": {"skill": "pac_eveil"}}],
+	["cael", 16, "Écoute l'âme de Caël", "Une silhouette pâle flotte au milieu du Sanctuaire.", "talk", "cael", {"reward": {"skill": "pac_eveil", "evolve": true}}],
 	["epilogue", 16, "Fonde ta nation", "Orvane t'attend au village.", "talk", "orvane", {"reward": {"skill": "pac_roi", "items": [["couronne_pactes", 1]]}}],
 	["fondation", 16, "La fête de la fondation", "Grik a tout préparé. Tout le monde t'attend.", "talk", "grik"],
 ]

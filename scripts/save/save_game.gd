@@ -55,6 +55,7 @@ var caves_state := {}
 var story_state := {}
 var seasons_state := {}
 var mounts_state := {}
+var familiars_state := {}
 var _autosave_timer := 300.0
 
 
@@ -232,6 +233,9 @@ func save_game(slot: String) -> bool:
 	var mnt := get_tree().get_first_node_in_group("mounts") as Mounts
 	if mnt:
 		d.mounts = mnt.export_state()
+	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
+	if fam:
+		d.familiars = fam.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -281,7 +285,7 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 		"pos": [pos.x, pos.y, pos.z],
 		"inventory": inv, "equipment": _equip_ids(p.equipment),
 		"souls": p.souls, "absorbed": p.skill.absorbed if p.skill else {},
-		"talents": p.talents.keys(), "ability_slots": p.ability_slots, "hunger": p.hunger,
+		"talents": p.talents.keys(), "ability_slots": p.ability_slots, "hunger": p.hunger, "hero_evo": p.hero_evo,
 	}
 
 
@@ -314,7 +318,8 @@ func _save_villagers() -> Array:
 		out.append({"name": vv.villager_name, "race": _res(vv.race), "talents": vv.talents, "level": vv.level,
 			"equipment": _equip_ids(vv.equipment), "companion": vv.companion, "work": work,
 			"pos": [vv.global_position.x, vv.global_position.y, vv.global_position.z],
-			"home": [vv.home.x, vv.home.y, vv.home.z], "food": vv.food, "happiness": vv.happiness, "unhappy": vv.unhappy_time, "friend": vv.friendship})
+			"home": [vv.home.x, vv.home.y, vv.home.z], "food": vv.food, "happiness": vv.happiness, "unhappy": vv.unhappy_time, "friend": vv.friendship,
+			"evo": vv.evo, "evo_title": vv.evo_title})
 	return out
 
 
@@ -364,6 +369,7 @@ func new_game() -> void:
 	story_state = {}
 	seasons_state = {}
 	mounts_state = {}
+	familiars_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -433,6 +439,8 @@ func apply_pending(world: WorldGenerator) -> void:
 		p.ability_slots = ["", "", "", ""]
 		for i in mini(4, slots.size()):
 			p.ability_slots[i] = str(slots[i])
+		p.hero_evo = int(pd.get("hero_evo", 0))
+		p._apply_evo_scale()
 		p._give_class_talent()
 		p._apply_talents()
 		var pos := Vector3(pd.pos[0], pd.pos[1], pd.pos[2])
@@ -456,6 +464,8 @@ func apply_pending(world: WorldGenerator) -> void:
 		v.villager_name = vd.name
 		v.talents = vd.talents
 		v.level = int(vd.level)
+		v.evo = int(vd.get("evo", 0))
+		v.evo_title = str(vd.get("evo_title", ""))
 		holder.add_child(v)
 		v.global_position = Vector3(vd.pos[0], vd.pos[1], vd.pos[2])
 		v.home = Vector3(vd.home[0], vd.home[1], vd.home[2])
@@ -500,6 +510,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if fm:
 		fm.import_state(farm_state)
 		farm_state = {}
+	familiars_state = d.get("familiars", {})
+	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
+	if fam and not familiars_state.is_empty():
+		fam.import_state(familiars_state)
+		familiars_state = {}
 	mounts_state = d.get("mounts", {})
 	var mnt := get_tree().get_first_node_in_group("mounts") as Mounts
 	if mnt and not mounts_state.is_empty():
