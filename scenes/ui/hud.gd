@@ -59,6 +59,7 @@ var livestock: Livestock
 var story: Story
 var seasons: Seasons
 var mounts: Mounts
+var familiars: Familiars
 var story_dialog: StoryDialog
 var journal: JournalPanel
 var fishing: Fishing
@@ -602,6 +603,8 @@ func _update_health() -> void:
 	_xp_fill.size.x = HP_WIDTH * float(player.xp) / float(player.xp_to_next())
 	var who := player.profile.hero_name if player.profile else ""
 	var cls := player.profile.hero_class.display_name if player.profile and player.profile.hero_class else ""
+	if player.hero_evo > 0:
+		who += " (%s)" % player.evo_title()
 	_xp_text.text = "%s  ·  %s niveau %d  ·  XP %d / %d" % [who, cls, player.level, player.xp, player.xp_to_next()]
 	if not h.is_dead():
 		_death.hide()
@@ -720,6 +723,11 @@ func _build_day_and_guide() -> void:
 	weather.world = world
 	weather.player = player
 	get_parent().add_child.call_deferred(weather)
+	familiars = Familiars.new()
+	familiars.name = "Familiars"
+	familiars.world = world
+	familiars.player = player
+	get_parent().add_child.call_deferred(familiars)
 	mounts = Mounts.new()
 	mounts.name = "Mounts"
 	mounts.world = world

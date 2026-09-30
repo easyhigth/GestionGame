@@ -82,6 +82,9 @@ var lock_target: Combatant
 var profile: HeroProfile
 ## Arbre de talents : talents débloqués (id -> true), emplacements des talents actifs (touches 1-4).
 var talents := {}
+## Évolution du héros (0 à 3), donnée par l'histoire principale (voir Evolution).
+var hero_evo := 0
+var _evo_fx := 0.0
 var ability_slots: Array = ["", "", "", ""]
 var abilities := {}      # id -> HeroSkill (talents actifs)
 var selected_slot := 0
@@ -180,7 +183,7 @@ func apply_profile(hero: HeroProfile, new_game := true) -> void:
 	visual.set_equipment_library(race.equipment if race else null)
 	visual.set_colors(hero.skin_color, hero.hair_color, hero.eye_color)
 	visual.set_model(hero.model())
-	visual.scale = Vector3(hero.build, hero.height, hero.build)
+	_apply_evo_scale()
 	if hero.skill and (skill == null or skill.data != hero.skill):
 		skill = HeroSkill.new(hero.skill, self)
 		skill.set_level(level)
@@ -342,6 +345,33 @@ func talent_block_reason(id: String) -> String:
 	return ""
 
 
+func _apply_evo_scale() -> void:
+	if profile:
+		visual.scale = Vector3(profile.build, profile.height, profile.build) * (1.0 + 0.04 * hero_evo)
+
+
+## Titre de l'évolution (« Seigneur-bête »...), vide avant la première.
+func evo_title() -> String:
+	return Evolution.hero_title(race, hero_evo)
+
+
+## Le héros évolue (histoire principale) : plus fort, un peu plus grand, un nouveau titre.
+func evolve_hero() -> void:
+	if hero_evo >= 3:
+		return
+	hero_evo += 1
+	_apply_evo_scale()
+	_apply_talents()
+	health.heal(health.max_health)
+	var col: Color = Evolution.HERO_COLOR[hero_evo - 1]
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), col, 90, 6.0, 0.13, 1.6, "up", -1.0)
+	SkillFX.ring(self, global_position, 6.0, col, 0.9)
+	shake(0.6)
+	Sound.ui("levelup")
+	feat.emit("Évolution ! Tu deviens : %s" % evo_title(), col)
+	notify.emit("Ton âme s'éveille : tu deviens %s. Vie, attaque et magie augmentent (évolution %d / 3)." % [evo_title(), hero_evo])
+
+
 ## Compétence unique offerte par l'histoire (sans point, sans condition).
 func grant_story_talent(id: String) -> void:
 	var n := TalentTree.node(id)
@@ -400,6 +430,10 @@ func set_ability_slot(slot: int, id: String) -> void:
 ## Applique les passifs et prépare les talents actifs.
 func _apply_talents() -> void:
 	var bonus := TalentTree.passive_bonus(talents)
+	# les évolutions du héros s'ajoutent aux talents
+	var eb := Evolution.hero_bonus(hero_evo)
+	for k in eb:
+		bonus[k] = float(bonus.get(k, 0.0)) + float(eb[k])
 	if skill:
 		skill.talent_bonus = bonus
 	for id in abilities.keys():
@@ -541,6 +575,13 @@ func _physics_process(delta: float) -> void:
 	_footsteps(delta)
 	_update_hunger(delta)
 	_update_tool(delta)
+	# aura des évolutions supérieures
+	if hero_evo >= 2 and is_alive():
+		_evo_fx -= delta
+		if _evo_fx <= 0.0:
+			_evo_fx = 1.1
+			var off := Vector3(randf_range(-0.4, 0.4), 0.2, randf_range(-0.4, 0.4))
+			VoxelBurst.spawn(self, global_position + off, Evolution.HERO_COLOR[hero_evo - 1], 4, 1.4, 0.07, 0.8, "up", -3.0)
 	if skill:
 		skill.process(delta)
 	for id in abilities:
@@ -1301,6 +1342,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("interact"):
+		# Pacte : apprivoiser un monstre affaibli
+		var fam := get_tree().get_first_node_in_group("familiars_mgr")
+		if fam and fam.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
 		# monter, descendre, embarquer, apprivoiser un cheval, coffre d'île
 		var mo := _mounts_node()
 		if mo and mo.try_interact(self):

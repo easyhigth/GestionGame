@@ -24,19 +24,24 @@ var _orbit_dir := 1.0 if randf() < 0.5 else -1.0
 var _orbit_timer := 0.0
 var _has_token := false
 var _fear_left := 0.0
+## Familier : monstre apprivoisé par le Pacte (voir Familiars) ; il suit le héros et combat avec lui.
+var tamed := false
+var familiar_name := ""
+var familiar_title := ""
+var familiar_slot := 0
 
 @onready var name_label: Label3D = $Name
 @onready var bar: HealthBar3D = $HealthBar
 
 
 func _ready() -> void:
-	team = Team.ENEMIES
+	team = Team.ALLIES if tamed else Team.ENEMIES
 	# pas d'invulnérabilité après un coup : les combos du joueur s'enchaînent
 	hit_invulnerability = 0.0
 	if data:
 		poise_max = data.poise
 	super()
-	add_to_group("enemy_units")
+	add_to_group("familiars" if tamed else "enemy_units")
 	home = global_position
 	_wander_to = home
 	if data:
@@ -51,15 +56,19 @@ func _apply_data() -> void:
 	body_radius = data.body_radius
 	for it in data.equipment:
 		equipment.equip(it)
-	health.set_max(roundi(data.max_health * power * SaveGame.enemy_hp_mult()), true)
+	health.set_max(roundi(data.max_health * power * (1.0 if tamed else SaveGame.enemy_hp_mult())), true)
 	name_label.text = "%s · Nv %d" % [data.display_name, level]
 	name_label.modulate = data.color
+	if tamed:
+		visual.scale = Vector3.ONE * data.model_scale * Familiars.SCALE[clampi(get_meta("evo", 0), 0, 2)]
+		name_label.text = "✦ %s · %s · Nv %d" % [familiar_name, familiar_title if familiar_title != "" else data.display_name, level]
+		name_label.modulate = Color("b8f0a0")
 	name_label.position.y = 2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale
 	bar.position.y = name_label.position.y - 0.22
 
 
 func base_attack() -> int:
-	return roundi((data.attack if data else 8) * power * SaveGame.enemy_dmg_mult())
+	return roundi((data.attack if data else 8) * power * (1.0 if tamed else SaveGame.enemy_dmg_mult()))
 
 
 func base_defense() -> int:
@@ -100,7 +109,8 @@ func _on_move_ended(_name: String, _interrupted: bool) -> void:
 
 func _release_token() -> void:
 	if _has_token:
-		Combat.release_token(_target, self)
+		if is_instance_valid(_target):
+			Combat.release_token(_target, self)
 		_has_token = false
 
 
@@ -115,8 +125,11 @@ func _physics_process(delta: float) -> void:
 			if visual.scale.x <= 0.02:
 				queue_free()
 		return
-	# loin du joueur et au calme : on ne calcule presque rien
 	var player := get_tree().get_first_node_in_group("player") as Node3D
+	if tamed:
+		_familiar_process(delta, player)
+		return
+	# loin du joueur et au calme : on ne calcule presque rien
 	var player_dist := player.global_position.distance_to(global_position) if player else 0.0
 	name_label.visible = player_dist < 12.0 or _target != null
 	if player and _target == null and player_dist > 45.0 and not has_meta("raider"):
@@ -125,6 +138,7 @@ func _physics_process(delta: float) -> void:
 	if _think <= 0.0:
 		_think = 0.3
 		_choose_target()
+		_pact_hint(player_dist)
 	var speed := (data.move_speed if data else 3.5) * speed_factor()
 	velocity = Vector3.ZERO
 	if _fear_left > 0.0:
@@ -211,6 +225,62 @@ func _choose_target() -> void:
 		_target = t
 
 
+# ---------------------------------------------------------------- familier et Pacte
+
+## Monstre affaibli près du héros : « [E] Pacte » pour l'apprivoiser.
+func _pact_hint(player_dist: float) -> void:
+	if data == null:
+		return
+	var base := "%s · Nv %d" % [data.display_name, level]
+	if player_dist < 4.0 and Familiars.can_tame(self):
+		name_label.text = base + "\n[E] Pacte (apprivoiser)"
+		name_label.modulate = Color("d8c0ff")
+	elif name_label.text != base:
+		name_label.text = base
+		name_label.modulate = data.color
+
+
+func _familiar_process(delta: float, player: Node3D) -> void:
+	if player == null:
+		return
+	name_label.visible = player.global_position.distance_to(global_position) < 14.0
+	_think -= delta
+	if _think <= 0.0:
+		_think = 0.3
+		home = player.global_position
+		# trop loin (téléportation, voyage rapide) : il rejoint le héros
+		if player.global_position.distance_to(global_position) > 35.0:
+			global_position = player.global_position + Vector3(1.5, 0.5, 1.5)
+			_target = null
+		if _target and (not is_instance_valid(_target) or not _target.is_alive() or not _target.can_be_targeted() \
+				or _target.global_position.distance_to(player.global_position) > 16.0):
+			_release_token()
+			_target = null
+		if _target == null:
+			var t := nearest_hostile(10.0, player.global_position)
+			if t:
+				_target = t
+			elif health.current < health.max_health:
+				health.heal(maxi(1, roundi(health.max_health * 0.03)))
+	var speed := (data.move_speed if data else 3.5) * speed_factor()
+	velocity = Vector3.ZERO
+	if not can_act() or in_move():
+		pass
+	elif _target:
+		_fight(delta, speed)
+	else:
+		# il suit le héros, chacun à sa place
+		var a := TAU * familiar_slot / 3.0 + 2.4
+		var spot := player.global_position + Vector3(cos(a), 0, sin(a)) * 2.2
+		var to := spot - global_position
+		to.y = 0.0
+		if to.length() > 0.8:
+			facing = to.normalized()
+			velocity = facing * speed * (1.25 if to.length() > 5.0 else 0.8)
+	_move_on_ground(delta)
+	visual.animate(delta, velocity, facing)
+
+
 ## Terrorisé : fuit le héros pendant `time` secondes.
 func frighten(time: float) -> void:
 	_fear_left = time
@@ -233,6 +303,15 @@ func _on_died() -> void:
 	collision_layer = 0
 	name_label.visible = false
 	bar.visible = false
+	var fm := get_tree().get_first_node_in_group("familiars_mgr")
+	if tamed:
+		# un familier ne meurt pas : il tombe K.O. et revient plus tard
+		VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color("b8f0a0"), 24, 3.0, 0.1, 0.8, "up", 2.0, false)
+		if fm:
+			fm.on_familiar_down(self)
+		return
+	if fm:
+		fm.on_enemy_died(self)
 	var c := data.color if data else Color.WHITE
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), c.darkened(0.2), 36, 5.0, 0.13, 0.9, "sphere", 12.0, false)
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color(1, 1, 0.9), 16, 6.0, 0.07, 0.4)
