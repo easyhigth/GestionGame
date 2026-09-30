@@ -29,9 +29,13 @@ const STEPS := [
 	["semer", "Sème 6 graines", "Coupe les hautes herbes pour trouver des graines de blé. Choisis-les (C) et sème devant toi (V).", 6],
 	["recolte", "Récolte 3 cultures mûres", "Frappe une culture mûre (épis dorés, carottes sorties) pour la récolter. Près de l'eau, ça pousse plus vite.", 3],
 	["fermier", "Nomme un fermier", "E près d'un habitant → Poste de travail → Champs (4 cases labourées au moins). Confie-lui des graines dans le royaume (U).", 1],
+	# chapitre 5 : le commerce
+	["vendre", "Vends 10 objets au marchand", "Un marchand ambulant passe au village tous les 3 jours (le royaume, U, dit quand). E près de lui : vends tes surplus.", 10],
+	["acheter", "Achète quelque chose au marchand", "Graines, outils, lingots, meubles, équipement : son stock change à chaque visite.", 1],
+	["marche", "Construis un marché", "Pièce fermée avec 2 étals et un comptoir (9 cases). Le marchand vient tous les 2 jours et paie mieux ; un marchand du village y gagne de l'or.", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20]]
+const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23]]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
 const VERSION := 2
 
@@ -95,6 +99,7 @@ func _ready() -> void:
 			var it := Items.get_item(id)
 			if it and it.food_cooked:
 				_advance("repas"))
+	_connect_trade.call_deferred()
 	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
 	if dc:
 		_connect_day(dc)
@@ -104,6 +109,21 @@ func _ready() -> void:
 		import_state(SaveGame.guide_state)
 		SaveGame.guide_state = {}
 	_refresh()
+
+
+func _connect_trade() -> void:
+	var tr := get_tree().get_first_node_in_group("trade") as Trade
+	if tr == null:
+		# le commerce arrive un peu après le guide
+		get_tree().create_timer(0.5).timeout.connect(_connect_trade)
+		return
+	if not tr.sold.is_connected(_on_sold):
+		tr.sold.connect(_on_sold)
+		tr.bought.connect(func(_id, _n, _g): _advance("acheter"))
+
+
+func _on_sold(_id: String, n: int, _gold: int) -> void:
+	_advance("vendre", n)
 
 
 func _connect_day(dc: DayCycle) -> void:
@@ -209,6 +229,13 @@ func _check_state() -> void:
 					_advance("lits")
 				elif current_id() == "bonheur" and m > 0 and vn.average_happiness() >= 70.0:
 					_advance("bonheur")
+		"marche":
+			var km := get_tree().get_first_node_in_group("kingdom") as Kingdom
+			if km:
+				for r in km.typed_rooms():
+					if (r.type as RoomTypeData).id == "marche":
+						_advance("marche")
+						return
 		"houe":
 			var hoe := Items.get_item("houe")
 			if hoe and player.inventory.count(hoe) > 0:

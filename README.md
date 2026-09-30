@@ -21,7 +21,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - T (ou croix gauche à la manette) : arbre de talents
 - I (ou Tab) : inventaire, équipement et artisanat
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures (s'il a une quête « ! » ou « ? », c'est d'abord la quête qui s'ouvre)
-- E près d'un voyageur : lui parler pour le recruter
+- E près d'un voyageur : lui parler pour le recruter ; E près du marchand ambulant : acheter et vendre
 - E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
 - B (ou croix bas à la manette) : mode construction (voir plus bas)
 - U : panneau du royaume (habitants, lits, réserve de nourriture, bonheur)
@@ -114,6 +114,14 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Un petit champ de blé est déjà semé au village au début de la partie. Le panneau du royaume résume les champs (cases, cultures, mûres, fermiers, graines). Tout est sauvegardé. Le guide a un 4e chapitre « Les champs ».
 - Réglages dans `scripts/world/farming.gd` (liste `CROPS` : durée, récolte, valeur pour la réserve) ; objets dans `data/items/` (champ « Culture » d'un objet = ce qu'il fait pousser) ; modèles des cultures créés par `tools/voxel_props_generator.py` (`crop_<culture>_<stade>.glb`).
 
+## Commerce
+- Un **marchand ambulant** arrive au village avec sa charrette tous les **3 jours** (le premier le jour 2), à 8 h, et repart le lendemain matin. Son arrivée est annoncée (cor) ; « Marchand au village » s'affiche sous l'horloge, et le royaume (**U**) dit quand il repasse.
+- **E près de lui** : sa boutique. À gauche ce qu'il vend (graines, nourriture, matériaux, outils, meubles et quelques pièces d'équipement), à droite ce que tu peux lui vendre, avec ta bourse en pièces d'or. Boutons « ×5 » et « Tout ».
+- Son **stock change à chaque visite** : il vient d'une zone du monde qui décide de sa **spécialité** (catégorie mieux fournie) et de la qualité de l'équipement (plus rare s'il vient d'une zone difficile).
+- **Prix** : chaque objet a une valeur (matières premières fixes, objets fabriqués = ingrédients + 30 %, équipement selon ses bonus et sa rareté). Le marchand vend au double et rachète à la valeur ; **vendre beaucoup du même objet fait baisser son prix** (jusqu'à 40 %) pendant sa visite. Les objets de moins d'une demi-pièce (planches...) ne se vendent pas.
+- **Marché** (pièce fermée, 2 étals et un comptoir, 9 cases) : le marchand vient **tous les 2 jours**, vend 15 % moins cher et rachète 20 % plus cher. Un habitant posté au marché y gagne de l'or. Le guide a un 5e chapitre « Le commerce ».
+- Tout est sauvegardé (même le marchand présent et son stock). Réglages dans `scripts/kingdom/trade.gd` (`GOODS` : ce qu'il peut vendre, `VALUES` : valeur des matières premières, fréquence des visites, multiplicateurs de prix) ; la boutique est `scenes/ui/shop_dialog.gd`.
+
 ## Besoins des habitants
 - **Réserve de nourriture du village** : la boulangerie (pain) et la grange (viande) la remplissent, et tu y déposes la nourriture de ton sac (panneau du royaume, **U**). Chaque habitant y prend un repas quand il a faim (sa faim se vide en 20 minutes). Au début : 5 repas.
 - **Lits** : 2 par maison (pièce fermée, porte, un lit et un coffre), 6 par dortoir (4 lits et un coffre), et 2 par cabane du village encore debout. Un habitant sans lit est moins heureux.
@@ -153,7 +161,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - L'heure et le jour sont sauvegardés. Réglages dans `scripts/world/day_cycle.gd`.
 
 ## Guide des premiers pas
-Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, casser 2 rochers, fabriquer un outil, fabriquer des planches, construire un abri (pièce fermée avec une porte et un lit), poser une torche, survivre à la première nuit. Puis viennent les chapitres « L'âge du fer », « Le village » et « Les champs » (houe, semer, récolter, nommer un fermier). Chaque objectif atteint est annoncé ; l'avancement est sauvegardé et le panneau disparaît à la fin (`scenes/ui/guide_panel.gd`).
+Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, casser 2 rochers, fabriquer un outil, fabriquer des planches, construire un abri (pièce fermée avec une porte et un lit), poser une torche, survivre à la première nuit. Puis viennent les chapitres « L'âge du fer », « Le village », « Les champs » (houe, semer, récolter, nommer un fermier) et « Le commerce » (vendre, acheter, construire un marché). Chaque objectif atteint est annoncé ; l'avancement est sauvegardé et le panneau disparaît à la fin (`scenes/ui/guide_panel.gd`).
 
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.
@@ -272,6 +280,6 @@ Choix de conception :
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville : voyageurs et prisonniers à recruter, 2 compagnons, raids de pillards qui assiègent le village. **(fait)**
 7. Sauvegarde, menus, équilibrage : écran titre, menu pause, 3 emplacements + sauvegarde automatique, options, 3 niveaux de difficulté, réglage des boss. **(fait)**
 
-Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : sons et musiques, cycle jour/nuit et météo, quêtes et personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
+Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : météo, personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
 
 Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la Going Medieval (plans bâtis par les habitants), **arbre de talents du héros** (27 talents, 15 nouvelles attaques et nouveaux sorts).

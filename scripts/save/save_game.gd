@@ -48,6 +48,7 @@ var guide_state := {}
 var village_state := {}
 var quest_state := {}
 var farm_state := {}
+var trade_state := {}
 var _autosave_timer := 300.0
 
 
@@ -204,6 +205,9 @@ func save_game(slot: String) -> bool:
 	var fm := get_tree().get_first_node_in_group("farming") as Farming
 	if fm:
 		d.farm = fm.export_state()
+	var tr := get_tree().get_first_node_in_group("trade") as Trade
+	if tr:
+		d.trade = tr.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -322,6 +326,7 @@ func new_game() -> void:
 	village_state = {}
 	quest_state = {}
 	farm_state = {}
+	trade_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -458,6 +463,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if fm:
 		fm.import_state(farm_state)
 		farm_state = {}
+	trade_state = d.get("trade", {})
+	var tr := get_tree().get_first_node_in_group("trade") as Trade
+	if tr and not trade_state.is_empty():
+		tr.import_state(trade_state)
+		trade_state = {}
 	# une ancienne partie sans guide : le guide est considéré comme fini
 	guide_state = d.get("guide", {"step": 99})
 	var gd := get_tree().get_first_node_in_group("guide") as GuidePanel

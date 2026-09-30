@@ -998,7 +998,9 @@ func _update_label() -> void:
 		if work_room != null and work_room.type:
 			job = " · " + (work_room.type as RoomTypeData).job_name
 		label.modulate = Color.WHITE
-		if stranger:
+		if stranger and has_meta("merchant"):
+			label.text = "%s (%s)\nMarchand ambulant%s" % [villager_name, race.display_name if race else "?", "\n[E] Commercer" if d < 3.0 else ""]
+		elif stranger:
 			label.text = "%s (%s) · Nv %d\nVoyageur · %s%s" % [villager_name, race.display_name if race else "?", level,
 				JOB_NAMES.get(best_job(), "?"), "\n[E] Parler" if d < 3.0 else ""]
 		elif companion:

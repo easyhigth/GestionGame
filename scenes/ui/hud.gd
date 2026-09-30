@@ -52,6 +52,8 @@ var guide: GuidePanel
 var _clock: Label
 var kingdom_panel: KingdomPanel
 var quest_dialog: QuestDialog
+var shop_dialog: ShopDialog
+var trade: Trade
 var _quest_box: VBoxContainer
 var _quest_refresh := 0.0
 var _hotbar: VBoxContainer
@@ -380,8 +382,16 @@ func _build_maps() -> void:
 	var recruit := RecruitDialog.new()
 	recruit.player = player
 	add_child(recruit)
+	shop_dialog = ShopDialog.new()
+	shop_dialog.player = player
+	add_child(shop_dialog)
 	if player:
-		player.talk.connect(func(s): recruit.open(s))
+		# le marchand ambulant ouvre sa boutique, les autres voyageurs se présentent
+		player.talk.connect(func(s):
+			if s.has_meta("merchant"):
+				shop_dialog.open(s)
+			else:
+				recruit.open(s))
 	map_ui = WorldMapUI.new()
 	map_ui.world = world
 	map_ui.player = player
@@ -557,7 +567,7 @@ func _process(delta: float) -> void:
 		if _quest_box and player:
 			_quest_box.visible = not player.building
 	if _clock and day_cycle and day_cycle.is_inside_tree():
-		_clock.text = day_cycle.clock_text()
+		_clock.text = day_cycle.clock_text() + ("\nMarchand au village" if trade and trade.is_here() else "")
 		_clock.add_theme_color_override("font_color", Color("b8c8ff") if day_cycle.is_night() else Color("fff2c8"))
 	if guide:
 		guide.modulate.a = 0.35 if player and player.ui_open else 1.0
@@ -642,6 +652,10 @@ func _build_day_and_guide() -> void:
 	farming.name = "Farming"
 	farming.world = world
 	get_parent().add_child.call_deferred(farming)
+	trade = Trade.new()
+	trade.name = "Trade"
+	trade.world = world
+	get_parent().add_child.call_deferred(trade)
 	var board := QuestBoard.new()
 	board.name = "QuestBoard"
 	get_parent().add_child.call_deferred(board)
