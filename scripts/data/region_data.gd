@@ -83,6 +83,12 @@ extends Resource
 ## Campements de voyageurs pour 1000 cases.
 @export_range(0.0, 1.0, 0.01) var traveler_density: float = 0.15
 
+@export_group("Météo")
+## Chances de chaque temps (clair, nuageux, pluie, orage, brouillard).
+@export var weather_weights: Dictionary = {"clair": 4, "nuageux": 3, "pluie": 2, "orage": 1, "brouillard": 1}
+## Ce qui tombe quand il « pleut » ici : pluie, neige, sable (tempête de sable) ou cendres.
+@export_enum("pluie", "neige", "sable", "cendres") var precipitation: String = "pluie"
+
 @export_group("Ressources")
 ## Matériaux qu'on trouve au sol dans cette région (au hasard).
 @export var resources: Array[ItemData] = []

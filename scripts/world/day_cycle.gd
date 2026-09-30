@@ -80,8 +80,12 @@ func _process(delta: float) -> void:
 		hour -= 24.0
 	_check_transition()
 	_apply_light()
-	if _night:
+	# la nuit, ou pendant un orage
+	var w := _weather()
+	if _night or (w and w.is_storm()):
 		_night_spawns(delta)
+	elif not _night_monsters.is_empty():
+		_scatter()
 
 
 func _check_transition() -> void:
@@ -99,13 +103,22 @@ func _check_transition() -> void:
 		_dawn()
 
 
-## Le jour se lève : les créatures de la nuit fuient.
-func _dawn() -> void:
+func _weather() -> Weather:
+	return get_tree().get_first_node_in_group("weather") as Weather
+
+
+## Les créatures de la nuit (ou de l'orage) fuient.
+func _scatter() -> void:
 	for e in _night_monsters:
 		if is_instance_valid(e):
 			VoxelBurst.spawn(e.get_parent(), e.global_position + Vector3(0, 0.8, 0), Color(1.0, 0.85, 0.5), 18, 3.0, 0.1, 0.6, "up", 6.0, false)
 			e.queue_free()
 	_night_monsters.clear()
+
+
+## Le jour se lève : les créatures de la nuit fuient.
+func _dawn() -> void:
+	_scatter()
 	day_started.emit(day)
 	Sound.ui("day")
 	if player:
@@ -120,6 +133,9 @@ func _apply_light() -> void:
 		return
 	var d := daylight()
 	var dusk := clampf(d * (1.0 - d) * 4.0, 0.0, 1.0) * 0.7
+	var w := _weather()
+	var cloud := w.clouds() if w else 0.0
+	var flash := w.flash() if w else 0.0
 	if _sun:
 		var t := clampf((hour - DAWN) / (DUSK - DAWN), 0.0, 1.0)
 		var dir: Vector3
@@ -131,12 +147,13 @@ func _apply_light() -> void:
 			dir = -Vector3(cos(deg_to_rad(55.0)) * sin(deg_to_rad(200.0)), sin(deg_to_rad(55.0)), cos(deg_to_rad(55.0)) * cos(deg_to_rad(200.0)))
 		_sun.global_basis = Basis.looking_at(dir, Vector3.UP)
 		var sun_col: Color = (_day_sun[0] as Color).lerp(DUSK_TINT, dusk)
-		_sun.light_color = MOON_COLOR.lerp(sun_col, d)
-		_sun.light_energy = lerpf(0.2, float(_day_sun[1]), d)
+		_sun.light_color = MOON_COLOR.lerp(sun_col, d).lerp(Color(0.75, 0.78, 0.85), cloud * 0.6)
+		_sun.light_energy = lerpf(0.2, float(_day_sun[1]), d) * (1.0 - cloud * 0.6) + flash * 1.5
 	if _env:
-		_env.background_color = NIGHT_BG.lerp(_day_env[0], d).lerp(DUSK_TINT, dusk * 0.6)
+		var grey := Color(0.5, 0.53, 0.58).lerp(NIGHT_BG, 1.0 - d)
+		_env.background_color = NIGHT_BG.lerp(_day_env[0], d).lerp(DUSK_TINT, dusk * 0.6 * (1.0 - cloud)).lerp(grey, cloud * 0.85).lerp(Color(0.85, 0.88, 1.0), flash * 0.5)
 		_env.ambient_light_color = NIGHT_AMBIENT.lerp(_day_env[1], d)
-		_env.ambient_light_energy = lerpf(0.26, float(_day_env[2]), d)
+		_env.ambient_light_energy = lerpf(0.26, float(_day_env[2]), d) * (1.0 - cloud * 0.25) + flash * 0.8
 
 
 ## 1 en plein jour, 0 la nuit, entre les deux à l'aube et au crépuscule.
@@ -188,7 +205,10 @@ func _night_spawns(delta: float) -> void:
 
 ## Nombre de monstres de la nuit en même temps (augmente un peu chaque nuit).
 func max_monsters() -> int:
-	return mini(3 + day, 8)
+	var w := _weather()
+	if w and w.is_storm() and not is_night():
+		return 3
+	return mini(3 + day, 8) + (2 if w and w.is_storm() else 0)
 
 
 ## Un endroit sombre, praticable, hors des pièces et loin des lumières (INF s'il n'y en a pas).

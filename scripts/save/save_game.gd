@@ -49,6 +49,7 @@ var village_state := {}
 var quest_state := {}
 var farm_state := {}
 var trade_state := {}
+var weather_state := {}
 var _autosave_timer := 300.0
 
 
@@ -208,6 +209,9 @@ func save_game(slot: String) -> bool:
 	var tr := get_tree().get_first_node_in_group("trade") as Trade
 	if tr:
 		d.trade = tr.export_state()
+	var we := get_tree().get_first_node_in_group("weather") as Weather
+	if we:
+		d.weather = we.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -327,6 +331,7 @@ func new_game() -> void:
 	quest_state = {}
 	farm_state = {}
 	trade_state = {}
+	weather_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -463,6 +468,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if fm:
 		fm.import_state(farm_state)
 		farm_state = {}
+	weather_state = d.get("weather", {})
+	var we := get_tree().get_first_node_in_group("weather") as Weather
+	if we and not weather_state.is_empty():
+		we.import_state(weather_state)
+		weather_state = {}
 	trade_state = d.get("trade", {})
 	var tr := get_tree().get_first_node_in_group("trade") as Trade
 	if tr and not trade_state.is_empty():

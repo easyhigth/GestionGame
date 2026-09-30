@@ -199,6 +199,8 @@ func _update(dt: float) -> void:
 		if _safety_left <= 0.0:
 			_safety = 0.0
 	var p := get_tree().get_first_node_in_group("player") as Player
+	var we := get_tree().get_first_node_in_group("weather") as Weather
+	var wet := we != null and we.is_wet()
 	for i in list.size():
 		var v = list[i]
 		# repas
@@ -236,6 +238,10 @@ func _update(dt: float) -> void:
 			reasons.append("pas de lit")
 		if _safety < 0.0:
 			reasons.append("a eu peur du raid")
+		# sous la pluie sans abri
+		if wet and not v.is_sheltered():
+			target -= 6.0
+			reasons.append("trempé")
 		# les quêtes réussies pour lui le rendent plus heureux (jusqu'à +15 quand il est ton ami)
 		target += 5.0 * mini(int(v.friendship), 3)
 		target = clampf(target, 0.0, 100.0)

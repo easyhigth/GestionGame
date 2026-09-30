@@ -54,6 +54,8 @@ var kingdom_panel: KingdomPanel
 var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
 var trade: Trade
+var weather: Weather
+var _weather_label: Label
 var _quest_box: VBoxContainer
 var _quest_refresh := 0.0
 var _hotbar: VBoxContainer
@@ -567,7 +569,9 @@ func _process(delta: float) -> void:
 		if _quest_box and player:
 			_quest_box.visible = not player.building
 	if _clock and day_cycle and day_cycle.is_inside_tree():
-		_clock.text = day_cycle.clock_text() + ("\nMarchand au village" if trade and trade.is_here() else "")
+		_clock.text = day_cycle.clock_text()
+		if _weather_label:
+			_weather_label.text = (weather.hud_text() if weather and weather.is_inside_tree() else "") + ("\nMarchand au village" if trade and trade.is_here() else "")
 		_clock.add_theme_color_override("font_color", Color("b8c8ff") if day_cycle.is_night() else Color("fff2c8"))
 	if guide:
 		guide.modulate.a = 0.35 if player and player.ui_open else 1.0
@@ -652,6 +656,11 @@ func _build_day_and_guide() -> void:
 	farming.name = "Farming"
 	farming.world = world
 	get_parent().add_child.call_deferred(farming)
+	weather = Weather.new()
+	weather.name = "Weather"
+	weather.world = world
+	weather.player = player
+	get_parent().add_child.call_deferred(weather)
 	trade = Trade.new()
 	trade.name = "Trade"
 	trade.world = world
@@ -669,6 +678,17 @@ func _build_day_and_guide() -> void:
 	_clock.offset_top = 244
 	_clock.offset_bottom = 262
 	add_child(_clock)
+	# météo (et marchand au village) sous l'horloge
+	_weather_label = _outlined("", 11)
+	_weather_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_weather_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_weather_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_weather_label.offset_left = -420
+	_weather_label.offset_right = -12
+	_weather_label.offset_top = 261
+	_weather_label.offset_bottom = 295
+	_weather_label.add_theme_color_override("font_color", Color("d8e4f0"))
+	add_child(_weather_label)
 	guide = GuidePanel.new()
 	guide.player = player
 	add_child(guide)
@@ -685,7 +705,7 @@ func _build_day_and_guide() -> void:
 	_quest_box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_quest_box.offset_left = -300
 	_quest_box.offset_right = -12
-	_quest_box.offset_top = 282
+	_quest_box.offset_top = 314
 	_quest_box.add_theme_constant_override("separation", 1)
 	_quest_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_quest_box)
@@ -791,8 +811,8 @@ func _place_help() -> void:
 	info.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	info.offset_left = -300
 	info.offset_right = -12
-	info.offset_top = 262
-	info.offset_bottom = 278
+	info.offset_top = 294
+	info.offset_bottom = 310
 	info.add_theme_font_size_override("font_size", 10)
 	info.modulate = Color(1, 1, 1, 0.7)
 

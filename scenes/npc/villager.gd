@@ -91,7 +91,10 @@ var _bubble: Label3D
 var friendship := 0
 var _mark: Label3D
 var _bubble_left := 0.0
-const ACTIVITY_NAMES := {"travail": "", "repas": "mange", "détente": "se détend", "sommeil": "dort", "ronde": "fait sa ronde"}
+const ACTIVITY_NAMES := {"travail": "", "repas": "mange", "détente": "se détend", "sommeil": "dort", "ronde": "fait sa ronde", "abri": "s'abrite"}
+## Pièces où l'on s'abrite de la pluie.
+const SHELTER_ROOMS := ["taverne", "maison", "dortoir", "temple", "bibliotheque", "marche", "caserne"]
+var _in_hut := false
 const JOB_NAMES := {"forgeron": "Forgeron", "boulanger": "Boulanger", "garde": "Garde", "fermier": "Fermier",
 	"bucheron": "Bûcheron", "macon": "Maçon", "verrier": "Verrier", "aubergiste": "Aubergiste", "marchand": "Marchand",
 	"erudit": "Érudit", "pretre": "Prêtre", "mage": "Mage", "tisserand": "Tisserand"}
@@ -341,6 +344,13 @@ func routine_activity() -> String:
 		return "ronde" if is_guard() else "sommeil"
 	if h >= 12.0 and h < 13.0:
 		return "repas"
+	# pluie : on se détend à l'abri ; orage : ceux qui travaillent dehors rentrent aussi
+	var w := get_tree().get_first_node_in_group("weather") as Weather
+	if w and w.is_wet() and not is_guard():
+		if h >= 18.0:
+			return "abri"
+		if w.is_storm() and (work_room == null or work_room.get("fields", false)):
+			return "abri"
 	if h >= 18.0:
 		return "détente"
 	return "travail"
@@ -361,6 +371,9 @@ func _start_activity(act: String) -> void:
 	_repath = 0.0
 	if act != "sommeil" and _sleeping:
 		_wake()
+	if _in_hut:
+		_in_hut = false
+		visual.visible = true
 
 
 ## Où aller pour cette activité.
@@ -392,7 +405,26 @@ func _pick_spot(act: String) -> Vector3:
 			return _ground(center + Vector3(cos(a), 0, sin(a)) * randf_range(2.5, 4.5))
 		"ronde":
 			return center
+		"abri":
+			var r := _room_spot(SHELTER_ROOMS)
+			if r != Vector3.INF:
+				return r
+			if bed_spot != Vector3.INF:
+				return bed_spot
+			# nulle part où aller : près du feu, sous la pluie
+			var a := seed * TAU
+			return _ground(center + Vector3(cos(a), 0, sin(a)) * 2.5)
 	return Vector3.INF
+
+
+## À l'abri : endormi, dans une pièce (au travail ou abrité), ou rentré dans sa cabane.
+func is_sheltered() -> bool:
+	if _sleeping or _in_hut or stranger or companion:
+		return true
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k == null or _world == null:
+		return false
+	return k.room_at(_world.cell_at(global_position), global_position.y) != null
 
 
 func _ground(p: Vector3) -> Vector3:
@@ -429,7 +461,7 @@ func _routine_step(delta: float) -> bool:
 	var to := dest - global_position
 	to.y = 0.0
 	# un lit (meuble plein) : on s'arrête à côté, puis on s'y couche
-	var reach := 1.3 if activity == "sommeil" and bed_kind == "lit" else (1.6 if activity == "sommeil" and bed_kind == "cabane" else 0.45)
+	var reach := 1.3 if activity == "sommeil" and bed_kind == "lit" else (1.6 if (activity == "sommeil" or activity == "abri") and bed_kind == "cabane" and _act_spot == bed_spot else 0.45)
 	if _sleeping:
 		velocity = Vector3.ZERO
 		_bubble_tick(delta, "Zzz", Color("b8c8ff"))
@@ -475,6 +507,11 @@ func _routine_step(delta: float) -> bool:
 			if _act_anim <= 0.0:
 				_act_anim = randf_range(3.0, 6.0)
 				_show_bubble(["♪", "♫", "…", "!"][randi() % 4], Color("fff0a0"), 1.5)
+		"abri":
+			# sa place dans une cabane : il rentre à l'intérieur
+			if bed_kind == "cabane" and _act_spot == bed_spot and not _in_hut:
+				_in_hut = true
+				visual.visible = false
 	_move_on_ground(delta)
 	visual.animate(delta, velocity, facing)
 	_bubble_tick(delta, "", Color.WHITE)
