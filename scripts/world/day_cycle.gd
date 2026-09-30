@@ -8,6 +8,8 @@ signal night_started
 ## Le jour se lève (numéro du jour qui commence).
 signal day_started(day: int)
 signal slept
+## Une créature de la nuit a été vaincue (pour les quêtes « défendre le village »).
+signal night_monster_killed
 
 const DAY_SECONDS := 600.0
 const NIGHT_SECONDS := 240.0
@@ -175,6 +177,7 @@ func _night_spawns(delta: float) -> void:
 	e.power = 1.0 + 0.09 * maxi(0, e.level - r.level_range.x)
 	e.set_meta("night", true)
 	add_child(e)
+	e.defeated.connect(func(): night_monster_killed.emit())
 	e.global_position = pos
 	e.home = player.global_position
 	e.set("_wander_to", player.global_position)

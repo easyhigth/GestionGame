@@ -87,6 +87,9 @@ var _act_anim := 0.0
 var _sleeping := false
 var _patrol_i := 0
 var _bubble: Label3D
+## Quêtes : nombre réussies pour lui (ami à 3), marque au-dessus de la tête (« ! », « … », « ? »).
+var friendship := 0
+var _mark: Label3D
 var _bubble_left := 0.0
 const ACTIVITY_NAMES := {"travail": "", "repas": "mange", "détente": "se détend", "sommeil": "dort", "ronde": "fait sa ronde"}
 const JOB_NAMES := {"forgeron": "Forgeron", "boulanger": "Boulanger", "garde": "Garde", "fermier": "Fermier",
@@ -120,6 +123,14 @@ func _ready() -> void:
 	_bubble.position.y = 2.35
 	_bubble.visible = false
 	add_child(_bubble)
+	_mark = Label3D.new()
+	_mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_mark.font_size = 96
+	_mark.pixel_size = 0.009
+	_mark.outline_size = 14
+	_mark.position.y = 2.9
+	_mark.visible = false
+	add_child(_mark)
 
 
 func set_race(new_race: RaceData) -> void:
@@ -489,16 +500,29 @@ func _sleep() -> void:
 			global_position = bed_spot
 		visual.set_downed(true)
 	_show_bubble("Zzz", Color("b8c8ff"), 999.0)
+	if _mark:
+		_mark.position.y = 1.4 if bed_kind != "cabane" else 2.9
 
 
 func _wake() -> void:
 	_sleeping = false
+	if _mark:
+		_mark.position.y = 2.9
 	visual.visible = true
 	visual.set_downed(false)
 	_bubble.visible = false
 	if bed_kind == "lit" and _world:
 		# on se relève à côté du lit
 		global_position = _world.constrain_move(global_position, global_position + Vector3(0.9, 0, 0))
+
+
+## Marque de quête au-dessus de la tête : « ! » (à prendre), « … » (en cours), « ? » (à rendre), « » (rien).
+func set_quest_mark(mark: String) -> void:
+	if _mark == null:
+		return
+	_mark.text = mark
+	_mark.visible = mark != ""
+	_mark.modulate = Color("f2c86a") if mark == "!" else (Color("8ad66a") if mark == "?" else Color(0.8, 0.8, 0.8, 0.8))
 
 
 func is_sleeping() -> bool:
@@ -909,7 +933,9 @@ func _update_label() -> void:
 			var doing: String = ACTIVITY_NAMES.get(activity, "")
 			if doing != "":
 				mood += " · " + doing
-			label.text = "%s (%s)%s\n%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job, mood]
+			var friend := " · Ami" if friendship >= QuestBoard.FRIEND_AT else ""
+			var talk := "[E] Parler (quête)" if _mark and _mark.visible else "[E] Équipement et poste"
+			label.text = "%s (%s)%s%s\n%s\n%s" % [villager_name, race.display_name if race else "?", friend, job, mood, talk]
 			label.modulate = VillageNeeds.mood_color(happiness).lerp(Color.WHITE, 0.35)
 
 

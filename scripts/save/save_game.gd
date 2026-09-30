@@ -46,6 +46,7 @@ var play_time := 0.0
 var day_state := {}
 var guide_state := {}
 var village_state := {}
+var quest_state := {}
 var _autosave_timer := 300.0
 
 
@@ -196,6 +197,9 @@ func save_game(slot: String) -> bool:
 	var vn := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
 	if vn:
 		d.village = vn.export_state()
+	var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
+	if qb:
+		d.quests = qb.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -271,7 +275,7 @@ func _save_villagers() -> Array:
 		out.append({"name": vv.villager_name, "race": _res(vv.race), "talents": vv.talents, "level": vv.level,
 			"equipment": _equip_ids(vv.equipment), "companion": vv.companion, "work": work,
 			"pos": [vv.global_position.x, vv.global_position.y, vv.global_position.z],
-			"home": [vv.home.x, vv.home.y, vv.home.z], "food": vv.food, "happiness": vv.happiness, "unhappy": vv.unhappy_time})
+			"home": [vv.home.x, vv.home.y, vv.home.z], "food": vv.food, "happiness": vv.happiness, "unhappy": vv.unhappy_time, "friend": vv.friendship})
 	return out
 
 
@@ -312,6 +316,7 @@ func new_game() -> void:
 	day_state = {}
 	guide_state = {}
 	village_state = {}
+	quest_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -410,6 +415,7 @@ func apply_pending(world: WorldGenerator) -> void:
 		v.food = float(vd.get("food", 80.0))
 		v.happiness = float(vd.get("happiness", 60.0))
 		v.unhappy_time = float(vd.get("unhappy", 0.0))
+		v.friendship = int(vd.get("friend", 0))
 		for id in vd.equipment:
 			var it := Items.get_item(id)
 			if it:
@@ -436,6 +442,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if vn and not village_state.is_empty():
 		vn.import_state(village_state)
 		village_state = {}
+	quest_state = d.get("quests", {})
+	var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
+	if qb and not quest_state.is_empty():
+		qb.import_state(quest_state)
+		quest_state = {}
 	# une ancienne partie sans guide : le guide est considéré comme fini
 	guide_state = d.get("guide", {"step": 99})
 	var gd := get_tree().get_first_node_in_group("guide") as GuidePanel

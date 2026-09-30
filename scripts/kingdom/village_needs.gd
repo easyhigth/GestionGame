@@ -236,6 +236,8 @@ func _update(dt: float) -> void:
 			reasons.append("pas de lit")
 		if _safety < 0.0:
 			reasons.append("a eu peur du raid")
+		# les quêtes réussies pour lui le rendent plus heureux (jusqu'à +15 quand il est ton ami)
+		target += 5.0 * mini(int(v.friendship), 3)
 		target = clampf(target, 0.0, 100.0)
 		v.happiness = move_toward(float(v.happiness), target, 0.5 * dt)
 		v.mood_reasons = reasons

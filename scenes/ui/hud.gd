@@ -51,6 +51,9 @@ var day_cycle: DayCycle
 var guide: GuidePanel
 var _clock: Label
 var kingdom_panel: KingdomPanel
+var quest_dialog: QuestDialog
+var _quest_box: VBoxContainer
+var _quest_refresh := 0.0
 var _hotbar: VBoxContainer
 var _hotbar_row: HBoxContainer
 var _hotbar_name: Label
@@ -547,6 +550,12 @@ func _process(delta: float) -> void:
 			_ability_bar.visible = not b and player.ability_slots.any(func(x): return x != "")
 			_process_abilities()
 		_messages.offset_bottom = -210.0 if b else -10.0
+	_quest_refresh -= delta
+	if _quest_refresh <= 0.0:
+		_quest_refresh = 1.0
+		_update_quests()
+		if _quest_box and player:
+			_quest_box.visible = not player.building
 	if _clock and day_cycle and day_cycle.is_inside_tree():
 		_clock.text = day_cycle.clock_text()
 		_clock.add_theme_color_override("font_color", Color("b8c8ff") if day_cycle.is_night() else Color("fff2c8"))
@@ -629,6 +638,10 @@ func _build_day_and_guide() -> void:
 	needs.name = "VillageNeeds"
 	get_parent().add_child.call_deferred(needs)
 	needs.changed.connect(_update_kingdom)
+	var board := QuestBoard.new()
+	board.name = "QuestBoard"
+	get_parent().add_child.call_deferred(board)
+	board.changed.connect(_update_quests)
 	_clock = _outlined("", 12)
 	_clock.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -644,6 +657,20 @@ func _build_day_and_guide() -> void:
 	kingdom_panel = KingdomPanel.new()
 	kingdom_panel.player = player
 	add_child(kingdom_panel)
+	quest_dialog = QuestDialog.new()
+	quest_dialog.player = player
+	add_child(quest_dialog)
+	player.quest_talk.connect(func(v): quest_dialog.open(v))
+	# suivi des quêtes en cours, sous l'horloge
+	_quest_box = VBoxContainer.new()
+	_quest_box.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_quest_box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_quest_box.offset_left = -300
+	_quest_box.offset_right = -12
+	_quest_box.offset_top = 282
+	_quest_box.add_theme_constant_override("separation", 1)
+	_quest_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_quest_box)
 
 
 ## Barre des objets à poser à la main (C / X pour choisir, V pour poser), au-dessus de la compétence.
@@ -709,6 +736,29 @@ func _update_hotbar() -> void:
 		_hotbar_row.add_child(cell)
 	var cur := Items.get_item(sel)
 	_hotbar_name.text = "%s  ·  V / L3 : poser   C / X : changer   (après le dernier : mains nues)" % (cur.display_name if cur else "")
+
+
+## Suivi des quêtes en cours (en haut à droite) : titre et avancement.
+func _update_quests() -> void:
+	if _quest_box == null:
+		return
+	for c in _quest_box.get_children():
+		_quest_box.remove_child(c)
+		c.queue_free()
+	var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
+	if qb == null:
+		return
+	for q in qb.active():
+		var t := _outlined("★ " + String(q.title), 11)
+		t.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		t.custom_minimum_size.x = 288
+		t.add_theme_color_override("font_color", Color("8ad66a") if q.state == "ready" else Color("f2c86a"))
+		_quest_box.add_child(t)
+		var p := _outlined(qb.progress_text(q), 9)
+		p.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		p.custom_minimum_size.x = 288
+		p.add_theme_color_override("font_color", Color("d8ccb0"))
+		_quest_box.add_child(p)
 
 
 func _place_help() -> void:

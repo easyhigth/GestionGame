@@ -29,6 +29,8 @@ signal talents_changed
 signal hunger_changed(value: float)
 ## Le héros a mangé (identifiant de l'objet).
 signal ate(item_id: String)
+## Parler à un habitant qui a une quête.
+signal quest_talk(villager: Node)
 ## Un décor a été récolté à la main (« arbre », « rocher », « buisson », « plante »).
 signal harvested(kind: String)
 ## Un objet a été fabriqué (identifiant de l'objet).
@@ -1088,6 +1090,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		var s := nearest_stranger()
 		if s:
 			talk.emit(s)
+			get_viewport().set_input_as_handled()
+			return
+		# un habitant qui a une quête à proposer ou à rendre
+		var qv := nearest_villager()
+		var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
+		if qv and qb and not qb.quest_of(qv).is_empty():
+			quest_talk.emit(qv)
 			get_viewport().set_input_as_handled()
 			return
 		# près d'un lit, la nuit : dormir jusqu'au matin
