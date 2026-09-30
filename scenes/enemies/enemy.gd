@@ -355,6 +355,9 @@ func _on_died() -> void:
 		return
 	if fm:
 		fm.on_enemy_died(self)
+	var sq := get_tree().get_first_node_in_group("side_quests")
+	if sq:
+		sq.on_enemy_died(self)
 	var c := data.color if data else Color.WHITE
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), c.darkened(0.2), 36, 5.0, 0.13, 0.9, "sphere", 12.0, false)
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color(1, 1, 0.9), 16, 6.0, 0.07, 0.4)

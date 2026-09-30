@@ -142,6 +142,9 @@ static func evolve_villager(v: Node, p: Player, new_name: String) -> bool:
 	p.feat.emit("Pacte : %s devient %s !" % [v.get("villager_name"), nxt[1]], Color("d8c0ff"))
 	p.notify.emit("%s reçoit le nom de %s et évolue : %s. Plus fort, plus grand, et il gagne des niveaux." % [old_name, v.get("villager_name"), nxt[1]])
 	p.gain_xp(40 + 60 * evo)
+	var sq := v.get_tree().get_first_node_in_group("side_quests")
+	if sq:
+		sq.on_event("evolve")
 	return true
 
 

@@ -101,6 +101,9 @@ func tame(e: Enemy) -> Dictionary:
 	e.queue_free()
 	_spawn(entry, pos)
 	Sound.ui("levelup")
+	var sq := get_tree().get_first_node_in_group("side_quests")
+	if sq:
+		sq.on_event("tame")
 	if player:
 		player.feat.emit("Pacte : %s devient ton familier « %s » !" % [(load(entry.data) as EnemyData).display_name, entry.name], Color("d8c0ff"))
 		if place == "equipe":

@@ -743,6 +743,9 @@ func _build_day_and_guide() -> void:
 	story.world = world
 	story.player = player
 	get_parent().add_child.call_deferred(story)
+	var side := SideQuests.new()
+	side.name = "SideQuests"
+	get_parent().add_child.call_deferred(side)
 	story_dialog = StoryDialog.new()
 	story_dialog.player = player
 	add_child(story_dialog)

@@ -281,7 +281,7 @@ func _npc_need() -> Dictionary:
 		need["kaede"] = "village" if choices.get("kaede", "") == "join" else "camp"
 	if cur == "duel_ren" and _duel != "ren":
 		need["ren"] = "camp"
-	if cur in ["kaia", "kaia_2", "kaia_3"]:
+	if cur in ["kaia", "kaia_2", "kaia_3"] or passed("kaia_3"):
 		need["kaia"] = "visit"
 	if reached("borin"):
 		need["borin"] = "village" if choices.get("borin", "") == "join" else "camp"
@@ -314,7 +314,7 @@ func _npc_need() -> Dictionary:
 		need["selene"] = "visit" if reached("selene_3") else "camp"
 	if reached("vharok"):
 		need["vharok"] = "camp"
-	if cur in ["aurele", "aurele_2"] or (cur == "duel_aurele" and _duel != "aurele"):
+	if cur in ["aurele", "aurele_2"] or (cur == "duel_aurele" and _duel != "aurele") or passed("aurele_2"):
 		need["aurele"] = "camp"
 	if cur == "cael":
 		need["cael"] = "camp"
@@ -449,6 +449,11 @@ func try_talk(v: Node) -> bool:
 		return false
 	var id: String = v.get_meta("story")
 	var d := _dialog_for(id)
+	# rien pour l'histoire : peut-être une quête secondaire
+	if d == "" or d.ends_with("_idle"):
+		var sq := get_tree().get_first_node_in_group("side_quests")
+		if sq and sq.try_talk(id, v):
+			return true
 	# au village, sans rien à dire : E ouvre son équipement comme pour les autres habitants
 	if d == "" or (d.ends_with("_idle") and not v.get("stranger")):
 		return false
@@ -723,11 +728,12 @@ func _process(delta: float) -> void:
 	_check()
 	# « ! » au-dessus du personnage à qui parler
 	var s := current()
+	var sq := get_tree().get_first_node_in_group("side_quests")
 	for id in npc_nodes:
 		var n = npc_nodes[id]
 		if n and is_instance_valid(n) and n.has_method("set_quest_mark"):
 			var mark: bool = not s.is_empty() and s[5] is String and s[5] == id and s[4] in ["talk", "duel"]
-			n.set_quest_mark("!" if mark else "")
+			n.set_quest_mark("!" if mark else (sq.mark_for(id) if sq else ""))
 	if s.is_empty():
 		return
 	match s[4]:
