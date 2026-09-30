@@ -44,13 +44,16 @@ const DIG_FLOOR := -2.5
 
 
 ## Un coup du héros : frappe le décor le plus utile devant lui. Vrai si quelque chose a été touché.
-static func strike(p: Player, reach: float, power: float) -> bool:
+static func strike(p: Player, reach: float, power: float, with_blocks := false) -> bool:
 	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
 	if world == null or p.global_position.y < WorldGenerator.UNDERGROUND:
 		return false
 	var w := p.weapon()
 	var wid: String = w.id if w else ""
-	var t := find_target(p, reach)
+	var t := find_target(p, reach, with_blocks)
+	if t.has("block") or t.has("furniture"):
+		hit_built(world, t, power, p)
+		return true
 	# 1) décors du village (cabane, tonneau...)
 	if t.has("prop"):
 		var best_prop: Node3D = t.prop
@@ -79,7 +82,7 @@ static func strike(p: Player, reach: float, power: float) -> bool:
 
 ## Ce que le héros frapperait devant lui : {"prop": décor du village} ou {"cell": case d'un décor}, ou {}.
 ## Les décors du village d'abord, puis arbres et rochers, puis les petites plantes.
-static func find_target(p: Player, reach: float) -> Dictionary:
+static func find_target(p: Player, reach: float, with_blocks := false) -> Dictionary:
 	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
 	if world == null or p.global_position.y < WorldGenerator.UNDERGROUND:
 		return {}
@@ -117,14 +120,76 @@ static func find_target(p: Player, reach: float) -> Dictionary:
 				best_score = score
 				target = c
 	if best_score == INF:
-		return {}
+		return _built_target(p, world) if with_blocks else {}
 	return {"cell": target}
+
+
+## Bloc ou meuble posé juste devant le héros (aux pieds, puis au-dessus, puis le sol posé devant).
+static func _built_target(p: Player, world: WorldGenerator) -> Dictionary:
+	var grid := world.build
+	var fwd := Vector3(p.facing.x, 0, p.facing.z).normalized()
+	var here := world.cell_at(p.global_position)
+	var col := world.cell_at(p.global_position + fwd * 1.1)
+	if col == here:
+		col = world.cell_at(p.global_position + fwd * 1.6)
+	var fy := floori(p.global_position.y + 0.3)
+	for f in grid.furniture_in(col):
+		if absf(float(f.base) - p.global_position.y) < 1.3:
+			return {"furniture": grid.furniture_key(col, f.base)}
+	for y in [fy, fy + 1, fy + 2, fy - 1]:
+		var k := Vector3i(col.x, y, col.y)
+		if grid.block_at(k) != null:
+			return {"block": k}
+	return {}
+
+
+## Frappe un bloc ou un meuble posé : il se casse après quelques coups et revient à ramasser.
+static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Player) -> void:
+	var grid := world.build
+	var it: ItemData
+	var key: Vector3i
+	var at: Vector3
+	if t.has("block"):
+		key = t.block
+		it = grid.block_at(key)
+		at = Vector3(key.x + 0.5, key.y + 0.5, key.z + 0.5)
+	else:
+		key = t.furniture
+		if not grid.furniture.has(key):
+			return
+		it = grid.furniture[key].item
+		at = Vector3(key.x + 0.5, float(grid.furniture[key].base) + 0.5, key.z + 0.5)
+	if it == null:
+		return
+	var stone := it.is_block() and it.block_tier >= 1
+	var hp := 2.0
+	if it.is_block():
+		hp = 1.0 if it.block_transparent else (1.5 if it.block_slab else 2.0 + it.block_tier * 1.5)
+	var dmg := power * tool_mult(p, "pioche" if stone else "hache")
+	var dkey := ("f%s" if t.has("furniture") else "b%s") % key
+	var left: float = float(world.block_damage.get(dkey, hp)) - dmg
+	var col := BuildMode.it_color(it) if it.is_block() else Color(0.7, 0.55, 0.38)
+	if left > 0.0:
+		world.block_damage[dkey] = left
+		VoxelBurst.spawn(p, at, col, 8, 2.2, 0.07, 0.3, "sphere", 8.0, false)
+		return
+	world.block_damage.erase(dkey)
+	var got: ItemData = grid.remove_block(key) if t.has("block") else grid.remove_furniture(key)
+	VoxelBurst.spawn(p, at, col, 20, 3.2, 0.1, 0.55, "sphere", 9.0, false)
+	if got:
+		_drop(world, got, 1, at - Vector3(0, 0.4, 0))
 
 
 ## Outil à tenir en main pour frapper ce qui est devant le héros (« » s'il n'y en a pas) :
 ## la meilleure hache du sac pour un arbre ou un décor du village, la meilleure pioche pour un rocher.
-static func tool_for_target(p: Player, reach: float) -> String:
-	var t := find_target(p, reach)
+static func tool_for_target(p: Player, reach: float, with_blocks := false) -> String:
+	var t := find_target(p, reach, with_blocks)
+	if t.has("furniture"):
+		return best_tool(p, "hache")
+	if t.has("block"):
+		var world0 := p.get_tree().get_first_node_in_group("world") as WorldGenerator
+		var b: ItemData = world0.build.block_at(t.block)
+		return best_tool(p, "pioche" if b and b.block_tier >= 1 else "hache")
 	if t.has("prop"):
 		return best_tool(p, "hache")
 	if t.has("cell"):

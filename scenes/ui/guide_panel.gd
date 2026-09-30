@@ -10,8 +10,8 @@ const STEPS := [
 	["rocher", "Casse 2 rochers", "Les rochers donnent des cailloux. Sans pioche, pas de minerai.", 2],
 	["outil", "Fabrique une hache ou une pioche", "Inventaire (I) → Artisanat → Outils. Il suffit de l'avoir dans ton sac.", 1],
 	["planches", "Fabrique des planches", "Inventaire (I) → Artisanat → Construction : 1 bois donne 4 planches.", 1],
-	["abri", "Construis un abri", "Mode construction (B) : une pièce fermée, avec une porte et un lit.", 1],
-	["torche", "Pose une torche", "Mode construction (B) → Mobilier. Les monstres n'apparaissent pas près des lumières.", 1],
+	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit : pose les blocs à la main (C pour choisir, V pour poser) ou avec le mode construction (B).", 1],
+	["torche", "Pose une torche", "Choisis-la avec C et pose-la avec V. Les monstres n'apparaissent pas près des lumières.", 1],
 	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit (E) ou tiens jusqu'au matin.", 1],
 ]
 

@@ -81,6 +81,8 @@ const DIG_TIME := 0.5
 var _dig_timer := 0.0
 ## Outil sorti du sac et tenu en main pour récolter (« » = l'arme est en main).
 var tool_in_hand := ""
+## Pose de blocs et de meubles à la main (C / X : choisir, V : poser).
+var hand: HandBuild
 var _tool_hold := 0.0
 ## Temps pendant lequel l'outil reste en main après le dernier coup de récolte.
 const TOOL_HOLD := 3.0
@@ -129,6 +131,10 @@ func _ready() -> void:
 	camera.top_level = true
 	# l'équipement changé remet l'arme en main
 	equipment.changed.connect(func(): tool_in_hand = "")
+	hand = HandBuild.new()
+	hand.name = "HandBuild"
+	hand.player = self
+	add_child(hand)
 	# le héros créé dans l'écran de création, sinon un héros par défaut de la race choisie
 	var hero: HeroProfile = GameState.hero
 	if hero == null:
@@ -713,7 +719,8 @@ func _harvest_swing(h: Dictionary) -> bool:
 		return false
 	var reach := clampf(attack_reach() * float(h.get("reach", 1.0)), 1.6, 2.6)
 	var power := 2.0 if float(h.get("dmg", 1.0)) * _move_damage >= 1.8 else 1.0
-	return Harvest.strike(self, reach, power)
+	# les blocs posés ne se cassent que s'il n'y a pas d'ennemi tout près (pas de mur cassé en combat)
+	return Harvest.strike(self, reach, power, not _enemy_close(4.5))
 
 
 ## Un coup de pelle dans la case devant le héros (renvoie ce qui a été obtenu, ou null).
@@ -731,7 +738,7 @@ func _ready_tool_for_swing() -> void:
 	if _enemy_close(4.5):
 		_put_tool_away()
 		return
-	var id := Harvest.tool_for_target(self, clampf(attack_reach(), 1.6, 2.6))
+	var id := Harvest.tool_for_target(self, clampf(attack_reach(), 1.6, 2.6), true)
 	if id != "":
 		_show_tool(id)
 	else:
@@ -879,6 +886,16 @@ func _start_dash(direction: Vector3) -> void:
 
 # ---------------------------------------------------------------- verrouillage de cible
 
+## Manette : LB (garde) maintenu + croix gauche / droite = objet précédent / suivant à poser.
+func _input(event: InputEvent) -> void:
+	if ui_open or building or not is_alive():
+		return
+	if event is InputEventJoypadButton and event.pressed and Input.is_action_pressed("block") \
+			and event.button_index in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_RIGHT]:
+		hand.cycle(1 if event.button_index == JOY_BUTTON_DPAD_RIGHT else -1)
+		get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if ui_open or not is_alive():
 		return
@@ -890,6 +907,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			cast_ability(i)
 			get_viewport().set_input_as_handled()
 			return
+	if event.is_action_pressed("place_block"):
+		hand.place()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("hotbar_next") or event.is_action_pressed("hotbar_prev"):
+		hand.cycle(1 if event.is_action_pressed("hotbar_next") else -1)
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ability_cast"):
 		cast_ability(selected_slot)
 		get_viewport().set_input_as_handled()

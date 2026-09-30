@@ -32,6 +32,8 @@ const PAGES := [
 	["Monde et royaume", [
 		["Récolter : frapper arbres, rochers, buissons, décors", "Clic gauche / J", "X"],
 		["Creuser le sol devant soi (maintenir)", "G", "RT"],
+		["Choisir un bloc ou un meuble à poser", "C / X", "LB + croix gauche/droite"],
+		["Poser devant soi · frapper un bloc le casse", "V", "L3"],
 		["Parler · équiper un habitant · recruter", "E", "Y"],
 		["Dormir dans un lit (la nuit)", "E", "Y"],
 		["Entrer dans un donjon · ouvrir un coffre", "E", "Y"],
