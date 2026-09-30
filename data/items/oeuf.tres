@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "oeuf"
+display_name = "Œuf"
+description = "Pondu par une poule. Cru, il nourrit peu : fais-en une omelette ou un gâteau."
+max_stack = 30
+food = 5.0
+food_heal = 1
+food_cooked = false

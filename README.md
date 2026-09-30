@@ -124,6 +124,15 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Froid** (neige) : sans cape ni armure de torse, et loin d'un feu ou d'une torche, tu as froid au bout de 20 s : tu avances moins vite et tu as faim plus vite.
 - Réglages : `scripts/world/weather.gd` (durées, effets) et, pour chaque région (`data/regions/*.tres`, groupe **Météo**) : chances de chaque temps et ce qui tombe.
 
+## Élevage
+- **Poules, moutons et vaches** vivent à l'état sauvage dans les prés (prairie, forêt, montagnes, toundra...) ; quelques poules picorent près du village au début.
+- **Attirer** : prends leur nourriture en main avec C (**graines de blé** pour les poules, **blé** pour les moutons et les vaches) : les bêtes proches te suivent (♥).
+- **Enclos** : fabrique une **mangeoire** (établi : 2 bois, 2 fibres) et pose-la ; mène les bêtes jusqu'à elle : elles s'y installent et restent autour (5 m). Les **barrières** (2 bois → 3, Mobilier) ferment l'enclos : les bêtes ne passent pas au travers.
+- **Produits** : nourries par la réserve du village, les poules pondent des **œufs**, les moutons donnent de la **laine**, les vaches du **lait**. Ils tombent près des bêtes (3 au plus) ; avec un **fermier à la grange**, ils sont ramassés tout seuls (œufs et lait dans la réserve, laine dans ton sac). Réserve vide : les bêtes ont faim et ne produisent plus.
+- **Petits** : chaque matin, une espèce qui a au moins un couple dans l'enclos a un petit (s'il y a assez de nourriture en réserve), qui grandit en un jour. 6 bêtes au plus par espèce.
+- **Recettes** : omelette (2 œufs), fromage (2 laits), gâteau (2 blés, 1 lait, 2 œufs) près du feu ; **manteau de laine** (4 laines, 1 cuir, établi) : une armure de torse qui tient chaud dans la neige.
+- Le royaume (U) résume l'élevage ; le guide a un 6e chapitre « L'élevage ». Les bêtes de l'enclos sont sauvegardées. Réglages : `scripts/world/farm_animal.gd` (`SPECIES` : nourriture, produit, fréquence, consommation) et `scripts/kingdom/livestock.gd` (bêtes sauvages par région, petits).
+
 ## Commerce
 - Un **marchand ambulant** arrive au village avec sa charrette tous les **3 jours** (le premier le jour 2), à 8 h, et repart le lendemain matin. Son arrivée est annoncée (cor) ; « Marchand au village » s'affiche sous l'horloge, et le royaume (**U**) dit quand il repasse.
 - **E près de lui** : sa boutique. À gauche ce qu'il vend (graines, nourriture, matériaux, outils, meubles et quelques pièces d'équipement), à droite ce que tu peux lui vendre, avec ta bourse en pièces d'or. Boutons « ×5 » et « Tout ».
@@ -290,6 +299,6 @@ Choix de conception :
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville : voyageurs et prisonniers à recruter, 2 compagnons, raids de pillards qui assiègent le village. **(fait)**
 7. Sauvegarde, menus, équilibrage : écran titre, menu pause, 3 emplacements + sauvegarde automatique, options, 3 niveaux de difficulté, réglage des boss. **(fait)**
 
-Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : élevage, pêche et nage, personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
+Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : pêche et nage, personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
 
 Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la Going Medieval (plans bâtis par les habitants), **arbre de talents du héros** (27 talents, 15 nouvelles attaques et nouveaux sorts).

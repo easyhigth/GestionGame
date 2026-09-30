@@ -46,7 +46,7 @@ func choices() -> Array[ItemData]:
 		return out
 	for e in player.inventory.entries:
 		var it := e.item as ItemData
-		if it and (it.is_placeable() or it.is_seed() or it.id == "houe") and not out.has(it):
+		if it and (it.is_placeable() or it.is_seed() or it.id == "houe" or is_lure(it)) and not out.has(it):
 			out.append(it)
 	return out
 
@@ -86,6 +86,11 @@ func _process(_delta: float) -> void:
 		_ghost.visible = false
 		_target = {}
 		return
+	if not it.is_placeable() and not _is_farm_item(it):
+		# nourriture pour les bêtes : rien à poser
+		_ghost.visible = false
+		_target = {}
+		return
 	_target = find_spot(it)
 	if _target.is_empty():
 		_ghost.visible = false
@@ -97,6 +102,14 @@ func _process(_delta: float) -> void:
 	var base: float = _target.get("base", float(k.y))
 	_ghost.global_position = Vector3(k.x + 0.5, base + h * 0.5, k.z + 0.5)
 	_ghost_mat.albedo_color = C_OK if _target.ok else C_BAD
+
+
+## Nourriture qui attire les bêtes (tenue en main, elles suivent le héros).
+static func is_lure(it: ItemData) -> bool:
+	for sp in FarmAnimal.SPECIES:
+		if FarmAnimal.SPECIES[sp].food == it.id:
+			return true
+	return false
 
 
 static func _is_farm_item(it: ItemData) -> bool:
@@ -186,6 +199,9 @@ func place() -> bool:
 	var it := selected_item()
 	if it == null:
 		cycle(1)
+		return false
+	if not it.is_placeable() and not _is_farm_item(it):
+		player.notify.emit("Garde-le en main : les bêtes qui l'aiment te suivent. Mène-les à une mangeoire.")
 		return false
 	if _target.is_empty():
 		_target = find_spot(it)

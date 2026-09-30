@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "manteau_laine"
+display_name = "Manteau de laine"
+description = "Épais et chaud : protège du froid dans la neige."
+max_stack = 1
+slot = 4
+defense = 3

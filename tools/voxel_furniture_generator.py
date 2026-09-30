@@ -350,6 +350,18 @@ def mangeoire():
     return g
 
 
+def barriere():
+    """Barrière d'enclos : deux poteaux et deux lisses sur toute la largeur de la case."""
+    g = Node('Barriere')
+    for x in (-9, 9):
+        V(2.4, 18, 2.4, WOOD_D, x, 9, 0, g)
+        V(3, 1.4, 3, shade(WOOD_D, 0.85), x, 18.4, 0, g)
+    for y in (7, 14):
+        V(20, 2, 1.4, WOOD, 0, y, 0, g)
+    V(1.6, 12, 1.2, WOOD_L, 0, 9.5, 0.2, g, rz=0.9)
+    return g
+
+
 def billot():
     g = Node('Billot')
     V(12, 10, 12, 0x8a6038, 0, 5, 0, g)
@@ -389,15 +401,20 @@ FURNITURE = {
     'mannequin': mannequin, 'ratelier': ratelier, 'cible': cible, 'etal': etal, 'comptoir': comptoir,
     'bibliotheque': bibliotheque, 'pupitre': pupitre, 'autel': autel, 'bougeoir': bougeoir, 'chaudron': chaudron,
     'metier_tisser': metier_tisser, 'auge': auge, 'mangeoire': mangeoire, 'billot': billot, 'statue': statue,
+    'barriere': barriere,
 }
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default='../assets/furniture')
+    ap.add_argument('--only', default='', help='noms séparés par des virgules (par défaut : tous)')
     a = ap.parse_args()
+    only = [n for n in a.only.split(',') if n]
     os.makedirs(a.out, exist_ok=True)
     for name, fn in FURNITURE.items():
+        if only and name not in only:
+            continue
         export_glb(fn(), os.path.join(a.out, name + '.glb'))
     print('%d meubles -> %s' % (len(FURNITURE), a.out))
 

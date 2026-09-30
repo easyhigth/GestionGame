@@ -113,6 +113,13 @@ func _refresh() -> void:
 			player.notify.emit("Les fermiers ont %d graines de plus à semer." % got)
 			_refresh())
 		_box.add_child(sb)
+	# élevage
+	var ls := get_tree().get_first_node_in_group("livestock") as Livestock
+	if ls and ls.summary_text() != "":
+		var ll := MenuKit.label(ls.summary_text(), 11, MenuKit.C_TEXT)
+		ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		ll.custom_minimum_size = Vector2(660, 0)
+		_box.add_child(ll)
 	# commerce
 	var tr := get_tree().get_first_node_in_group("trade") as Trade
 	if tr:
@@ -190,6 +197,8 @@ func _refresh() -> void:
 		tips.append("Nomme un fermier (E près d'un habitant → Poste de travail → Champs) : il récoltera pour la réserve.")
 	elif fm and fm.seeds_count() == 0 and fm.summary().planted < fm.plots.size():
 		tips.append("Des cases de champ sont vides : confie des graines aux fermiers.")
+	if ls and ls.domestic().is_empty():
+		tips.append("Élevage : pose une mangeoire, puis attire des poules (graines de blé en main) ou des moutons et vaches (blé) jusqu'à elle.")
 	if tr and not have.has("marche") and members.size() >= 4:
 		tips.append("Un marché (pièce fermée, 2 étals et un comptoir) ferait venir le marchand tous les 2 jours, avec de meilleurs prix.")
 	if not have.has("taverne"):

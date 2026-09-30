@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "fromage"
+display_name = "Fromage"
+description = "Du lait caillé et affiné. Se mange (H)."
+max_stack = 20
+food = 20.0
+food_heal = 5
+food_cooked = true
