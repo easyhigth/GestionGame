@@ -67,6 +67,9 @@ var level := 1
 ## Évolution par le Pacte (0 à 2) et son nom (« Hobgobelin », « Orc noble »...).
 var evo := 0
 var evo_title := ""
+## Variante de couleur du modèle (0 à 2) et modèle d'évolution affiché (0 = la race de base).
+var model_variant := -1
+var evo_model := 0
 ## Bonus d'attaque des gardes pendant un raid.
 var guard_bonus := 0.0
 ## Besoins (voir VillageNeeds) : faim (100 = rassasié), bonheur (0 à 100), lit, raisons de mécontentement.
@@ -147,11 +150,26 @@ func set_race(new_race: RaceData) -> void:
 	if race == null or vis == null:
 		return
 	vis.set_equipment_library(race.equipment)
-	if not race.villager_models.is_empty():
-		vis.set_model(race.villager_models.pick_random())
-	elif race.model:
-		vis.set_model(race.model)
+	var m := _model_scene()
+	if m:
+		vis.set_model(m)
 	_apply_level(true)
+
+
+## Le modèle de sa race (sa variante de couleur), ou de son évolution s'il existe (<race>_base_evoN.glb).
+func _model_scene() -> PackedScene:
+	if race == null:
+		return null
+	if race.villager_models.is_empty():
+		return race.model
+	if model_variant < 0 or model_variant >= race.villager_models.size():
+		model_variant = randi() % race.villager_models.size()
+	var base: PackedScene = race.villager_models[model_variant]
+	if evo_model > 0 and base:
+		var path := base.resource_path.get_basename() + "_evo%d.glb" % evo_model
+		if ResourceLoader.exists(path):
+			return load(path)
+	return base
 
 
 ## Vie selon la race et le niveau.
@@ -169,6 +187,9 @@ func _level_mult() -> float:
 func apply_evolution(fx := false) -> void:
 	var vis := get_node_or_null("Visual") as VoxelCharacter
 	if vis:
+		var m := _model_scene()
+		if m and m != vis.model:
+			vis.set_model(m)
 		vis.scale = Vector3.ONE * Evolution.SCALE[clampi(evo, 0, 2)]
 	_apply_level(true)
 	if fx and is_inside_tree():

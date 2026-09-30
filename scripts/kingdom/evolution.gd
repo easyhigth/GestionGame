@@ -125,10 +125,16 @@ static func evolve_villager(v: Node, p: Player, new_name: String) -> bool:
 	var old_name: String = v.get("villager_name")
 	if new_name.strip_edges() != "":
 		v.set("villager_name", new_name.strip_edges().left(18))
+	# nouvelle race : son modèle de base ; même race : le modèle de l'évolution suivante
+	var switched := false
 	if nxt[0] != "":
 		var r := load("res://data/races/%s.tres" % nxt[0]) as RaceData
 		if r:
+			v.set("evo_model", 0)
 			v.set_race(r)
+			switched = true
+	if not switched:
+		v.set("evo_model", mini(int(v.get("evo_model")) + 1, 3))
 	v.set("evo", evo + 1)
 	v.set("evo_title", nxt[1])
 	v.set_level(int(v.get("level")) + 3)

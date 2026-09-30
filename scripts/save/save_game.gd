@@ -319,7 +319,8 @@ func _save_villagers() -> Array:
 			"equipment": _equip_ids(vv.equipment), "companion": vv.companion, "work": work,
 			"pos": [vv.global_position.x, vv.global_position.y, vv.global_position.z],
 			"home": [vv.home.x, vv.home.y, vv.home.z], "food": vv.food, "happiness": vv.happiness, "unhappy": vv.unhappy_time, "friend": vv.friendship,
-			"evo": vv.evo, "evo_title": vv.evo_title})
+			"evo": vv.evo, "evo_title": vv.evo_title,
+			"variant": vv.model_variant, "evo_model": vv.evo_model})
 	return out
 
 
@@ -440,7 +441,7 @@ func apply_pending(world: WorldGenerator) -> void:
 		for i in mini(4, slots.size()):
 			p.ability_slots[i] = str(slots[i])
 		p.hero_evo = int(pd.get("hero_evo", 0))
-		p._apply_evo_scale()
+		p._apply_evo_look()
 		p._give_class_talent()
 		p._apply_talents()
 		var pos := Vector3(pd.pos[0], pd.pos[1], pd.pos[2])
@@ -466,6 +467,8 @@ func apply_pending(world: WorldGenerator) -> void:
 		v.level = int(vd.level)
 		v.evo = int(vd.get("evo", 0))
 		v.evo_title = str(vd.get("evo_title", ""))
+		v.model_variant = int(vd.get("variant", -1))
+		v.evo_model = int(vd.get("evo_model", mini(int(vd.get("evo", 0)), 2)))
 		holder.add_child(v)
 		v.global_position = Vector3(vd.pos[0], vd.pos[1], vd.pos[2])
 		v.home = Vector3(vd.home[0], vd.home[1], vd.home[2])
