@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "pioche_bois"
+display_name = "Pioche en bois"
+description = "Casse les rochers deux fois plus vite et permet d'en tirer du minerai. Il suffit de l'avoir dans son sac."

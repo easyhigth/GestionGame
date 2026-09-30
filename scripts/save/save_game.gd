@@ -40,6 +40,9 @@ var pending := {}
 var current_slot := "1"
 ## Temps de jeu de la partie en cours (secondes).
 var play_time := 0.0
+## Heure et jour, et avancement du guide, d'une partie chargée (repris par le cycle et le guide s'ils arrivent après).
+var day_state := {}
+var guide_state := {}
 var _autosave_timer := 300.0
 
 
@@ -179,6 +182,12 @@ func save_game(slot: String) -> bool:
 	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
 	d.raid_timer = rm.next_raid_in() if rm else 600.0
 	d.play_time = play_time
+	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
+	if dc:
+		d.day = dc.export_state()
+	var gd := get_tree().get_first_node_in_group("guide") as GuidePanel
+	if gd:
+		d.guide = gd.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -292,6 +301,8 @@ func load_game(slot: String) -> bool:
 ## Nouvelle partie : écran de création du héros.
 func new_game() -> void:
 	pending = {}
+	day_state = {}
+	guide_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -402,6 +413,17 @@ func apply_pending(world: WorldGenerator) -> void:
 	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
 	if rm:
 		rm.set_next_raid(float(d.get("raid_timer", 600.0)))
+	day_state = d.get("day", {"hour": 8.0, "day": 1})
+	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
+	if dc:
+		dc.import_state(day_state)
+		day_state = {}
+	# une ancienne partie sans guide : le guide est considéré comme fini
+	guide_state = d.get("guide", {"step": 99})
+	var gd := get_tree().get_first_node_in_group("guide") as GuidePanel
+	if gd:
+		gd.import_state(guide_state)
+		guide_state = {}
 	if k:
 		k.recompute()
 	loaded.emit(str(d.get("slot", "")))

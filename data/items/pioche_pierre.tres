@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "pioche_pierre"
+display_name = "Pioche en pierre"
+description = "Casse les rochers trois fois plus vite et creuse la roche. Il suffit de l'avoir dans son sac."

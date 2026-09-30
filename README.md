@@ -77,7 +77,17 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
   - Une hache coupe les arbres deux fois plus vite, un marteau de guerre casse les rochers deux fois plus vite, et un coup chargé compte double.
 - **Creuser** (G / gâchette droite) : chaque coup de pelle abaisse le sol de 50 cm devant soi et donne 1 bloc de terre (sable sur la plage, cailloux dans la roche, parfois du minerai).
 - Ensuite on fabrique (inventaire, I) : bois → planches, rondins, portes, torches ; fibre → chaume ; cailloux → blocs de pierre...
+- **Outils** (inventaire → Artisanat → Outils) : hache et pioche en bois (3 bois), en pierre (2 bois + 3 cailloux, près d'un établi). Il suffit de les avoir dans son sac, le meilleur est utilisé tout seul : ×2 en bois, ×3 en pierre. Sans pioche, un rocher ne donne que des cailloux (pas de minerai) et on ne peut pas creuser la roche.
 - Les réglages sont dans `scripts/world/harvest.gd` (points de vie des décors, butin, outils).
+
+## Jour et nuit
+- Un jour dure 10 minutes (6 h → 20 h) et une nuit 4 minutes (20 h → 6 h). L'heure et le jour s'affichent sous la mini-carte ; le ciel, le soleil et la lune changent avec l'heure.
+- **La nuit**, des monstres de la région apparaissent dans le noir, à 15-24 m du héros, et marchent vers lui : un peu plus chaque nuit (4 la première, jusqu'à 8). Ils n'apparaissent pas près d'une lumière (torche, lanterne posée, feu de camp du village) ni dans une pièce fermée. Au lever du jour, ils fuient.
+- **Dormir** : E près d'un lit, la nuit, s'il n'y a pas de monstre à moins de 12 m. On se réveille le matin avec toute sa vie.
+- L'heure et le jour sont sauvegardés. Réglages dans `scripts/world/day_cycle.gd`.
+
+## Guide des premiers pas
+Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, casser 2 rochers, fabriquer un outil, fabriquer des planches, construire un abri (pièce fermée avec une porte et un lit), poser une torche, survivre à la première nuit. Chaque objectif atteint est annoncé ; l'avancement est sauvegardé et le panneau disparaît à la fin (`scenes/ui/guide_panel.gd`).
 
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.

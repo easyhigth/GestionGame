@@ -379,7 +379,38 @@ def m_fiber():
     return g
 
 
-MATERIALS = [m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber]
+def _tool_handle(g):
+    V(1.6, 16, 1.6, WOOD, 0, 8, 0, g)
+    V(2, 1.2, 2, WOOD_D, 0, 0.6, 0, g)
+
+
+def _axe(name, head, edge):
+    g = Node(name)
+    _tool_handle(g)
+    V(2.2, 5, 2.4, head, 1.8, 13.5, 0, g)      # tête collée au manche
+    V(1.4, 7, 2.4, head, 3.6, 13.5, 0, g)
+    V(0.8, 8, 2.6, edge, 4.7, 13.5, 0, g)      # tranchant
+    return g
+
+
+def _pick(name, head, tip):
+    g = Node(name)
+    _tool_handle(g)
+    V(3, 2.6, 2.4, head, 0, 15, 0, g)
+    for s in (-1, 1):
+        V(3.2, 2, 2, head, s * 3, 14.6, 0, g)
+        V(2.2, 1.6, 1.6, tip, s * 5.4, 13.8, 0, g)
+    return g
+
+
+def m_hache_bois(): return _axe('hache_bois', 0xa87848, 0xc89868)
+def m_hache_pierre(): return _axe('hache_pierre', 0x8a8a86, 0xb8b8b2)
+def m_pioche_bois(): return _pick('pioche_bois', 0xa87848, 0xc89868)
+def m_pioche_pierre(): return _pick('pioche_pierre', 0x8a8a86, 0xb8b8b2)
+
+
+MATERIALS = [m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
+             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre]
 
 
 # ---------------------------------------------------------------- export
