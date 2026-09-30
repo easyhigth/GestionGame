@@ -20,9 +20,13 @@ const STEPS := [
 	["lingot", "Fonds 2 lingots de fer", "Près du four : 2 minerais de fer et 1 bois donnent 1 lingot (Artisanat → Matériaux).", 2],
 	["enclume", "Fabrique et pose une enclume", "4 lingots de fer, près d'un établi. Toutes les pièces en fer se forgent à côté d'elle.", 1],
 	["pioche_fer", "Forge une pioche en fer", "À l'enclume : 2 lingots et 2 bois (Artisanat → Outils). Elle mine l'or et le marbre.", 1],
+	# chapitre 3 : le village
+	["reserve", "Remplis la réserve du village", "Ouvre le royaume (U) et dépose de la nourriture. Une boulangerie ou une grange la remplissent aussi.", 1],
+	["lits", "Un lit pour chaque habitant", "Une maison (pièce fermée, porte, un lit et un coffre) donne 2 lits ; un dortoir (4 lits et un coffre) en donne 6.", 1],
+	["bonheur", "Rends ton village heureux", "Bonheur moyen de 70 % : nourriture, lits, taverne, temple... Le royaume (U) dit ce qui manque.", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13]]
+const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16]]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
 const VERSION := 2
 
@@ -69,6 +73,14 @@ func _ready() -> void:
 	_bar.color = Color("f2c86a")
 	_bar.size = Vector2(0, 4)
 	bar_bg.add_child(_bar)
+	var vn0 := get_tree().get_first_node_in_group("village_needs")
+	if vn0:
+		vn0.deposited.connect(func(_p): _advance("reserve"))
+	else:
+		(func():
+			var vn1 := get_tree().get_first_node_in_group("village_needs")
+			if vn1:
+				vn1.deposited.connect(func(_p): _advance("reserve"))).call_deferred()
 	if player:
 		player.harvested.connect(_on_harvested)
 		player.crafted.connect(_on_crafted)
@@ -182,6 +194,14 @@ func _check_state() -> void:
 					if (grid2.furniture[key].item as ItemData).id == current_id():
 						_advance(current_id())
 						return
+		"lits", "bonheur":
+			var vn := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
+			if vn:
+				var m := vn.members().size()
+				if current_id() == "lits" and m > 0 and vn.total_beds() >= m and vn.total_beds() > 6:
+					_advance("lits")
+				elif current_id() == "bonheur" and m > 0 and vn.average_happiness() >= 70.0:
+					_advance("bonheur")
 		"pioche_fer":
 			var pf := Items.get_item("pioche_fer")
 			if pf and player.inventory.count(pf) > 0:
