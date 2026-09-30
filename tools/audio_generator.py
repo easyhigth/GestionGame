@@ -334,6 +334,15 @@ def sfx_eat():
     return out
 
 
+def sfx_coins():
+    """Pièces qui tintent (achat, vente)."""
+    out = silence(0.45)
+    for i, (n, at) in enumerate(((91, 0.0), (96, 0.06), (88, 0.13), (94, 0.2))):
+        ring = mix(osc('sine', note(n), 0.25), gain(osc('sine', note(n) * 2.76, 0.25), 0.35))
+        place(out, expdecay(ring, 0.06), at, 0.55 - i * 0.07)
+    return highpass(out, 900)
+
+
 def sfx_door():
     return mix(expdecay(osc('saw', lambda t: 180 + 80 * math.sin(t * 40), 0.4), 0.15), gain(expdecay(lowpass(noise(0.2, 81), 900), 0.05), 0.5))
 

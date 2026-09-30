@@ -381,6 +381,36 @@ def weapon_rack(seed=1):
     return g
 
 
+def merchant_cart(seed=1):
+    """Charrette du marchand ambulant : plateau, deux roues, bâche rayée, caisses et sacs."""
+    rnd = mk(seed * 41 + 9)
+    g = Node('Cart')
+    V(36, 3, 22, WOOD, 0, 11, 0, g)                       # plateau
+    for x in (-17, 17):
+        V(2, 6, 22, WOOD_D, x, 15, 0, g)                  # ridelles
+    for z in (-10, 10):
+        V(36, 6, 2, WOOD_D, 0, 15, z, g)
+    for z in (-12.5, 12.5):                               # roues
+        V(3, 16, 16, 0x5a3a22, -6, 8, z, g)
+        V(3.4, 12, 12, 0x6a4428, -6, 8, z, g)
+        V(3.6, 4, 4, 0x3a2a1a, -6, 8, z, g)
+    V(30, 2, 2, WOOD_D, 30, 10, -6, g)                    # brancards
+    V(30, 2, 2, WOOD_D, 30, 10, 6, g)
+    for x in (-15, 15):                                   # arceaux
+        for z in (-10, 10):
+            V(2, 20, 2, WOOD_D, x, 24, z, g)
+    for i in range(6):                                    # bâche rayée
+        V(34, 2, 4, 0xc83c32 if i % 2 == 0 else 0xf0e6d2, 0, 34 + (i if i < 3 else 5 - i) * 1.6, -10 + i * 4, g)
+    for x, z, c in ((-10, -4, 0xa87848), (-4, 5, 0x8a6238), (8, -3, 0xa87848)):
+        V(8, 8, 8, c, x, 16.5, z, g)                       # caisses
+        V(8.4, 1, 8.4, shade(c, 0.8), x, 18, z, g)
+    for x, z in ((3, -5), (12, 4)):
+        V(6, 7, 6, 0xd8c8a0, x, 16, z, g)                  # sacs
+        V(3, 2, 3, 0x8a6a3a, x, 20.5, z, g)
+    V(4, 4, 4, 0xe0b030, -12, 22.5, 6, g)                  # pièces d'or en tas
+    return g
+
+
 PROPS = {
     'workbench': workbench, 'weapon_rack': weapon_rack,
     'oak_1': lambda: oak(1), 'oak_2': lambda: oak(2), 'oak_3': lambda: oak(3), 'oak_autumn': lambda: oak(4, True),
@@ -388,7 +418,7 @@ PROPS = {
     'bush_1': lambda: bush(1), 'bush_2': lambda: bush(2),
     'rock_1': lambda: rock(1), 'rock_2': lambda: rock(2), 'rock_big': lambda: rock(3, True),
     'flowers_1': lambda: flowers(1), 'flowers_2': lambda: flowers(2), 'grass_1': lambda: grass(1),
-    'hut': hut, 'campfire': campfire, 'barrel': barrel, 'crate': crate,
+    'hut': hut, 'campfire': campfire, 'merchant_cart': merchant_cart, 'barrel': barrel, 'crate': crate,
     'iron_vein_1': lambda: vein(1, 0xc8743a, 0xe89a5a), 'iron_vein_2': lambda: vein(2, 0xc8743a, 0xe89a5a),
     'gold_vein_1': lambda: vein(3, 0xe0b030, 0xfff080),
 }

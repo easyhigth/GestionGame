@@ -113,11 +113,18 @@ func _refresh() -> void:
 			player.notify.emit("Les fermiers ont %d graines de plus à semer." % got)
 			_refresh())
 		_box.add_child(sb)
+	# commerce
+	var tr := get_tree().get_first_node_in_group("trade") as Trade
+	if tr:
+		var tl := MenuKit.label(tr.status_text(), 11, MenuKit.C_GOLD if tr.is_here() else MenuKit.C_DIM)
+		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		tl.custom_minimum_size = Vector2(660, 0)
+		_box.add_child(tl)
 	# habitants
 	var sep := MenuKit.label("Habitants", 14, MenuKit.C_GOLD)
 	_box.add_child(sep)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(660, 120 if fm and not fm.plots.is_empty() else 170)
+	scroll.custom_minimum_size = Vector2(660, 100 if fm and not fm.plots.is_empty() else 150)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_box.add_child(scroll)
 	_list = VBoxContainer.new()
@@ -183,6 +190,8 @@ func _refresh() -> void:
 		tips.append("Nomme un fermier (E près d'un habitant → Poste de travail → Champs) : il récoltera pour la réserve.")
 	elif fm and fm.seeds_count() == 0 and fm.summary().planted < fm.plots.size():
 		tips.append("Des cases de champ sont vides : confie des graines aux fermiers.")
+	if tr and not have.has("marche") and members.size() >= 4:
+		tips.append("Un marché (pièce fermée, 2 étals et un comptoir) ferait venir le marchand tous les 2 jours, avec de meilleurs prix.")
 	if not have.has("taverne"):
 		tips.append("Une taverne rendrait les habitants plus heureux (+10).")
 	elif not have.has("temple"):
@@ -191,7 +200,8 @@ func _refresh() -> void:
 		tips.append("Ton village est heureux : des voyageurs viendront s'y installer.")
 	elif avg < 25.0 and not members.is_empty():
 		tips.append("Attention : des habitants malheureux finiront par partir.")
-	for t in tips:
+	# les 3 conseils les plus utiles (le panneau doit tenir à l'écran)
+	for t in tips.slice(0, 3):
 		var l := MenuKit.label("• " + t, 11, MenuKit.C_DIM)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(600, 0)
