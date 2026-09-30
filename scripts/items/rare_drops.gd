@@ -26,6 +26,10 @@ const BOSS_EXTRA := {
 	"ren_possede": [["ecaille_dragon", 0.5, 1, 2], ["fragment_brume", 1.0, 2, 3]],
 	"aurele_epreuve": [["larme_esprit", 1.0, 3, 3], ["cristal_aube", 1.0, 1, 1]],
 }
+## Gemmes (serties à l'enclume, voir Forge) : une au hasard, avec cette chance.
+const GEM_IDS := ["gemme_rubis", "gemme_saphir", "gemme_emeraude", "gemme_topaze", "gemme_amethyste", "gemme_diamant"]
+const GEM_CHANCE := {"boss": 0.45, "ile": 0.3, "grotte": 0.15, "donjon_boss": 0.4}
+
 ## Coffres : sorte -> [objet, chance, minimum, maximum].
 const CHESTS := {
 	"ile": [["orichalque", 0.08, 1, 1], ["mithril_brut", 0.3, 1, 2], ["ecaille_dragon", 0.12, 1, 1]],
@@ -56,6 +60,8 @@ static func roll_enemy(e: Enemy, mult := 1.0) -> Array:
 	for r in table:
 		if randf() < minf(1.0, float(r[1]) * mult):
 			out.append([_item(r[0]), randi_range(int(r[2]), int(r[3]))])
+	if e is Boss and randf() < GEM_CHANCE.boss * mult:
+		out.append([_item(GEM_IDS.pick_random()), 1])
 	return out.filter(func(x): return x[0] != null)
 
 
@@ -65,6 +71,8 @@ static func roll_chest(kind: String) -> Array:
 	for r in CHESTS.get(kind, []):
 		if randf() < float(r[1]):
 			out.append([_item(r[0]), randi_range(int(r[2]), int(r[3]))])
+	if randf() < float(GEM_CHANCE.get(kind, 0.0)):
+		out.append([_item(GEM_IDS.pick_random()), 1])
 	return out.filter(func(x): return x[0] != null)
 
 

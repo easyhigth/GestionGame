@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "gemme_rubis"
+display_name = "Rubis"
+description = "Une gemme rouge vif. Sertie à l'enclume : brûlure au contact et un peu d'attaque."
+rarity = 3
+max_stack = 50

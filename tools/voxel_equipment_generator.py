@@ -1026,8 +1026,23 @@ def m_fragment_brume():
 RARE = [m_mithril_brut, m_lingot_mithril, m_ecaille_dragon, m_larme_esprit, m_sang_demon, m_cristal_aube, m_orichalque, m_fragment_brume]
 
 
+def _gem(gid, col):
+    def f():
+        g = Node(gid)
+        V(6, 1, 6, 0x6a6a66, 0, 0.5, 0, g)
+        VG(4, 3, 4, col, 0, 2.6, 0, g, ry=0.785)
+        VG(2.4, 2.4, 2.4, col, 0, 4.6, 0, g, ry=0.785)
+        VG(1.2, 1.2, 1.2, 0xffffff, 0.8, 3.4, 1.2, g)
+        return g
+    return f
+
+
+GEMS = [_gem(n, c) for n, c in (('gemme_rubis', 0xd8203a), ('gemme_saphir', 0x2a6ad8), ('gemme_emeraude', 0x2ac85a),
+                                 ('gemme_topaze', 0xf0b020), ('gemme_amethyste', 0x9a4ad8), ('gemme_diamant', 0xe8f4ff))]
+
+
 MATERIALS = [m_baies, m_viande_crue, m_viande_cuite, m_ragout, m_pain, m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
-             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer] + FARM + RARE
+             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer] + FARM + RARE + GEMS
 
 
 # ---------------------------------------------------------------- export

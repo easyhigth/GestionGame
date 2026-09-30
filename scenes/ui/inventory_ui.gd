@@ -205,7 +205,7 @@ func _build() -> void:
 	tabs.add_theme_constant_override("h_separation", 2)
 	tabs.add_theme_constant_override("v_separation", 2)
 	tabs.custom_minimum_size.x = 320
-	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire"]:
+	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Forge"]:
 		var tb := Button.new()
 		tb.text = cname
 		tb.toggle_mode = true
@@ -315,6 +315,10 @@ func _refresh() -> void:
 		_cat_buttons[cn].set_pressed_no_signal(cn == _cat)
 	for c in _recipes.get_children():
 		c.queue_free()
+	if _cat == "Forge":
+		_forge_rows()
+		_refresh_job()
+		return
 	var list: Array = Items.recipes.filter(func(r): return r.category == _cat or (_cat == "Matériaux" and r.category == "Matériaux"))
 	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
 	for r: RecipeData in list:
@@ -423,6 +427,66 @@ func _evolution_box() -> void:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(230, 0)
 		_job_box.add_child(l)
+
+
+## Onglet « Forge » : renforcer (+1 à +10) et sertir des gemmes, à l'enclume.
+func _forge_rows() -> void:
+	var anvil := _stations.has("enclume")
+	var head := _label("Renforce ton équipement (+1 à +10) et sertis des gemmes." + ("" if anvil else "  Approche-toi d'une enclume."), 9, C_OK if anvil else C_DIM)
+	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	head.custom_minimum_size = Vector2(300, 0)
+	_recipes.add_child(head)
+	var items := Forge.workable(player)
+	if items.is_empty():
+		_recipes.add_child(_label("Aucune arme ni armure à travailler.", 10, C_DIM))
+	for it: ItemData in items:
+		var panel := PanelContainer.new()
+		panel.add_theme_stylebox_override("panel", _style(C_SLOT, C_FRAME.darkened(0.5), 1))
+		var col := VBoxContainer.new()
+		panel.add_child(col)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		col.add_child(row)
+		row.add_child(_icon_box(it, 34))
+		var worn: bool = player.equipment.slots.values().has(it)
+		var txt := VBoxContainer.new()
+		txt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		txt.add_child(_label(it.display_name + ("  (porté)" if worn else ""), 11, it.rarity_color()))
+		txt.add_child(_label("%s  ·  gemmes %d / %d" % [it.stats_text().get_slice("\n", 0), it.gems.size(), Forge.sockets(it.upgrade)], 9, C_DIM))
+		row.add_child(txt)
+		if it.upgrade < Forge.MAX_LEVEL:
+			var why := Forge.upgrade_block(player, it, _stations)
+			var b := Button.new()
+			b.text = "+%d" % (it.upgrade + 1)
+			b.add_theme_font_size_override("font_size", 11)
+			b.custom_minimum_size = Vector2(46, 30)
+			b.disabled = why != ""
+			b.tooltip_text = "Renforcer : %s%s" % [Forge.cost_text(it.upgrade + 1), ("\n" + why) if why != "" else ""]
+			b.pressed.connect(func():
+				Forge.upgrade(player, it, _stations)
+				_refresh())
+			row.add_child(b)
+			col.add_child(_label("Coût du +%d : %s" % [it.upgrade + 1, Forge.cost_text(it.upgrade + 1)], 8, C_DIM if why != "" else C_OK))
+		# gemmes du sac que l'on peut sertir
+		if it.gems.size() < Forge.sockets(it.upgrade):
+			var gems := HBoxContainer.new()
+			gems.add_theme_constant_override("separation", 3)
+			for gid in Forge.GEMS:
+				var n := player.inventory.count(Items.get_item(gid))
+				if n <= 0:
+					continue
+				var gb := Button.new()
+				gb.text = "%s (%d)" % [Forge.GEMS[gid].name, n]
+				gb.add_theme_font_size_override("font_size", 9)
+				gb.tooltip_text = "Sertir : %s" % Forge.GEMS[gid].text
+				gb.disabled = Forge.gem_block(player, it, gid, _stations) != ""
+				gb.pressed.connect(func():
+					Forge.socket(player, it, gid, _stations)
+					_refresh())
+				gems.add_child(gb)
+			if gems.get_child_count() > 0:
+				col.add_child(gems)
+		_recipes.add_child(panel)
 
 
 func _recipe_row(r: RecipeData, near: bool) -> Control:

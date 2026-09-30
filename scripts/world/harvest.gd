@@ -22,8 +22,8 @@ const DECOR_LOOT := {
 const DECOR_BONUS := {
 	WorldGenerator.D_OAK: [["fiber", 0.3, 0]], WorldGenerator.D_PINE: [["fiber", 0.3, 0]],
 	WorldGenerator.D_ROCK: [["iron_ore", 0.3, 1], ["marbre_brut", 0.1, 2], ["or_brut", 0.05, 2], ["mithril_brut", 0.006, 2]],
-	WorldGenerator.D_IRON: [["iron_ore", 0.4, 1], ["mithril_brut", 0.02, 2]],
-	WorldGenerator.D_GOLD: [["mithril_brut", 0.03, 2], ["orichalque", 0.002, 2]],
+	WorldGenerator.D_IRON: [["iron_ore", 0.4, 1], ["mithril_brut", 0.02, 2], ["gemme_saphir", 0.01, 2], ["gemme_emeraude", 0.01, 2], ["gemme_amethyste", 0.008, 2]],
+	WorldGenerator.D_GOLD: [["mithril_brut", 0.03, 2], ["orichalque", 0.002, 2], ["gemme_topaze", 0.02, 2], ["gemme_rubis", 0.015, 2], ["gemme_diamant", 0.005, 2]],
 	WorldGenerator.D_GRASS: [["fiber", 0.25, 0], ["graines_ble", 0.45, 0]],
 	WorldGenerator.D_FLOWERS: [["graines_ble", 0.2, 0]],
 	WorldGenerator.D_BUSH: [["carotte", 0.2, 0], ["pomme_de_terre", 0.15, 0]],

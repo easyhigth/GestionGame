@@ -43,7 +43,7 @@ func equip(item: ItemData) -> Array[ItemData]:
 			removed.append(unequip(ItemData.Slot.MAIN_HAND, false))
 	slots[item.slot] = item
 	if visual:
-		visual.show_equipment(item.slot, item.id)
+		visual.show_equipment(item.slot, item.model_id())
 	changed.emit()
 	return removed
 

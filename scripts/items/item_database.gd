@@ -25,7 +25,15 @@ func _ready() -> void:
 
 
 func get_item(id: String) -> ItemData:
-	return items.get(id)
+	var it: ItemData = items.get(id)
+	# objet amélioré à la forge : « objet@niveau~gemmes », fabriqué à la demande
+	if it == null and id.contains("@"):
+		var spec := Forge.parse(id)
+		var base: ItemData = items.get(spec[0])
+		if base:
+			it = Forge.make_variant(base, spec[1], spec[2])
+			items[id] = it
+	return it
 
 
 func all_equipment() -> Array[ItemData]:
@@ -82,7 +90,7 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 			inner.add_child(copy)
 		f.free()
 	elif item.is_equipment():
-		parts = VoxelCharacter.library_parts(DISPLAY_EQUIPMENT).get(item.id, [])
+		parts = VoxelCharacter.library_parts(DISPLAY_EQUIPMENT).get(item.model_id(), [])
 		# on reconstruit les pièces à leur place sur un humain de référence
 		var ref := _reference_bones()
 		for p in parts:
@@ -93,7 +101,7 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 	else:
 		var inst := DISPLAY_MATERIALS.instantiate()
 		for mi in inst.find_children("*", "MeshInstance3D", true, false):
-			if String(mi.name) == item.id:
+			if String(mi.name) == item.model_id():
 				var copy := MeshInstance3D.new()
 				copy.mesh = (mi as MeshInstance3D).mesh
 				inner.add_child(copy)
@@ -135,8 +143,8 @@ func _reference_bones() -> Dictionary:
 func get_icon(item: ItemData) -> Texture2D:
 	if item == null:
 		return null
-	if _icons.has(item.id):
-		return _icons[item.id]
+	if _icons.has(item.model_id()):
+		return _icons[item.model_id()]
 	var vp := SubViewport.new()
 	vp.size = Vector2i(ICON_SIZE, ICON_SIZE)
 	vp.transparent_bg = true
@@ -165,5 +173,5 @@ func get_icon(item: ItemData) -> Texture2D:
 	cam.look_at_from_position(cam.position, Vector3.ZERO)
 	add_child(vp)
 	var tex := vp.get_texture()
-	_icons[item.id] = tex
+	_icons[item.model_id()] = tex
 	return tex
