@@ -24,6 +24,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - E près d'un voyageur : lui parler pour le recruter
 - E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
 - B (ou croix bas à la manette) : mode construction (voir plus bas)
+- U : panneau du royaume (habitants, lits, réserve de nourriture, bonheur)
 - M (ou croix haut à la manette) : carte du monde et voyage rapide
 - Échap (ou Start à la manette) : pause (sauvegarder, charger, options, menu principal)
 - Touches de test, seulement quand le jeu est lancé depuis l'éditeur Godot : R (changer de race), N (nouveau monde)
@@ -101,6 +102,16 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Nourriture** : baies (buissons, 8), viande crue (sangliers, loups, ours, 10), viande cuite (32, +15 vie), pain (boulangerie du village, 26, +8 vie), ragoût (viande + 3 baies, 55, +40 vie).
 - **Cuisine** (inventaire → Artisanat → Cuisine) : près du feu de camp du village, d'un four, d'un four à pain ou d'une forge.
 - Le guide a une nouvelle étape : « Mange un repas cuit » (avant la première nuit).
+
+## Besoins des habitants
+- **Réserve de nourriture du village** : la boulangerie (pain) et la grange (viande) la remplissent, et tu y déposes la nourriture de ton sac (panneau du royaume, **U**). Chaque habitant y prend un repas quand il a faim (sa faim se vide en 20 minutes). Au début : 5 repas.
+- **Lits** : 2 par maison (pièce fermée, porte, un lit et un coffre), 6 par dortoir (4 lits et un coffre), et 2 par cabane du village encore debout. Un habitant sans lit est moins heureux.
+- **Bonheur** (0 à 100 %) : nourriture et lit (nourri et logé = « Content »), plus le confort des pièces (taverne +10, temple +10, marché +5, bibliothèque +5, salle du trône +5), le rang du royaume et la sécurité (raid repoussé : +10 pendant 10 min ; raid perdu : -15).
+  - Heureux (70 % et plus) : travaille 25 % plus vite, et des voyageurs viennent s'installer (un toutes les 3 min au plus, s'il reste de la place).
+  - Mécontent : 20 % plus lent ; malheureux : 40 % plus lent, et s'il le reste 4 minutes, il quitte le village (on est prévenu à 2 minutes).
+- **Panneau du royaume** (U, ou menu pause → Royaume) : habitants, lits, réserve, bonheur moyen, liste des habitants avec leur humeur et ce qui leur manque, conseils. L'étiquette de chaque habitant montre aussi son humeur, et la ligne du royaume en haut à gauche résume tout.
+- Le guide a un 3e chapitre, « Le village » : remplir la réserve, un lit pour chaque habitant, un village heureux.
+- Code : `scripts/kingdom/village_needs.gd`, `scenes/ui/kingdom_panel.gd`.
 
 ## Sons et musique
 - **Bruitages** : coups d'épée et impacts (plus forts pour un coup critique), garde, parade, roulade, dégâts reçus, monstre vaincu, défaite du héros, pas (herbe, pierre, bois, sable), coupe du bois, coups de pioche, blocs cassés et posés, creusage, objets ramassés, niveau gagné, talent appris, sorts, cri du boss en 2e phase, cor du raid, tombée de la nuit, lever du jour, sommeil, artisanat, porte, boutons et fenêtres. Les bruits du monde sont en 3D (plus faibles de loin).

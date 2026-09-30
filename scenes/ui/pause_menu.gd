@@ -34,7 +34,7 @@ func open() -> void:
 		k.title() if k else "", MenuKit.format_time(int(SaveGame.play_time)), SaveGame.DIFFICULTY_NAMES[int(SaveGame.options.difficulty)],
 		w.world_seed if w else 0]
 	_box.add_child(_info)
-	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Charger", _load], ["Commandes", _controls], ["Options", _options],
+	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Charger", _load], ["Royaume", _kingdom], ["Commandes", _controls], ["Options", _options],
 		["Menu principal", _to_title], ["Quitter le jeu", _quit]]
 	var first: Button = null
 	for it in items:
@@ -91,6 +91,13 @@ func _load() -> void:
 	add_child(panel)
 
 
+func _kingdom() -> void:
+	close()
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.get("kingdom_panel"):
+		hud.kingdom_panel.open()
+
+
 func _controls() -> void:
 	# le menu pause se cache derrière la fenêtre des commandes
 	var holder := _box.get_parent().get_parent() as Control
@@ -99,7 +106,7 @@ func _controls() -> void:
 	panel.closed.connect(func():
 		holder.show()
 		if visible:
-			(_box.get_child(5) as Button).grab_focus())
+			(_box.get_child(6) as Button).grab_focus())
 	add_child(panel)
 
 

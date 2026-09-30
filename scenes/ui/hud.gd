@@ -50,6 +50,7 @@ var talent_ui: TalentTreeUI
 var day_cycle: DayCycle
 var guide: GuidePanel
 var _clock: Label
+var kingdom_panel: KingdomPanel
 var _hotbar: VBoxContainer
 var _hotbar_row: HBoxContainer
 var _hotbar_name: Label
@@ -486,7 +487,12 @@ func _update_kingdom() -> void:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k == null or _kingdom_text == null:
 		return
-	_kingdom_text.text = "♜ %s   (B : construire)" % k.title()
+	var n := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
+	if n:
+		var m := n.members().size()
+		_kingdom_text.text = "♜ %s · %d hab. · bonheur %d %% · %d repas   (U : royaume · B : construire)" % [k.title(), m, roundi(n.average_happiness()), n.meals()]
+	else:
+		_kingdom_text.text = "♜ %s   (B : construire)" % k.title()
 	_kingdom_text.add_theme_color_override("font_color", Kingdom.AGE_COLORS[k.age].lightened(0.2))
 
 
@@ -619,6 +625,10 @@ func _build_day_and_guide() -> void:
 	day_cycle.world = world
 	day_cycle.player = player
 	get_parent().add_child.call_deferred(day_cycle)
+	var needs := VillageNeeds.new()
+	needs.name = "VillageNeeds"
+	get_parent().add_child.call_deferred(needs)
+	needs.changed.connect(_update_kingdom)
 	_clock = _outlined("", 12)
 	_clock.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -631,6 +641,9 @@ func _build_day_and_guide() -> void:
 	guide = GuidePanel.new()
 	guide.player = player
 	add_child(guide)
+	kingdom_panel = KingdomPanel.new()
+	kingdom_panel.player = player
+	add_child(kingdom_panel)
 
 
 ## Barre des objets à poser à la main (C / X pour choisir, V pour poser), au-dessus de la compétence.

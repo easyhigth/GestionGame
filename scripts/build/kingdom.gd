@@ -358,7 +358,9 @@ static func affinity(villager: Node, job_id: String) -> float:
 		a += 0.4
 	var talents: Dictionary = villager.get("talents") if villager.get("talents") != null else {}
 	a += float(talents.get(job_id, 0.0))
-	return clampf(a, 0.5, 1.8)
+	# un habitant heureux travaille plus vite, un malheureux plus lentement
+	var mood = villager.get("work_mult")
+	return clampf(a, 0.5, 1.8) * (float(mood) if mood != null else 1.0)
 
 
 func assign(villager: Node, room: Variant) -> bool:
@@ -391,7 +393,13 @@ func _produce(delta: float) -> void:
 		_prod_timers[v] = float(_prod_timers.get(v, 0.0)) + delta * speed
 		if _prod_timers[v] >= t.production_interval:
 			_prod_timers[v] = 0.0
-			if player:
+			var needs := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
+			if t.production.is_food() and needs:
+				# la nourriture va dans la réserve du village
+				needs.add_food(t.production.food * t.production_count)
+				if player:
+					player.notify.emit("%s (%s) : réserve du village +%d %s" % [t.display_name, v.get("villager_name"), t.production_count, t.production.display_name])
+			elif player:
 				player.inventory.add(t.production, t.production_count)
 				player.notify.emit("%s (%s) : +%d %s" % [t.display_name, v.get("villager_name"), t.production_count, t.production.display_name])
 

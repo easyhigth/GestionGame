@@ -41,6 +41,7 @@ const PAGES := [
 		["Inventaire, équipement, artisanat", "I / Tab", "Back"],
 		["Carte du monde · voyage rapide", "M", "Croix haut"],
 		["Mode construction", "B", "Croix bas"],
+		["Royaume : habitants, lits, réserve de nourriture, bonheur", "U", "Start → Royaume"],
 		["Menu pause (sauvegarde, options)", "Échap", "Start"],
 	]],
 	["Construction", [

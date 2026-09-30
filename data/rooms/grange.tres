@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="RoomTypeData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
-[ext_resource type="Resource" path="res://data/items/leather.tres" id="p"]
+[ext_resource type="Resource" path="res://data/items/viande_crue.tres" id="p"]
 
 [resource]
 script = ExtResource("1")
@@ -15,6 +15,6 @@ job_id = "fermier"
 job_name = "Fermier"
 job_slots = 2
 production = ExtResource("p")
-production_count = 1
+production_count = 2
 production_interval = 70.0
 effect_text = "Produit du cuir."

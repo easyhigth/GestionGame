@@ -66,6 +66,13 @@ var companion := false
 var level := 1
 ## Bonus d'attaque des gardes pendant un raid.
 var guard_bonus := 0.0
+## Besoins (voir VillageNeeds) : faim (100 = rassasié), bonheur (0 à 100), lit, raisons de mécontentement.
+var food := 80.0
+var happiness := 60.0
+var has_bed := true
+var work_mult := 1.0
+var unhappy_time := 0.0
+var mood_reasons: Array = []
 const JOB_NAMES := {"forgeron": "Forgeron", "boulanger": "Boulanger", "garde": "Garde", "fermier": "Fermier",
 	"bucheron": "Bûcheron", "macon": "Maçon", "verrier": "Verrier", "aubergiste": "Aubergiste", "marchand": "Marchand",
 	"erudit": "Érudit", "pretre": "Prêtre", "mage": "Mage", "tisserand": "Tisserand"}
@@ -650,13 +657,18 @@ func _update_label() -> void:
 		var job := ""
 		if work_room != null and work_room.type:
 			job = " · " + (work_room.type as RoomTypeData).job_name
+		label.modulate = Color.WHITE
 		if stranger:
 			label.text = "%s (%s) · Nv %d\nVoyageur · %s%s" % [villager_name, race.display_name if race else "?", level,
 				JOB_NAMES.get(best_job(), "?"), "\n[E] Parler" if d < 3.0 else ""]
 		elif companion:
 			label.text = "%s (%s) · Nv %d\nCompagnon d'expédition\n[E] Équipement" % [villager_name, race.display_name if race else "?", level]
 		else:
-			label.text = "%s (%s)%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job]
+			var mood := VillageNeeds.mood_name(happiness)
+			if not mood_reasons.is_empty():
+				mood += " : " + ", ".join(PackedStringArray(mood_reasons))
+			label.text = "%s (%s)%s\n%s\n[E] Équipement et poste" % [villager_name, race.display_name if race else "?", job, mood]
+			label.modulate = VillageNeeds.mood_color(happiness).lerp(Color.WHITE, 0.35)
 
 
 ## Attaque, défense et magie totales (race + équipement).
