@@ -23,6 +23,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures (s'il a une quête « ! » ou « ? », c'est d'abord la quête qui s'ouvre)
 - E près d'un voyageur : lui parler pour le recruter ; E près du marchand ambulant : acheter et vendre
 - E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
+- E près d'un cheval apprivoisé ou d'une barque : monter / descendre (carottes en main près d'un cheval sauvage : l'apprivoiser)
 - B (ou croix bas à la manette) : mode construction (voir plus bas)
 - U : panneau du royaume (habitants, lits, réserve de nourriture, bonheur)
 - O : journal de l'histoire (actes, objectif en cours, éclats, personnages)
@@ -123,6 +124,13 @@ Jadis, le **Cœur d'Aube** nourrissait les obélisques et protégeait le royaume
 - **Fermiers** : dès 4 cases labourées, le poste **Champs** apparaît (E près d'un habitant → Poste de travail), 1 fermier pour 8 cases. Pendant les heures de travail, il récolte les cultures mûres (tout va dans la **réserve du village**), ressème aussitôt et sème les cases vides avec les graines que tu lui confies (royaume **U** → « Confier mes graines aux fermiers »). Il garde une partie des récoltes comme semence.
 - Un petit champ de blé est déjà semé au village au début de la partie. Le panneau du royaume résume les champs (cases, cultures, mûres, fermiers, graines). Tout est sauvegardé. Le guide a un 4e chapitre « Les champs ».
 - Réglages dans `scripts/world/farming.gd` (liste `CROPS` : durée, récolte, valeur pour la réserve) ; objets dans `data/items/` (champ « Culture » d'un objet = ce qu'il fait pousser) ; modèles des cultures créés par `tools/voxel_props_generator.py` (`crop_<culture>_<stade>.glb`).
+
+## Montures, barques et îles
+- **Chevaux sauvages** dans les prés (prairie surtout, forêt, montagnes). Prends des **carottes** en main (C) : le cheval te suit. **E** près de lui : il mange une carotte ; au bout de **3**, il est apprivoisé et porte une selle.
+- **À cheval** : E pour monter, E pour descendre. On va **1,9 fois plus vite** ; le cheval ne va pas dans l'eau. Il attend là où tu l'as laissé.
+- **Barque** : établi, 12 planches et 4 fibres (Outils). Choisis-la (C) et **V face à l'eau** pour la mettre à l'eau. **E** pour monter (depuis la berge ou en nageant) : elle glisse sur les lacs et les mers, plus vite qu'à la nage, sans perdre son souffle. **E près d'une berge** pour débarquer. Elle reste là où tu la laisses.
+- **Îles au trésor** : au large, en pleine mer, de petites îles (sable et herbe, arbres de la région) ; sur chacune, un **coffre** (perles, or, parfois un lingot d'or ou un équipement rare). Il faut une barque (ou de bons poumons) pour les atteindre.
+- Chevaux apprivoisés, barques et coffres ouverts sont sauvegardés. Réglages : `scripts/world/horse.gd`, `scripts/world/mounts.gd` ; les îles sont créées avec le monde (`ISLAND_GRID`, `ISLAND_CHANCE` dans `scenes/world/world_generator.gd`).
 
 ## Saisons
 - Une année = **4 saisons de 4 jours** : printemps, été, automne, hiver. La saison et le jour s'affichent sous l'horloge ; le royaume (U) donne la prochaine fête.

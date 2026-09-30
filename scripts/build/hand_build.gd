@@ -46,7 +46,7 @@ func choices() -> Array[ItemData]:
 		return out
 	for e in player.inventory.entries:
 		var it := e.item as ItemData
-		if it and (it.is_placeable() or it.is_seed() or it.id == "houe" or it.id == "canne_peche" or is_lure(it)) and not out.has(it):
+		if it and (it.is_placeable() or it.is_seed() or it.id in ["houe", "canne_peche", "barque"] or is_lure(it)) and not out.has(it):
 			out.append(it)
 	return out
 
@@ -199,6 +199,16 @@ func place() -> bool:
 	var it := selected_item()
 	if it == null:
 		cycle(1)
+		return false
+	if it.id == "barque":
+		var mo := player.get_tree().get_first_node_in_group("mounts") as Mounts
+		if mo:
+			var err := mo.place_boat(player)
+			if err != "":
+				player.notify.emit(err)
+			else:
+				player.inventory.remove(it, 1)
+				player.notify.emit("La barque est à l'eau : E pour monter, E près d'une berge pour débarquer.")
 		return false
 	if it.id == "canne_peche":
 		var fi := player.get_tree().get_first_node_in_group("fishing") as Fishing
