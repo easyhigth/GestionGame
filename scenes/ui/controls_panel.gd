@@ -30,6 +30,8 @@ const PAGES := [
 		["Ranger un sort dans un emplacement", "1 / 2 / 3 / 4", "Boutons 1-4"],
 	]],
 	["Monde et royaume", [
+		["Récolter : frapper arbres, rochers, buissons, décors", "Clic gauche / J", "X"],
+		["Creuser le sol devant soi (maintenir)", "G", "RT"],
 		["Parler · équiper un habitant · recruter", "E", "Y"],
 		["Entrer dans un donjon · ouvrir un coffre", "E", "Y"],
 		["Inventaire, équipement, artisanat", "I / Tab", "Back"],

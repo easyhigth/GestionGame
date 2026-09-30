@@ -72,6 +72,9 @@ var ability_slots: Array = ["", "", "", ""]
 var abilities := {}      # id -> HeroSkill (talents actifs)
 var selected_slot := 0
 var _double_used := false
+## Récolte à la main : délai entre deux coups de pelle.
+const DIG_TIME := 0.5
+var _dig_timer := 0.0
 ## Distance de la caméra (option du joueur : 1 = normale ; molette pour zoomer).
 var camera_zoom := 1.0
 ## Rotation de la caméra autour du héros (clic molette maintenu + glisser, ou joystick droit).
@@ -505,6 +508,12 @@ func _physics_process(delta: float) -> void:
 			elif jump():
 				_double_used = false
 				VoxelBurst.spawn(self, global_position + Vector3(0, 0.05, 0), Color(0.8, 0.75, 0.65), 8, 2.0, 0.07, 0.3, "ring", 0.0, false)
+		# creuser le sol devant soi (maintenir G / gâchette droite) : terre, sable, cailloux
+		_dig_timer = maxf(0.0, _dig_timer - delta)
+		if Input.is_action_pressed("dig") and can_act() and not in_move() and not is_dashing() and not airborne and _dig_timer <= 0.0:
+			_dig_timer = DIG_TIME
+			visual.play_move("heavy_1", 1.4)
+			Harvest.dig(self)
 	if input.length() > 1.0:
 		input = input.normalized()
 	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0)
@@ -667,11 +676,31 @@ func _aim_assist() -> void:
 
 
 func _on_attack_landed(hits: int, hit: Dictionary) -> void:
+	var harvested := _harvest_swing(hit)
 	if hits <= 0:
+		if harvested:
+			TimeFX.hit_stop(0.03)
+			shake(0.3)
 		return
 	var heavy := float(hit.get("dmg", 1.0)) >= 1.5
 	TimeFX.hit_stop(0.09 if heavy else 0.045)
 	shake(1.0 if heavy else 0.5)
+
+
+## Les sorts du bâton récoltent aussi ce qui est tout près.
+func _do_hit(h: Dictionary) -> void:
+	super(h)
+	if h.get("cast", false):
+		_harvest_swing(h)
+
+
+## Chaque coup frappe aussi le décor devant le héros (arbre, rocher, cabane...), façon Minecraft.
+func _harvest_swing(h: Dictionary) -> bool:
+	if building or ui_open:
+		return false
+	var reach := clampf(attack_reach() * float(h.get("reach", 1.0)), 1.6, 2.6)
+	var power := 2.0 if float(h.get("dmg", 1.0)) * _move_damage >= 1.8 else 1.0
+	return Harvest.strike(self, reach, power)
 
 
 # ---------------------------------------------------------------- défense

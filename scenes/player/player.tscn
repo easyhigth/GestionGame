@@ -32,8 +32,8 @@ motion_mode = 1
 script = ExtResource("1")
 stats = ExtResource("2")
 race = ExtResource("3")
-founder_kit = Array[ExtResource("itd")]([ExtResource("kit_bloc_planches"), ExtResource("kit_bloc_rondins"), ExtResource("kit_dalle_planches"), ExtResource("kit_bloc_chaume"), ExtResource("kit_porte"), ExtResource("kit_etabli"), ExtResource("kit_lit"), ExtResource("kit_coffre"), ExtResource("kit_table"), ExtResource("kit_chaise"), ExtResource("kit_torche"), ExtResource("kit_wood"), ExtResource("kit_stone")])
-founder_counts = PackedInt32Array(80, 20, 40, 40, 3, 1, 2, 2, 1, 2, 6, 20, 10)
+founder_kit = Array[ExtResource("itd")]([ExtResource("kit_bloc_planches"), ExtResource("kit_bloc_chaume"), ExtResource("kit_porte"), ExtResource("kit_lit"), ExtResource("kit_torche"), ExtResource("kit_wood")])
+founder_counts = PackedInt32Array(24, 12, 1, 1, 3, 4)
 
 [node name="Visual" type="Node3D" parent="."]
 script = ExtResource("4")

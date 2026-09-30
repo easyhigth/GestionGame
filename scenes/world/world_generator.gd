@@ -282,6 +282,8 @@ func generate(seed_value: int) -> void:
 	_edits.clear()
 	_recruited.clear()
 	removed_props.clear()
+	decor_damage.clear()
+	prop_damage.clear()
 	_camp_cells.clear()
 	current_zone = -1
 	map_image = Image.create(world_size.x, world_size.y, false, Image.FORMAT_RGBA8)
@@ -1921,6 +1923,10 @@ const PROP_LOOT := {
 	"rack": [["ratelier", 1]],
 }
 var _village_props := {}
+## Dégâts en cours sur les décors (récolte à la main) : case -> points de vie restants.
+var decor_damage := {}
+## Dégâts en cours sur les décors du village : identifiant -> points de vie restants.
+var prop_damage := {}
 ## Décors du village déjà démolis (sauvegardés).
 var removed_props := {}
 

@@ -13,7 +13,8 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Maj (B à la manette) : roulade (esquive : invulnérable pendant la roulade)
 - Clic molette maintenu + glisser (joystick droit) : tourner la caméra à 360° autour du héros et changer sa hauteur ; molette : zoom
 - Clic molette simple, F, L ou gâchette gauche : viser la cible la plus proche
-- Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage
+- Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage ; frapper un arbre, un rocher, un buisson ou un décor du village le récolte
+- G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux)
 - Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
 - T (ou croix gauche à la manette) : arbre de talents
 - I (ou Tab) : inventaire, équipement et artisanat
@@ -67,6 +68,16 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Ronds = passifs (bonus permanents), carrés = actifs (nouvelles attaques et nouveaux sorts). Un actif appris se range dans un des **4 emplacements** (touches 1-4), visibles à droite de la compétence en bas de l'écran avec leur recharge.
 - « Oublier les talents » rend tous les points. Les talents et les emplacements sont sauvegardés.
 - Les talents sont décrits dans `scripts/hero/talent_tree.gd` (liste `NODES` : ajoute une ligne pour créer un talent ; les actifs réutilisent les effets des compétences de `scripts/hero/hero_skill.gd`).
+
+## Début de partie et récolte (façon Minecraft)
+- On commence avec peu de choses, de quoi se faire un premier abri : 24 planches, 12 blocs de chaume, 1 porte, 1 lit, 3 torches, 4 bois (plus l'équipement de sa classe, les objets de son métier, et une épée en bois, du bois, de la fibre et du cuir près du feu).
+- Tout le reste se récolte. Chaque coup d'arme frappe aussi le décor devant le héros ; il se brise après quelques coups et lâche des ressources à ramasser en marchant dessus :
+  - arbre (5 coups) : 3 à 5 bois, parfois de la fibre ; rocher (6 coups) : 2 à 4 cailloux, parfois du minerai de fer, du marbre ou de l'or ; buisson (2 coups) : fibre ; herbes et fleurs (1 coup) : fibre ;
+  - décors du village : cabane (14 coups : planches, rondins, chaume), tonneau, caisse, établi, râtelier.
+  - Une hache coupe les arbres deux fois plus vite, un marteau de guerre casse les rochers deux fois plus vite, et un coup chargé compte double.
+- **Creuser** (G / gâchette droite) : chaque coup de pelle abaisse le sol de 50 cm devant soi et donne 1 bloc de terre (sable sur la plage, cailloux dans la roche, parfois du minerai).
+- Ensuite on fabrique (inventaire, I) : bois → planches, rondins, portes, torches ; fibre → chaume ; cailloux → blocs de pierre...
+- Les réglages sont dans `scripts/world/harvest.gd` (points de vie des décors, butin, outils).
 
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.

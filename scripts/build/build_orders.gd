@@ -11,11 +11,6 @@ signal orders_changed
 
 ## Temps de travail (secondes, pour un habitant moyen).
 const WORK := {"block": 1.2, "furniture": 2.5, "remove": 0.7, "terrain": 0.8, "harvest": 2.5}
-const HARVEST_LOOT := {
-	WorldGenerator.D_OAK: [["wood", 3, 4]], WorldGenerator.D_PINE: [["wood", 3, 5]],
-	WorldGenerator.D_BUSH: [["fiber", 2, 3]], WorldGenerator.D_FLOWERS: [["fiber", 1, 1]], WorldGenerator.D_GRASS: [["fiber", 1, 1]],
-	WorldGenerator.D_ROCK: [["stone", 2, 4]],
-}
 const C_PLAN := Color(0.35, 0.7, 1.0, 0.2)
 const C_MISSING := Color(1.0, 0.35, 0.3, 0.3)
 const C_REMOVE := Color(1.0, 0.55, 0.15, 0.45)
@@ -348,17 +343,11 @@ func _harvest(cell: Vector2i) -> void:
 	world.remove_decor(cell)
 	var col := Color(0.45, 0.7, 0.3) if kind != WorldGenerator.D_ROCK else Color(0.6, 0.6, 0.58)
 	VoxelBurst.spawn(self, Vector3(cell.x + 0.5, world.terrain_height(cell) + 1.0, cell.y + 0.5), col, 26, 4.0, 0.14, 0.8, "sphere", 10.0, false)
-	for l in HARVEST_LOOT.get(kind, []):
-		_give(l[0], randi_range(l[1], l[2]))
-	if kind == WorldGenerator.D_ROCK:
-		if randf() < 0.3:
-			_give("iron_ore", 1)
-		if randf() < 0.1:
-			_give("marbre_brut", 1)
-		if randf() < 0.05:
-			_give("or_brut", 1)
-	if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE] and randf() < 0.3:
-		_give("fiber", 1)
+	world.decor_damage.erase(cell)
+	var p := _player()
+	for l in Harvest.loot(kind):
+		if p:
+			p.inventory.add(l[0], l[1])
 
 
 ## Terrassement : le sol retiré donne de la terre, du sable ou de la pierre (et parfois du minerai).
@@ -380,7 +369,7 @@ func _set_height(c: Vector2i, nh: float) -> void:
 				_give("marbre_brut", 1)
 	var kind := world.decor_at(c)
 	if kind != WorldGenerator.D_NONE:
-		for l in HARVEST_LOOT.get(kind, []):
+		for l in Harvest.DECOR_LOOT.get(kind, []):
 			_give(l[0], l[1])
 	world.set_terrain_height(c, nh)
 	world.refresh_cells([c])
