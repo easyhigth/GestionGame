@@ -219,6 +219,18 @@ renderer/rendering_method.mobile="gl_compatibility"
 
 [shader_globals]
 
+season_leaf={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+season_ground={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+season_snow={
+"type": "float",
+"value": 0.0
+}
 see_from={
 "type": "vec3",
 "value": Vector3(0, 0, 0)

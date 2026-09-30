@@ -53,6 +53,8 @@ var weather_state := {}
 var livestock_state := {}
 var caves_state := {}
 var story_state := {}
+var seasons_state := {}
+var mounts_state := {}
 var _autosave_timer := 300.0
 
 
@@ -224,6 +226,9 @@ func save_game(slot: String) -> bool:
 	var sto := get_tree().get_first_node_in_group("story") as Story
 	if sto:
 		d.story = sto.export_state()
+	var sea := get_tree().get_first_node_in_group("seasons") as Seasons
+	if sea:
+		d.seasons = sea.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -351,6 +356,8 @@ func new_game() -> void:
 	livestock_state = {}
 	caves_state = {}
 	story_state = {}
+	seasons_state = {}
+	mounts_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -487,6 +494,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if fm:
 		fm.import_state(farm_state)
 		farm_state = {}
+	seasons_state = d.get("seasons", {})
+	var sea := get_tree().get_first_node_in_group("seasons") as Seasons
+	if sea and not seasons_state.is_empty():
+		sea.import_state(seasons_state)
+		seasons_state = {}
 	story_state = d.get("story", {})
 	var sto := get_tree().get_first_node_in_group("story") as Story
 	if sto and not story_state.is_empty():

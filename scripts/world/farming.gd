@@ -222,6 +222,9 @@ func growth_rate(cell: Vector2i) -> float:
 	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
 	if dc and dc.is_night():
 		r *= NIGHT_RATE
+	var se := get_tree().get_first_node_in_group("seasons")
+	if se:
+		r *= se.crop_rate()
 	return r
 
 
@@ -250,6 +253,8 @@ func grow(seconds: float) -> void:
 	var w := get_tree().get_first_node_in_group("weather") as Weather
 	var rain := w != null and w.waters_fields()
 	var dry := w != null and w.drought()
+	var se := get_tree().get_first_node_in_group("seasons")
+	var season_rate: float = se.crop_rate() if se else 1.0
 	for cell in crops.keys():
 		var c: Dictionary = crops[cell]
 		var total: float = CROPS[c.c].time
@@ -257,7 +262,7 @@ func grow(seconds: float) -> void:
 			continue
 		if not water.has(cell):
 			water[cell] = rain or world.near_water(cell)
-		var r := (WATER_BONUS if water[cell] else (Weather.DROUGHT_RATE if dry else 1.0)) * (NIGHT_RATE if night else 1.0)
+		var r := (WATER_BONUS if water[cell] else (Weather.DROUGHT_RATE if dry else 1.0)) * (NIGHT_RATE if night else 1.0) * season_rate
 		var before := stage_of(cell)
 		c.g = minf(total, c.g + seconds * r)
 		if stage_of(cell) != before:

@@ -57,6 +57,7 @@ var trade: Trade
 var weather: Weather
 var livestock: Livestock
 var story: Story
+var seasons: Seasons
 var story_dialog: StoryDialog
 var journal: JournalPanel
 var fishing: Fishing
@@ -627,7 +628,7 @@ func _process(delta: float) -> void:
 	if _clock and day_cycle and day_cycle.is_inside_tree():
 		_clock.text = day_cycle.clock_text()
 		if _weather_label:
-			_weather_label.text = (weather.hud_text() if weather and weather.is_inside_tree() else "") + ("\nMarchand au village" if trade and trade.is_here() else "")
+			_weather_label.text = (seasons.hud_text() + "  ·  " if seasons and seasons.is_inside_tree() else "") + (weather.hud_text() if weather and weather.is_inside_tree() else "") + ("\nMarchand au village" if trade and trade.is_here() else "")
 		_clock.add_theme_color_override("font_color", Color("b8c8ff") if day_cycle.is_night() else Color("fff2c8"))
 	if guide:
 		guide.modulate.a = 0.35 if player and player.ui_open else 1.0
@@ -718,6 +719,11 @@ func _build_day_and_guide() -> void:
 	weather.world = world
 	weather.player = player
 	get_parent().add_child.call_deferred(weather)
+	seasons = Seasons.new()
+	seasons.name = "Seasons"
+	seasons.world = world
+	seasons.player = player
+	get_parent().add_child.call_deferred(seasons)
 	story = Story.new()
 	story.name = "Story"
 	story.world = world
