@@ -114,6 +114,16 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Un petit champ de blé est déjà semé au village au début de la partie. Le panneau du royaume résume les champs (cases, cultures, mûres, fermiers, graines). Tout est sauvegardé. Le guide a un 4e chapitre « Les champs ».
 - Réglages dans `scripts/world/farming.gd` (liste `CROPS` : durée, récolte, valeur pour la réserve) ; objets dans `data/items/` (champ « Culture » d'un objet = ce qu'il fait pousser) ; modèles des cultures créés par `tools/voxel_props_generator.py` (`crop_<culture>_<stade>.glb`).
 
+## Météo
+- Le temps change toutes les quelques heures : **beau temps, nuageux, pluie, orage, brouillard**. Chaque jour a un temps dominant, **annoncé la veille** : sous l'horloge, « Pluie · demain : beau temps ».
+- **Climat des régions** : le désert est surtout ensoleillé (et sans orage), le marais souvent dans le brouillard... Ce qui tombe dépend de la région où tu es : **pluie**, **neige** (toundra, montagnes), **vent ou tempête de sable** (désert), **pluie de cendres** (volcan).
+- **Effets** : ciel plus sombre et lumière grise, gouttes, flocons, sable ou cendres, brouillard, bruit de la pluie ou du vent.
+- **Champs** : la pluie les arrose (ils poussent 1,5 fois plus vite, comme près de l'eau). **Sécheresse** après 3 jours sans pluie : les champs loin de l'eau poussent moins vite.
+- **Habitants** : sous la pluie, ils passent la soirée à l'abri (taverne, maisons, dortoir, temple... ou dans leur cabane) au lieu de se détendre dehors ; pendant un orage, ceux qui travaillent dehors (bâtisseurs, fermiers) rentrent aussi. Rester trempé les rend un peu moins heureux.
+- **Orage** : éclairs et tonnerre, des monstres rôdent même en plein jour (et 2 de plus la nuit) ; ils fuient quand l'orage passe. La foudre frappe parfois un arbre isolé (du bois à ramasser).
+- **Froid** (neige) : sans cape ni armure de torse, et loin d'un feu ou d'une torche, tu as froid au bout de 20 s : tu avances moins vite et tu as faim plus vite.
+- Réglages : `scripts/world/weather.gd` (durées, effets) et, pour chaque région (`data/regions/*.tres`, groupe **Météo**) : chances de chaque temps et ce qui tombe.
+
 ## Commerce
 - Un **marchand ambulant** arrive au village avec sa charrette tous les **3 jours** (le premier le jour 2), à 8 h, et repart le lendemain matin. Son arrivée est annoncée (cor) ; « Marchand au village » s'affiche sous l'horloge, et le royaume (**U**) dit quand il repasse.
 - **E près de lui** : sa boutique. À gauche ce qu'il vend (graines, nourriture, matériaux, outils, meubles et quelques pièces d'équipement), à droite ce que tu peux lui vendre, avec ta bourse en pièces d'or. Boutons « ×5 » et « Tout ».
@@ -280,6 +290,6 @@ Choix de conception :
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville : voyageurs et prisonniers à recruter, 2 compagnons, raids de pillards qui assiègent le village. **(fait)**
 7. Sauvegarde, menus, équilibrage : écran titre, menu pause, 3 emplacements + sauvegarde automatique, options, 3 niveaux de difficulté, réglage des boss. **(fait)**
 
-Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : météo, personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
+Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : élevage, pêche et nage, personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
 
 Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la Going Medieval (plans bâtis par les habitants), **arbre de talents du héros** (27 talents, 15 nouvelles attaques et nouveaux sorts).

@@ -562,7 +562,7 @@ func _physics_process(delta: float) -> void:
 			dig()
 	if input.length() > 1.0:
 		input = input.normalized()
-	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0) * (0.85 if hunger <= 0.0 else 1.0)
+	var speed := stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0) * (0.85 if hunger <= 0.0 else 1.0) * _weather_speed()
 
 	if can_input and can_act() and not building:
 		_handle_combat_input(input, delta)
@@ -779,12 +779,25 @@ func hunger_state() -> int:
 	return 2 if hunger >= WELL_FED else 1
 
 
+var _weather: Node
+
+
+## Froid (neige) : on avance moins vite.
+func _weather_speed() -> float:
+	if _weather == null or not is_instance_valid(_weather):
+		_weather = get_tree().get_first_node_in_group("weather")
+	return _weather.speed_mult() if _weather else 1.0
+
+
 func _update_hunger(delta: float) -> void:
 	if not is_alive() or building or ui_open:
 		return
 	var rate := HUNGER_PER_SECOND
 	if Vector2(velocity.x, velocity.z).length() > 2.5:
 		rate *= 1.4
+	# le froid creuse l'appétit
+	if _weather and is_instance_valid(_weather) and _weather.cold:
+		rate *= 1.5
 	var before := hunger
 	hunger = maxf(0.0, hunger - rate * delta)
 	if int(before) != int(hunger):

@@ -214,8 +214,11 @@ func _show(cell: Vector2i) -> void:
 ## Vitesse de pousse d'une case (eau, nuit).
 func growth_rate(cell: Vector2i) -> float:
 	var r := 1.0
-	if world and world.near_water(cell):
+	var w := get_tree().get_first_node_in_group("weather") as Weather
+	if world and (world.near_water(cell) or (w and w.waters_fields())):
 		r *= WATER_BONUS
+	elif w and w.drought():
+		r *= Weather.DROUGHT_RATE
 	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
 	if dc and dc.is_night():
 		r *= NIGHT_RATE
@@ -244,14 +247,17 @@ func grow(seconds: float) -> void:
 				_remove(cell)
 			_update_slots()
 	var water := {}
+	var w := get_tree().get_first_node_in_group("weather") as Weather
+	var rain := w != null and w.waters_fields()
+	var dry := w != null and w.drought()
 	for cell in crops.keys():
 		var c: Dictionary = crops[cell]
 		var total: float = CROPS[c.c].time
 		if c.g >= total:
 			continue
 		if not water.has(cell):
-			water[cell] = world.near_water(cell)
-		var r := (WATER_BONUS if water[cell] else 1.0) * (NIGHT_RATE if night else 1.0)
+			water[cell] = rain or world.near_water(cell)
+		var r := (WATER_BONUS if water[cell] else (Weather.DROUGHT_RATE if dry else 1.0)) * (NIGHT_RATE if night else 1.0)
 		var before := stage_of(cell)
 		c.g = minf(total, c.g + seconds * r)
 		if stage_of(cell) != before:

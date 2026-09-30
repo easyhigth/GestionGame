@@ -376,6 +376,40 @@ def amb_night():
     return out
 
 
+def amb_rain():
+    """Pluie : un souffle aigu régulier et des gouttes qui claquent."""
+    sec = 8.0
+    out = mix(gain(bandpass(noise(sec, 131), 900, 7000), 0.5), gain(lowpass(noise(sec, 133), 500), 0.35))
+    rnd = random.Random(17)
+    for k in range(260):
+        drop = expdecay(bandpass(noise(0.03, 200 + k), 2500, 9000), 0.008)
+        place(out, drop, rnd.uniform(0, sec - 0.05), rnd.uniform(0.05, 0.22))
+    return out
+
+
+def amb_wind():
+    """Vent fort (neige, sable) : souffle grave qui enfle et retombe."""
+    sec = 10.0
+    base = bandpass(noise(sec, 141), 150, 1400)
+    out = []
+    for i, v in enumerate(base):
+        t = i / SR
+        swell = 0.55 + 0.45 * math.sin(TAU * t / sec * 2) * math.sin(TAU * t / sec * 3 + 1.0)
+        out.append(v * swell)
+    return mix(out, gain(highpass(noise(sec, 143), 3000), 0.08))
+
+
+def sfx_thunder():
+    """Tonnerre : craquement puis grondement grave."""
+    crack = expdecay(highpass(noise(0.25, 151), 1200), 0.05)
+    rumble = env(lowpass(noise(3.2, 153), 180), 0.05, 0.6, 0.55, 2.2)
+    out = silence(3.4)
+    place(out, crack, 0.0, 0.7)
+    place(out, rumble, 0.05, 1.6)
+    place(out, gain(lowpass(noise(1.5, 155), 90), 1.0), 0.6, 0.9)
+    return out
+
+
 def amb_fire():
     sec = 6.0
     out = gain(lowpass(noise(sec, 105), 600), 0.4)
@@ -488,7 +522,7 @@ def music_title():
 
 
 SFX = {k[4:]: v for k, v in globals().items() if k.startswith('sfx_')}
-AMB = {'amb_day': amb_day, 'amb_night': amb_night, 'amb_fire': amb_fire}
+AMB = {'amb_day': amb_day, 'amb_night': amb_night, 'amb_fire': amb_fire, 'amb_rain': amb_rain, 'amb_wind': amb_wind}
 MUSIC = {'day': music_day, 'night': music_night, 'combat': music_combat, 'title': music_title}
 
 

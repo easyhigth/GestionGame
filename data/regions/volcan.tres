@@ -71,3 +71,5 @@ camp_density = 0.6
 resources = Array[ExtResource("3")]([ExtResource("r16"), ExtResource("r17"), ExtResource("r18"), ExtResource("r19")])
 resource_chance = 0.012
 recruit_races = Array[ExtResource("4")]([ExtResource("r20"), ExtResource("r21"), ExtResource("r22"), ExtResource("r23")])
+weather_weights = {"clair": 3, "nuageux": 3, "pluie": 2, "orage": 2, "brouillard": 1}
+precipitation = "cendres"
