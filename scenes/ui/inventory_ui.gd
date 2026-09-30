@@ -46,6 +46,7 @@ func _ready() -> void:
 
 
 func open(who: Node) -> void:
+	Sound.ui("ui_open")
 	if target and target.has_node("Equipment"):
 		var old_eq := target.get_node("Equipment") as CharacterEquipment
 		if old_eq.changed.is_connected(_refresh):
@@ -457,6 +458,7 @@ func _craft(r: RecipeData) -> void:
 	if r.craft(player.inventory, player.is_near_workbench(), player.nearby_stations()):
 		player.notify.emit("Fabriqué : %s" % r.result.display_name)
 		player.crafted.emit(r.result.id)
+		Sound.ui("craft")
 	_refresh()
 
 

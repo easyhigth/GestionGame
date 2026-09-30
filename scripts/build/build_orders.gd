@@ -289,6 +289,8 @@ func _complete(o: Dictionary) -> bool:
 					if old:
 						p.inventory.add(old, 1)
 				done = grid.place_block(o.key, o.item)
+				if done and not instant:
+					Sound.play("place", Vector3(o.key.x + 0.5, o.key.y + 0.5, o.key.z + 0.5), -6.0)
 				if done:
 					# le bloc remplace la terre dans laquelle il est posé
 					var th := world.terrain_height(o.cell)

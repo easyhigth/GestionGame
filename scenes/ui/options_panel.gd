@@ -56,7 +56,17 @@ func _build() -> void:
 	vol.step = 0.05
 	vol.value = float(o.volume)
 	vol.value_changed.connect(func(v): o.volume = v; _save())
-	_row("Volume", vol)
+	_row("Volume général", vol)
+	for pair in [["music_volume", "Musique"], ["sfx_volume", "Bruitages"]]:
+		var sl := HSlider.new()
+		sl.min_value = 0.0
+		sl.max_value = 1.0
+		sl.step = 0.05
+		sl.value = float(o.get(pair[0], 0.7))
+		var key: String = pair[0]
+		sl.value_changed.connect(func(v): o[key] = v; _save())
+		sl.drag_ended.connect(func(_c): Sound.ui("pickup"))
+		_row(pair[1], sl)
 	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"]]:
 		var cb := CheckButton.new()
 		cb.button_pressed = bool(o[pair[0]])

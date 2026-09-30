@@ -12,6 +12,15 @@ var _t := 0.0
 
 func _ready() -> void:
 	_flame = find_child("Flame", true, false) as Node3D
+	# crépitement du feu, qu'on entend en s'approchant
+	var crackle := AudioStreamPlayer3D.new()
+	crackle.stream = Sound.loop_stream("amb_fire")
+	crackle.bus = "Sfx"
+	crackle.unit_size = 2.5
+	crackle.max_distance = 16.0
+	crackle.volume_db = -4.0
+	add_child(crackle)
+	crackle.play.call_deferred()
 
 
 func _process(delta: float) -> void:

@@ -94,6 +94,13 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Chaîne du fer** : four (6 cailloux + 2 terre, près d'un établi) → lingot de fer (2 minerais + 1 bois, près du four) → enclume (4 lingots, près d'un établi) → à côté de l'enclume : hache et pioche en fer (2 lingots + 2 bois, ×4), épée, hache de guerre, marteau, lance, dague, bouclier, casques, armure, gantelets et jambières en fer.
 - Le guide continue avec un 2e chapitre, « L'âge du fer » : miner 2 filons, poser un four, fondre 2 lingots, poser une enclume, forger une pioche en fer.
 
+## Sons et musique
+- **Bruitages** : coups d'épée et impacts (plus forts pour un coup critique), garde, parade, roulade, dégâts reçus, monstre vaincu, défaite du héros, pas (herbe, pierre, bois, sable), coupe du bois, coups de pioche, blocs cassés et posés, creusage, objets ramassés, niveau gagné, talent appris, sorts, cri du boss en 2e phase, cor du raid, tombée de la nuit, lever du jour, sommeil, artisanat, porte, boutons et fenêtres. Les bruits du monde sont en 3D (plus faibles de loin).
+- **Ambiances** : oiseaux et vent le jour, grillons la nuit, crépitement du feu de camp en s'approchant.
+- **Musiques** (en boucle, avec fondus) : écran titre, jour, nuit (et donjons), combat (boss tout proche ou raid en cours).
+- **Options** : volume général, musique et bruitages séparés.
+- Tous les sons sont fabriqués par programme (`tools/audio_generator.py`, synthèse en Python pur) dans `assets/audio/sfx/` et `assets/audio/music/`. Pour mettre un vrai son, remplace le fichier en gardant son nom (un `.ogg` du même nom est pris en priorité). Le code est dans `scripts/audio/sound.gd` (autoload `Sound` : `Sound.play("hit", position)`).
+
 ## Jour et nuit
 - Un jour dure 10 minutes (6 h → 20 h) et une nuit 4 minutes (20 h → 6 h). L'heure et le jour s'affichent sous la mini-carte ; le ciel, le soleil et la lune changent avec l'heure.
 - **La nuit**, des monstres de la région apparaissent dans le noir, à 15-24 m du héros, et marchent vers lui : un peu plus chaque nuit (4 la première, jusqu'à 8). Ils n'apparaissent pas près d'une lumière (torche, lanterne posée, feu de camp du village) ni dans une pièce fermée. Au lever du jour, ils fuient.

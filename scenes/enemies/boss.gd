@@ -67,6 +67,7 @@ func _physics_process(delta: float) -> void:
 	name_label.visible = true
 	if phase == 1 and health.ratio() <= 0.5:
 		phase = 2
+		Sound.play("boss_roar", global_position + Vector3(0, 2, 0), 3.0, 0.0)
 		visual.trail_color = Color(1, 0.3, 0.2)
 		visual.flash(Color(1, 0.2, 0.1, 0.9), 0.5)
 		VoxelBurst.spawn(self, global_position + Vector3(0, 1.4, 0), Color(1, 0.3, 0.2), 60, 8.0, 0.12, 0.9, "sphere", 6.0)

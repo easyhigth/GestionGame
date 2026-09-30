@@ -74,8 +74,10 @@ static func strike(p: Player, reach: float, power: float, with_blocks := false) 
 		VoxelBurst.spawn(p, at, Color(0.6, 0.44, 0.28), 10, 2.5, 0.08, 0.35, "sphere", 8.0, false)
 		if left > 0.0:
 			world.prop_damage[id] = left
+			Sound.play("chop", at)
 			return true
 		world.prop_damage.erase(id)
+		Sound.play("break_wood", at)
 		for l in world.remove_village_prop(id):
 			_drop(world, l[0], l[1], at)
 		return true
@@ -181,7 +183,9 @@ static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Pla
 	if left > 0.0:
 		world.block_damage[dkey] = left
 		VoxelBurst.spawn(p, at, col, 8, 2.2, 0.07, 0.3, "sphere", 8.0, false)
+		Sound.play("pick" if stone else "chop", at)
 		return
+	Sound.play("break_stone" if stone else "break_wood", at)
 	world.block_damage.erase(dkey)
 	var got: ItemData = grid.remove_block(key) if t.has("block") else grid.remove_furniture(key)
 	VoxelBurst.spawn(p, at, col, 20, 3.2, 0.1, 0.55, "sphere", 9.0, false)
@@ -249,7 +253,9 @@ static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_pare
 	if left > 0.0:
 		world.decor_damage[cell] = left
 		VoxelBurst.spawn(fx_parent, at, col, 8, 2.2, 0.07, 0.3, "sphere", 8.0, false)
+		Sound.play("pick" if is_stone(kind) else ("step_grass" if kind in [WorldGenerator.D_FLOWERS, WorldGenerator.D_GRASS] else "chop"), at)
 		return
+	Sound.play("break_stone" if is_stone(kind) else ("step_grass" if kind in [WorldGenerator.D_FLOWERS, WorldGenerator.D_GRASS, WorldGenerator.D_BUSH] else "break_wood"), at)
 	world.decor_damage.erase(cell)
 	world.remove_decor(cell)
 	VoxelBurst.spawn(fx_parent, at, col, 26, 4.0, 0.12, 0.7, "sphere", 10.0, false)
@@ -339,6 +345,7 @@ static func dig(p: Player) -> ItemData:
 			return null
 	world.set_terrain_height(cell, h - DIG_STEP)
 	world.refresh_cells([cell])
+	Sound.play("pick" if id == "stone" else "dig", Vector3(cell.x + 0.5, h, cell.y + 0.5))
 	var at := Vector3(cell.x + 0.5, h - DIG_STEP + 0.1, cell.y + 0.5)
 	VoxelBurst.spawn(p, at, Color(0.55, 0.42, 0.28) if id != "stone" else Color(0.6, 0.6, 0.58), 12, 2.8, 0.09, 0.45, "up", 9.0, false)
 	var it := Items.get_item(id) as ItemData

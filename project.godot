@@ -15,6 +15,7 @@ config/features=PackedStringArray("4.7")
 Items="*res://scripts/items/item_database.gd"
 TimeFX="*res://scripts/combat/time_fx.gd"
 GameState="*res://scripts/hero/game_state.gd"
+Sound="*res://scripts/audio/sound.gd"
 SaveGame="*res://scripts/save/save_game.gd"
 
 [display]

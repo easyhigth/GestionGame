@@ -89,6 +89,7 @@ func _check_transition() -> void:
 	_night = n
 	if n:
 		night_started.emit()
+		Sound.ui("night")
 		if player:
 			player.notify.emit("La nuit tombe ! Reste près d'une lumière ou dors dans un lit (E).")
 	else:
@@ -104,6 +105,7 @@ func _dawn() -> void:
 			e.queue_free()
 	_night_monsters.clear()
 	day_started.emit(day)
+	Sound.ui("day")
 	if player:
 		player.notify.emit("Le jour %d se lève." % day)
 
@@ -246,6 +248,7 @@ func sleep() -> String:
 	tw.tween_interval(0.5)
 	tw.tween_property(black, "color:a", 0.0, 0.8)
 	tw.tween_callback(layer.queue_free)
+	Sound.ui("sleep")
 	return "Tu dors jusqu'au matin..."
 
 

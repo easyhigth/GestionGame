@@ -183,6 +183,7 @@ func node_center(n: Dictionary) -> Vector2:
 
 
 func open() -> void:
+	Sound.ui("ui_open")
 	if player == null or player.ui_open or player.building:
 		return
 	get_parent().move_child(self, get_parent().get_child_count() - 1)
