@@ -182,7 +182,7 @@ func apply_profile(hero: HeroProfile, new_game := true) -> void:
 	race = hero.race
 	visual.set_equipment_library(race.equipment if race else null)
 	visual.set_colors(hero.skin_color, hero.hair_color, hero.eye_color)
-	visual.set_model(hero.model())
+	visual.set_model(hero.model(hero_evo))
 	_apply_evo_scale()
 	if hero.skill and (skill == null or skill.data != hero.skill):
 		skill = HeroSkill.new(hero.skill, self)
@@ -350,6 +350,13 @@ func _apply_evo_scale() -> void:
 		visual.scale = Vector3(profile.build, profile.height, profile.build) * (1.0 + 0.04 * hero_evo)
 
 
+## Modèle de l'évolution (cornes, marques, auréole... selon la race) et taille.
+func _apply_evo_look() -> void:
+	if profile:
+		visual.set_model(profile.model(hero_evo))
+	_apply_evo_scale()
+
+
 ## Titre de l'évolution (« Seigneur-bête »...), vide avant la première.
 func evo_title() -> String:
 	return Evolution.hero_title(race, hero_evo)
@@ -360,7 +367,7 @@ func evolve_hero() -> void:
 	if hero_evo >= 3:
 		return
 	hero_evo += 1
-	_apply_evo_scale()
+	_apply_evo_look()
 	_apply_talents()
 	health.heal(health.max_health)
 	var col: Color = Evolution.HERO_COLOR[hero_evo - 1]

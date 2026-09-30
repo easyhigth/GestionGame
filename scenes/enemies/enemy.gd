@@ -29,6 +29,8 @@ var tamed := false
 var familiar_name := ""
 var familiar_title := ""
 var familiar_slot := 0
+var _stuck_time := 0.0
+var _stuck_from := Vector3.ZERO
 
 @onready var name_label: Label3D = $Name
 @onready var bar: HealthBar3D = $HealthBar
@@ -248,9 +250,21 @@ func _familiar_process(delta: float, player: Node3D) -> void:
 	if _think <= 0.0:
 		_think = 0.3
 		home = player.global_position
-		# trop loin (téléportation, voyage rapide) : il rejoint le héros
-		if player.global_position.distance_to(global_position) > 35.0:
+		# trop loin (téléportation, voyage rapide) ou bloqué derrière un obstacle : il rejoint le héros
+		var far := player.global_position.distance_to(global_position)
+		# bloqué : il ne s'est pas rapproché du héros d'au moins 1 m en 1,5 s
+		if _target == null and far > 5.0:
+			_stuck_time += 0.3
+			if far < _stuck_from.x - 1.0:
+				_stuck_time = 0.0
+				_stuck_from.x = far
+		else:
+			_stuck_time = 0.0
+			_stuck_from.x = far
+		if far > 35.0 or _stuck_time > 1.5:
 			global_position = player.global_position + Vector3(1.5, 0.5, 1.5)
+			_stuck_time = 0.0
+			_stuck_from.x = 0.0
 			_target = null
 		if _target and (not is_instance_valid(_target) or not _target.is_alive() or not _target.can_be_targeted() \
 				or _target.global_position.distance_to(player.global_position) > 16.0):

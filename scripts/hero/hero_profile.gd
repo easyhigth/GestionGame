@@ -21,10 +21,14 @@ const HERO_DIR := "res://assets/characters/hero/"
 @export var skill: SkillData
 
 
-## Modèle 3D du héros (race + style + barbe).
-func model() -> PackedScene:
+## Modèle 3D du héros (race + style + barbe), ou de son évolution `evo` (1 à 3) s'il en existe une.
+func model(evo := 0) -> PackedScene:
 	if race == null:
 		return null
+	if evo > 0:
+		var ep := HERO_DIR + "%s_s%d_evo%d.glb" % [race.model_id, style, mini(evo, 3)]
+		if ResourceLoader.exists(ep):
+			return load(ep)
 	var path := HERO_DIR + "%s_s%d%s.glb" % [race.model_id, style, "_beard" if beard else ""]
 	if not ResourceLoader.exists(path):
 		path = HERO_DIR + "%s_s0.glb" % race.model_id
