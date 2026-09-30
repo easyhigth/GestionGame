@@ -159,8 +159,10 @@ func stats_text() -> String:
 		parts.append("Sort à distance" if projectile else "Portée %.1f m" % reach)
 	var t := "  ".join(parts)
 	if not gems.is_empty():
+		# la forge est chargée à l'exécution (elle dépend du héros, qui dépend des objets)
+		var all_gems: Dictionary = load("res://scripts/items/forge.gd").GEMS
 		var g := []
 		for gem in gems:
-			g.append(Forge.GEMS[gem].name if Forge.GEMS.has(gem) else gem)
+			g.append(all_gems[gem].name if all_gems.has(gem) else gem)
 		t += "\nGemmes : " + ", ".join(PackedStringArray(g))
 	return t
