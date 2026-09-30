@@ -276,6 +276,13 @@ Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, ca
 - **Habitants** : ils commencent avec une partie de la tenue d'un métier (garde, mage, guerrier...), vont chercher les armes et armures meilleures que les leurs qui traînent près d'eux et reposent l'ancienne au sol. Touche E près d'un habitant pour l'équiper avec le contenu de ton sac.
 - **Artisanat** (fenêtre I) : le bois, la pierre, le cuir et la fibre se ramassent dans la nature ; le minerai de fer se trouve sur la roche et se fond en lingots à l'**établi** du village. Les objets en fer demandent d'être près de l'établi.
 
+### Forge : renforcer et sertir des gemmes
+- Onglet **Forge** de l'artisanat (fenêtre I), près d'une **enclume** : toutes les armes et armures portées ou dans le sac.
+- **Renforcer** de +1 à +10 : +10 % des caractéristiques et +1 point par niveau. Rareté : rare à +4, épique à +7, légendaire à +10. L'objet garde son apparence.
+- Coût : +1 à +3 lingots de fer et or ; +4 à +6 lingots d'or, mithril brut et or ; +7 à +9 lingots de mithril, larme d'esprit et or ; +10 un orichalque, 3 lingots de mithril et 1 000 pièces d'or.
+- **Gemmes** : 1 emplacement, 2 à +4, 3 à +8. Rubis (brûlure, attaque), Saphir (givre, magie), Émeraude (vol de vie, régénération), Topaze (critiques), Améthyste (magie, recharges), Diamant (vie, défense). On les trouve en minant l'or et le fer, sur les boss, dans les grottes, les îles et les donjons.
+- Un objet renforcé se vend plus cher au marchand (+25 % par niveau, +40 or par gemme) et se sauvegarde avec ses gemmes.
+
 ## Combat (temps réel, façon Zelda)
 Commandes (clavier-souris / manette) :
 - **Attaque** : clic gauche, J / X. Trois appuis = combo (le 3e coup est un coup final qui fait une onde de choc). Chaque arme a ses coups : épée (taillades), lance (estocs et balayage), arme lourde (lents, puissants), bâton (sorts, le 3e en éventail), mains nues (poings et uppercut).

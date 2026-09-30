@@ -154,7 +154,9 @@ func _ready() -> void:
 		stats = PlayerStats.new()
 	camera.top_level = true
 	# l'équipement changé remet l'arme en main
-	equipment.changed.connect(func(): tool_in_hand = "")
+	equipment.changed.connect(func():
+		tool_in_hand = ""
+		_apply_talents())
 	hand = HandBuild.new()
 	hand.name = "HandBuild"
 	hand.player = self
@@ -437,6 +439,10 @@ func set_ability_slot(slot: int, id: String) -> void:
 ## Applique les passifs et prépare les talents actifs.
 func _apply_talents() -> void:
 	var bonus := TalentTree.passive_bonus(talents)
+	# les gemmes serties de l'équipement porté
+	var gb := Forge.equipment_bonus(self)
+	for k in gb:
+		bonus[k] = float(bonus.get(k, 0.0)) + float(gb[k])
 	# les évolutions du héros s'ajoutent aux talents
 	var eb := Evolution.hero_bonus(hero_evo)
 	for k in eb:
@@ -995,7 +1001,7 @@ func _put_tool_away() -> void:
 		return
 	tool_in_hand = ""
 	var w := weapon()
-	visual.show_equipment(ItemData.Slot.MAIN_HAND, w.id if w else "")
+	visual.show_equipment(ItemData.Slot.MAIN_HAND, w.model_id() if w else "")
 
 
 func _update_tool(delta: float) -> void:

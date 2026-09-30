@@ -282,6 +282,11 @@ func value_of(it: ItemData, depth := 0) -> float:
 	if _values.has(it.id):
 		return _values[it.id]
 	var v := 0.0
+	# objet amélioré à la forge : la valeur de l'objet de base, plus son niveau et ses gemmes
+	if it.base_id != "":
+		v = value_of(Items.get_item(it.base_id), depth + 1) * (1.0 + 0.25 * it.upgrade) + 40.0 * it.gems.size()
+		_values[it.id] = v
+		return v
 	if VALUES.has(it.id):
 		v = VALUES[it.id]
 	else:

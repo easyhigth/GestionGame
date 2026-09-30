@@ -35,6 +35,12 @@ const RARITY_COLORS := {
 ## Emplacement où l'objet s'équipe (« NONE » = matériau d'artisanat).
 @export var slot: Slot = Slot.NONE
 @export var rarity: Rarity = Rarity.COMMON
+## Objet amélioré à la forge (voir Forge) : objet de base, niveau (+0 à +10), gemmes serties et leurs bonus
+## (mêmes clés que les compétences : burn, crit, lifesteal...).
+@export var base_id := ""
+@export var upgrade := 0
+@export var gems: PackedStringArray = PackedStringArray()
+@export var bonus: Dictionary = {}
 ## Arme à deux mains : retire le bouclier quand on l'équipe.
 @export var two_handed: bool = false
 ## Nombre maximum d'exemplaires dans une case d'inventaire.
@@ -134,6 +140,11 @@ func rarity_color() -> Color:
 
 
 ## Résumé des bonus, ex. « Attaque +8  Défense +2 ».
+## Identifiant du modèle 3D (celui de l'objet de base pour un objet amélioré).
+func model_id() -> String:
+	return base_id if base_id != "" else id
+
+
 func stats_text() -> String:
 	var parts := []
 	if attack:
@@ -146,4 +157,12 @@ func stats_text() -> String:
 		parts.append("Vitesse %+d %%" % roundi(speed_bonus * 100.0))
 	if slot == Slot.MAIN_HAND:
 		parts.append("Sort à distance" if projectile else "Portée %.1f m" % reach)
-	return "  ".join(parts)
+	var t := "  ".join(parts)
+	if not gems.is_empty():
+		# la forge est chargée à l'exécution (elle dépend du héros, qui dépend des objets)
+		var all_gems: Dictionary = load("res://scripts/items/forge.gd").GEMS
+		var g := []
+		for gem in gems:
+			g.append(all_gems[gem].name if all_gems.has(gem) else gem)
+		t += "\nGemmes : " + ", ".join(PackedStringArray(g))
+	return t
