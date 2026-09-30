@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RecipeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/hache_bois.tres" id="result"]
+[ext_resource type="Resource" path="res://data/items/wood.tres" id="wood"]
+
+[resource]
+script = ExtResource("1")
+result = ExtResource("result")
+ingredients = Array[ExtResource("2")]([ExtResource("wood")])
+amounts = PackedInt32Array(3)
+needs_workbench = false
+category = "Outils"

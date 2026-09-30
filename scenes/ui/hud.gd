@@ -45,6 +45,9 @@ var _boss_lag: ColorRect
 var _ability_bar: HBoxContainer
 var _ability_cells: Array = []
 var talent_ui: TalentTreeUI
+var day_cycle: DayCycle
+var guide: GuidePanel
+var _clock: Label
 const HP_WIDTH := 220.0
 
 
@@ -68,6 +71,7 @@ func _ready() -> void:
 	_build_skill_slot()
 	_build_maps()
 	_build_ability_bar()
+	_build_day_and_guide()
 	if player:
 		player.feat.connect(show_feat)
 		player.lock_changed.connect(func(t): _target = t)
@@ -501,6 +505,11 @@ func _process(delta: float) -> void:
 			_ability_bar.visible = not b and player.ability_slots.any(func(x): return x != "")
 			_process_abilities()
 		_messages.offset_bottom = -210.0 if b else -10.0
+	if _clock and day_cycle and day_cycle.is_inside_tree():
+		_clock.text = day_cycle.clock_text()
+		_clock.add_theme_color_override("font_color", Color("b8c8ff") if day_cycle.is_night() else Color("fff2c8"))
+	if guide:
+		guide.modulate.a = 0.35 if player and player.ui_open else 1.0
 	if player and player.skill and _skill_cd:
 		var r := player.skill.cooldown_ratio()
 		_skill_cd.size.y = 36.0 * r
@@ -565,6 +574,29 @@ func set_help_visible(on: bool) -> void:
 
 
 ## Petit rappel discret sous la mini-carte (la liste complète des touches est dans le menu « Commandes »).
+## Cycle jour/nuit (ajouté à la scène principale), horloge sous la mini-carte et guide des premiers pas.
+func _build_day_and_guide() -> void:
+	if player == null or world == null:
+		return
+	day_cycle = DayCycle.new()
+	day_cycle.name = "DayCycle"
+	day_cycle.world = world
+	day_cycle.player = player
+	get_parent().add_child.call_deferred(day_cycle)
+	_clock = _outlined("", 12)
+	_clock.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_clock.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_clock.offset_left = -300
+	_clock.offset_right = -12
+	_clock.offset_top = 244
+	_clock.offset_bottom = 262
+	add_child(_clock)
+	guide = GuidePanel.new()
+	guide.player = player
+	add_child(guide)
+
+
 func _place_help() -> void:
 	# sous la mini-carte, en haut à droite
 	info.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
@@ -572,8 +604,8 @@ func _place_help() -> void:
 	info.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	info.offset_left = -300
 	info.offset_right = -12
-	info.offset_top = 244
-	info.offset_bottom = 260
+	info.offset_top = 262
+	info.offset_bottom = 278
 	info.add_theme_font_size_override("font_size", 10)
 	info.modulate = Color(1, 1, 1, 0.7)
 
@@ -585,6 +617,9 @@ func show_message(text: String) -> void:
 	l.add_theme_color_override("font_color", Color("fff2c8"))
 	l.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.1))
 	l.add_theme_constant_override("outline_size", 4)
+	# les longs messages passent à la ligne au lieu de glisser sous la compétence
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(330, 0)
 	_messages.add_child(l)
 	while _messages.get_child_count() > 5:
 		_messages.get_child(0).free()

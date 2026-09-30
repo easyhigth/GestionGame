@@ -25,6 +25,10 @@ signal xp_changed(xp: int, needed: int, level: int)
 signal skill_changed(skill: HeroSkill)
 ## L'arbre de talents a changé (talent débloqué, emplacements modifiés).
 signal talents_changed
+## Un décor a été récolté à la main (« arbre », « rocher », « buisson », « plante »).
+signal harvested(kind: String)
+## Un objet a été fabriqué (identifiant de l'objet).
+signal crafted(item_id: String)
 
 @export var stats: PlayerStats
 @export var race: RaceData
@@ -845,6 +849,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		var s := nearest_stranger()
 		if s:
 			talk.emit(s)
+			get_viewport().set_input_as_handled()
+			return
+		# près d'un lit, la nuit : dormir jusqu'au matin
+		var grid := get_tree().get_first_node_in_group("build_grid") as BuildGrid
+		var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
+		if grid and dc and dc.is_night() and grid.furniture_near(global_position, 2.2).has("lit"):
+			notify.emit(dc.sleep())
 			get_viewport().set_input_as_handled()
 			return
 		var v := nearest_villager()

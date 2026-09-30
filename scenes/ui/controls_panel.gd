@@ -33,6 +33,7 @@ const PAGES := [
 		["Récolter : frapper arbres, rochers, buissons, décors", "Clic gauche / J", "X"],
 		["Creuser le sol devant soi (maintenir)", "G", "RT"],
 		["Parler · équiper un habitant · recruter", "E", "Y"],
+		["Dormir dans un lit (la nuit)", "E", "Y"],
 		["Entrer dans un donjon · ouvrir un coffre", "E", "Y"],
 		["Inventaire, équipement, artisanat", "I / Tab", "Back"],
 		["Carte du monde · voyage rapide", "M", "Croix haut"],

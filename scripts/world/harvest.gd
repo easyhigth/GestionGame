@@ -28,10 +28,15 @@ const DECOR_COLOR := {
 }
 ## Points de vie des décors du village (par sorte).
 const PROP_HP := {"hut": 14, "barrel": 3, "crate": 3, "workbench": 5, "rack": 4}
-## Outils qui vont plus vite : identifiant d'arme -> sortes de décor.
+## Armes qui vont plus vite : identifiant d'arme -> sortes de décor.
 const TOOL_BONUS := {
 	"axe": [WorldGenerator.D_OAK, WorldGenerator.D_PINE, "prop"],
 	"war_hammer": [WorldGenerator.D_ROCK, "prop"],
+}
+## Outils du sac (il suffit de les avoir) : sorte -> [[identifiant, multiplicateur], ...] du meilleur au moins bon.
+const TOOLS := {
+	"hache": [["hache_pierre", 3.0], ["hache_bois", 2.0]],
+	"pioche": [["pioche_pierre", 3.0], ["pioche_bois", 2.0]],
 }
 ## Profondeur retirée à chaque coup de pelle, et profondeur minimale du sol.
 const DIG_STEP := 0.5
@@ -60,7 +65,7 @@ static func strike(p: Player, reach: float, power: float) -> bool:
 	if best_prop:
 		var id: String = best_prop.get_meta("prop_id")
 		var kind := id.get_slice("_", 0)
-		var dmg := power * (2.0 if "prop" in TOOL_BONUS.get(wid, []) else 1.0)
+		var dmg := power * maxf(2.0 if "prop" in TOOL_BONUS.get(wid, []) else 1.0, tool_mult(p, "hache"))
 		var left: float = float(world.prop_damage.get(id, PROP_HP.get(kind, 4))) - dmg
 		var at: Vector3 = best_prop.global_position + Vector3(0, 0.8, 0)
 		VoxelBurst.spawn(p, at, Color(0.6, 0.44, 0.28), 10, 2.5, 0.08, 0.35, "sphere", 8.0, false)
@@ -94,12 +99,24 @@ static func strike(p: Player, reach: float, power: float) -> bool:
 				target = c
 	if best_score == INF:
 		return false
-	hit_decor(world, target, power * (2.0 if world.decor_at(target) in TOOL_BONUS.get(wid, []) else 1.0), p)
+	var tk := world.decor_at(target)
+	var mult := maxf(2.0 if tk in TOOL_BONUS.get(wid, []) else 1.0, tool_mult(p, "pioche" if tk == WorldGenerator.D_ROCK else "hache"))
+	hit_decor(world, target, power * mult, p)
 	return true
+
+
+## Multiplicateur du meilleur outil de cette sorte (« hache », « pioche ») présent dans le sac.
+static func tool_mult(p: Player, kind: String) -> float:
+	for t in TOOLS.get(kind, []):
+		var it := Items.get_item(t[0]) as ItemData
+		if it and p.inventory.count(it) > 0:
+			return float(t[1])
+	return 1.0
 
 
 ## Abîme le décor d'une case ; il se brise quand ses points de vie tombent à zéro.
 static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_parent: Node3D) -> void:
+	var p := fx_parent as Player
 	var kind := world.decor_at(cell)
 	if kind == WorldGenerator.D_NONE:
 		return
@@ -113,18 +130,35 @@ static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_pare
 	world.decor_damage.erase(cell)
 	world.remove_decor(cell)
 	VoxelBurst.spawn(fx_parent, at, col, 26, 4.0, 0.12, 0.7, "sphere", 10.0, false)
-	for l in loot(kind):
+	# sans pioche, un rocher ne donne que des cailloux (comme dans Minecraft)
+	var ore := p == null or kind != WorldGenerator.D_ROCK or tool_mult(p, "pioche") > 1.0 or (p.weapon() != null and p.weapon().id == "war_hammer")
+	for l in loot(kind, ore):
 		_drop(world, l[0], l[1], world.cell_center(cell))
+	if p:
+		p.harvested.emit(_kind_name(kind))
+
+
+static func _kind_name(kind: int) -> String:
+	match kind:
+		WorldGenerator.D_OAK, WorldGenerator.D_PINE:
+			return "arbre"
+		WorldGenerator.D_ROCK:
+			return "rocher"
+		WorldGenerator.D_BUSH:
+			return "buisson"
+	return "plante"
 
 
 ## Butin d'un décor : [[ItemData, nombre], ...] (aussi utilisé par les habitants).
-static func loot(kind: int) -> Array:
+static func loot(kind: int, with_ore := true) -> Array:
 	var out := []
 	for l in DECOR_LOOT.get(kind, []):
 		var it := Items.get_item(l[0]) as ItemData
 		if it:
 			out.append([it, randi_range(l[1], l[2])])
 	for b in DECOR_BONUS.get(kind, []):
+		if not with_ore and b[0] != "fiber":
+			continue
 		if randf() < float(b[1]):
 			var it := Items.get_item(b[0]) as ItemData
 			if it:
@@ -158,6 +192,9 @@ static func dig(p: Player) -> ItemData:
 		id = "bloc_sable"
 	elif t == WorldGenerator.STONE:
 		id = "stone"
+		if tool_mult(p, "pioche") <= 1.0:
+			p.notify.emit("Il te faut une pioche pour creuser la roche.")
+			return null
 	world.set_terrain_height(cell, h - DIG_STEP)
 	world.refresh_cells([cell])
 	var at := Vector3(cell.x + 0.5, h - DIG_STEP + 0.1, cell.y + 0.5)

@@ -29,7 +29,7 @@ var _info_name: Label
 var _info_text: Label
 var _recipes: VBoxContainer
 var _bench: Label
-var _cat := "Équipement"
+var _cat := "Outils"
 var _cat_buttons := {}
 var _job_box: VBoxContainer
 
@@ -202,7 +202,7 @@ func _build() -> void:
 	var c3 := _column("Artisanat", 330, cols)
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 2)
-	for cname in ["Équipement", "Construction", "Mobilier", "Matériaux"]:
+	for cname in ["Outils", "Équipement", "Construction", "Mobilier", "Matériaux"]:
 		var tb := Button.new()
 		tb.text = cname
 		tb.toggle_mode = true
@@ -456,6 +456,7 @@ func _unequip(slot: int) -> void:
 func _craft(r: RecipeData) -> void:
 	if r.craft(player.inventory, player.is_near_workbench(), player.nearby_stations()):
 		player.notify.emit("Fabriqué : %s" % r.result.display_name)
+		player.crafted.emit(r.result.id)
 	_refresh()
 
 
