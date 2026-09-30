@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lame_aube"
+display_name = "Lame d'Aube"
+description = "L'épée de l'ordre de Sire Aldéric. Sa lame dorée garde un reflet du Cœur d'Aube."
+slot = 1
+rarity = 3
+attack = 24
+magic = 6
+attack_speed = 1.1
+reach = 1.9

@@ -25,6 +25,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
 - B (ou croix bas à la manette) : mode construction (voir plus bas)
 - U : panneau du royaume (habitants, lits, réserve de nourriture, bonheur)
+- O : journal de l'histoire (actes, objectif en cours, éclats, personnages)
 - M (ou croix haut à la manette) : carte du monde et voyage rapide
 - Échap (ou Start à la manette) : pause (sauvegarder, charger, options, menu principal)
 - Touches de test, seulement quand le jeu est lancé depuis l'éditeur Godot : R (changer de race), N (nouveau monde)
@@ -102,6 +103,15 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Nourriture** : baies (buissons, 8), viande crue (sangliers, loups, ours, 10), viande cuite (32, +15 vie), pain (boulangerie du village, 26, +8 vie), ragoût (viande + 3 baies, 55, +40 vie).
 - **Cuisine** (inventaire → Artisanat → Cuisine) : près du feu de camp du village, d'un four, d'un four à pain ou d'une forge.
 - Le guide a une nouvelle étape : « Mange un repas cuit » (avant la première nuit).
+
+## Histoire principale : L'Éveil du Royaume
+Jadis, le **Cœur d'Aube** nourrissait les obélisques et protégeait le royaume. Le **Seigneur de la Brume** l'a brisé ; ses éclats ont été avalés par les grandes bêtes des régions (les boss des donjons). Tu es « l'Éveillé » que les anciens textes annonçaient.
+- **Acte I — Le réveil** : Maëlle l'Érudite t'attend près du feu ; éveille 3 obélisques ; trouve **Sire Aldéric**, chevalier déchu, à son camp près du donjon voisin ; vaincs la bête de ce donjon. Choix : Aldéric rejoint ton village (garde ou compagnon redoutable) ou te confie la **Lame d'Aube** (épée épique).
+- **Acte II — Les éclats** : rassemble 4 éclats du Cœur (un par région : bats les boss de régions différentes) ; Maëlle t'envoie vers **Lysandre la marchande**, dans une contrée lointaine ; elle veut 5 perles des eaux profondes. Choix : elle s'installe au village (le marchand ambulant vient tous les 2 jours, 10 % moins cher, 10 % mieux payé) ou te donne sa **carte des anciens** (tous les obélisques révélés) et 300 pièces d'or.
+- **Acte III — Le Cœur d'Aube** : rassemble tous les éclats, construis un **temple**, et Maëlle reforme le Cœur ; porte-le au **Sanctuaire de l'Éveil**, au bout du monde, et affronte le **Seigneur de la Brume** (4 pouvoirs, invocations, orage). Épilogue : tous les obélisques brillent, les habitants sont plus heureux (+10), grosse récompense.
+- **Dialogues** avec portrait du personnage qui parle (E ou Espace pour la suite), et choix qui changent la suite. Un **« ! »** au-dessus de la personne à qui parler.
+- **Suivi** : l'objectif en cours en haut à droite (avec la distance et la direction), une **étoile dorée** sur la mini-carte et la carte (M) ; le **journal (O)** récapitule les actes, les éclats (région par région) et les personnages. Grands titres à chaque acte.
+- Tout est sauvegardé (étape, choix, éclats, personnages). Les étapes et les dialogues sont dans `scripts/story/story.gd` (listes `STEPS`, `NPCS`, `DIALOGS`) ; faciles à modifier ou à compléter.
 
 ## Agriculture
 - **Houe** (Artisanat → Outils : 2 bois, 2 cailloux) : choisis-la avec C et appuie sur V pour **labourer** l'herbe ou la terre devant toi (sillons bruns).
@@ -307,6 +317,6 @@ Choix de conception :
 6. Recrutement dans le monde, compagnons en expédition, menaces sur la ville : voyageurs et prisonniers à recruter, 2 compagnons, raids de pillards qui assiègent le village. **(fait)**
 7. Sauvegarde, menus, équilibrage : écran titre, menu pause, 3 emplacements + sauvegarde automatique, options, 3 niveaux de difficulté, réglage des boss. **(fait)**
 
-Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : personnages à histoire, commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
+Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
 
 Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la Going Medieval (plans bâtis par les habitants), **arbre de talents du héros** (27 talents, 15 nouvelles attaques et nouveaux sorts).

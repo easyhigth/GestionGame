@@ -99,7 +99,7 @@ func make_offer(forced_type := "") -> Dictionary:
 	var needs := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
 	if needs == null:
 		return {}
-	var free := needs.members().filter(func(v): return quest_of(v).is_empty())
+	var free := needs.members().filter(func(v): return quest_of(v).is_empty() and not v.has_meta("story"))
 	if free.is_empty():
 		return {}
 	var v = free[randi() % free.size()]

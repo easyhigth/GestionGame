@@ -56,6 +56,9 @@ var shop_dialog: ShopDialog
 var trade: Trade
 var weather: Weather
 var livestock: Livestock
+var story: Story
+var story_dialog: StoryDialog
+var journal: JournalPanel
 var fishing: Fishing
 var caves: UnderwaterCaves
 var _breath_box: Control
@@ -441,6 +444,10 @@ func _build_maps() -> void:
 		player.talk.connect(func(s):
 			if s.has_meta("merchant"):
 				shop_dialog.open(s)
+			elif s.has_meta("story"):
+				var st := get_tree().get_first_node_in_group("story") as Story
+				if st:
+					st.try_talk(s)
 			else:
 				recruit.open(s))
 	map_ui = WorldMapUI.new()
@@ -711,6 +718,17 @@ func _build_day_and_guide() -> void:
 	weather.world = world
 	weather.player = player
 	get_parent().add_child.call_deferred(weather)
+	story = Story.new()
+	story.name = "Story"
+	story.world = world
+	story.player = player
+	get_parent().add_child.call_deferred(story)
+	story_dialog = StoryDialog.new()
+	story_dialog.player = player
+	add_child(story_dialog)
+	journal = JournalPanel.new()
+	journal.player = player
+	add_child(journal)
 	fishing = Fishing.new()
 	fishing.name = "Fishing"
 	fishing.world = world
@@ -859,6 +877,20 @@ func _update_quests() -> void:
 	for c in _quest_box.get_children():
 		_quest_box.remove_child(c)
 		c.queue_free()
+	# l'histoire principale en premier
+	var st := get_tree().get_first_node_in_group("story") as Story
+	if st and not st.is_done():
+		var h := _outlined("✦ Histoire", 11)
+		h.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		h.custom_minimum_size.x = 288
+		h.add_theme_color_override("font_color", Color("ffe08a"))
+		_quest_box.add_child(h)
+		var sl := _outlined(st.tracker_text() + "  (O : journal)", 9)
+		sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		sl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sl.custom_minimum_size.x = 288
+		sl.add_theme_color_override("font_color", Color("f0e6c8"))
+		_quest_box.add_child(sl)
 	var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
 	if qb == null:
 		return

@@ -1035,7 +1035,11 @@ func _update_label() -> void:
 		if work_room != null and work_room.type:
 			job = " · " + (work_room.type as RoomTypeData).job_name
 		label.modulate = Color.WHITE
-		if stranger and has_meta("merchant"):
+		if has_meta("story") and stranger:
+			var info: Dictionary = Story.NPCS.get(get_meta("story"), {})
+			label.text = "%s %s%s" % [villager_name, info.get("title", ""), "\n[E] Parler" if d < 3.0 else ""]
+			label.modulate = info.get("color", Color.WHITE)
+		elif stranger and has_meta("merchant"):
 			label.text = "%s (%s)\nMarchand ambulant%s" % [villager_name, race.display_name if race else "?", "\n[E] Commercer" if d < 3.0 else ""]
 		elif stranger:
 			label.text = "%s (%s) · Nv %d\nVoyageur · %s%s" % [villager_name, race.display_name if race else "?", level,

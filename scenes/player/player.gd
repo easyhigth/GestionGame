@@ -1261,6 +1261,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			talk.emit(s)
 			get_viewport().set_input_as_handled()
 			return
+		# un personnage de l'histoire qui a quelque chose à dire
+		var sv := nearest_villager()
+		var st := get_tree().get_first_node_in_group("story")
+		if sv and st and sv.has_meta("story") and st.try_talk(sv):
+			get_viewport().set_input_as_handled()
+			return
 		# un habitant qui a une quête à proposer ou à rendre
 		var qv := nearest_villager()
 		var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
