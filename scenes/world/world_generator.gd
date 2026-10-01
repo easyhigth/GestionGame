@@ -151,6 +151,8 @@ const FARM := 7
 
 # décors
 const D_NONE := 0
+## Part des carrés de 8 m sans arbres (clairières).
+const CLEARING_CHANCE := 0.15
 const D_OAK := 1     # arbre (modèle choisi dans la région)
 const D_PINE := 2    # arbre (ancien type)
 const D_BUSH := 3
@@ -675,7 +677,9 @@ func _pick_decor(x: int, y: int, t: int, h: float, m: float, r: RegionData) -> i
 	var bush := r.bush_chance if r else 0.02
 	var rock := r.rock_chance if r else 0.06
 	var plant := r.small_plant_chance if r else 0.1
-	var tree_ok := x % 2 == 0
+	# arbres en quinconce (au moins 2,2 m entre deux troncs : on passe toujours entre eux),
+	# et quelques clairières dans les bois
+	var tree_ok := x % 2 == 0 and (y + (x / 2) % 2) % 2 == 0 and _rand(x / 8, y / 8, 41) >= CLEARING_CHANCE
 	if t == STONE:
 		# filons : du fer dans toute la roche, de l'or plus rare sur les hauteurs
 		var ore := _rand(x, y, 5)

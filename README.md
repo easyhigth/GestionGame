@@ -336,6 +336,14 @@ Règles :
 - **Carte du monde** sur un vieux parchemin (« Terra incognita » tant qu'on n'a pas exploré), dans un cadre doré, avec une rose des vents.
 - **Sons d'interface** : un parchemin qu'on déroule à l'ouverture d'un panneau et qu'on roule à la fermeture, une page tournée pour changer d'onglet, un « toc » de bois pour les boutons, un tic très doux au survol.
 
+## Un monde fait de blocs
+- **Pas de constructions toutes faites** : le campement de départ n'a que le feu et des meubles posés comme ceux du joueur (établi, râtelier, tonneaux, coffre), qu'on peut casser et ramasser. Les habitants dorment à la belle étoile tant qu'on ne leur a pas bâti de maison.
+- **Les constructions du monde sont faites des mêmes blocs que celles du joueur** (comme les villages de Minecraft), et **tout se casse bloc par bloc** en rendant ses blocs :
+  - des **maisons abandonnées** et des **ruines** dans chaque région, avec les matériaux du lieu : planches et chaume dans les prairies, rondins en forêt, tuiles et pierre polie au bois enchanté, grès dans le désert, pierre et ardoise en montagne et dans la toundra, marbre noir dans les terres de cendres, et sur pilotis dans les marais et la jungle ;
+  - l'**arche de pierre** de chaque entrée de donjon (avec un voile de ténèbres dans l'ouverture) et les **piliers** autour des obélisques.
+- Ces constructions ne comptent pas comme pièces du royaume. Ce qui a été cassé le reste après une sauvegarde.
+- Les blocs ne sont dessinés qu'autour du héros (environ 150 m), quelques morceaux par image : les grandes constructions apparaissent sans à-coup.
+
 ## Construction du royaume (façon Going Medieval)
 Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur place et une **caméra libre** survole le village : ZQSD/flèches pour la déplacer (Maj : plus vite), molette pour zoomer, clic molette + glisser ou A/E (Q/E en QWERTY) pour tourner. B ou Échap pour revenir au héros (on y revient aussi tout seul si le héros est attaqué).
 - On trace des **plans** : ils apparaissent en fantômes bleus, et les **habitants libres** (sans poste de travail ni expédition) viennent les construire eux-mêmes, du bas vers le haut, avec les matériaux de ton sac. Un plan sans matériaux devient rouge et attend. Clic droit : effacer le plan visé. Case « Construction instantanée » pour tout réaliser tout de suite.
@@ -366,6 +374,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - **Obélisques** : un par zone. Passe à côté pour l'activer, puis voyage vers n'importe quel obélisque activé depuis la carte. Celui du village est actif dès le départ.
 - **Carte** (M) : se dévoile là où tu passes, avec les noms et niveaux des zones découvertes, les obélisques, les entrées de donjon (vertes une fois vaincues) et ton royaume. Molette ou gâchettes : zoom. **Mini-carte** en haut à droite, avec le nom de la zone.
 - Un bandeau annonce chaque nouvelle zone (nom, région, niveaux) ; la découverte d'une zone donne de l'expérience.
+- Les arbres poussent en quinconce, toujours à au moins 2 m l'un de l'autre : on circule entre les troncs même au cœur des forêts profondes, qui ont aussi leurs clairières.
 - Les feuillages et les murs entre la caméra et le héros deviennent transparents.
 - Modèles : `tools/voxel_region_props.py` (cactus, sapins enneigés, arbres morts, champignons géants, cerisiers, roseaux, cristaux, roches volcaniques, obélisque, porte de donjon), `tools/voxel_creature_generator.py` (créatures), `tools/regions_database.py` (monstres et régions).
 
@@ -496,7 +505,7 @@ La carte montre maintenant les **capitales** (avec leur enceinte et leur populat
 - Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
 
 ## Tests automatiques
-- Le dossier `tests/` contient 41 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
+- Le dossier `tests/` contient 43 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
 - Tout lancer : `GODOT=/chemin/vers/godot tests/run_tests.sh` (ou seulement quelques-uns : `tests/run_tests.sh save story`). Il faut l'éditeur Godot 4.7 ; sans écran, `xvfb-run` est utilisé automatiquement. Importer le projet une première fois : `godot --headless --editor --quit --path .`.
 - Le monde des tests est toujours le même (graine 4242, ou `TEST_SEED=...`). Les captures d'écran vont dans `tests/captures/`, les journaux dans `tests/logs/` (ignorés par git).
 - Un test réussi affiche `RÉSULTAT : tout est bon` sans erreur de script ; le lanceur fait le résumé et renvoie un code d'erreur si un test échoue.
