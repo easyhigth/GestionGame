@@ -25,6 +25,8 @@ signal obelisk_activated(zone: Dictionary)
 @export var zone_size: int = 128
 ## Distance d'affichage autour du héros (en morceaux de 16 m).
 @export_range(2.0, 10.0, 0.5) var view_distance: float = 4.5
+## Distance au-delà de laquelle la petite végétation (fleurs, herbes, fougères) n'est plus dessinée (0 : toujours).
+var small_decor_range := 60.0
 ## Largeur (en mètres) des transitions entre deux régions.
 @export var region_blend: float = 10.0
 ## Dossier des types de régions.
@@ -221,6 +223,9 @@ func _ready() -> void:
 	build = get_node_or_null("Build") as BuildGrid
 	if Engine.is_editor_hint():
 		return
+	# une construction ou une démolition rend caduques les chemins impossibles et le cache du décor
+	if build:
+		build.changed.connect(invalidate_paths)
 	if get_node_or_null("Donjons") == null:
 		var dm := DungeonManager.new()
 		dm.name = "Donjons"
@@ -233,6 +238,7 @@ func _ready() -> void:
 		var rm := RaidManager.new()
 		rm.name = "Menaces"
 		add_child(rm)
+	apply_quality.call_deferred(int(SaveGame.options.get("graphics", 2)))
 	if generate_on_start:
 		var loaded_seed := SaveGame.pending_seed()
 		if loaded_seed >= 0:
@@ -900,23 +906,31 @@ func find_path(from: Vector3, to: Vector3, max_nodes := 2500, through_build := f
 	if start == goal:
 		out.append(to)
 		return out
-	var open := [start]
+	# un chemin impossible n'est pas recherché à nouveau avant quelques secondes
+	var now := Time.get_ticks_msec()
+	var memo_key := Vector4i(start.x, start.y, goal.x, goal.y)
+	if _path_fail.has(memo_key) and now - int(_path_fail[memo_key]) < PATH_FAIL_MEMO_MS:
+		return out
+	if now - _prop_cache_time > PROP_CACHE_MS:
+		_prop_cache.clear()
+		_prop_cache_time = now
+	# pas de recherche démesurée pour un but proche : le détour autorisé dépend de la distance
+	var dist := Vector2(start - goal).length()
+	max_nodes = mini(max_nodes, 400 + int(dist * dist * 4.0))
+	# A* avec un tas binaire (file de priorité) : [f, ordre d'arrivée, case]
+	var heap: Array = []
+	var seq := 0
 	var came := {start: start}
 	var g := {start: 0.0}
 	var hgt := {start: ground_height_at(from)}
-	var props := {}
+	var closed := {}
+	_heap_push(heap, [Vector2(start - goal).length(), 0, start])
 	var visited := 0
-	while not open.is_empty() and visited < max_nodes:
-		var best := 0
-		var best_f := INF
-		for i in open.size():
-			var c: Vector2i = open[i]
-			var f: float = g[c] + Vector2(c - goal).length()
-			if f < best_f:
-				best_f = f
-				best = i
-		var cur: Vector2i = open[best]
-		open.remove_at(best)
+	while not heap.is_empty() and visited < max_nodes:
+		var cur: Vector2i = _heap_pop(heap)[2]
+		if closed.has(cur):
+			continue
+		closed[cur] = true
 		visited += 1
 		if cur == goal:
 			var path := [cur]
@@ -925,9 +939,9 @@ func find_path(from: Vector3, to: Vector3, max_nodes := 2500, through_build := f
 			for c in path.slice(1):
 				out.append(Vector3(c.x + 0.5, hgt[c], c.y + 0.5))
 			return out
-		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		for d in DIRS4:
 			var n: Vector2i = cur + d
-			if not _inside(n):
+			if closed.has(n) or not _inside(n):
 				continue
 			if through_build:
 				var tn := _type(n)
@@ -936,34 +950,100 @@ func find_path(from: Vector3, to: Vector3, max_nodes := 2500, through_build := f
 					continue
 			elif not step_ok(n, hgt[cur]):
 				continue
-			if Vector2(n - goal).length() > 1.5 and _prop_blocked(n, hgt[cur], props):
+			if Vector2(n - goal).length() > 1.5 and _prop_blocked(n, hgt[cur], _prop_cache):
 				continue
 			var ng: float = g[cur] + 1.0
 			if not g.has(n) or ng < g[n]:
 				g[n] = ng
 				came[n] = cur
 				hgt[n] = _h(n) if through_build else support_height(Vector3(n.x + 0.5, 0, n.y + 0.5), hgt[cur])
-				if not open.has(n):
-					open.append(n)
+				seq += 1
+				_heap_push(heap, [ng + Vector2(n - goal).length(), seq, n])
+	_path_fail[memo_key] = now
+	if _path_fail.size() > 512:
+		_path_fail.clear()
 	return out
+
+
+const DIRS4: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+## Un chemin impossible n'est pas recherché à nouveau avant ce délai (ms).
+const PATH_FAIL_MEMO_MS := 4000
+## Le cache « case bloquée par le décor » est vidé régulièrement (le décor et les constructions changent).
+const PROP_CACHE_MS := 3000
+var _path_fail := {}
+var _prop_cache := {}
+var _prop_cache_time := 0
+var _prop_query: PhysicsShapeQueryParameters3D
+
+
+func invalidate_paths() -> void:
+	_path_fail.clear()
+	_prop_cache.clear()
+
+
+static func _heap_less(a: Array, b: Array) -> bool:
+	return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1])
+
+
+static func _heap_push(h: Array, item: Array) -> void:
+	h.append(item)
+	var i := h.size() - 1
+	while i > 0:
+		var parent := (i - 1) >> 1
+		if _heap_less(h[i], h[parent]):
+			var t = h[i]
+			h[i] = h[parent]
+			h[parent] = t
+			i = parent
+		else:
+			break
+
+
+static func _heap_pop(h: Array) -> Array:
+	var top: Array = h[0]
+	var last: Array = h.pop_back()
+	if h.is_empty():
+		return top
+	h[0] = last
+	var i := 0
+	var n := h.size()
+	while true:
+		var l := 2 * i + 1
+		var r := l + 1
+		var m := i
+		if l < n and _heap_less(h[l], h[m]):
+			m = l
+		if r < n and _heap_less(h[r], h[m]):
+			m = r
+		if m == i:
+			break
+		var t = h[i]
+		h[i] = h[m]
+		h[m] = t
+		i = m
+	return top
 
 
 ## Vrai si un objet du décor (cabane, tonneau, feu...) occupe la case. Résultats mis en cache dans `cache`.
 func _prop_blocked(cell: Vector2i, h: float, cache: Dictionary) -> bool:
-	if cache.has(cell):
-		return cache[cell]
-	var shape := SphereShape3D.new()
-	shape.radius = 0.3
-	var q := PhysicsShapeQueryParameters3D.new()
-	q.shape = shape
+	var key := Vector3i(cell.x, cell.y, roundi(h * 2.0))
+	if cache.has(key):
+		return cache[key]
+	# une seule requête réutilisée (en créer une par case coûte cher)
+	if _prop_query == null:
+		var shape := SphereShape3D.new()
+		shape.radius = 0.3
+		_prop_query = PhysicsShapeQueryParameters3D.new()
+		_prop_query.shape = shape
+		_prop_query.collide_with_areas = false
+	var q := _prop_query
 	q.transform = Transform3D(Basis(), Vector3(cell.x + 0.5, h + 0.6, cell.y + 0.5))
-	q.collide_with_areas = false
 	var blocked := false
 	for hit in get_world_3d().direct_space_state.intersect_shape(q, 4):
 		if hit.collider is StaticBody3D:
 			blocked = true
 			break
-	cache[cell] = blocked
+	cache[key] = blocked
 	return blocked
 
 
@@ -1099,6 +1179,29 @@ func _process(delta: float) -> void:
 
 func _chunk_of(cell: Vector2i) -> Vector2i:
 	return Vector2i(cell.x / CHUNK, cell.y / CHUNK)
+
+
+## Qualité graphique (options) : 0 basse, 1 moyenne, 2 haute.
+const QUALITY := [
+	{"view": 3.0, "small": 25.0, "shadow": false, "shadow_dist": 0.0},
+	{"view": 3.75, "small": 40.0, "shadow": true, "shadow_dist": 30.0},
+	{"view": 4.5, "small": 60.0, "shadow": true, "shadow_dist": 45.0},
+]
+
+
+func apply_quality(q: int) -> void:
+	var cfg: Dictionary = QUALITY[clampi(q, 0, QUALITY.size() - 1)]
+	view_distance = float(cfg.view)
+	small_decor_range = float(cfg.small)
+	for n in get_tree().get_nodes_in_group("small_decor"):
+		(n as GeometryInstance3D).visibility_range_end = small_decor_range
+	var sun := get_parent().get_node_or_null("Soleil") as DirectionalLight3D if get_parent() else null
+	var dm := get_node_or_null("Donjons") as DungeonManager
+	if sun:
+		# dans un donjon, l'ombre est coupée et sera rétablie à la sortie
+		if dm == null or not dm.active:
+			sun.shadow_enabled = bool(cfg.shadow)
+		sun.directional_shadow_max_distance = maxf(10.0, float(cfg.shadow_dist))
 
 
 ## Crée les morceaux proches de `focus` et libère les morceaux lointains.
@@ -1464,6 +1567,7 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 	var obstacles := StaticBody3D.new()
 	holder.add_child(obstacles)
 	var groups := {}  # scène -> transforms
+	var small := {}   # scènes de petite végétation
 	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
 		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
 			var cell := Vector2i(x, y)
@@ -1492,6 +1596,8 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 			if not groups.has(scene):
 				groups[scene] = []
 			groups[scene].append(Transform3D(basis, pos))
+			if kind == D_FLOWERS or kind == D_GRASS:
+				small[scene] = true
 			var shape: Shape3D = null
 			var shape_y := 0.0
 			match kind:
@@ -1522,6 +1628,9 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 			mm.set_instance_transform(i, (list[i] as Transform3D) * (info[1] as Transform3D))
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
+		if small.has(scene):
+			mmi.add_to_group("small_decor")
+			mmi.visibility_range_end = small_decor_range
 		holder.add_child(mmi)
 	$Decor.add_child(holder)
 	_decor_nodes[ch] = holder

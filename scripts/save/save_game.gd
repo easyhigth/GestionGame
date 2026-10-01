@@ -34,7 +34,12 @@ var options := {
 	"volume": 0.8,
 	"music_volume": 0.6,
 	"sfx_volume": 0.9,
+	"graphics": 2,
+	"show_fps": false,
+	## touches du clavier changées par le joueur : action -> code physique (voir KeyBindings)
+	"keys": {},
 }
+const GRAPHICS_NAMES := ["Basse", "Moyenne", "Haute"]
 
 ## Partie à charger au prochain lancement de la scène de jeu (vide = nouvelle partie).
 var pending := {}
@@ -116,6 +121,8 @@ func save_options() -> void:
 
 
 func apply_options() -> void:
+	if options.get("keys") is Dictionary and not (options.keys as Dictionary).is_empty():
+		KeyBindings.apply(options.keys)
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
 	var bus := AudioServer.get_bus_index("Master")
@@ -128,6 +135,11 @@ func apply_options() -> void:
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud and hud.has_method("set_help_visible"):
 		hud.set_help_visible(options.show_help)
+	if hud and hud.has_method("set_fps_visible"):
+		hud.set_fps_visible(bool(options.get("show_fps", false)))
+	var w := get_tree().get_first_node_in_group("world")
+	if w and w.has_method("apply_quality"):
+		w.apply_quality(int(options.get("graphics", 2)))
 
 
 func enemy_hp_mult() -> float:

@@ -47,6 +47,7 @@ const PAGES := [
 		["Diplomatie : nations voisines, traités, guerre", "Y", "—"],
 		["Boire une potion (soin si blessé, sinon renfort)", "Z", "—"],
 		["Succès et bestiaire", "F1", "—"],
+		["Aide-mémoire des touches à l'écran", "F2", "—"],
 		["Menu pause (sauvegarde, options)", "Échap", "Start"],
 	]],
 	["Construction", [
@@ -65,9 +66,19 @@ const PAGES := [
 	]],
 ]
 
+## Lignes des onglets dont la touche suit la personnalisation : début du texte -> action.
+const ROW_ACTIONS := {"Sauter": "jump", "Roulade": "dash", "Compétence unique": "skill", "Arbre de talents": "talents",
+	"Creuser": "dig", "Poser, semer": "place_block", "Parler": "interact", "Dormir": "interact", "Entrer dans un donjon": "interact",
+	"Manger": "eat", "Inventaire": "inventory", "Carte du monde": "world_map", "Mode construction": "build_mode",
+	"Royaume": "kingdom", "Journal": "journal", "Familiers": "familiar_order", "Diplomatie": "diplomacy",
+	"Boire une potion": "potion", "Succès et bestiaire": "achievements"}
+
 var _page := 0
 var _tabs: HBoxContainer
 var _list: VBoxContainer
+## Action qui attend sa nouvelle touche ("" sinon).
+var _listening := ""
+var _note: Label
 
 
 func _ready() -> void:
@@ -84,8 +95,8 @@ func _ready() -> void:
 	_tabs.add_theme_constant_override("separation", 6)
 	_tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(_tabs)
-	for i in PAGES.size():
-		var b := MenuKit.button(PAGES[i][0], 170, 12)
+	for i in PAGES.size() + 1:
+		var b := MenuKit.button(PAGES[i][0] if i < PAGES.size() else "Personnaliser", 170 if i < PAGES.size() else 130, 12)
 		b.custom_minimum_size.y = 30
 		b.pressed.connect(_show_page.bind(i))
 		b.focus_entered.connect(func(): if _page != i: _show_page(i))
@@ -166,6 +177,11 @@ func _show_page(i: int) -> void:
 			MenuKit.C_GOLD if t == i else Color("6a5030"), 2, 4, 6))
 	for c in _list.get_children():
 		c.queue_free()
+	_listening = ""
+	if i >= PAGES.size():
+		_show_custom()
+		return
+	var custom: Dictionary = SaveGame.options.get("keys", {})
 	var rows: Array = PAGES[i][1]
 	for r in rows.size():
 		var row: Array = rows[r]
@@ -175,9 +191,82 @@ func _show_page(i: int) -> void:
 		line.add_child(h)
 		var l := MenuKit.label(row[0], 12)
 		h.add_child(_cell(l, 300))
-		h.add_child(_keys(row[1], C_KEY))
+		var keys_text: String = row[1]
+		for start in ROW_ACTIONS:
+			if String(row[0]).begins_with(start) and custom.has(ROW_ACTIONS[start]):
+				keys_text = KeyBindings.key_text(ROW_ACTIONS[start])
+		h.add_child(_keys(keys_text, C_KEY))
 		h.add_child(_keys(row[2], C_PAD))
 		_list.add_child(line)
+
+
+## Onglet « Personnaliser » : une touche du clavier par action, à changer d'un clic.
+func _show_custom() -> void:
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(740, 300)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("v_separation", 3)
+	scroll.add_child(grid)
+	for r in KeyBindings.REBINDABLE:
+		var h := _row_box()
+		var l := MenuKit.label(r[1], 12)
+		l.custom_minimum_size.x = 200
+		h.add_child(l)
+		var b := MenuKit.button(KeyBindings.key_text(r[0]), 130, 12)
+		b.custom_minimum_size.y = 26
+		var action: String = r[0]
+		b.pressed.connect(func():
+			_listening = action
+			b.text = "…appuie"
+			_note.text = "Appuie sur la nouvelle touche pour « %s » (Échap : annuler)." % r[1])
+		h.add_child(b)
+		grid.add_child(h)
+	_list.add_child(scroll)
+	var foot := HBoxContainer.new()
+	foot.add_theme_constant_override("separation", 12)
+	_note = MenuKit.label("Clique sur une touche pour la changer. La souris et la manette ne changent pas.", 11, MenuKit.C_DIM)
+	_note.custom_minimum_size.x = 560
+	_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	foot.add_child(_note)
+	var reset := MenuKit.button("Touches par défaut", 170, 12)
+	reset.custom_minimum_size.y = 28
+	reset.pressed.connect(func():
+		KeyBindings.reset()
+		SaveGame.options.keys = {}
+		SaveGame.save_options()
+		_show_page(PAGES.size()))
+	foot.add_child(reset)
+	_list.add_child(foot)
+
+
+func _input(event: InputEvent) -> void:
+	if _listening == "" or not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	get_viewport().set_input_as_handled()
+	var action := _listening
+	_listening = ""
+	var k := event as InputEventKey
+	if k.keycode == KEY_ESCAPE or k.physical_keycode == KEY_ESCAPE:
+		_show_page(PAGES.size())
+		return
+	var code: int = k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
+	var others := KeyBindings.conflicts(code, action)
+	KeyBindings.rebind(action, code)
+	var keys: Dictionary = (SaveGame.options.get("keys", {}) as Dictionary).duplicate()
+	keys[action] = code
+	SaveGame.options.keys = keys
+	SaveGame.save_options()
+	Sound.ui("ui_click")
+	_show_page(PAGES.size())
+	if not others.is_empty():
+		_note.text = "« %s » : %s. Attention, cette touche sert aussi à : %s." % [KeyBindings.label_of(action), KeyBindings.key_text(action), ", ".join(PackedStringArray(others))]
+		_note.add_theme_color_override("font_color", MenuKit.C_BAD)
+	else:
+		_note.text = "« %s » : %s." % [KeyBindings.label_of(action), KeyBindings.key_text(action)]
+		_note.add_theme_color_override("font_color", MenuKit.C_OK)
 
 
 func close() -> void:
@@ -191,7 +280,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event is InputEventJoypadButton and event.pressed and event.button_index in [JOY_BUTTON_LEFT_SHOULDER, JOY_BUTTON_RIGHT_SHOULDER]:
 		var d := 1 if event.button_index == JOY_BUTTON_RIGHT_SHOULDER else -1
-		var i := (_page + d + PAGES.size()) % PAGES.size()
+		var i := (_page + d + PAGES.size() + 1) % (PAGES.size() + 1)
 		(_tabs.get_child(i) as Button).grab_focus()
 		_show_page(i)
 		get_viewport().set_input_as_handled()

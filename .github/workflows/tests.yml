@@ -1,0 +1,75 @@
+# Lance les tests du jeu (tests/test_*.gd) à chaque pull request et à chaque envoi sur main.
+# Les tests sont répartis sur plusieurs machines pour aller plus vite ; les journaux et les captures
+# d'écran sont gardés comme artefacts (onglet « Actions » de GitHub).
+name: Tests du jeu
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7-stable"
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.part }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Paquets (écran virtuel, OpenGL logiciel)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q xvfb libgl1-mesa-dri libglu1-mesa mesa-utils libxcursor1 libxinerama1 libxrandr2 libxi6 libasound2t64 || \
+          sudo apt-get install -y -q xvfb libgl1-mesa-dri libglu1-mesa mesa-utils libxcursor1 libxinerama1 libxrandr2 libxi6
+
+      - name: Godot (cache)
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Godot (téléchargement)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          rm "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+
+      - name: Import du projet
+        run: |
+          GODOT=~/godot/Godot_v${GODOT_VERSION}_linux.x86_64
+          timeout 1500 "$GODOT" --headless --editor --quit --path . > import.log 2>&1 || true
+          if grep -q "SCRIPT ERROR" import.log; then grep -A3 "SCRIPT ERROR" import.log; exit 1; fi
+
+      - name: Tests
+        run: |
+          GODOT=~/godot/Godot_v${GODOT_VERSION}_linux.x86_64
+          # répartition des tests : 1 sur 4 pour chaque machine
+          tests=($(ls tests/test_*.gd | sed 's#tests/test_##; s#\.gd$##' | awk -v p=${{ matrix.part }} '(NR - 1) % 4 == p - 1'))
+          echo "Tests de cette machine : ${tests[*]}"
+          GODOT="$GODOT" tests/run_tests.sh "${tests[@]}"
+
+      - name: Journaux et captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-${{ matrix.part }}
+          path: |
+            tests/logs/
+            tests/captures/
+            import.log
+          if-no-files-found: ignore

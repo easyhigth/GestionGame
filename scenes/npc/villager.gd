@@ -539,7 +539,10 @@ func _routine_step(delta: float) -> bool:
 	velocity = Vector3.ZERO
 	match activity:
 		"sommeil":
+			# couché sur le lit : on ne retombe pas au sol dans la même image
 			_sleep()
+			visual.animate(delta, Vector3.ZERO, facing)
+			return true
 		"repas":
 			_face_center()
 			_act_anim -= delta

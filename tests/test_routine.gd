@@ -134,7 +134,7 @@ func _process(_d) -> bool:
 		start("c")
 	if later("c", 12000):
 		for v in villagers():
-			print("   ", v.villager_name, " lit=", v.bed_kind, " dort=", v.is_sleeping(), " dist=", snappedf(Vector2(v.global_position.x - v.bed_spot.x, v.global_position.z - v.bed_spot.z).length() if v.bed_spot != Vector3.INF else -1.0, 0.1), " spot=", v._act_spot == v.bed_spot, " marche=", snappedf(v._act_walk, 0.1), " coincé=", snappedf(v._act_stuck, 0.1), " menace=", v._threat != null, " vivant=", v.is_alive(), " ordre=", v._order != null)
+			print("   ", v.villager_name, " lit=", v.bed_kind, " dort=", v.is_sleeping(), " dist=", snappedf(Vector2(v.global_position.x - v.bed_spot.x, v.global_position.z - v.bed_spot.z).length() if v.bed_spot != Vector3.INF else -1.0, 0.1), " dy=", snappedf(v.global_position.y - v.bed_spot.y if v.bed_spot != Vector3.INF else 0.0, 0.01), " couché=", v.visual.is_downed(), " spot=", v._act_spot == v.bed_spot, " marche=", snappedf(v._act_walk, 0.1), " coincé=", snappedf(v._act_stuck, 0.1), " menace=", v._threat != null, " vivant=", v.is_alive(), " ordre=", v._order != null)
 		var sleepers := villagers().filter(func(v): return v.is_sleeping())
 		print("   endormis : ", sleepers.size(), " / ", villagers().size(), " activités ", villagers().map(func(v): return v.activity))
 		check("la nuit, tous dorment sauf le garde (%d)" % sleepers.size(), sleepers.size() == villagers().size() - 1 and not guard.is_sleeping())

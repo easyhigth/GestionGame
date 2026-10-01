@@ -54,6 +54,7 @@ var kingdom_panel: KingdomPanel
 var diplomacy_panel: DiplomacyPanel
 var achievements_panel: AchievementsPanel
 var heraldry_panel: HeraldryPanel
+var keys_help: KeysHelp
 var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
 var trade: Trade
@@ -630,6 +631,8 @@ func _update_health() -> void:
 
 
 func _process(delta: float) -> void:
+	if _fps_label and _fps_label.visible:
+		_fps_label.text = "%d IPS" % Engine.get_frames_per_second()
 	# en construction, l'interface de construction remplace l'aide et la compétence
 	if player:
 		var b := player.building
@@ -717,6 +720,22 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## Affiche ou cache l'aide des touches (option).
+var _fps_label: Label
+
+
+func set_fps_visible(on: bool) -> void:
+	if _fps_label == null and on:
+		_fps_label = Label.new()
+		_fps_label.add_theme_font_size_override("font_size", 12)
+		_fps_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		_fps_label.add_theme_constant_override("outline_size", 4)
+		_fps_label.position = Vector2(8, 2)
+		_fps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_fps_label)
+	if _fps_label:
+		_fps_label.visible = on
+
+
 func set_help_visible(on: bool) -> void:
 	if info:
 		info.visible = on
@@ -837,6 +856,7 @@ func _build_day_and_guide() -> void:
 		if ok:
 			show_feat("%s : réussi !" % WorldEvents.EVENTS[ev.id].name, Color("ffd24a")))
 	get_parent().add_child.call_deferred(wev)
+	set_fps_visible.call_deferred(bool(SaveGame.options.get("show_fps", false)))
 	var ach := Achievements.new()
 	ach.name = "Achievements"
 	ach.changed.connect(_update_health)
@@ -848,6 +868,8 @@ func _build_day_and_guide() -> void:
 	her.name = "Heraldry"
 	her.changed.connect(_update_health)
 	get_parent().add_child.call_deferred(her)
+	keys_help = KeysHelp.new()
+	add_child(keys_help)
 	heraldry_panel = HeraldryPanel.new()
 	heraldry_panel.player = player
 	add_child(heraldry_panel)
@@ -1017,4 +1039,4 @@ func show_message(text: String) -> void:
 
 func _refresh() -> void:
 	_update_health()
-	info.text = "Échap / Start : menu et commandes"
+	info.text = "Échap / Start : menu et commandes  ·  F2 : aide-mémoire des touches"
