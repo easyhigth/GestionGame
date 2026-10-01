@@ -60,6 +60,7 @@ var side_quests_state := {}
 var diplomacy_state := {}
 var events_state := {}
 var achievements_state := {}
+var heraldry_state := {}
 var _autosave_timer := 300.0
 
 
@@ -252,6 +253,9 @@ func save_game(slot: String) -> bool:
 	var ach := get_tree().get_first_node_in_group("achievements") as Achievements
 	if ach:
 		d.achievements = ach.export_state()
+	var her := get_tree().get_first_node_in_group("heraldry") as Heraldry
+	if her:
+		d.heraldry = her.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -391,6 +395,7 @@ func new_game() -> void:
 	diplomacy_state = {}
 	events_state = {}
 	achievements_state = {}
+	heraldry_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -553,6 +558,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if ach and not achievements_state.is_empty():
 		ach.import_state(achievements_state)
 		achievements_state = {}
+	heraldry_state = d.get("heraldry", {})
+	var her := get_tree().get_first_node_in_group("heraldry") as Heraldry
+	if her and not heraldry_state.is_empty():
+		her.import_state(heraldry_state)
+		heraldry_state = {}
 	familiars_state = d.get("familiars", {})
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam and not familiars_state.is_empty():

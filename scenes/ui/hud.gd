@@ -53,6 +53,7 @@ var _clock: Label
 var kingdom_panel: KingdomPanel
 var diplomacy_panel: DiplomacyPanel
 var achievements_panel: AchievementsPanel
+var heraldry_panel: HeraldryPanel
 var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
 var trade: Trade
@@ -843,6 +844,13 @@ func _build_day_and_guide() -> void:
 	achievements_panel = AchievementsPanel.new()
 	achievements_panel.player = player
 	add_child(achievements_panel)
+	var her := Heraldry.new()
+	her.name = "Heraldry"
+	her.changed.connect(_update_health)
+	get_parent().add_child.call_deferred(her)
+	heraldry_panel = HeraldryPanel.new()
+	heraldry_panel.player = player
+	add_child(heraldry_panel)
 	diplomacy_panel = DiplomacyPanel.new()
 	diplomacy_panel.player = player
 	add_child(diplomacy_panel)

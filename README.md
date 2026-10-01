@@ -340,6 +340,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Le terrain est calculé et affiché par morceaux de 16 m autour du héros (**View Distance**) : seuls les morceaux proches existent en 3D, avec leurs camps de monstres et leurs objets au sol. Un objet ramassé ne revient pas.
 - Plus on s'éloigne du village, plus les monstres sont forts : chaque zone a sa fourchette de niveaux (« Loup · Nv 3 ») et des camps d'élite (loup alpha, ogre des cimes, seigneur squelette, dryade corrompue, seigneur démon...).
 - Nouveaux monstres : slimes (bleu, acide, de magma), araignée géante, loup de givre, ours des neiges, scorpion géant, salamandre de feu, homme-lézard, harpie, ogre, esprit follet, fée sauvage, dryade corrompue, démons, seigneur squelette.
+- **Jungle d'émeraude** (régions chaudes et humides, niveaux 11 à 16) : palmiers, arbres géants à lianes, fougères, roches moussues et pluies fréquentes. Panthères d'ombre (on peut les monter une fois apprivoisées), grenouilles venimeuses, serpents géants, et le Serpent royal en camp d'élite. Au fond de son donjon-temple : **Xochitl, le Serpent à Plumes** (+3 attaque, +1,5 vie/s, +5 % d'expérience). Poissons : gardons, carpes, anguilles.
 - **Obélisques** : un par zone. Passe à côté pour l'activer, puis voyage vers n'importe quel obélisque activé depuis la carte. Celui du village est actif dès le départ.
 - **Carte** (M) : se dévoile là où tu passes, avec les noms et niveaux des zones découvertes, les obélisques, les entrées de donjon (vertes une fois vaincues) et ton royaume. Molette ou gâchettes : zoom. **Mini-carte** en haut à droite, avec le nom de la zone.
 - Un bandeau annonce chaque nouvelle zone (nom, région, niveaux) ; la découverte d'une zone donne de l'expérience.
@@ -355,7 +356,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
   - **invocation** : il appelle des monstres de sa région ;
   - **charge** : il fonce sur toi.
 - Sous la moitié de sa vie, le boss **enrage** : il frappe plus vite, lance ses pouvoirs plus souvent et en enchaîne parfois deux. Sa barre de vie s'affiche en bas de l'écran.
-- Les 8 boss : Grondebois le Roi Sanglier (prairie), Tissombre la Reine Araignée (forêt), le Slime Primordial (marais), Ankhar le Scorpion Empereur (désert), Brisemonts Roi des Ogres (montagnes), Givrecroc l'Ours Ancien (toundra), Sylvaëlle la Dryade Mère (bois enchanté), Ignarok Seigneur des Cendres (terres de cendres).
+- Les 9 boss : Grondebois le Roi Sanglier (prairie), Tissombre la Reine Araignée (forêt), le Slime Primordial (marais), Ankhar le Scorpion Empereur (désert), Brisemonts Roi des Ogres (montagnes), Givrecroc l'Ours Ancien (toundra), Sylvaëlle la Dryade Mère (bois enchanté), Xochitl le Serpent à Plumes (jungle d'émeraude), Ignarok Seigneur des Cendres (terres de cendres).
 - Boss vaincu : trésor (or, lingots, équipements rares), portail de sortie, beaucoup d'expérience, et ton héros **absorbe l'âme du boss** : un bonus permanent propre à chaque boss (**Boss Soul**, par exemple « Prédation du Slime Primordial : +2,5 vie/s »). L'entrée du donjon devient verte sur la carte (« Vaincu »).
 - Si tu tombes dans un donjon, tu te réveilles au village comme d'habitude. On ne peut pas construire dans un donjon.
 
@@ -396,10 +397,15 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Un événement dure jusqu'à la fin du lendemain, ou jusqu'à ce qu'il soit réglé.
 
 ## Succès et bestiaire (touche F1)
-- **111 succès** en 11 catégories : combat (victoires, 25 de chaque monstre), boss (les 8 boss), héros (niveaux, évolution, or), royaume (habitants, rangs), histoire (16 actes, quêtes des personnages), familiers, forge (renforcement, gemmes, runes), Brume, diplomatie (traités, capitulation, provinces), événements du monde, exploration (salles secrètes, Gardiens, obélisques, bestiaire complet).
+- **116 succès** en 11 catégories : combat (victoires, 25 de chaque monstre), boss (les 9 boss), héros (niveaux, évolution, or), royaume (habitants, rangs), histoire (16 actes, quêtes des personnages), familiers, forge (renforcement, gemmes, runes), Brume, diplomatie (traités, capitulation, provinces), événements du monde, exploration (salles secrètes, Gardiens, obélisques, bestiaire complet).
 - Chaque succès rapporte des points. **Titres** (affichés à côté du nom du héros) : Aventurier (50 points), Héros du royaume (150), Légende vivante (300), Mythe éternel (500), et des titres de succès (Tueur de boss, Empereur, Maître de la Brume, Dompteur, Cartographe, Naturaliste...). **Auras** (lumière et étincelles autour du héros) bleue, dorée et violette à 150, 300 et 500 points. Titre et aura se choisissent dans le panneau.
-- **Bestiaire** : les 23 monstres du monde, découverts en les battant : victoires, vie, attaque, régions, butin et ressources rares (avec leurs chances).
+- **Bestiaire** : les 27 monstres du monde, découverts en les battant : victoires, vie, attaque, régions, butin et ressources rares (avec leurs chances).
 - Panneau : touche F1, ou « Succès et bestiaire » dans le menu pause. Tout est sauvegardé.
+
+## Bannière et trophées
+- Panneau du royaume (U) → **Bannière et trophées** : choisis le **nom du royaume** (affiché partout à la place du rang), ses **deux couleurs** (pourpre, azur, sinople, or, argent, sable, orangé, violet) et son **emblème** (couronne, étoile, épées, soleil, lune, fleur, tour, croix, cavalier, flocon).
+- Quatre **étendards** aux couleurs du royaume flottent autour du village ; on peut en poser d'autres (Artisanat → Mobilier → Étendard : 3 bois et 2 laines, près d'un établi). Ils changent dès qu'on modifie la bannière.
+- **L'allée des trophées** : chaque boss de donjon vaincu laisse une statue de pierre (sur un piédestal, avec son nom) autour du feu de camp.
 
 ## Diplomatie (touche Y)
 - Cinq nations voisines : **Horde de Karg** (orcs), **Cour de Sylvaë** (fées et dryades), **Sultanat des Sables** (hommes-lézards), **Jarls du Givre** (clans du nord), **Principauté des Cendres** (démons). Chacune a une relation de -100 à +100 et un caractère vers lequel elle revient peu à peu.

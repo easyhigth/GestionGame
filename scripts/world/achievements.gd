@@ -12,9 +12,10 @@ signal changed
 ## Monstres du bestiaire (fichiers de data/enemies), dans l'ordre d'affichage.
 const BESTIARY := ["slime_bleu", "slime_acide", "slime_magma", "gobelin_pillard", "loup", "loup_alpha", "loup_givre", "sanglier",
 	"araignee", "scorpion", "homme_lezard", "orc_brute", "ogre", "harpie", "ours_neige", "salamandre", "esprit_follet",
-	"fee_sauvage", "dryade_corrompue", "squelette", "seigneur_squelette", "demon", "seigneur_demon"]
+	"fee_sauvage", "dryade_corrompue", "squelette", "seigneur_squelette", "demon", "seigneur_demon",
+	"panthere", "grenouille", "serpent", "serpent_roi"]
 const BOSSES := {"prairie": "Grondebois", "foret": "Tissombre", "marais": "le Slime Primordial", "desert": "Ankhar",
-	"montagnes": "Brisemonts", "toundra": "Givrecroc", "bois_enchante": "Sylvaëlle", "volcan": "Ignarok"}
+	"montagnes": "Brisemonts", "toundra": "Givrecroc", "bois_enchante": "Sylvaëlle", "volcan": "Ignarok", "jungle": "Xochitl"}
 ## Récompenses selon les points : [points, titre, couleur de l'aura (ou null)].
 const REWARDS := [[50, "Aventurier", null], [150, "Héros du royaume", Color("6ad0ff")], [300, "Légende vivante", Color("ffd24a")],
 	[500, "Mythe éternel", Color("c48aff")]]
@@ -68,7 +69,7 @@ static func build_defs() -> Array:
 		d.append(_d("kill_" + id, "Chasseur : %s" % nm, "Vaincre 25 × %s." % nm, "Combat", "kill", 25, 5, id))
 	for r in BOSSES:
 		d.append(_d("boss_" + r, "Tombeur de %s" % BOSSES[r], "Vaincre le boss du donjon (%s)." % BOSSES[r], "Boss", "boss", 1, 10, r))
-	d.append(_d("boss_all", "Fléau des boss", "Vaincre les 8 boss des donjons.", "Boss", "boss_all", 8, 40, "", "Tueur de boss"))
+	d.append(_d("boss_all", "Fléau des boss", "Vaincre les %d boss des donjons." % BOSSES.size(), "Boss", "boss_all", BOSSES.size(), 40, "", "Tueur de boss"))
 	for lv in [5, 10, 15, 20, 25, 30, 40, 50]:
 		d.append(_d("level_%d" % lv, "Niveau %d" % lv, "Atteindre le niveau %d." % lv, "Héros", "level", lv, 5 if lv < 20 else (10 if lv < 40 else 20)))
 	d.append(_d("evo_hero", "Éveil", "Faire évoluer le héros.", "Héros", "hero_evo", 1, 10))
@@ -365,7 +366,7 @@ func bestiary_entry(id: String) -> Dictionary:
 		var it := Items.get_item(pair[0])
 		if it:
 			out.rare.append("%s (%.1f %%)" % [it.display_name, float(pair[1]) * 100.0])
-	for f in ["bois_enchante", "desert", "foret", "marais", "montagnes", "prairie", "toundra", "volcan"]:
+	for f in ["bois_enchante", "desert", "foret", "marais", "montagnes", "prairie", "toundra", "volcan", "jungle"]:
 		var r := load("res://data/regions/%s.tres" % f) as RegionData
 		if r == null:
 			continue

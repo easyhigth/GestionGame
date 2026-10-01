@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/creatures/snake_king.glb" id="r2"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="r3"]
+[ext_resource type="Resource" path="res://data/items/lingot_or.tres" id="r4"]
+[ext_resource type="Resource" path="res://data/items/or_brut.tres" id="r5"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Serpent royal"
+model = ExtResource("r2")
+model_scale = 1.2
+color = Color(1.000, 0.824, 0.290, 1)
+max_health = 420
+attack = 34
+defense = 9
+move_speed = 3.8
+aggro_range = 10
+leash_range = 20
+attack_range = 2.3
+attack_moves = PackedStringArray("bite", "charge_ram")
+attack_speed = 0.9
+poise = 110
+attack_cooldown = 1.0
+knockback = 8.0
+body_radius = 0.8
+loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r4"), ExtResource("r5")])
+loot_chances = PackedFloat32Array(1.0, 0.6, 0.6)
