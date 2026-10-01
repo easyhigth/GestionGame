@@ -249,6 +249,18 @@ func _refresh() -> void:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(600, 0)
 		_box.add_child(l)
+	# épidémie : soigner les malades
+	var wev := get_tree().get_first_node_in_group("world_events") as WorldEvents
+	if wev and not wev.sick().is_empty():
+		var why := wev.cure_block()
+		var cure_b := MenuKit.button("Soigner les malades (%d) : 1 soupe ou potion chacun" % wev.sick().size(), 460, 13)
+		cure_b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		cure_b.disabled = why != ""
+		cure_b.tooltip_text = why
+		cure_b.pressed.connect(func():
+			wev.cure()
+			_refresh())
+		_box.add_child(cure_b)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
