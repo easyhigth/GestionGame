@@ -67,6 +67,7 @@ var mounts: Mounts
 var familiars: Familiars
 var story_dialog: StoryDialog
 var journal: JournalPanel
+var mountain_caves: MountainCaves
 var fishing: Fishing
 var caves: UnderwaterCaves
 var _breath_box: Control
@@ -881,6 +882,11 @@ func _build_day_and_guide() -> void:
 	caves.world = world
 	caves.player = player
 	get_parent().add_child.call_deferred(caves)
+	mountain_caves = MountainCaves.new()
+	mountain_caves.name = "MountainCaves"
+	mountain_caves.world = world
+	mountain_caves.player = player
+	get_parent().add_child.call_deferred(mountain_caves)
 	add_child(FishingBar.new())
 	_build_breath()
 	livestock = Livestock.new()

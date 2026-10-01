@@ -20,7 +20,7 @@ signal obelisk_activated(zone: Dictionary)
 
 @export_group("Monde")
 ## Taille du monde en cases (1 case = 1 m).
-@export var world_size: Vector2i = Vector2i(640, 640)
+@export var world_size: Vector2i = Vector2i(1536, 1536)
 ## Taille (en mètres) d'une zone : le monde est découpé en zones d'environ cette taille.
 @export var zone_size: int = 128
 ## Distance d'affichage autour du héros (en morceaux de 16 m).
@@ -169,6 +169,8 @@ const UNDERGROUND := -40.0
 const SEA_FLOOR := -2.0
 ## Rayon (m) autour du héros dévoilé sur la carte.
 const REVEAL_RADIUS := 26
+## Amplitude des crêtes de montagne par région (0 : pas de grands sommets).
+const PEAKS := {"montagnes": 1.3, "toundra": 0.7, "volcan": 0.9}
 const GRAIN_SCALE := 1.0 / 0.8
 const GRAIN := preload("res://assets/environment/voxel_grain.png")
 
@@ -198,6 +200,7 @@ var _map_dirty := false
 var _map_timer := 0.0
 var _last_reveal := Vector3.INF
 var _warp_noise: FastNoiseLite
+var _ridge_noise: FastNoiseLite
 var _mesh_cache := {}
 var _terrain_nodes := {}   # morceau -> MeshInstance3D
 var _decor_nodes := {}     # morceau -> Node3D
@@ -280,6 +283,7 @@ func generate(seed_value: int) -> void:
 	height_noise.seed = seed_value
 	moisture_noise.seed = seed_value + 1
 	_warp_noise.seed = seed_value + 2
+	_ridge_noise.seed = seed_value + 3
 	_rng.seed = seed_value
 	clear()
 	_load_region_types()
@@ -297,6 +301,7 @@ func generate(seed_value: int) -> void:
 	_island_cache.clear()
 	_recruited.clear()
 	removed_props.clear()
+	opened_chests.clear()
 	decor_damage.clear()
 	prop_damage.clear()
 	_camp_cells.clear()
@@ -321,6 +326,31 @@ func generate(seed_value: int) -> void:
 		_build_structures()
 		reveal(focus, REVEAL_RADIUS + 10)
 	world_generated.emit(seed_value)
+
+
+const NAME_KINDS := {
+	"prairie": ["Prés", "Plaines", "Vallon", "Collines", "Champs", "Coteaux"],
+	"foret": ["Forêt", "Bois", "Futaie", "Sylve", "Hallier"],
+	"bois_enchante": ["Clairière", "Jardins", "Vallée", "Sylve", "Bosquets"],
+	"marais": ["Marais", "Tourbières", "Fondrières", "Marécages"],
+	"desert": ["Désert", "Dunes", "Erg", "Plateau", "Oasis"],
+	"montagnes": ["Pics", "Monts", "Cols", "Crêtes", "Hauts"],
+	"toundra": ["Toundra", "Glaciers", "Steppes", "Plaines gelées"],
+	"volcan": ["Terres", "Caldeira", "Coulées", "Brasiers"],
+	"jungle": ["Jungle", "Canopée", "Forêt vierge", "Mangroves"],
+}
+const NAME_START := ["Clair", "Mor", "Bel", "Haut", "Ros", "Fon", "Ver", "Aube", "Gris", "Sombre", "Or", "Lune",
+	"Brume", "Roc", "Val", "Ombre", "Givre", "Cendre", "Saule", "Ronce", "Aigle", "Loup", "Fer", "Étoile"]
+const NAME_END := ["val", "mont", "bois", "fleur", "combe", "lande", "pierre", "rive", "garde", "fosse", "croix",
+	"pré", "lac", "roche", "vent", "court", "brune", "ciel", "sang", "dor"]
+
+
+## Un nom de zone inventé : « Monts de Grisroche », « Dunes d'Orvent »...
+func _compose_name(region_id: String, rng: RandomNumberGenerator) -> String:
+	var kinds: Array = NAME_KINDS.get(region_id, ["Terres"])
+	var root: String = NAME_START[rng.randi() % NAME_START.size()] + NAME_END[rng.randi() % NAME_END.size()]
+	var de := "d'" if "AEÉIOUY".contains(root.substr(0, 1)) else "de "
+	return "%s %s%s" % [kinds[rng.randi() % kinds.size()], de, root]
 
 
 func _load_region_types() -> void:
@@ -409,8 +439,14 @@ func _make_zones() -> void:
 			if not used_names.has(cand):
 				nm = cand
 				break
-		if nm == "":
-			nm = "%s %d" % [t.display_name, zones.filter(func(o): return o.type == t).size()]
+		# monde immense : quand les noms de la région sont épuisés, on en compose de nouveaux
+		var tries := 0
+		while nm == "" or used_names.has(nm):
+			nm = _compose_name(t.id, zrng)
+			tries += 1
+			if tries > 40:
+				nm = "%s %d" % [t.display_name, zones.filter(func(o): return o.type == t).size()]
+				break
 		used_names[nm] = true
 		z.name = nm
 		# niveau : plus loin du village = plus fort
@@ -510,6 +546,11 @@ func _gen_chunk_data(ch: Vector2i) -> void:
 			var d := (Vector2(x, y) - center) / center
 			var edge := maxf(absf(d.x), absf(d.y))
 			var h := height_noise.get_noise_2d(x, y) * relief + bias - pow(edge, 4.0) * island_falloff + land_bias
+			# hautes montagnes : des crêtes qui montent très haut dans les régions de montagne
+			var peak := lerpf(float(PEAKS.get(r1.id if r1 else "", 0.0)), float(PEAKS.get(r2.id if r2 else "", 0.0)), f)
+			if peak > 0.0 and h > sand_level:
+				var ridge := 1.0 - absf(_ridge_noise.get_noise_2d(x, y))
+				h += peak * ridge * ridge * ridge * clampf((h - sand_level) * 4.0, 0.0, 1.0)
 			# îles au trésor, au large
 			var isl := _island_height(x, y)
 			if isl > h:
@@ -618,8 +659,9 @@ func _terrain_height(t: int, h: float) -> float:
 		SAND:
 			return 0.0
 		STONE:
+			# la roche monte deux fois plus vite par marches de 0,5 m (on peut gravir les pentes douces)
 			var top := step_height * (1.0 + floorf((stone_level - sand_level) / terrace_size))
-			return top + step_height * stone_step_multiplier * (1.0 + floorf((h - stone_level) / terrace_size))
+			return top + step_height * stone_step_multiplier * (1.0 + floorf((h - stone_level) / (terrace_size * 0.5)))
 	return step_height * (1.0 + floorf((h - sand_level) / terrace_size))
 
 
@@ -1653,6 +1695,13 @@ func _build_content(ch: Vector2i) -> void:
 			_add_obelisk(holder, z)
 		if _chunk_of(z.gate) == ch and (z.gate as Vector2i).x >= 0:
 			_add_gate(holder, z)
+	# châteaux et épaves : coffres, garnison ou morts-vivants
+	for st in structure_sites:
+		if st.kind != "castle" and st.kind != "wreck":
+			continue
+		var center: Vector2i = st.cell + (Vector2i(10, 10) if st.kind == "castle" else Vector2i(1, 6))
+		if _chunk_of(center) == ch:
+			_add_structure_content(holder, st, center)
 	# camp de monstres (un au plus par morceau)
 	var crng := RandomNumberGenerator.new()
 	crng.seed = hash(Vector3i(ch.x, ch.y, world_seed + 555))
@@ -1814,6 +1863,70 @@ func mark_recruited(v: Node) -> void:
 		_recruited[v.get_meta("recruit_key")] = true
 
 
+## Coffres ouverts dans le monde (châteaux, épaves) : identifiant -> vrai.
+var opened_chests := {}
+const GUARD_LINES := ["Halte ! ... Ah, un voyageur. Passe ton chemin en paix.", "Le seigneur reçoit dans le donjon.",
+	"Rien à signaler sur les remparts.", "On raconte que des morts rôdent dans les châteaux abandonnés.", "Belle journée pour monter la garde."]
+
+
+func _add_structure_content(holder: Node3D, st: Dictionary, center: Vector2i) -> void:
+	var z: Dictionary = zones[int(st.zone)]
+	var floor_y := float(st.get("base", roundi(terrain_height(center))))
+	var pos := Vector3(center.x + 0.5, floor_y, center.y + 0.5)
+	if st.kind == "wreck":
+		_add_chest(holder, st.id, "wreck", pos + Vector3(0, 1.0, 0))
+		return
+	if st.abandoned:
+		# château abandonné : les morts y montent la garde, le trésor dort dans le donjon
+		var camp := EnemyCamp.new()
+		camp.name = "MortsVivants"
+		var types: Array[EnemyData] = [load("res://data/enemies/squelette.tres"), load("res://data/enemies/squelette.tres"),
+			load("res://data/enemies/seigneur_squelette.tres")]
+		camp.enemy_types = types
+		camp.count = 5
+		camp.levels = Vector2i((z.level as Vector2i).y, (z.level as Vector2i).y + 2)
+		camp.base_level = 1
+		camp.radius = 7.0
+		holder.add_child(camp)
+		camp.global_position = pos + Vector3(0, 0, 5)
+		_add_chest(holder, st.id, "castle", pos)
+	else:
+		# château habité : une garnison et son seigneur
+		var race := load("res://data/races/humain.tres") as RaceData
+		for i in 4:
+			var g := Townsfolk.new()
+			g.name = "Garde_%d" % i
+			g.race = race
+			g.role = "guard"
+			g.kit = ["sword_iron", "iron_helmet", "cape_red"]
+			g.display_name = "Garde"
+			g.lines = GUARD_LINES
+			g.wander = 8.0
+			g.home = pos + Vector3([-6, 6, -6, 6][i], 0, [-4, -4, 6, 6][i])
+			holder.add_child(g)
+			g.global_position = g.home
+		var lord := Townsfolk.new()
+		lord.name = "Seigneur"
+		lord.race = race
+		lord.role = "lord"
+		lord.kit = ["cape_red"]
+		lord.display_name = "Seigneur de %s" % z.name
+		lord.color = Color("f2c86a")
+		lord.lines = ["Bienvenue en mes terres, voyageur.", "Mes gens vivent en paix derrière ces murs.", "Les morts-vivants hantent les forts abandonnés : méfie-t'en."]
+		lord.home = pos + Vector3(0, 0, 4.5)
+		holder.add_child(lord)
+		lord.global_position = lord.home
+
+
+func _add_chest(holder: Node3D, id: String, kind: String, pos: Vector3) -> void:
+	var c := WorldChest.new()
+	c.chest_id = id
+	c.kind = kind
+	c.opened = opened_chests.has(id)
+	holder.add_child(c)
+	c.global_position = pos
+
+
 func _add_camp(holder: Node3D, cell: Vector2i, z: Dictionary, crng: RandomNumberGenerator) -> void:
 	var r: RegionData = z.type
 	var camp := EnemyCamp.new()
@@ -1957,6 +2070,56 @@ func _plan_structures() -> void:
 				continue
 			_flatten_spot(mid, 4)
 			structure_sites.append({"kind": "house" if k == 0 else "ruin", "cell": c, "region": rid, "seed": rng.randi()})
+	# châteaux forts (environ une zone sur cinq, loin du village) et épaves échouées sur les côtes
+	for z in zones:
+		if float(z.dist) < 0.2:
+			continue
+		var rid: String = (z.type as RegionData).id if z.type else "prairie"
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([world_seed, int(z.id), 313])
+		if rng.randf() < 0.2:
+			var dir := Vector2.from_angle(rng.randf() * TAU)
+			var c := _find_site(Vector2i((z.site as Vector2) + dir * 36.0), z.id, 40)
+			var mid := c + Vector2i(10, 10)
+			var ok := c.x >= 10 and c.y >= 10 and c.x < world_size.x - 32 and c.y < world_size.y - 32
+			# tout le château sur la terre ferme
+			if ok:
+				for o in [Vector2i(0, 0), Vector2i(20, 0), Vector2i(0, 20), Vector2i(20, 20), Vector2i(10, 10), Vector2i(10, 0), Vector2i(0, 10), Vector2i(20, 10), Vector2i(10, 20)]:
+					if not _is_dry_area(c + o, 2):
+						ok = false
+						break
+			for other in [z.obelisk, z.gate]:
+				if ok and (other as Vector2i).x >= 0 and mid.distance_to(other) < 18.0:
+					ok = false
+			for st in structure_sites:
+				if ok and mid.distance_to(st.cell) < 26.0:
+					ok = false
+			if ok:
+				_flatten_spot(mid, 12)
+				var abandoned := rng.randf() < 0.55 or rid in ["volcan", "marais"]
+				structure_sites.append({"kind": "castle", "cell": c, "region": rid, "seed": rng.randi(), "abandoned": abandoned,
+					"id": "castle_%d" % int(z.id), "zone": int(z.id)})
+		if rng.randf() < 0.15:
+			var wc := _find_coast(Vector2i(z.site), int(z.id), 80)
+			if wc.x >= 0:
+				structure_sites.append({"kind": "wreck", "cell": wc, "region": rid, "seed": rng.randi(), "id": "wreck_%d" % int(z.id), "zone": int(z.id)})
+
+
+## Une plage de sable au bord de l'eau, près de `from` (dans la zone), pour une épave.
+func _find_coast(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
+	for r in range(6, max_r, 3):
+		for i in 24:
+			var a := TAU * i / 24.0
+			var c := from + Vector2i(roundi(cos(a) * r), roundi(sin(a) * r))
+			if not _inside(c) or c.x < 6 or c.y < 6 or c.x >= world_size.x - 16 or c.y >= world_size.y - 16:
+				continue
+			if _type(c) != SAND or _zone[_idx(c)] != zone_id:
+				continue
+			for d in [Vector2i(3, 0), Vector2i(-3, 0), Vector2i(0, 3), Vector2i(0, -3)]:
+				var t := _type(c + d)
+				if t == WATER or t == DEEP:
+					return c
+	return Vector2i(-1, -1)
 
 
 ## Pose les blocs de toutes les constructions du monde (une partie chargée les remplace ensuite
@@ -1964,13 +2127,35 @@ func _plan_structures() -> void:
 func _build_structures() -> void:
 	if build == null:
 		return
+	build.generating = true
 	for st in structure_sites:
 		var style: Dictionary = WorldStructures.STYLES.get(st.region, WorldStructures.STYLES.prairie)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = int(st.seed)
-		var plan: Dictionary = WorldStructures.house_plan(style) if st.kind == "house" else WorldStructures.ruin_plan(style, rng)
+		var plan: Dictionary
+		var broken := 0.0
+		match st.kind:
+			"house":
+				plan = WorldStructures.house_plan(style)
+				broken = 0.08
+			"ruin":
+				plan = WorldStructures.ruin_plan(style, rng)
+			"castle":
+				var mats: Array = WorldStructures.CASTLE_MATS.get(st.region, ["bloc_briques", "bloc_pierre_polie"])
+				plan = WorldStructures.castle_plan(21, 5, mats[0], mats[1])
+				broken = 0.22 if st.abandoned else 0.0
+				style = {}
+			"wreck":
+				plan = WorldStructures.shipwreck_plan(rng)
+				style = {}
 		_clear_decor_under(plan, st.cell)
-		WorldStructures.build(self, plan, st.cell, rng, 0.08 if st.kind == "house" else 0.0, style)
+		if st.kind == "castle":
+			# la cour aussi : pas d'arbres dans l'enceinte
+			for y in 21:
+				for x in 21:
+					_clear_decor_cell(st.cell + Vector2i(x, y))
+		WorldStructures.build(self, plan, st.cell, rng, broken, style)
+		st["base"] = WorldStructures.last_base
 	for z in zones:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash([world_seed, int(z.id), 91])
@@ -1982,18 +2167,23 @@ func _build_structures() -> void:
 			var op := WorldStructures.obelisk_plan()
 			_clear_decor_under(op, z.obelisk)
 			WorldStructures.build(self, op, z.obelisk, rng)
+	build.generating = false
+	build.changed.emit()
 
 
 func _clear_decor_under(plan: Dictionary, origin: Vector2i) -> void:
 	for k in plan:
-		var c := Vector2i(origin.x + k.x, origin.y + k.z)
-		if not _inside(c):
-			continue
-		_ensure_chunk_of(c)
-		if _decor[_idx(c)] != D_NONE:
-			_decor[_idx(c)] = D_NONE
-			if _decor_nodes.has(_chunk_of(c)):
-				_build_decor_chunk(_chunk_of(c))
+		_clear_decor_cell(Vector2i(origin.x + k.x, origin.y + k.z))
+
+
+func _clear_decor_cell(c: Vector2i) -> void:
+	if not _inside(c):
+		return
+	_ensure_chunk_of(c)
+	if _decor[_idx(c)] != D_NONE:
+		_decor[_idx(c)] = D_NONE
+		if _decor_nodes.has(_chunk_of(c)):
+			_build_decor_chunk(_chunk_of(c))
 
 
 # ---------------------------------------------------------------- carte
@@ -2070,13 +2260,20 @@ func export_state() -> Dictionary:
 		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0))])
 	return {
 		"seed": world_seed, "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
-		"removed_props": removed_props.keys(),
+		"removed_props": removed_props.keys(), "chests": opened_chests.keys(),
 		"revealed": Marshalls.raw_to_base64(_revealed.compress(FileAccess.COMPRESSION_ZSTD)),
 		"map": Marshalls.raw_to_base64(map_image.save_png_to_buffer()),
 	}
 
 
 func import_state(d: Dictionary) -> void:
+	opened_chests.clear()
+	for id in d.get("chests", []):
+		opened_chests[str(id)] = true
+	if is_inside_tree():
+		for c in get_tree().get_nodes_in_group("world_chests"):
+			c.opened = opened_chests.has(c.chest_id)
+			c._refresh()
 	for e in d.get("edits", []):
 		var c := Vector2i(int(e[0]), int(e[1]))
 		if not _inside(c):
@@ -2483,3 +2680,8 @@ func _ensure_noises() -> void:
 	if _warp_noise == null:
 		_warp_noise = FastNoiseLite.new()
 		_warp_noise.frequency = 0.012
+	if _ridge_noise == null:
+		# crêtes des grandes chaînes de montagnes
+		_ridge_noise = FastNoiseLite.new()
+		_ridge_noise.frequency = 0.011
+		_ridge_noise.fractal_octaves = 4

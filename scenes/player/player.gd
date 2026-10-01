@@ -1413,6 +1413,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		if cv and cv.try_interact(self):
 			get_viewport().set_input_as_handled()
 			return
+		var mcv := get_tree().get_first_node_in_group("mountain_caves")
+		if mcv and mcv.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
+		# un coffre du monde (château, épave), un habitant d'une ville ou d'un château
+		var wch := WorldChest.nearest(self)
+		if wch:
+			wch.open(self)
+			get_viewport().set_input_as_handled()
+			return
+		var tf := Townsfolk.nearest(self)
+		if tf:
+			tf.talk(self)
+			get_viewport().set_input_as_handled()
+			return
 		var s := nearest_stranger()
 		if s:
 			talk.emit(s)
