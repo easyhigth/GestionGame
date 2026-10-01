@@ -20,6 +20,8 @@ var shop: CityMerchant
 var trade_name := ""
 ## Quête de citadin (voir CityLife) : sa clé, et la marque au-dessus de lui (« ! » offre, « ? » à rendre).
 var quest_key := ""
+## Voyageurs des routes (voir RoadLife) : les points à suivre, dans l'ordre.
+var route: Array = []
 var _mark: Label3D
 var color := Color(0.95, 0.9, 0.8)
 var visual: VoxelCharacter
@@ -104,7 +106,25 @@ func _process(delta: float) -> void:
 	if w == null:
 		return
 	var vel := Vector3.ZERO
-	if role == "merchant" or role == "lord" or role == "innkeeper" or quest_key != "":
+	if not route.is_empty():
+		# en voyage : il suit la route
+		var tgt: Vector3 = route[0]
+		var dir := tgt - global_position
+		dir.y = 0.0
+		if dir.length() < 0.6:
+			route.pop_front()
+			if route.is_empty():
+				home = global_position
+		else:
+			dir = dir.normalized()
+			var moved := w.constrain_move(global_position, global_position + dir * SPEED * delta)
+			moved.y = w.support_height(moved, global_position.y + 0.6)
+			if moved.distance_to(global_position) < SPEED * delta * 0.2:
+				route.pop_front()    # bloqué : on vise le point suivant
+			global_position = moved
+			_facing = dir
+			vel = dir * SPEED
+	elif role == "merchant" or role == "lord" or role == "innkeeper" or quest_key != "":
 		# il reste à sa place et regarde le héros quand il approche
 		if d < 6.0:
 			var to := p.global_position - global_position

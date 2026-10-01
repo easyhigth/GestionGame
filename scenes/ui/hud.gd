@@ -71,6 +71,7 @@ var mountain_caves: MountainCaves
 var city_life: CityLife
 var console: CommandConsole
 var city_siege: CitySiege
+var road_life: RoadLife
 var fishing: Fishing
 var caves: UnderwaterCaves
 var _breath_box: Control
@@ -905,6 +906,11 @@ func _build_day_and_guide() -> void:
 	city_life.world = world
 	city_life.player = player
 	get_parent().add_child.call_deferred(city_life)
+	road_life = RoadLife.new()
+	road_life.name = "RoadLife"
+	road_life.world = world
+	road_life.player = player
+	get_parent().add_child.call_deferred(road_life)
 	city_siege = CitySiege.new()
 	city_siege.name = "CitySiege"
 	city_siege.world = world

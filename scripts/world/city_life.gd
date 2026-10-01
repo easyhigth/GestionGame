@@ -181,6 +181,11 @@ func _race(id: String) -> RaceData:
 
 
 func _name(nation: String, rng: RandomNumberGenerator) -> String:
+	return random_name(nation, rng)
+
+
+## Un prénom dans la langue d'une nation.
+static func random_name(nation: String, rng: RandomNumberGenerator) -> String:
 	var s: Array = SYLL.get(nation, SYLL.givre)
 	return str(s[0][rng.randi() % s[0].size()]) + str(s[1][rng.randi() % s[1].size()])
 
@@ -303,15 +308,15 @@ func _spawn(city: Dictionary) -> void:
 		inn.display_name = "Aubergiste"
 		inn.trade_name = "« %s »" % tv.name
 		inn.color = Color("ffb870")
-		var sign := Label3D.new()
-		sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		sign.text = "Taverne\n« %s »" % tv.name
-		sign.font_size = 40
-		sign.pixel_size = 0.008
-		sign.outline_size = 10
-		sign.modulate = Color("ffcf7a")
-		holder.add_child(sign)
-		sign.global_position = _ground(world_cell(city, tv.door)) + Vector3(0, 3.6, 0)
+		var plate := Label3D.new()
+		plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		plate.text = "Taverne\n« %s »" % tv.name
+		plate.font_size = 40
+		plate.pixel_size = 0.008
+		plate.outline_size = 10
+		plate.modulate = Color("ffcf7a")
+		holder.add_child(plate)
+		plate.global_position = _ground(world_cell(city, tv.door)) + Vector3(0, 3.6, 0)
 	# des citadins qui ont besoin d'aide (pas avec un ennemi)
 	if st != "guerre":
 		for k in QUEST_GIVERS:
@@ -649,19 +654,35 @@ func furnished_count(nation: String) -> int:
 
 # ---------------------------------------------------------------- quêtes des citadins
 
+## Le lieu d'une quête : une capitale (« nation:numéro ») ou un hameau (« hamlet:id »).
+## {name, nation, center, radius, seed} ou {}.
+func _place_of(key: String) -> Dictionary:
+	var head := key.get_slice(":", 0)
+	if head == "hamlet":
+		if world:
+			for st in world.structure_sites:
+				if st.kind == "hamlet" and st.id == key.get_slice(":", 1):
+					return {"name": st.name, "nation": st.nation, "center": st.cell, "radius": 16, "seed": int(st.seed)}
+		return {}
+	var city := _city(head)
+	if city.is_empty():
+		return {}
+	return {"name": city.name, "nation": head, "center": city.center, "radius": int(city.radius), "seed": int(city.seed)}
+
+
 func _quest(key: String) -> Dictionary:
 	var q: Dictionary = quests.get(key, {})
 	if not q.is_empty() and q.state == "done" and today() >= int(q.get("next_day", 0)):
 		quests.erase(key)
 		q = {}
 	if q.is_empty():
-		var nation := key.get_slice(":", 0)
-		var city := _city(nation)
+		var city := _place_of(key)
 		if city.is_empty():
 			return {}
+		var nation: String = city.nation
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash([key, today(), int(city.seed)])
-		if rng.randf() < 0.5:
+		if rng.randf() < 0.5 and Diplomacy.NATIONS.has(nation):
 			var wants: Array = Diplomacy.NATIONS[nation].wants
 			var wnt: Array = wants[rng.randi() % wants.size()]
 			var it := Items.get_item(wnt[0]) as ItemData
@@ -708,8 +729,8 @@ func quest_talk(p: Player, t: Node) -> String:
 	var q := _quest(key)
 	if q.is_empty():
 		return ""
-	var nation := key.get_slice(":", 0)
-	var city := _city(nation)
+	var city := _place_of(key)
+	var nation: String = city.get("nation", "")
 	var what := _quest_text(q, str(city.get("name", "")))
 	var out := ""
 	match str(q.state):
@@ -726,12 +747,12 @@ func quest_talk(p: Player, t: Node) -> String:
 				p.inventory.add(Items.get_item("piece_or"), int(q.gold))
 				p.gain_xp(int(q.xp))
 				var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
-				if dip and dip.states.has(nation) and not dip.at_war(nation):
+				if dip and nation != "" and dip.states.has(nation) and not dip.at_war(nation):
 					dip._add_rel(nation, 6.0)
 				q.state = "done"
 				q.next_day = today() + 1
 				Sound.ui("coins")
-				p.notify.emit("Quête réussie : +%d or, +%d XP, amitié avec %s." % [int(q.gold), int(q.xp), Diplomacy.NATIONS[nation].name])
+				p.notify.emit("Quête réussie : +%d or, +%d XP, amitié avec %s." % [int(q.gold), int(q.xp), Diplomacy.NATIONS.get(nation, {}).get("name", "tes voisins")])
 				out = "Merci, du fond du cœur ! Voici ta récompense."
 			else:
 				out = "Il me faut toujours %s (%d / %d)." % [what, int(q.progress) if q.type == "chasser" else p.inventory.count(Items.get_item(q.need)), int(q.count)]
@@ -754,7 +775,7 @@ func _on_enemy_died(pos: Vector3) -> void:
 		var q: Dictionary = quests[key]
 		if q.type != "chasser" or q.state != "active":
 			continue
-		var city := _city(key.get_slice(":", 0))
+		var city := _place_of(key)
 		if city.is_empty():
 			continue
 		var ctr: Vector2i = city.center

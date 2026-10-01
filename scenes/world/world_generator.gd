@@ -317,8 +317,10 @@ func generate(seed_value: int) -> void:
 	spawn_cell = _find_spawn(center)
 	_make_clearing(spawn_cell)
 	_plan_cities()
+	_plan_roads()
 	_place_sites()
 	_plan_structures()
+	_plan_hamlets()
 	_build_water()
 	_generated = true
 	var focus := cell_center(spawn_cell)
@@ -328,6 +330,7 @@ func generate(seed_value: int) -> void:
 		_build_village()
 		_build_structures()
 		_build_cities()
+		_build_bridges()
 		reveal(focus, REVEAL_RADIUS + 10)
 	world_generated.emit(seed_value)
 
@@ -1705,6 +1708,10 @@ func _build_content(ch: Vector2i) -> void:
 			_add_gate(holder, z)
 	# châteaux et épaves : coffres, garnison ou morts-vivants
 	for st in structure_sites:
+		if st.kind == "hamlet":
+			if _chunk_of(st.cell) == ch:
+				_add_hamlet_content(holder, st)
+			continue
 		if st.kind != "castle" and st.kind != "wreck":
 			continue
 		var center: Vector2i = st.cell + (Vector2i(10, 10) if st.kind == "castle" else Vector2i(1, 6))
@@ -1827,15 +1834,15 @@ func _add_travelers(holder: Node3D, cell: Vector2i, z: Dictionary, trng: RandomN
 	if campfire_scene:
 		var fire := campfire_scene.instantiate() as Node3D
 		node.add_child(fire)
-	var sign := Label3D.new()
-	sign.text = "Campement de voyageurs"
-	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sign.font_size = 44
-	sign.pixel_size = 0.008
-	sign.outline_size = 9
-	sign.modulate = Color("ffe0a0")
-	sign.position.y = 3.4
-	node.add_child(sign)
+	var plate := Label3D.new()
+	plate.text = "Campement de voyageurs"
+	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	plate.font_size = 44
+	plate.pixel_size = 0.008
+	plate.outline_size = 9
+	plate.modulate = Color("ffe0a0")
+	plate.position.y = 3.4
+	node.add_child(plate)
 	var r: RegionData = z.type
 	var races: Array = r.recruit_races if r and not r.recruit_races.is_empty() else villager_races
 	var n := trng.randi_range(1, 3)
@@ -2124,6 +2131,275 @@ func _castle_spot_ok(c: Vector2i, mid: Vector2i, z: Dictionary) -> bool:
 	return true
 
 
+# ---------------------------------------------------------------- routes et hameaux
+
+## Routes pavées entre le village et les capitales : [[case, case, ...], ...] (points tous les ROAD_STEP mètres).
+var roads: Array = []
+var _bridges: Array = []
+const ROAD_STEP := 6
+## Hameaux le long des routes : un tous les ~HAMLET_EVERY mètres de route.
+const HAMLET_EVERY := 170.0
+
+
+## Relie le village et les capitales (arbre couvrant le plus court) par des routes qui évitent l'eau
+## et les pentes raides (A* sur une grille de 6 m), puis les pave, les lisse et prévoit les ponts.
+func _plan_roads() -> void:
+	roads.clear()
+	_bridges.clear()
+	var nodes: Array = [spawn_cell]
+	for c in cities:
+		nodes.append(c.center)
+	if nodes.size() < 2:
+		return
+	# arbre couvrant minimal (Prim)
+	var linked := [0]
+	var edges: Array = []
+	while linked.size() < nodes.size():
+		var best := [-1, -1, INF]
+		for i in linked:
+			for j in nodes.size():
+				if j in linked:
+					continue
+				var d := Vector2(nodes[i] - nodes[j]).length()
+				if d < float(best[2]):
+					best = [i, j, d]
+		linked.append(best[1])
+		edges.append([nodes[best[0]], nodes[best[1]]])
+	for e in edges:
+		var path := _road_path(e[0], e[1])
+		if path.size() >= 2:
+			roads.append(path)
+			_pave(path)
+
+
+func _road_path(a: Vector2i, b: Vector2i) -> Array:
+	var S := ROAD_STEP
+	var start := Vector2i(a.x / S, a.y / S)
+	var goal := Vector2i(b.x / S, b.y / S)
+	var gw := world_size.x / S
+	var gh := world_size.y / S
+	var heap: Array = []
+	var came := {start: start}
+	var g := {start: 0.0}
+	var closed := {}
+	_heap_push(heap, [Vector2(start - goal).length(), 0, start])
+	var seq := 0
+	var found := false
+	while not heap.is_empty():
+		var cur: Vector2i = _heap_pop(heap)[2]
+		if closed.has(cur):
+			continue
+		closed[cur] = true
+		if cur == goal:
+			found = true
+			break
+		var hc := _h(cur * S)
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)]:
+			var n: Vector2i = cur + d
+			if n.x < 1 or n.y < 1 or n.x >= gw - 1 or n.y >= gh - 1 or closed.has(n):
+				continue
+			var cell := n * S
+			var t := _type(cell)
+			var step := Vector2(d).length()
+			var cost := step
+			if t == WATER or t == DEEP:
+				cost *= 7.0    # un pont, si vraiment il le faut
+			else:
+				var slope := absf(_h(cell) - hc) / (S * step)
+				cost *= 1.0 + slope * 40.0 + (25.0 if slope > 0.12 else 0.0)
+			# on traverse les capitales par leurs rues, pas au travers des murs : on passe au large sauf au but
+			var inside := city_at(Vector3(cell.x, 0, cell.y), 4.0)
+			if not inside.is_empty() and Vector2(cell - b).length() > float(inside.radius) + 6.0 and Vector2(cell - a).length() > float(inside.radius) + 6.0:
+				cost *= 20.0
+			var ng: float = float(g[cur]) + cost
+			if not g.has(n) or ng < float(g[n]):
+				g[n] = ng
+				came[n] = cur
+				seq += 1
+				_heap_push(heap, [ng + Vector2(n - goal).length(), seq, n])
+	if not found:
+		return []
+	var path: Array = [goal * S]
+	var c: Vector2i = goal
+	while c != start:
+		c = came[c]
+		path.push_front(c * S)
+	return path
+
+
+## Pave une route : 3 cases de large, hauteur lissée d'un point à l'autre (on y marche partout), ponts sur l'eau.
+func _pave(path: Array) -> void:
+	for i in path.size() - 1:
+		var a: Vector2i = path[i]
+		var b: Vector2i = path[i + 1]
+		var ha := _h(a)
+		var hb := _h(b)
+		var n := maxi(1, int(Vector2(b - a).length()))
+		for k in n + 1:
+			var t := float(k) / n
+			var p := Vector2(a).lerp(Vector2(b), t)
+			var hgt := snappedf(lerpf(ha, hb, t), step_height)
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					var c := Vector2i(roundi(p.x) + ox, roundi(p.y) + oy)
+					if not _inside(c):
+						continue
+					if not city_at(Vector3(c.x, 0, c.y), 0.0).is_empty():
+						continue    # les rues de la ville prennent le relais
+					if Vector2(c - spawn_cell).length() <= spawn_clearing_radius:
+						continue
+					_ensure_chunk_of(c)
+					var idx := _idx(c)
+					if _types[idx] == WATER or _types[idx] == DEEP:
+						_bridges.append(c)
+						continue
+					_decor[idx] = D_NONE
+					_types[idx] = PLAZA
+					if ha > SEA_FLOOR and hb > SEA_FLOOR:
+						_heights[idx] = maxf(hgt, 0.0)
+
+
+## Les ponts de planches au-dessus des rivières traversées par les routes.
+func _build_bridges() -> void:
+	if build == null or _bridges.is_empty():
+		return
+	build.generating = true
+	var plank := Items.get_item("bloc_planches")
+	var post := Items.get_item("bloc_rondins")
+	for c in _bridges:
+		build.place_block(Vector3i(c.x, -1, c.y), plank)
+	# des rambardes de rondins sur les bords
+	var set := {}
+	for c in _bridges:
+		set[c] = true
+	for c in _bridges:
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var n: Vector2i = c + d
+			var t := _type(n)
+			if not set.has(n) and (t == WATER or t == DEEP) and (c.x + c.y) % 2 == 0:
+				build.place_block(Vector3i(c.x, 0, c.y), post)
+				break
+	build.generating = false
+	build.changed.emit()
+
+
+## Vrai si la case est sur une route pavée (ou un pont).
+func on_road(cell: Vector2i) -> bool:
+	return _inside(cell) and _types[_idx(cell)] == PLAZA and city_at(Vector3(cell.x, 0, cell.y), 2.0).is_empty() \
+		and Vector2(cell - spawn_cell).length() > plaza_radius + 2
+
+
+## Hameaux : quelques maisons autour d'une petite place, au bord des routes, tous les ~170 m.
+func _plan_hamlets() -> void:
+	var n := 0
+	for path in roads:
+		var walked := HAMLET_EVERY * 0.6
+		for i in range(1, path.size() - 1):
+			walked += Vector2(path[i] - path[i - 1]).length()
+			if walked < HAMLET_EVERY:
+				continue
+			var a: Vector2i = path[i]
+			var dir := Vector2(path[i + 1] - path[i - 1]).normalized()
+			var side := Vector2(-dir.y, dir.x) * (1.0 if (i / 3) % 2 == 0 else -1.0)
+			var c := a + Vector2i(roundi(side.x * 15.0), roundi(side.y * 15.0))
+			if not _hamlet_spot_ok(c):
+				continue
+			walked = 0.0
+			var zid := _zone[_idx(c)]
+			var z: Dictionary = zones[zid]
+			var rid: String = (z.type as RegionData).id if z.type else "prairie"
+			var rng := RandomNumberGenerator.new()
+			rng.seed = hash([world_seed, c.x, c.y, 515])
+			_flatten_spot(c, 13)
+			var id := "hamlet_%d" % n
+			n += 1
+			var nearest := ""
+			var nd := INF
+			for city in cities:
+				var d := Vector2(c - (city.center as Vector2i)).length()
+				if d < nd:
+					nd = d
+					nearest = city.nation
+			var hname := "%s%s" % [NAME_START[rng.randi() % NAME_START.size()], NAME_END[rng.randi() % NAME_END.size()]]
+			structure_sites.append({"kind": "hamlet", "cell": c, "region": rid, "seed": rng.randi(), "id": id, "zone": zid,
+				"name": hname, "nation": nearest})
+			# ses maisons, au nord de la place (porte vers la place) et au sud
+			var count := rng.randi_range(4, 6)
+			for k in count:
+				var hx := -11 + (k % 3) * 8
+				var hz := -10 if k < 3 else 5
+				structure_sites.append({"kind": "house", "cell": c + Vector2i(hx, hz), "region": rid, "seed": rng.randi(), "hamlet": id})
+
+
+func _hamlet_spot_ok(c: Vector2i) -> bool:
+	if not _inside(c) or c.x < 20 or c.y < 20 or c.x >= world_size.x - 20 or c.y >= world_size.y - 20:
+		return false
+	if Vector2(c - spawn_cell).length() < 110.0 or not city_at(Vector3(c.x, 0, c.y), 60.0).is_empty():
+		return false
+	for o in [Vector2i(0, 0), Vector2i(-12, -10), Vector2i(12, -10), Vector2i(-12, 10), Vector2i(12, 10)]:
+		var t := _type(c + o)
+		if t == WATER or t == DEEP or t == PLAZA:
+			return false
+		if absf(_h(c + o) - _h(c)) > 2.5:
+			return false
+	for st in structure_sites:
+		if Vector2(c - (st.cell as Vector2i)).length() < (120.0 if st.kind == "hamlet" else 24.0):
+			return false
+	for z in zones:
+		if (z.obelisk as Vector2i).x >= 0 and Vector2(c - (z.obelisk as Vector2i)).length() < 16.0:
+			return false
+		if (z.gate as Vector2i).x >= 0 and Vector2(c - (z.gate as Vector2i)).length() < 16.0:
+			return false
+	return true
+
+
+## Les habitants d'un hameau : quelques villageois, un colporteur et le chef (qui a souvent une quête).
+func _add_hamlet_content(holder: Node3D, st: Dictionary) -> void:
+	var c: Vector2i = st.cell
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(st.seed)
+	var races: Array = CityPlans.CITIES.get(st.nation, {}).get("races", ["humain"])
+	var cl := get_tree().get_first_node_in_group("city_life")
+	var plate := Label3D.new()
+	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	plate.text = "Hameau de %s" % st.name
+	plate.font_size = 44
+	plate.pixel_size = 0.008
+	plate.outline_size = 10
+	plate.modulate = Color("f2dca0")
+	holder.add_child(plate)
+	plate.global_position = cell_center(c) + Vector3(0, 4.0, 0)
+	for k in 6:
+		var t := Townsfolk.new()
+		t.race = load("res://data/races/%s.tres" % races[rng.randi() % races.size()]) as RaceData
+		t.name = "Hameau_%d" % k
+		t.home = cell_center(c + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-3, 3)))
+		t.display_name = CityLife.random_name(st.nation, rng) if cl else "Villageois"
+		t.lines = ["Bienvenue à %s, voyageur." % st.name, "La route est longue jusqu'à la capitale.", "Méfie-toi des bandits sur les routes, la nuit."]
+		t.wander = 7.0
+		match k:
+			0:
+				t.role = "merchant"
+				t.trade_name = "Colporteur"
+				t.color = Color("ffe08a")
+				var trade := get_tree().get_first_node_in_group("trade") as Trade
+				if trade:
+					if not st.has("shop"):
+						st["shop"] = CityMerchant.new(trade, {"name": st.name, "nation": st.nation}, ["Épicier", "Herboriste", "Charpentier"][rng.randi() % 3], t.display_name, rng)
+					t.shop = st.shop
+					t.trade_name = "Colporteur (%s)" % (st.shop as CityMerchant).trade_name.to_lower()
+				t.home = cell_center(c + Vector2i(0, -2))
+			1:
+				t.display_name = "Chef " + t.display_name
+				t.color = Color("f2c86a")
+				t.quest_key = "hamlet:" + str(st.id)
+				t.home = cell_center(c + Vector2i(2, 1))
+		holder.add_child(t)
+		t.global_position = t.home
+		if t.quest_key != "" and cl:
+			cl._refresh_mark(t)
+
+
 # ---------------------------------------------------------------- capitales
 
 ## Les capitales des nations voisines (voir CityPlans) : {nation, name, center, base, radius, population, races,
@@ -2319,6 +2595,8 @@ func _build_structures() -> void:
 		return
 	build.generating = true
 	for st in structure_sites:
+		if st.kind == "hamlet":
+			continue    # ses maisons sont des sites « house » à part
 		var style: Dictionary = WorldStructures.STYLES.get(st.region, WorldStructures.STYLES.prairie)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = int(st.seed)

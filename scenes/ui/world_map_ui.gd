@@ -311,6 +311,12 @@ func _draw_places() -> void:
 			var c: Vector2i = st.cell + Vector2i(1, 6)
 			if world.is_revealed(c):
 				_wreck_icon(cell_to_screen(Vector2(c)))
+	for st in world.structure_sites:
+		if st.kind == "hamlet" and world.is_revealed(st.cell):
+			var q := cell_to_screen(Vector2(st.cell))
+			draw_colored_polygon(PackedVector2Array([q + Vector2(-4, 4), q + Vector2(-4, -1), q + Vector2(0, -5), q + Vector2(4, -1), q + Vector2(4, 4)]), Color("e8c890"))
+			if zoom >= 2.0:
+				_text_center(st.name, q + Vector2(0, -12), 10, Color("f2dca0"))
 	for city in world.cities:
 		var c: Vector2i = city.center
 		if not world.is_revealed(c):
