@@ -49,7 +49,8 @@ func _small(text: String, tip: String, disabled: bool, cb: Callable, width := 0.
 	b.disabled = disabled
 	b.pressed.connect(func():
 		cb.call()
-		_refresh())
+		if visible:
+			_refresh())
 	return b
 
 
@@ -114,13 +115,15 @@ func _row(dip: Diplomacy, id: String) -> Control:
 	var info := "Traités : " + (", ".join(PackedStringArray(tr)) if not tr.is_empty() else "aucun")
 	if dip.at_war(id):
 		info = "Armées repoussées : %d / %d" % [int(s.wins), Diplomacy.WINS_TO_SURRENDER]
+	if dip.annexed(id):
+		info = "Province : impôts tous les %d jours, colons tous les %d jours" % [Diplomacy.TAX_EVERY, Diplomacy.SETTLER_EVERY]
 	h1.add_child(MenuKit.label(info, 11, MenuKit.C_TEXT))
 	v.add_child(h1)
 	# ligne 2 : description, goûts, demande
 	var lk: Array = n.likes
 	var rq: Array = s.request
 	var line := "%s (%s). Aime : %s." % [n.text, n.people, Items.get_item(lk[0]).display_name]
-	if not rq.is_empty() and not dip.at_war(id):
+	if not rq.is_empty() and not dip.at_war(id) and not dip.annexed(id):
 		line += "  Demande : %d %s." % [int(rq[1]), Items.get_item(rq[0]).display_name]
 	var l2 := MenuKit.label(line, 10, MenuKit.C_DIM)
 	l2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -130,7 +133,10 @@ func _row(dip: Diplomacy, id: String) -> Control:
 	var h3 := HBoxContainer.new()
 	h3.add_theme_constant_override("separation", 6)
 	var acts := []
-	if dip.at_war(id):
+	if dip.annexed(id):
+		pass
+	elif dip.at_war(id):
+		acts.append(["siege", "⚔ Assiéger la capitale"])
 		acts.append(["peace", "Acheter la paix (%d or)" % dip.peace_price(id)])
 	else:
 		acts.append(["gift", "Présent : %d or" % Diplomacy.GIFT_GOLD])
@@ -143,8 +149,14 @@ func _row(dip: Diplomacy, id: String) -> Control:
 		acts.append(["war", "Guerre !"])
 	for a in acts:
 		var why := dip.block(id, a[0])
-		h3.add_child(_small(a[1], why if why != "" else a[1], why != "", dip.act.bind(id, a[0])))
-	v.add_child(h3)
+		var cb := dip.act.bind(id, a[0])
+		if a[0] == "siege":
+			cb = func():
+				close()
+				dip.start_siege(id)
+		h3.add_child(_small(a[1], why if why != "" else a[1], why != "", cb))
+	if not acts.is_empty():
+		v.add_child(h3)
 	return pc
 
 

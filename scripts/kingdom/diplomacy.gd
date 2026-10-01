@@ -10,6 +10,8 @@ extends Node
 ##    aussi la déclarer soi-même. En guerre, ses armées attaquent le village (raids) ; trois armées
 ##    repoussées : elle capitule et paie un tribut. On peut aussi acheter la paix.
 ## La relation revient doucement vers le caractère de la nation, un peu chaque jour.
+## Conquête : en guerre, on peut assiéger la capitale (voir DungeonManager.enter_siege). Champion vaincu :
+## la nation devient une province du royaume (impôts tous les 2 jours, colons de sa race, bonus pour le héros).
 
 signal changed
 signal war_declared(id: String, by_us: bool)
@@ -24,6 +26,14 @@ const CARAVAN_EVERY := 3
 const ALLY_GIFT_EVERY := 5
 const WINS_TO_SURRENDER := 3
 const TREATY_NAMES := {"paix": "Paix", "commerce": "Commerce", "alliance": "Alliance"}
+const TAX_EVERY := 2
+const SETTLER_EVERY := 5
+const SIEGE_MIN_LEVEL := 6
+## Bonus du héros pour chaque province.
+const PROVINCE_BONUS := {"attack": 2.0, "defense": 2.0}
+## Races des colons de chaque nation.
+const RACES := {"karg": ["orc", "gobelin", "hobgobelin"], "sylvae": ["fee", "dryade", "elfe"], "sables": ["homme_lezard", "insectoide"],
+	"givre": ["nain", "lycan"], "cendres": ["demon", "oni", "vampire"]}
 
 ## id -> nation. base : relation vers laquelle elle revient ; likes : [objet, nombre] qu'elle adore ;
 ## wants : ce qu'elle peut demander ; goods : ce que livrent ses caravanes ; army : raid en temps de guerre.
@@ -74,7 +84,8 @@ func _ready() -> void:
 
 func _fresh(id: String) -> Dictionary:
 	return {"rel": float(NATIONS[id].start), "war": false, "treaties": [], "wins": 0, "gift_day": -1,
-		"request": [], "req_day": 0, "last_caravan": 0, "last_gift": 0}
+		"request": [], "req_day": 0, "last_caravan": 0, "last_gift": 0,
+		"annexed": false, "last_tax": 0, "last_settler": 0}
 
 
 func _connect() -> void:
@@ -130,7 +141,17 @@ func _add_rel(id: String, v: float) -> void:
 	states[id].rel = clampf(rel(id) + v, -100.0, 100.0)
 
 
+func annexed(id: String) -> bool:
+	return bool(states[id].get("annexed", false))
+
+
+func provinces() -> Array:
+	return NATIONS.keys().filter(func(id): return annexed(id))
+
+
 func status(id: String) -> String:
+	if annexed(id):
+		return "Province"
 	if at_war(id):
 		return "En guerre"
 	if has_treaty(id, "alliance"):
@@ -146,7 +167,7 @@ func status(id: String) -> String:
 
 
 static func status_color(s: String) -> Color:
-	return {"En guerre": Color("ff5a4a"), "Hostile": Color("e0705a"), "Méfiante": Color("e8b070"),
+	return {"Province": Color("ffd24a"), "En guerre": Color("ff5a4a"), "Hostile": Color("e0705a"), "Méfiante": Color("e8b070"),
 		"Neutre": Color("d8d0c0"), "Amicale": Color("8ad66a"), "Alliée": Color("6ad0ff")}.get(s, Color.WHITE)
 
 
@@ -194,7 +215,17 @@ func _say(text: String) -> void:
 ## Pourquoi on ne peut pas faire l'action ("" si c'est possible).
 func block(id: String, action: String) -> String:
 	var s: Dictionary = states[id]
+	if annexed(id):
+		return "C'est ta province."
 	match action:
+		"siege":
+			if not at_war(id):
+				return "Il faut être en guerre."
+			if player and player.level < SIEGE_MIN_LEVEL:
+				return "Niveau %d requis pour mener un siège." % SIEGE_MIN_LEVEL
+			var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
+			if dm == null or dm.active:
+				return "Impossible depuis un donjon."
 		"gift", "like":
 			if at_war(id):
 				return "En guerre : elle refuse tes présents."
@@ -282,6 +313,64 @@ func act(id: String, action: String) -> bool:
 	return true
 
 
+## Part assiéger la capitale (le panneau est fermé avant).
+func start_siege(id: String) -> bool:
+	if block(id, "siege") != "":
+		return false
+	var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
+	dm.enter_siege(id)
+	return true
+
+
+## Le champion est tombé : la nation devient une province.
+func annex(id: String) -> void:
+	var s: Dictionary = states[id]
+	s.annexed = true
+	s.war = false
+	s.wins = 0
+	s.treaties = []
+	s.request = []
+	s.rel = 100.0
+	s.last_tax = today()
+	s.last_settler = today()
+	if player:
+		player.absorb_soul("province_" + id, PROVINCE_BONUS)
+		player.feat.emit("%s devient ta province !" % NATIONS[id].name, Color("ffd24a"))
+		player.notify.emit("Province annexée : impôts tous les %d jours, colons de temps en temps, +2 attaque et +2 défense." % TAX_EVERY)
+	# les autres nations craignent l'empire
+	for o in NATIONS:
+		if o != id and not annexed(o):
+			_add_rel(o, -5.0)
+	changed.emit()
+
+
+func _settler(id: String) -> void:
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if w == null or w.villager_scene == null:
+		return
+	var race_id: String = (RACES.get(id, ["humain"]) as Array).pick_random()
+	if not ResourceLoader.exists("res://data/races/%s.tres" % race_id):
+		return
+	var v := w.villager_scene.instantiate() as Villager
+	v.stranger = true
+	v.race = load("res://data/races/%s.tres" % race_id)
+	v.villager_name = Villager.NAMES[randi() % Villager.NAMES.size()]
+	v.level = randi_range(2, 4)
+	var jobs := Villager.JOBS.duplicate()
+	jobs.shuffle()
+	v.talents = {jobs[0]: randf_range(0.5, 0.75), jobs[1]: randf_range(0.2, 0.35)}
+	v.recruit_offer = {"items": [], "text": "Je viens de la province de %s. Le royaume est ma nouvelle maison : où dois-je m'installer ?" % NATIONS[id].name}
+	v.wander_radius = 2.0
+	v.set_meta("province", id)
+	w.get_node("Village").add_child(v)
+	var a := randf() * TAU
+	var pos := w.cell_center(w.spawn_cell) + Vector3(cos(a), 0, sin(a)) * 10.0
+	pos.y = w.ground_height_at(pos + Vector3(0, 3, 0))
+	v.global_position = pos
+	v.home = pos
+	_say("Un colon de la province de %s arrive au village (%s) : parle-lui (E)." % [NATIONS[id].name, v.villager_name])
+
+
 func declare_war(id: String, by_us: bool) -> void:
 	var s: Dictionary = states[id]
 	s.war = true
@@ -321,6 +410,14 @@ func new_day(d: int) -> void:
 	for id in NATIONS:
 		var s: Dictionary = states[id]
 		var n: Dictionary = NATIONS[id]
+		if annexed(id):
+			if d - int(s.last_tax) >= TAX_EVERY:
+				s.last_tax = d
+				_deliver(id, [["piece_or", 60]] + (n.goods as Array).slice(0, 2), "Impôts de la province de %s" % n.name)
+			if d - int(s.last_settler) >= SETTLER_EVERY:
+				s.last_settler = d
+				_settler(id)
+			continue
 		# la relation revient vers le caractère de la nation
 		if not at_war(id):
 			var base: float = n.base + (10.0 if has_treaty(id, "paix") else 0.0) + (10.0 if has_treaty(id, "alliance") else 0.0)
@@ -415,5 +512,8 @@ func import_state(d: Dictionary) -> void:
 		states[id].req_day = int(e.get("req_day", 0))
 		states[id].last_caravan = int(e.get("last_caravan", 0))
 		states[id].last_gift = int(e.get("last_gift", 0))
+		states[id].annexed = bool(e.get("annexed", false))
+		states[id].last_tax = int(e.get("last_tax", 0))
+		states[id].last_settler = int(e.get("last_settler", 0))
 	_day = int(d.get("day", -1))
 	changed.emit()

@@ -379,6 +379,8 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - **Traités** : paix (relation 0 : elle ne te déclarera jamais la guerre), commerce (20 : une caravane tous les 3 jours et de meilleurs prix chez le marchand), alliance (60, avec paix et commerce : un présent rare tous les 5 jours et un pillard de moins par raid).
 - **Guerre** : une nation hostile (-40 ou moins, sans paix) peut te la déclarer, ou tu la déclares toi-même (les autres nations n'aiment pas ça). Ses armées attaquent alors le village. Repousse-en 3 : elle capitule, signe la paix et paie un tribut. On peut aussi acheter la paix.
 - Panneau : touche Y, ou bouton « Diplomatie » du panneau du royaume (U).
+- **Conquête** : en guerre, à partir du niveau 6, le bouton « Assiéger la capitale » emmène le héros (et ses compagnons) devant la place forte de la nation. Trois vagues de soldats sortent du donjon, puis leur champion (Grukk le Brise-Remparts, Ysolde la Dryade-Reine, Ssarak Sultan des Sables, Fenrök le Loup du Jarl, Azhar Prince des Cendres). Le portail « Retraite » permet de lever le siège.
+- Champion vaincu : la nation devient une **province** (trésor de la capitale, +2 attaque et +2 défense pour le héros, impôts tous les 2 jours, un colon de sa race tous les 5 jours). Avec 3 provinces, ton royaume devient un **Empire**.
 
 ## Sauvegarde, menus et options
 - **3 emplacements de sauvegarde** et une **sauvegarde automatique** toutes les 5 minutes (désactivable). Menu pause > Sauvegarder ; écran titre > Continuer (la plus récente) ou Charger. Chaque emplacement affiche le héros, son niveau, le rang du royaume, la zone, le temps de jeu et la date.
