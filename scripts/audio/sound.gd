@@ -12,6 +12,8 @@ const MUSIC_DIR := "res://assets/audio/music/"
 const FADE := 1.6
 ## Distance au-delà de laquelle un bruitage 3D ne s'entend plus.
 const HEAR_DISTANCE := 32.0
+## Autour du village, on garde la musique « de chez soi ».
+const VILLAGE_RADIUS := 45.0
 
 var _streams := {}
 var _pool2d: Array[AudioStreamPlayer] = []
@@ -210,11 +212,28 @@ func _auto_music(player: Node3D) -> String:
 	# combat : un boss vivant tout près, ou un raid en cours
 	for b in get_tree().get_nodes_in_group("bosses"):
 		if b is Combatant and (b as Combatant).is_alive() and (b as Node3D).global_position.distance_to(player.global_position) < 30.0:
-			return "combat"
+			return "boss"
 	var rm := get_tree().get_first_node_in_group("raids")
 	if rm and rm.get("raid") is Dictionary and str(rm.raid.get("state", "")) == "active":
 		return "combat"
+	# donjons et grottes : thème souterrain
 	if player.global_position.y < WorldGenerator.UNDERGROUND:
-		return "night"
+		return "dungeon"
 	var dc := get_tree().get_first_node_in_group("day_cycle")
-	return "night" if dc and dc.is_night() else "day"
+	if dc and dc.is_night():
+		return "night"
+	return region_music(player)
+
+
+## De jour : le thème du village tout près de chez soi, sinon celui de la région traversée.
+func region_music(player: Node3D) -> String:
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if w == null:
+		return "day"
+	if player.global_position.distance_to(w.cell_center(w.spawn_cell)) < VILLAGE_RADIUS:
+		return "day"
+	var z := w.zone_at(player.global_position)
+	if z.is_empty() or z.type == null:
+		return "day"
+	var track := "region_" + (z.type as RegionData).id
+	return track if ResourceLoader.exists(MUSIC_DIR + track + ".wav") else "day"

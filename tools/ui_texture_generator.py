@@ -478,6 +478,73 @@ def icons():
 		save(img, "icon_%s.png" % name)
 
 
+# ---------------------------------------------------------------- blasons des nations
+
+CRESTS = {
+	# champ, champ sombre (partition), emblème, motif 12×12
+	"karg": ((200, 110, 60), (150, 70, 40), (30, 22, 18), [
+		"..........oo", ".........oWo", "....o...oWo.", "...oWo.oWo..", "..oWWWoWo...", ".oWWWWWo....",
+		"..oWWWoo....", "...ooo.o....", "......o.o...", ".....o...o..", "....o.....o.", "............"]),
+	"sylvae": ((70, 140, 70), (40, 100, 50), (242, 200, 106), [
+		".....oo.....", "....oWWo....", "...oWWWWo...", "..oWWoWWWo..", ".oWWWoWWWWo.", ".oWWWWoWWWo.",
+		"..oWWWWoWo..", "...oWWWWo...", "....ooWoo...", "......o.....", "......o.....", "............"]),
+	"sables": ((222, 180, 90), (180, 130, 60), (130, 40, 30), [
+		"......o.....", "..o...o...o.", "...o.ooo.o..", "....oWWWo...", "..ooWWWWWoo.", "....oWWWo...",
+		"...o.ooo.o..", "..o...o...o.", "......o.....", "............", "oooooooooooo", "............"]),
+	"givre": ((90, 150, 210), (50, 100, 170), (240, 248, 255), [
+		".....o......", "...o.o.o....", "....ooo.....", ".o..ooo..o..", "..o.ooo.o...", "ooooooooooo.",
+		"..o.ooo.o...", ".o..ooo..o..", "....ooo.....", "...o.o.o....", ".....o......", "............"]),
+	"cendres": ((90, 30, 30), (50, 18, 20), (255, 150, 50), [
+		".....o......", ".....oo.....", "....oWo..o..", "...oWWo.oo..", "..oWWWWoWo..", "..oWWYWWWo..",
+		".oWWYYYWWo..", ".oWYYYYYWo..", ".oWYYYYYWo..", "..oWYYYWo...", "...ooooo....", "............"]),
+}
+
+
+def crests():
+	"""Écu de chaque nation : champ parti en deux tons, bordure dorée, emblème au centre."""
+	w, h = 24, 28
+	for nid, (field, dark, emb, rows) in CRESTS.items():
+		img = new(w, h)
+		for y in range(h):
+			for x in range(w):
+				# forme d'écu : bords droits puis pointe en bas
+				half = w / 2.0
+				if y > 16:
+					t = (y - 16) / (h - 16)
+					if abs(x + 0.5 - half) > half * (1.0 - t * t) - 0.5:
+						continue
+				c = field if x < w // 2 else dark
+				px(img, x, y, c)
+		# contour et dorure
+		edge = []
+		for y in range(h):
+			for x in range(w):
+				if img.getpixel((x, y))[3] == 0:
+					continue
+				for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+					nx, ny = x + dx, y + dy
+					if nx < 0 or ny < 0 or nx >= w or ny >= h or img.getpixel((nx, ny))[3] == 0:
+						edge.append((x, y))
+						break
+		for (x, y) in edge:
+			px(img, x, y, GOLD if y < h // 2 else GOLD_MID)
+		for (x, y) in edge:
+			for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+				nx, ny = x + dx, y + dy
+				if 0 <= nx < w and 0 <= ny < h and img.getpixel((nx, ny))[3] > 0 and (nx, ny) not in edge:
+					px(img, nx, ny, GOLD_SHADOW)
+		# emblème (W : couleur de l'emblème, Y : cœur clair, o : contour sombre)
+		for j, line in enumerate(rows):
+			for i, ch in enumerate(line):
+				c = {"o": tuple(max(0, v - 90) for v in emb) if sum(emb) > 300 else OUTLINE[:3], "W": emb, "Y": (255, 230, 150)}.get(ch)
+				if c:
+					px(img, 6 + i, 7 + j, c)
+		# reflet
+		for y in range(3, 12):
+			px(img, 3, y, (255, 255, 255, 60))
+		save(img, "crest_%s.png" % nid)
+
+
 if __name__ == "__main__":
 	print("textures de l'interface ->", os.path.normpath(OUT))
 	panel_frame()
@@ -494,3 +561,4 @@ if __name__ == "__main__":
 	field()
 	portrait_frame()
 	icons()
+	crests()

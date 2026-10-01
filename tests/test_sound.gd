@@ -55,8 +55,13 @@ func _process(_d) -> bool:
 		var missing := names.filter(func(n): return snd._stream(snd.SFX_DIR, n) == null)
 		check("%d bruitages chargés" % (names.size() - missing.size()), missing.is_empty())
 		if not missing.is_empty(): print("   manquants : ", missing)
-		var mus := ["title", "day", "night", "combat"].filter(func(n): return snd._stream(snd.MUSIC_DIR, n, true) == null)
-		check("4 musiques chargées", mus.is_empty())
+		var all_mus := ["title", "day", "night", "combat", "dungeon", "boss"]
+		for r in ["foret", "marais", "desert", "montagnes", "toundra", "bois_enchante", "volcan", "jungle"]:
+			all_mus.append("region_" + r)
+		var mus := all_mus.filter(func(n): return snd._stream(snd.MUSIC_DIR, n, true) == null)
+		check("%d musiques chargées (régions, donjon, boss) %s" % [all_mus.size(), str(mus)], mus.is_empty())
+		var ui_missing := ["ui_close", "ui_page", "ui_hover"].filter(func(n): return snd._stream(snd.SFX_DIR, n) == null)
+		check("sons d'interface : parchemin, page, survol", ui_missing.is_empty())
 		var loop_s = snd._stream(snd.MUSIC_DIR, "day", true)
 		check("musique en boucle (%.1f s, fin %d)" % [loop_s.get_length(), loop_s.loop_end], loop_s is AudioStreamWAV and loop_s.loop_mode == AudioStreamWAV.LOOP_FORWARD and absi(loop_s.loop_end - int(loop_s.get_length() * loop_s.mix_rate)) < 2 and loop_s.loop_end > 22050 * 10)
 		check("bus Musique et Bruitages", AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("Sfx") >= 0)
@@ -75,6 +80,21 @@ func _process(_d) -> bool:
 		rm.raid = {"state": "active"}
 		check("raid en cours : musique de combat (%s)" % snd._auto_music(p), snd._auto_music(p) == "combat")
 		rm.raid = {}
+		# loin du village, dans une région : son thème
+		var keep: Vector3 = p.global_position
+		var target_zone := {}
+		for z in w.zones:
+			if z.type and z.type.id != "prairie" and ResourceLoader.exists(snd.MUSIC_DIR + "region_" + z.type.id + ".wav"):
+				target_zone = z
+				break
+		if not target_zone.is_empty():
+			dc.hour = 10.0
+			p.global_position = w.cell_center(target_zone.site)
+			check("région « %s » : musique %s" % [target_zone.type.id, snd._auto_music(p)], snd._auto_music(p) == "region_" + target_zone.type.id)
+			dc.hour = 21.0
+		p.global_position = keep + Vector3(0, -300, 0)
+		check("sous terre : musique du donjon (%s)" % snd._auto_music(p), snd._auto_music(p) == "dungeon")
+		p.global_position = keep
 		snd.forced_music = "combat"
 		dc.hour = 10.0
 	if wait(4200, "c"):

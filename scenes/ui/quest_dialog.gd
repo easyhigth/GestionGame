@@ -57,8 +57,15 @@ func _refresh() -> void:
 	var q := qb.quest_of(target) if qb else {}
 	var v = target
 	var friend := "  ·  ton ami" if int(v.friendship) >= QuestBoard.FRIEND_AT else ("  ·  quêtes réussies : %d / %d" % [v.friendship, QuestBoard.FRIEND_AT])
-	_box.add_child(MenuKit.title("%s (%s)" % [v.villager_name, v.race.display_name if v.race else "?"], 18))
-	_box.add_child(_label(VillageNeeds.mood_name(v.happiness) + friend, 11, VillageNeeds.mood_color(v.happiness)))
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	head.add_child(MenuKit.portrait(MenuKit.villager_portrait_id(v), 70))
+	var hv := VBoxContainer.new()
+	hv.alignment = BoxContainer.ALIGNMENT_CENTER
+	hv.add_child(MenuKit.heading("%s (%s)" % [v.villager_name, v.race.display_name if v.race else "?"], 17))
+	hv.add_child(_label(VillageNeeds.mood_name(v.happiness) + friend, 11, VillageNeeds.mood_color(v.happiness)))
+	head.add_child(hv)
+	_box.add_child(head)
 	if q.is_empty():
 		_box.add_child(_label("« Merci encore pour ton aide ! »", 13, MenuKit.C_DIM))
 		_buttons([["Fermer", close]])

@@ -45,12 +45,18 @@ func close_all() -> void:
 	for c in [hud.kingdom_panel, hud.achievements_panel, hud.journal, hud.map_ui, hud.talent_ui, hud.diplomacy_panel, hud.heraldry_panel]:
 		if c and c.visible and c.has_method("close"):
 			c.close()
+	if hud.talent_ui.visible:
+		hud.talent_ui.close_ui()
 	if inv_ui and inv_ui.visible:
 		inv_ui.close()
 	if pause and pause.visible:
 		pause.close()
 	if hud.story_dialog.visible:
 		hud.story_dialog._close("")
+	hud.journal._tab = "histoire"
+	for c in hud.get_children():
+		if c.get_script() and c.get_script().resource_path.ends_with("recruit_dialog.gd") and c.visible:
+			c.close()
 	get_root_paused_off()
 
 func get_root_paused_off() -> void:
@@ -86,6 +92,11 @@ func _process(_d) -> bool:
 		for b in AP.boss_entries():
 			if MK.portrait_texture(b[0]) == null: missing.append(b[0])
 		check("un portrait pour chaque créature et chaque boss %s" % str(missing), missing.is_empty())
+		for id in load("res://scripts/story/story_data.gd").NPCS:
+			if MK.portrait_texture("npc_" + id) == null: missing.append(id)
+		for n in ["karg", "sylvae", "sables", "givre", "cendres"]:
+			if UiTheme.tex("crest_" + n) == null: missing.append(n)
+		check("portraits des personnages et blasons des nations %s" % str(missing), missing.is_empty())
 		for n in ["heart", "sword", "shield", "magic", "food", "coin", "crown", "skull", "scroll", "star", "book", "compass"]:
 			if UiTheme.tex("icon_" + n) == null: missing.append(n)
 		check("icônes présentes", missing.is_empty())
@@ -108,6 +119,14 @@ func _process(_d) -> bool:
 			["journal", func(): hud.journal.open()],
 			["carte", func(): hud.map_ui.open()],
 			["talents", func(): hud.talent_ui.open()],
+			["personnages", func():
+				hud.journal._tab = "personnages"
+				hud.journal.open()],
+			["diplomatie", func(): hud.diplomacy_panel.open()],
+			["recrutement", func():
+				var v = get_nodes_in_group("villagers")[0]
+				for c in hud.get_children():
+					if c.get_script() and c.get_script().resource_path.ends_with("recruit_dialog.gd"): c.open(v)],
 			["dialogue", func(): hud.story_dialog.open_custom("test", {"pages": [["hero", "Le royaume s'éveille. Les voix du cristal murmurent au loin…"]], "choices": []}, null, func(_c): pass)],
 		]
 		start("s")
@@ -137,11 +156,11 @@ func get_root_paused() -> bool:
 
 func _end_shots() -> bool:
 	if later("t", 3000):
-		shot("11_titre.png")
+		shot("%02d_titre.png" % (steps.size() + 1))
 		change_scene_to_file("res://scenes/ui/character_creator.tscn")
 		start("c")
 	if later("c", 2500):
-		shot("12_creation.png")
+		shot("%02d_creation.png" % (steps.size() + 2))
 		print("RÉSULTAT : ", "tout est bon" if ok else "échec")
 		return true
 	return false

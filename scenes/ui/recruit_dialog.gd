@@ -96,7 +96,15 @@ func _refresh() -> void:
 		return
 	var v := target
 	var prisoner := v.has_meta("prisoner")
-	_box.add_child(_label("%s  ·  %s  ·  Niveau %d" % [v.villager_name, v.race.display_name if v.race else "?", v.level], 18, C_GOLD))
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	head.add_child(MenuKit.portrait(MenuKit.villager_portrait_id(v), 76))
+	var hv := VBoxContainer.new()
+	hv.alignment = BoxContainer.ALIGNMENT_CENTER
+	hv.add_child(MenuKit.heading(v.villager_name, 18))
+	hv.add_child(MenuKit.label("%s  ·  Niveau %d" % [v.race.display_name if v.race else "?", v.level], 12, C_DIM))
+	head.add_child(hv)
+	_box.add_child(head)
 	_box.add_child(_label("« %s »" % v.recruit_offer.get("text", "Je cherche un endroit où vivre."), 12, C_TEXT))
 	var tal := []
 	var keys := v.talents.keys()
