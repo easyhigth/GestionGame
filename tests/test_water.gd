@@ -254,7 +254,7 @@ func _process(_d) -> bool:
 		gd._check_state()
 		for i in 3: fi.caught.emit("gardon")
 		cv.chest_opened.emit("x")
-		check("chapitre 7 « L'eau » fini", gd.is_done())
+		check("chapitre 7 « L'eau » fini", gd.step >= 29 and gd.current_id() == "donjon")
 		root.get_node("SaveGame").save_game("3")
 		set_meta("opened", cv.opened.duplicate(true))
 		root.get_node("SaveGame").load_game("3")
