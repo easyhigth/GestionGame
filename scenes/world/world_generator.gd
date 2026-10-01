@@ -2186,7 +2186,7 @@ func _plan_cities() -> void:
 		var plan := CityPlans.plan(nation, rng)
 		var city := {"nation": nation, "name": info.name, "center": best, "radius": r, "population": int(info.population),
 			"races": info.races, "stalls": plan.stalls, "streets": plan.streets, "gates": plan.gates, "hall": plan.hall,
-			"seed": city_seed, "style": info.style}
+			"seed": city_seed, "style": info.style, "houses": plan.houses}
 		_shape_city(city, plan)
 		_city_plans[nation] = plan
 		cities.append(city)

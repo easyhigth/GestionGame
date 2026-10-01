@@ -9,7 +9,8 @@ extends RefCounted
 ## - Cendres : Minas Cendrys, à la façon de Minas Tirith (sept terrasses étagées, remparts, citadelle).
 ##
 ## Un plan : {"blocks": {Vector3i: id}, "relief": {Vector2i: hauteur en plus}, "stalls": [[Vector2i, métier]],
-## "streets": [Vector2i], "gates": [Vector2i], "hall": Vector2i, "radius": int}
+## "streets": [Vector2i], "gates": [Vector2i], "hall": Vector2i, "radius": int,
+## "houses": [[coin Vector2i, largeur, profondeur, sol, porte]] (palais compris quand c'est une maison)}
 ## Les clés sont relatives au centre de la ville ; y est compté depuis le sol de la ville (relief compris).
 ## Le relief monte en pentes de 0,25 m par case (on y marche) et reste plat, en mètres entiers, sous les maisons.
 
@@ -35,6 +36,10 @@ const TRADES := {
 	"Charpentier": ["bloc_planches", "bloc_rondins", "porte", "lit", "coffre", "lanterne"],
 	"Tisserand": ["cape_red", "laine", "leather"],
 }
+
+
+## Maisons du plan en cours (voir plan()).
+static var _houses: Array = []
 
 
 static func _put(out: Dictionary, k: Vector3i, id: String) -> void:
@@ -98,6 +103,7 @@ static func tower(out: Dictionary, c: Vector2i, r: int, h: int, base: int, mat: 
 ## Maison (coin bas-gauche `o`, taille w × d, h étages de murs), porte du côté `door` (0 sud, 1 nord, 2 est, 3 ouest).
 static func house(out: Dictionary, o: Vector2i, w: int, d: int, h: int, base: int, wall: String, post: String,
 		roof: String, window: String, door: int, roof_kind := "pitched") -> void:
+	_houses.append([o, w, d, base, door])
 	for y in h:
 		for x in w:
 			for z in d:
@@ -157,6 +163,7 @@ static func stall(out: Dictionary, c: Vector2i, base: int, post: String, roof: S
 static func plan(nation: String, rng: RandomNumberGenerator) -> Dictionary:
 	var info: Dictionary = CITIES[nation]
 	var out := {"blocks": {}, "relief": {}, "stalls": [], "streets": [], "gates": [], "hall": Vector2i.ZERO, "radius": int(info.radius)}
+	_houses = []
 	match String(info.style):
 		"edoras":
 			_edoras(out, rng)
@@ -168,6 +175,8 @@ static func plan(nation: String, rng: RandomNumberGenerator) -> Dictionary:
 			_isengard(out, rng)
 		"minas":
 			_minas(out, rng)
+	out.houses = _houses.duplicate()
+	_houses = []
 	return out
 
 

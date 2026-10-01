@@ -10,7 +10,7 @@ const ACTIVE_DISTANCE := 70.0
 var race: RaceData
 var kit: Array = []
 var display_name := ""
-## « citizen », « guard », « merchant », « lord ».
+## « citizen », « guard », « merchant », « lord », « innkeeper » (aubergiste).
 var role := "citizen"
 var lines: Array = []
 var home := Vector3.ZERO
@@ -18,6 +18,9 @@ var wander := 6.0
 ## Marchand : sa boutique (voir CityMerchant) et son métier affiché.
 var shop: CityMerchant
 var trade_name := ""
+## Quête de citadin (voir CityLife) : sa clé, et la marque au-dessus de lui (« ! » offre, « ? » à rendre).
+var quest_key := ""
+var _mark: Label3D
 var color := Color(0.95, 0.9, 0.8)
 var visual: VoxelCharacter
 var _target := Vector3.INF
@@ -61,7 +64,24 @@ func _ready() -> void:
 	_bubble.modulate = Color("fff2c8")
 	_bubble.visible = false
 	add_child(_bubble)
+	_mark = Label3D.new()
+	_mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_mark.font_size = 64
+	_mark.pixel_size = 0.01
+	_mark.outline_size = 12
+	_mark.position.y = 2.75
+	_mark.visible = false
+	add_child(_mark)
 	_wait = _rng.randf_range(0.0, 3.0)
+
+
+## Marque au-dessus de la tête (« » : aucune).
+func set_mark(text: String, col := Color("ffd24a")) -> void:
+	if _mark == null:
+		return
+	_mark.text = text
+	_mark.modulate = col
+	_mark.visible = text != ""
 
 
 func _world() -> WorldGenerator:
@@ -84,7 +104,7 @@ func _process(delta: float) -> void:
 	if w == null:
 		return
 	var vel := Vector3.ZERO
-	if role == "merchant" or role == "lord":
+	if role == "merchant" or role == "lord" or role == "innkeeper" or quest_key != "":
 		# il reste à sa place et regarde le héros quand il approche
 		if d < 6.0:
 			var to := p.global_position - global_position
@@ -128,6 +148,14 @@ func _pick_target(w: WorldGenerator) -> void:
 
 ## E : il parle (et un marchand montre ses marchandises).
 func talk(p: Player) -> void:
+	var cl := get_tree().get_first_node_in_group("city_life")
+	if (role == "innkeeper" or quest_key != "") and cl:
+		var to2 := p.global_position - global_position
+		to2.y = 0.0
+		if to2.length() > 0.1:
+			_facing = to2.normalized()
+		say(cl.inn(p, self) if role == "innkeeper" else cl.quest_talk(p, self))
+		return
 	if not lines.is_empty():
 		_bubble.text = str(lines[_rng.randi() % lines.size()])
 		_bubble.visible = true
@@ -140,6 +168,15 @@ func talk(p: Player) -> void:
 		var hud := get_tree().get_first_node_in_group("hud")
 		if hud and hud.has_method("open_city_shop"):
 			hud.open_city_shop(self)
+
+
+## Une bulle de paroles au-dessus de lui.
+func say(text: String) -> void:
+	if text == "":
+		return
+	_bubble.text = text
+	_bubble.visible = true
+	_bubble_left = 5.0
 
 
 ## L'habitant le plus proche du héros (à moins de 2,2 m), ou null.

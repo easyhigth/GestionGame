@@ -58,6 +58,7 @@ var weather_state := {}
 var livestock_state := {}
 var caves_state := {}
 var mountain_caves_state := {}
+var city_life_state := {}
 var story_state := {}
 var seasons_state := {}
 var mounts_state := {}
@@ -245,6 +246,9 @@ func save_game(slot: String) -> bool:
 	var mcv := get_tree().get_first_node_in_group("mountain_caves") as MountainCaves
 	if mcv:
 		d.mountain_caves = mcv.export_state()
+	var cl := get_tree().get_first_node_in_group("city_life")
+	if cl:
+		d.city_life = cl.export_state()
 	var sto := get_tree().get_first_node_in_group("story") as Story
 	if sto:
 		d.story = sto.export_state()
@@ -413,6 +417,7 @@ func new_game() -> void:
 	livestock_state = {}
 	caves_state = {}
 	mountain_caves_state = {}
+	city_life_state = {}
 	story_state = {}
 	seasons_state = {}
 	mounts_state = {}
@@ -626,6 +631,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if mcv and not mountain_caves_state.is_empty():
 		mcv.import_state(mountain_caves_state)
 		mountain_caves_state = {}
+	city_life_state = d.get("city_life", {})
+	var cl := get_tree().get_first_node_in_group("city_life")
+	if cl and not city_life_state.is_empty():
+		cl.import_state(city_life_state)
+		city_life_state = {}
 	livestock_state = d.get("livestock", {"animals": []})
 	var ls := get_tree().get_first_node_in_group("livestock") as Livestock
 	if ls:

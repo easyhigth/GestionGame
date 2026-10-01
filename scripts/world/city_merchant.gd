@@ -10,6 +10,8 @@ var trade_name := ""
 var city_name := ""
 var nation := ""
 var seller_name := ""
+## Jour du dernier réassort (le stock se renouvelle chaque semaine).
+var day := 0
 var _trade: Trade
 
 
@@ -28,6 +30,16 @@ func _init(trade: Trade, city: Dictionary, trade_id: String, seller: String, rng
 			continue
 		var n := rng.randi_range(4, 16) if it.max_stack > 1 else rng.randi_range(1, 2)
 		stock.append({"id": id, "n": n, "price": p, "cat": trade_id})
+
+
+func export_state() -> Dictionary:
+	return {"stock": stock, "sold": sold_count, "day": day}
+
+
+func import_state(d: Dictionary) -> void:
+	stock = (d.get("stock", stock) as Array).duplicate(true)
+	sold_count = (d.get("sold", {}) as Dictionary).duplicate()
+	day = int(d.get("day", day))
 
 
 func _dip() -> Diplomacy:
