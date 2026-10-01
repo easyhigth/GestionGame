@@ -2078,22 +2078,17 @@ func _plan_structures() -> void:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash([world_seed, int(z.id), 313])
 		if rng.randf() < 0.2:
-			var dir := Vector2.from_angle(rng.randf() * TAU)
-			var c := _find_site(Vector2i((z.site as Vector2) + dir * 36.0), z.id, 40)
-			var mid := c + Vector2i(10, 10)
-			var ok := c.x >= 10 and c.y >= 10 and c.x < world_size.x - 32 and c.y < world_size.y - 32
-			# tout le château sur la terre ferme
-			if ok:
-				for o in [Vector2i(0, 0), Vector2i(20, 0), Vector2i(0, 20), Vector2i(20, 20), Vector2i(10, 10), Vector2i(10, 0), Vector2i(0, 10), Vector2i(20, 10), Vector2i(10, 20)]:
-					if not _is_dry_area(c + o, 2):
-						ok = false
-						break
-			for other in [z.obelisk, z.gate]:
-				if ok and (other as Vector2i).x >= 0 and mid.distance_to(other) < 18.0:
-					ok = false
-			for st in structure_sites:
-				if ok and mid.distance_to(st.cell) < 26.0:
-					ok = false
+			var a0 := rng.randf() * TAU
+			var c := Vector2i(-1, -1)
+			var mid := c
+			var ok := false
+			for attempt in 8:
+				var dir := Vector2.from_angle(a0 + attempt * TAU / 8.0)
+				c = _find_site(Vector2i((z.site as Vector2) + dir * (30.0 + 6.0 * (attempt % 3))), z.id, 24)
+				mid = c + Vector2i(10, 10)
+				ok = _castle_spot_ok(c, mid, z)
+				if ok:
+					break
 			if ok:
 				_flatten_spot(mid, 12)
 				var abandoned := rng.randf() < 0.55 or rid in ["volcan", "marais"]
@@ -2103,6 +2098,22 @@ func _plan_structures() -> void:
 			var wc := _find_coast(Vector2i(z.site), int(z.id), 80)
 			if wc.x >= 0:
 				structure_sites.append({"kind": "wreck", "cell": wc, "region": rid, "seed": rng.randi(), "id": "wreck_%d" % int(z.id), "zone": int(z.id)})
+
+
+func _castle_spot_ok(c: Vector2i, mid: Vector2i, z: Dictionary) -> bool:
+	if c.x < 10 or c.y < 10 or c.x >= world_size.x - 32 or c.y >= world_size.y - 32:
+		return false
+	# tout le château sur la terre ferme
+	for o in [Vector2i(0, 0), Vector2i(20, 0), Vector2i(0, 20), Vector2i(20, 20), Vector2i(10, 10), Vector2i(10, 0), Vector2i(0, 10), Vector2i(20, 10), Vector2i(10, 20)]:
+		if not _is_dry_area(c + o, 2):
+			return false
+	for other in [z.obelisk, z.gate]:
+		if (other as Vector2i).x >= 0 and mid.distance_to(other) < 18.0:
+			return false
+	for st in structure_sites:
+		if mid.distance_to(st.cell) < 22.0:
+			return false
+	return true
 
 
 ## Une plage de sable au bord de l'eau, près de `from` (dans la zone), pour une épave.
