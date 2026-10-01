@@ -373,6 +373,15 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
 - Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
 
+## Événements du monde
+- Tous les 3 ou 4 jours (à partir du jour 3), un événement frappe le royaume, annoncé par un bandeau et suivi en haut de l'écran et dans le journal (O) :
+  - **Pluie d'étoiles** : 4 éclats lumineux tombent autour du village (mithril, cristal d'aube, gemmes, parfois de l'orichalque).
+  - **Invasion de la Brume** : une horde brumeuse attaque le village ; repoussée, elle laisse fragments de Brume, gemme et or.
+  - **Grand tournoi** : trois champions t'attendent près du feu de camp, l'un après l'autre. Victoire : or, gemme, lingots et +1 attaque.
+  - **Fête du royaume** : habitants plus heureux (+15) et visite du marchand.
+  - **Épidémie** : des habitants tombent malades (-20 bonheur) ; soigne-les dans le panneau du royaume (U), une soupe de légumes ou une potion de soin chacun.
+- Un événement dure jusqu'à la fin du lendemain, ou jusqu'à ce qu'il soit réglé.
+
 ## Diplomatie (touche Y)
 - Cinq nations voisines : **Horde de Karg** (orcs), **Cour de Sylvaë** (fées et dryades), **Sultanat des Sables** (hommes-lézards), **Jarls du Givre** (clans du nord), **Principauté des Cendres** (démons). Chacune a une relation de -100 à +100 et un caractère vers lequel elle revient peu à peu.
 - **Présents** (50 or, ou ce que la nation aime, une fois par jour) et **demandes** remplies (de l'or en échange) font monter la relation.

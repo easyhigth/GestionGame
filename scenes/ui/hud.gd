@@ -672,6 +672,9 @@ func _process(delta: float) -> void:
 		_raid_timer = 0.25
 		var rm := get_tree().get_first_node_in_group("raids") as RaidManager
 		_raid_label.text = rm.status_text() if rm else ""
+		var wev := get_tree().get_first_node_in_group("world_events") as WorldEvents
+		if _raid_label.text == "" and wev:
+			_raid_label.text = wev.status_text()
 	# la barre jaune rattrape doucement la rouge (on voit les dégâts reçus)
 	if _hp_lag and _hp_fill:
 		_hp_lag.size.x = move_toward(_hp_lag.size.x, _hp_fill.size.x, delta * 90.0)
@@ -820,6 +823,15 @@ func _build_day_and_guide() -> void:
 	var dip := Diplomacy.new()
 	dip.name = "Diplomacy"
 	get_parent().add_child.call_deferred(dip)
+	var wev := WorldEvents.new()
+	wev.name = "WorldEvents"
+	wev.started.connect(func(ev):
+		var info: Dictionary = WorldEvents.EVENTS[ev.id]
+		show_banner(info.name, info.text, info.color))
+	wev.ended.connect(func(ev, ok, _t):
+		if ok:
+			show_feat("%s : réussi !" % WorldEvents.EVENTS[ev.id].name, Color("ffd24a")))
+	get_parent().add_child.call_deferred(wev)
 	diplomacy_panel = DiplomacyPanel.new()
 	diplomacy_panel.player = player
 	add_child(diplomacy_panel)

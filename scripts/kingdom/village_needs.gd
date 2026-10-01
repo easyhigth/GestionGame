@@ -202,6 +202,10 @@ func _update(dt: float) -> void:
 	var se := get_tree().get_first_node_in_group("seasons")
 	if se and se.is_festival():
 		comfort += 12.0
+	# événements du monde (fête du royaume)
+	var wev := get_tree().get_first_node_in_group("world_events") as WorldEvents
+	if wev:
+		comfort += wev.happiness_bonus()
 	if _safety_left > 0.0:
 		_safety_left -= dt
 		if _safety_left <= 0.0:
@@ -246,6 +250,9 @@ func _update(dt: float) -> void:
 			reasons.append("pas de lit")
 		if _safety < 0.0:
 			reasons.append("a eu peur du raid")
+		if v.get_meta("malade", false):
+			target -= 20.0
+			reasons.append("malade")
 		# sous la pluie sans abri
 		if wet and not v.is_sheltered():
 			target -= 6.0

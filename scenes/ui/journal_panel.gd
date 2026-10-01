@@ -115,6 +115,11 @@ func _refresh() -> void:
 		_add_foot(_label(head, 13, Color("b8f0a0")))
 		for q in act:
 			_add_foot(_label("   ➤ %s (%s) : %s  ·  %s" % [q.title, Story.NPCS[q.npc].name, q.text, sq.progress_text(q)], 10, MenuKit.C_TEXT))
+	# événement du monde en cours
+	var wev := get_tree().get_first_node_in_group("world_events") as WorldEvents
+	if wev and wev.is_active():
+		var info: Dictionary = WorldEvents.EVENTS[wev.current.id]
+		_add_foot(_label("Événement : %s — %s" % [info.name, info.text], 12, info.color))
 	# fin de jeu : la Brume
 	var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
 	if dm and dm.brume_unlocked():
