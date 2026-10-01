@@ -163,8 +163,13 @@ func _process(_d) -> bool:
 		for e in get_nodes_in_group("enemy_units"):
 			e.remove_from_group("enemy_units")
 			e.queue_free()
-		var ev := InputEventAction.new(); ev.action = "interact"; ev.pressed = true
-		p._unhandled_input(ev)
+		# (E près du lit appelle dc.sleep() ; un voyageur ou un personnage tout proche passerait avant,
+		# on vérifie donc le lit puis on dort directement)
+		var grid = get_first_node_in_group("build_grid")
+		check("un lit à portée du héros", grid.furniture_near(p.global_position, 2.2).has("lit"))
+		var msg: String = dc.sleep()
+		print("   ", msg)
+		check("dormir accepté (« %s »)" % msg, msg.begins_with("Tu dors"))
 		set_meta("t5", Time.get_ticks_msec())
 	if has_meta("t5") and Time.get_ticks_msec() - int(get_meta("t5")) > 3000 and not has_meta("t5_done") and set_done("t5"):
 		check("réveil le matin (%.2f h), jour 2" % dc.hour, not dc.is_night() and dc.day == 2)
