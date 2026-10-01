@@ -76,6 +76,14 @@ func _process(_d) -> bool:
 			print("   %s (%s) : centre %s, sol %d m, %d blocs, %d étals, %d habitants" % [c.name, c.nation, c.center, c.base, c.blocks, c.stalls.size(), c.population])
 			check("%s est bâtie en blocs (%d)" % [c.name, c.blocks], int(c.blocks) > 2500)
 		check("les cinq capitales existent (%d)" % cities.size(), cities.size() == 5)
+		var in_pref := 0
+		for c in cities:
+			var z = w.zone_at(Vector3(c.center.x, 0, c.center.y))
+			var rid: String = z.type.id if not z.is_empty() and z.type else "?"
+			var prefs: Array = load("res://scripts/world/city_plans.gd").CITIES[c.nation].regions
+			print("   %s : région %s (préférées %s)" % [c.name, rid, prefs])
+			if rid in prefs: in_pref += 1
+		check("les capitales dans les régions de leur peuple (%d / 5)" % in_pref, in_pref >= 4)
 		check("des milliers d'habitants (%d)" % pop, pop >= 3000)
 		var far := true
 		for c in cities:

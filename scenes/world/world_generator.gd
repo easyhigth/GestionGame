@@ -2446,7 +2446,7 @@ func _plan_cities() -> void:
 						far = false
 				if not far:
 					continue
-				var site := _city_site_quality(c, r + 6)
+				var site := _city_site_quality(c, r + 6, pref == 0)
 				if site.x < 0.0:
 					continue
 				var score := (40.0 if pref == 0 else (30.0 if pref > 0 else 0.0)) - site.y * 0.5 - absf(float(z.dist) - 0.6) * 4.0 \
@@ -2469,7 +2469,7 @@ func _plan_cities() -> void:
 
 
 ## x : -1 si l'endroit ne convient pas (trop d'eau ou de relief) ; y : sa pénalité (relief, part d'eau).
-func _city_site_quality(c: Vector2i, r: int) -> Vector2:
+func _city_site_quality(c: Vector2i, r: int, lenient := false) -> Vector2:
 	var lo := INF
 	var hi := -INF
 	var wet := 0
@@ -2486,7 +2486,8 @@ func _city_site_quality(c: Vector2i, r: int) -> Vector2:
 				continue
 			lo = minf(lo, _h(cell))
 			hi = maxf(hi, _h(cell))
-	if n == 0 or wet > n * 0.2 or hi - lo > 30.0:
+	# dans la région préférée de la nation, on accepte un terrain plus difficile (la ville le façonne)
+	if n == 0 or wet > n * (0.4 if lenient else 0.2) or hi - lo > (36.0 if lenient else 30.0):
 		return Vector2(-1, 0)
 	# la ville comble l'eau de son emprise, mais mieux vaut peu d'eau et peu de relief
 	return Vector2(1, hi - lo + 60.0 * wet / n)

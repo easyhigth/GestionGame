@@ -15,6 +15,9 @@ const COMMANDS := {
 	"donner": ["/donner <objet> [nombre]", "ajoute un objet au sac (identifiant ou nom, ex. /donner épée en fer)"],
 	"or": ["/or <nombre>", "ajoute des pièces d'or"],
 	"soin": ["/soin", "vie et faim au maximum"],
+	"vol": ["/vol", "voler au-dessus du monde (Saut : monter, Creuser : descendre) ; encore une fois pour atterrir"],
+	"kit": ["/kit", "un équipement complet en mithril, des outils, des potions et de quoi manger"],
+	"invoquer": ["/invoquer <monstre> [nombre]", "fait apparaître des monstres devant toi (ex. /invoquer loup 3)"],
 	"dieu": ["/dieu", "invincible (encore une fois pour arrêter)"],
 	"vitesse": ["/vitesse <x>", "vitesse de marche multipliée (1 = normale, jusqu'à 10)"],
 	"niveau": ["/niveau <n>", "monte jusqu'au niveau n"],
@@ -27,7 +30,7 @@ const COMMANDS := {
 }
 const ALIASES := {"help": "aide", "map": "carte", "tp": "tp", "give": "donner", "heal": "soin", "god": "dieu",
 	"speed": "vitesse", "time": "heure", "weather": "meteo", "météo": "meteo", "kill": "tuer", "seed": "graine",
-	"clear": "effacer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp"}
+	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp"}
 const MAX_LINES := 14
 ## Temps de calcul accordé par image au dévoilement de la carte (le jeu reste fluide pendant ce temps).
 const REVEAL_BUDGET_USEC := 18000
@@ -244,6 +247,26 @@ func run(text: String) -> bool:
 			player.hunger = Player.HUNGER_MAX
 			_ok("Vie et faim au maximum.")
 			return true
+		"vol":
+			player.cheat_fly = not player.cheat_fly
+			if not player.cheat_fly:
+				player.airborne = true    # on retombe doucement
+				player.air_vy = 0.0
+			_ok("Tu t'envoles ! Saut : monter, Creuser : descendre." if player.cheat_fly else "Tu redescends sur terre.")
+			return true
+		"kit":
+			var given: Array = []
+			for pair in [["epee_mithril", 1], ["armure_mithril", 1], ["casque_mithril", 1], ["gantelets_mithril", 1], ["jambieres_mithril", 1],
+					["bouclier_hauterive", 1], ["pioche_fer", 1], ["hache_fer", 1], ["potion_soin", 10], ["potion_force", 3],
+					["pain", 20], ["viande_cuite", 10], ["torche", 10], ["bloc_planches", 64], ["bloc_pierre_polie", 64]]:
+				var it := Items.get_item(pair[0]) as ItemData
+				if it:
+					player.inventory.add(it, int(pair[1]))
+					given.append(it.display_name)
+			_ok("Kit d'aventurier : %s." % ", ".join(given))
+			return true
+		"invoquer":
+			return _cmd_summon(args)
 		"dieu":
 			player.cheat_god = not player.cheat_god
 			player.health.invulnerable = player.cheat_god
@@ -510,6 +533,55 @@ func _nearest_cave() -> Dictionary:
 		if not best.is_empty():
 			return best
 	return {}
+
+
+# ---------------------------------------------------------------- monstres
+
+func _cmd_summon(args: Array) -> bool:
+	if args.is_empty():
+		_err("Usage : /invoquer <monstre> [nombre]  (ex. /invoquer loup 3, /invoquer bandit)")
+		return false
+	var n := 1
+	if args.size() > 1 and str(args[-1]).is_valid_int():
+		n = clampi(int(args[-1]), 1, 20)
+		args = args.slice(0, args.size() - 1)
+	var q := _plain(" ".join(args))
+	var found := ""
+	var dir := DirAccess.open("res://data/enemies")
+	var ids: Array = []
+	if dir:
+		for f in dir.get_files():
+			if f.ends_with(".tres") or f.ends_with(".tres.remap"):
+				ids.append(f.trim_suffix(".remap").trim_suffix(".tres"))
+	for id in ids:
+		if _plain(id).replace("_", " ") == q:
+			found = id
+	if found == "":
+		for id in ids:
+			var d := load("res://data/enemies/%s.tres" % id) as EnemyData
+			if _plain(id).replace("_", " ").contains(q) or (d and _plain(d.display_name).contains(q)):
+				found = id
+				break
+	if found == "":
+		_err("Monstre inconnu : « %s »." % " ".join(args))
+		return false
+	var scene := load("res://scenes/enemies/enemy.tscn") as PackedScene
+	var data := load("res://data/enemies/%s.tres" % found) as EnemyData
+	var front := player.global_position + player.facing.normalized() * 5.0 if player.facing.length() > 0.1 else player.global_position + Vector3(0, 0, 5)
+	var parent: Node = world.get_node_or_null("Village") if world.get_node_or_null("Village") else world
+	for i in n:
+		var e := scene.instantiate() as Enemy
+		e.data = data
+		e.level = maxi(1, player.level)
+		e.power = 1.0 + 0.05 * e.level
+		parent.add_child(e)
+		var a := TAU * i / n
+		var p := front + Vector3(cos(a), 0, sin(a)) * (0.0 if n == 1 else 2.0)
+		p.y = world.support_height(p, player.global_position.y + 2.0)
+		e.global_position = p
+		e.home = p
+	_ok("%d × %s." % [n, data.display_name])
+	return true
 
 
 # ---------------------------------------------------------------- objets

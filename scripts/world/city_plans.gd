@@ -383,7 +383,8 @@ static func _minas(out: Dictionary, rng: RandomNumberGenerator) -> void:
 		var r := t * step
 		var base := (tiers - 1 - t) * 4
 		var gate := PI / 2.0 if t % 2 == 1 else -PI / 2.0
-		ring_wall(b, r, 4 + 2, base, "bloc_marbre_noir" if t > 3 else "bloc_pierre_polie", "bloc_pierre_polie", [gate])
+		# remparts blancs (comme Minas Tirith), créneaux de marbre noir aux couleurs des Cendres
+		ring_wall(b, r, 4 + 2, base, "bloc_pierre_polie", "bloc_marbre_noir", [gate])
 		out.gates.append(Vector2i(roundi(cos(gate) * r), roundi(sin(gate) * r)))
 	# rampes entre les terrasses, au droit des portes
 	for t in range(1, tiers):
@@ -412,7 +413,7 @@ static func _minas(out: Dictionary, rng: RandomNumberGenerator) -> void:
 			var c := Vector2i(roundi(cos(a) * r), roundi(sin(a) * r))
 			if t == 1 or absi(c.x) < 6:
 				continue    # la citadelle, et le passage des rampes
-			house(b, c - Vector2i(2, 2), 5, 5, 3, base, "bloc_pierre_polie" if t < 4 else "bloc_marbre_noir", "bloc_briques",
+			house(b, c - Vector2i(2, 2), 5, 5, 3, base, "bloc_pierre_polie" if t % 2 == 0 else "bloc_marbre", "bloc_briques",
 				"bloc_ardoise", "bloc_verre", rng.randi() % 4, "steps")
 		for i in 12:
 			var a := TAU * i / 12.0

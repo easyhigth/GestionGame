@@ -124,6 +124,8 @@ var xp := 0
 ## Terminal de commandes : vitesse multipliée (/vitesse) et invincibilité (/dieu).
 var cheat_speed := 1.0
 var cheat_god := false
+## /vol : on vole au-dessus du monde (Saut : monter, Creuser : descendre), à travers tout.
+var cheat_fly := false
 ## En mode construction (les clics servent à construire, pas à frapper).
 var building := false
 ## Compétence unique (peut être null).
@@ -1215,6 +1217,9 @@ func in_water() -> bool:
 func _move_on_ground(delta: float) -> void:
 	if _world == null:
 		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+	if cheat_fly and _world:
+		_fly_move(delta)
+		return
 	# en barque : on glisse sur l'eau
 	var mo := _mounts_node()
 	if mo and mo.sail_move(delta):
@@ -1233,6 +1238,31 @@ func _move_on_ground(delta: float) -> void:
 		if top > -INF and not airborne:
 			global_position.y = floor_h
 	_update_breath(delta, top)
+
+
+## /vol : on traverse tout, à 2,5 fois la vitesse de marche ; jamais sous le sol.
+func _fly_move(delta: float) -> void:
+	swimming = false
+	airborne = false
+	air_vy = 0.0
+	breath = BREATH_MAX
+	var vy := 0.0
+	if not ui_open:
+		if Input.is_action_pressed("jump"):
+			vy = 9.0
+		elif Input.is_action_pressed("dig"):
+			vy = -9.0
+	var to := global_position + Vector3(velocity.x, 0, velocity.z) * 2.5 * delta
+	to.y += vy * delta
+	var cell := _world.cell_at(to)
+	to.x = clampf(to.x, 1.0, _world.world_size.x - 1.0)
+	to.z = clampf(to.z, 1.0, _world.world_size.y - 1.0)
+	if to.y > WorldGenerator.UNDERGROUND:
+		to.y = maxf(to.y, _world.terrain_height(cell))
+	global_position = to
+	velocity = Vector3(velocity.x, 0, velocity.z)
+	if visual:
+		visual.airborne = vy != 0.0
 
 
 func _swim_move(delta: float, top: float, floor_h: float) -> void:

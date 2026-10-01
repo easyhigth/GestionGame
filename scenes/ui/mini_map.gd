@@ -55,6 +55,38 @@ func _draw() -> void:
 			var g := (Vector2(z.gate) + Vector2(0.5, 0.5) - src.position) * s
 			if rect.has_point(g):
 				draw_rect(Rect2(g - Vector2(3, 3), Vector2(6, 6)), Color("5ac84a") if z.get("cleared", false) else Color("c84a3a"))
+	# capitales, châteaux, hameaux et épaves déjà vus
+	for st in world.structure_sites:
+		var k: String = st.kind
+		if k != "castle" and k != "hamlet" and k != "wreck":
+			continue
+		var cc: Vector2i = st.cell + (Vector2i(10, 10) if k == "castle" else (Vector2i(1, 6) if k == "wreck" else Vector2i.ZERO))
+		if not world.is_revealed(cc):
+			continue
+		var q := (Vector2(cc) - src.position) * s
+		if not rect.has_point(q):
+			continue
+		match k:
+			"castle":
+				draw_rect(Rect2(q - Vector2(4, 3), Vector2(8, 7)), Color(0.6, 0.6, 0.62) if st.abandoned else Color("d8c8a8"))
+				draw_rect(Rect2(q - Vector2(4, 5), Vector2(2, 2)), Color(0.6, 0.6, 0.62) if st.abandoned else Color("d8c8a8"))
+				draw_rect(Rect2(q + Vector2(2, -5), Vector2(2, 2)), Color(0.6, 0.6, 0.62) if st.abandoned else Color("d8c8a8"))
+			"hamlet":
+				draw_colored_polygon(PackedVector2Array([q + Vector2(-3, 3), q + Vector2(-3, -1), q + Vector2(0, -4), q + Vector2(3, -1), q + Vector2(3, 3)]), Color("e8c890"))
+			"wreck":
+				draw_colored_polygon(PackedVector2Array([q + Vector2(-4, 0), q + Vector2(4, 0), q + Vector2(3, 3), q + Vector2(-3, 3)]), Color("8a5a32"))
+	for city in world.cities:
+		var cc: Vector2i = city.center
+		if not world.is_revealed(cc):
+			continue
+		var q := (Vector2(cc) - src.position) * s
+		var col: Color = Diplomacy.NATIONS.get(city.nation, {}).get("color", Color("ffd24a"))
+		var r := float(city.radius) * s
+		if rect.grow(r).has_point(q):
+			draw_arc(q, r, 0, TAU, 32, Color(col, 0.8), 1.5)
+			if rect.has_point(q):
+				draw_rect(Rect2(q - Vector2(5, 4), Vector2(10, 8)), Color("ffd24a"))
+				draw_string(UiTheme.font("body"), q + Vector2(-40, -10), city.name, HORIZONTAL_ALIGNMENT_CENTER, 80, 10, col.lightened(0.4))
 	var v := (Vector2(world.spawn_cell) + Vector2(0.5, 0.5) - src.position) * s
 	if rect.has_point(v):
 		draw_rect(Rect2(v - Vector2(4, 4), Vector2(8, 8)), Color("f2c86a"))

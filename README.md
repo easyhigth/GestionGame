@@ -390,7 +390,7 @@ Les cinq nations voisines (voir Diplomatie) ont chacune une capitale bâtie dans
 - **Lothëlia** (Cour de Sylvaë), façon Fondcombe : des terrasses de marbre blanc reliées par une longue rampe, des demeures claires aux toits de tuiles et la maison du seigneur sur la plus haute terrasse. 420 habitants.
 - **Qasr-Ammar** (Sultanat des Sables) : de hauts remparts de grès percés de quatre portes, des rues en damier bordées de maisons à toit plat, un grand bazar d'une douzaine d'étals et le palais au dôme doré. 900 habitants.
 - **Gor-Karath** (Horde de Karg), façon Isengard : une enceinte noire hérissée de pointes autour d'une tour noire de 40 m à quatre cornes, avec des huttes et des forges. 650 habitants.
-- **Minas Cendrys** (Principauté des Cendres), façon Minas Tirith : sept cercles étagés de 4 m chacun, un rempart par cercle avec sa porte alternativement d'un côté puis de l'autre, des rampes entre les niveaux et la tour blanche de la citadelle tout en haut (près de 50 m). On monte à pied de la grande porte jusqu'à la citadelle. 1 200 habitants.
+- **Minas Cendrys** (Principauté des Cendres), façon Minas Tirith : sept cercles étagés de 4 m chacun, un rempart blanc par cercle avec sa porte alternativement d'un côté puis de l'autre, des rampes entre les niveaux et la tour blanche de la citadelle tout en haut (près de 50 m). On monte à pied de la grande porte jusqu'à la citadelle. 1 200 habitants.
 
 Dans les rues :
 - À l'approche, la ville s'anime : une quarantaine de citadins des peuples de la nation flânent dans les rues, des gardes tiennent chaque porte et le souverain attend devant son palais (Jarl, Dame, Sultan, Chef de guerre, Prince). Ils disparaissent quand on s'éloigne, ce qui garde le jeu fluide. Un bandeau annonce la ville, sa population et ses marchands.
@@ -463,8 +463,20 @@ Dans les rues :
 - **Traités** : paix (relation 0 : elle ne te déclarera jamais la guerre), commerce (20 : une caravane tous les 3 jours et de meilleurs prix chez le marchand), alliance (60, avec paix et commerce : un présent rare tous les 5 jours et un pillard de moins par raid).
 - **Guerre** : une nation hostile (-40 ou moins, sans paix) peut te la déclarer, ou tu la déclares toi-même (les autres nations n'aiment pas ça). Ses armées attaquent alors le village. Repousse-en 3 : elle capitule, signe la paix et paie un tribut. On peut aussi acheter la paix.
 - Panneau : touche Y, ou bouton « Diplomatie » du panneau du royaume (U).
-- **Conquête** : en guerre, à partir du niveau 6, le bouton « Assiéger la capitale » emmène le héros (et ses compagnons) devant la place forte de la nation. Trois vagues de soldats sortent du donjon, puis leur champion (Grukk le Brise-Remparts, Ysolde la Dryade-Reine, Ssarak Sultan des Sables, Fenrök le Loup du Jarl, Azhar Prince des Cendres). Le portail « Retraite » permet de lever le siège.
-- Champion vaincu : la nation devient une **province** (trésor de la capitale, +2 attaque et +2 défense pour le héros, impôts tous les 2 jours, un colon de sa race tous les 5 jours). Avec 3 provinces, ton royaume devient un **Empire**.
+- **Conquête** : en guerre, à partir du niveau 6, le bouton « Assiéger la capitale » emmène le héros (et ses compagnons) **devant la grande porte de la vraie capitale**. Les habitants se barricadent, trois vagues de soldats sortent par la porte, puis le souverain (Gor, Chef de guerre de Karg ; Dame Lothaël ; le Sultan Ssarak-Ammar ; le Jarl Hrothgar ; Azhar, Prince des Cendres) attend devant son palais : il faut traverser la ville pour l'affronter (à Minas Cendrys, monter les sept cercles). S'éloigner de la ville lève le siège. Sur un monde sans capitale, le siège se joue dans une place forte souterraine, comme avant.
+- En guerre, des **soldats hostiles gardent les portes** de la capitale ennemie, et ses marchands refusent de commercer.
+- Souverain vaincu : la nation devient une **province**. Sa capitale arbore **ta bannière** (couleurs et emblème du royaume) aux portes et devant le palais, un **gouverneur** la dirige, ses marchands te font -25 % (et rachètent 25 % plus cher), et le **trésor de la capitale** attend devant le palais. La province donne aussi +2 attaque et +2 défense au héros, des impôts tous les 2 jours et un colon de sa race tous les 5 jours. Avec 3 provinces, ton royaume devient un **Empire**.
+
+## Villes vivantes, routes et hameaux
+- **Maisons meublées** : autour du héros, les maisons des capitales ont leurs lits, tables, chaises, tonneaux, coffres et lanternes (seules les plus proches sont meublées, pour garder le jeu fluide).
+- **Le jour et la nuit** : la nuit, le marché ferme, les rues se vident (une dizaine de passants), des torches s'allument le long des rues et des lanternes dans les maisons.
+- **Une taverne par ville** (« Le Sanglier d'or », « Le Dragon assoupi »...) : **E** auprès de l'aubergiste, le jour un repas chaud (5 or : faim rassasiée, un peu de vie), la nuit une chambre (12 or : on dort jusqu'au matin, repu).
+- **Quêtes des citadins** : dans chaque ville, deux citadins ont une demande (« ! ») : apporter ce que leur nation recherche, ou abattre des monstres autour de la ville. « ? » : c'est fait, la récompense (or, expérience, amitié avec la nation) t'attend. Une nouvelle demande le lendemain.
+- **Marchands** : leur stock est sauvegardé (ce qu'on a acheté ne revient pas) et se renouvelle chaque semaine.
+- **Routes pavées** : des routes relient ton village aux cinq capitales (plus de 2 km en tout). Elles évitent les pentes trop raides, sont lissées pour qu'on y marche partout et franchissent les rivières sur des ponts de planches.
+- **Hameaux** au bord des routes : quelques maisons en blocs autour d'une place, des villageois, un **colporteur** (épicier, herboriste ou charpentier) et un **chef** qui a souvent une quête. Ils apparaissent sur la carte et la mini-carte.
+- **Rencontres sur les routes** : on croise des **caravanes** (un marchand et ses gardes : E pour commercer), des **patrouilles** de la nation voisine, ou on tombe dans une **embuscade de bandits** (des bandits et leur chef, plus fréquente la nuit).
+- La **mini-carte** montre aussi les capitales (leur nom et leur enceinte), les châteaux, les hameaux et les épaves.
 
 ## Terminal de commandes (Entrée ou /)
 Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas à gauche. Le jeu continue pendant qu'on écrit ; la ligne se ferme après chaque commande et les réponses restent affichées quelques secondes. **Échap** referme, **↑ / ↓** rappellent les commandes précédentes, **Tab** complète le nom d'une commande. Les accents sont facultatifs.
@@ -486,6 +498,9 @@ Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas 
 | `/heure <0-24>`, `/meteo <clair, nuageux, pluie, orage, brouillard>` | l'heure et le temps |
 | `/obelisques` | active tous les obélisques (voyage rapide partout depuis la carte) |
 | `/tuer` | terrasse les monstres à moins de 30 m |
+| `/vol` | voler au-dessus du monde, à travers tout (Saut : monter, Creuser : descendre) ; encore une fois pour atterrir |
+| `/kit` | un équipement complet en mithril, des outils, des potions, à manger et des blocs |
+| `/invoquer <monstre> [nombre]` | fait apparaître des monstres devant toi (`/invoquer loup 3`, `/invoquer chef des bandits`) |
 | `/graine` | la graine du monde |
 
 La carte montre maintenant les **capitales** (avec leur enceinte et leur population), les **châteaux** (gris : abandonnés), les **épaves** et, en zoomant, les **entrées de grottes**. Sur le monde immense, les noms des zones apparaissent en zoomant.
@@ -505,7 +520,7 @@ La carte montre maintenant les **capitales** (avec leur enceinte et leur populat
 - Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
 
 ## Tests automatiques
-- Le dossier `tests/` contient 48 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
+- Le dossier `tests/` contient 51 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
 - Tout lancer : `GODOT=/chemin/vers/godot tests/run_tests.sh` (ou seulement quelques-uns : `tests/run_tests.sh save story`). Il faut l'éditeur Godot 4.7 ; sans écran, `xvfb-run` est utilisé automatiquement. Importer le projet une première fois : `godot --headless --editor --quit --path .`.
 - Le monde des tests est toujours le même (graine 4242, ou `TEST_SEED=...`). Les captures d'écran vont dans `tests/captures/`, les journaux dans `tests/logs/` (ignorés par git).
 - Un test réussi affiche `RÉSULTAT : tout est bon` sans erreur de script ; le lanceur fait le résumé et renvoie un code d'erreur si un test échoue.

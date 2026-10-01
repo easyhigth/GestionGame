@@ -69,7 +69,7 @@ func _process(_d) -> bool:
 		var g0: int = p.inventory.count(items.get_item("piece_or"))
 		check("/or 500", con.run("/or 500") and p.inventory.count(items.get_item("piece_or")) == g0 + 500)
 		check("/donner objet inconnu : refusé", not con.run("/donner licorne_magique"))
-		check("commande inconnue : refusée", not con.run("/voler"))
+		check("commande inconnue : refusée", not con.run("/danser"))
 		check("/tp 300 400", con.run("/tp 300 400") and absf(p.global_position.x - 300.5) < 1.0 and absf(p.global_position.z - 400.5) < 1.0)
 		check("/tp minas", con.run("/tp minas"))
 		var mc = w.cities.filter(func(c): return c.nation == "cendres")[0]
@@ -128,6 +128,26 @@ func _process(_d) -> bool:
 		var lv0: int = p.level
 		check("/niveau %d" % (lv0 + 3), con.run("/niveau %d" % (lv0 + 3)) and p.level == lv0 + 3)
 		check("/obelisques", con.run("/obelisques") and w.zones.all(func(z): return z.obelisk_on or (z.obelisk as Vector2i).x < 0))
+		var y0: float = p.global_position.y
+		set_meta("y0", y0)
+		check("/vol", con.run("/vol") and p.cheat_fly)
+		Input.action_press("jump")
+		start("fly")
+	if later("fly", 1000):
+		Input.action_release("jump")
+		check("en vol, on monte (%.1f m)" % (p.global_position.y - get_meta("y0", 0.0)), p.global_position.y - get_meta("y0", 0.0) > 4.0)
+		check("/vol : on atterrit", con.run("/vol") and not p.cheat_fly)
+		var n0: int = p.inventory.count(items.get_item("epee_mithril"))
+		check("/kit : équipement de mithril", con.run("/kit") and p.inventory.count(items.get_item("epee_mithril")) == n0 + 1)
+		var e0: int = get_nodes_in_group("enemy_units").size()
+		check("/invoquer loup 3", con.run("/invoquer loup 3"))
+		set_meta("e0", e0)
+		start("summ")
+	if later("summ", 300):
+		check("3 loups sont apparus", get_nodes_in_group("enemy_units").size() >= get_meta("e0") + 3)
+		check("/invoquer chef des bandits", con.run("/invoquer chef des bandits"))
+		check("/invoquer monstre inconnu : refusé", not con.run("/invoquer licorne"))
+		con.run("/tuer")
 		check("/lieux", con.run("/lieux"))
 		check("/pos", con.run("/pos"))
 		con.open("")
