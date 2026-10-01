@@ -1,6 +1,6 @@
 class_name KeysHelp
 extends PanelContainer
-## Aide-mémoire des touches (F2) : un petit cadre à droite de l'écran avec les touches principales,
+## Aide-mémoire des touches (F2) : un petit cadre à gauche de l'écran avec les touches principales,
 ## telles que le joueur les a réglées (fenêtre Commandes → Personnaliser).
 
 const SHOWN := [["move_up", "Avancer"], ["jump", "Sauter"], ["dash", "Roulade"], ["attack", "Frapper"], ["block", "Garde"],
@@ -21,7 +21,7 @@ func _ready() -> void:
 	add_child(v)
 	v.add_child(MenuKit.label("Touches (F2 : cacher)", 11, MenuKit.C_GOLD))
 	_grid = GridContainer.new()
-	_grid.columns = 2
+	_grid.columns = 4
 	_grid.add_theme_constant_override("h_separation", 10)
 	v.add_child(_grid)
 	hide()
@@ -34,7 +34,9 @@ func refresh() -> void:
 		_grid.add_child(MenuKit.label(KeyBindings.key_text(r[0]), 11, Color("fff2c8")))
 		_grid.add_child(MenuKit.label(r[1], 11, MenuKit.C_TEXT))
 	reset_size()
-	position = Vector2(get_viewport_rect().size.x - size.x - 10, get_viewport_rect().size.y * 0.5 - size.y * 0.5)
+	# à gauche, sous le guide (la droite est prise par la carte, l'horloge et l'histoire)
+	var vp := get_viewport_rect().size
+	position = Vector2(10, clampf(vp.y - size.y - 130.0, 285.0, vp.y))
 
 
 func toggle() -> void:

@@ -426,7 +426,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 
 ## Confort et options
 - **Touches configurables** : menu pause → Commandes → onglet **Personnaliser** : clique sur une touche puis appuie sur la nouvelle (Échap : annuler). Les conflits sont signalés ; « Touches par défaut » remet tout comme au départ. La souris et la manette gardent leurs boutons. Les touches choisies sont gardées dans `user://options.cfg` et s'affichent partout (onglets des commandes, aide-mémoire).
-- **Aide-mémoire** (F2) : un petit cadre à droite de l'écran avec les touches principales.
+- **Aide-mémoire** (F2) : un petit cadre à gauche de l'écran avec les touches principales.
 - **Qualité graphique** (Options) : basse, moyenne ou haute (ombres, distance d'affichage du monde, petite végétation au loin). **Images par seconde** : à afficher en haut à gauche.
 - Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
 
