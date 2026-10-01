@@ -3,6 +3,8 @@ var f := 0
 var p; var w; var items; var dc; var gd; var bm; var bo
 var s: Vector2i; var H := 0
 var ok := true
+## temps de jeu écoulé (ms) : les attentes ne dépendent pas de la vitesse de la machine
+var game_ms := 0.0
 
 func _initialize():
 	var h = load("res://scripts/hero/hero_profile.gd").new()
@@ -62,6 +64,7 @@ func plan(cat: int, tool: int, a: Vector2i, b: Vector2i, layer: int) -> void:
 	bm._commit_selection()
 
 func _process(_d) -> bool:
+	game_ms += _d * 1000.0
 	f += 1
 	if p: p._invulnerable_left = 5.0
 	if f == 8:
@@ -105,8 +108,8 @@ func _process(_d) -> bool:
 		plan(3, 1, s + Vector2i(-2, 2), s + Vector2i(2, 6), H + 3)
 		bm.toggle(false)
 		get_first_node_in_group("kingdom").recompute()
-		set_meta("t", Time.get_ticks_msec())
-	if has_meta("t") and Time.get_ticks_msec() - int(get_meta("t")) > 1500 and not has_meta("t_done") and set_done("t"):
+		set_meta("t", int(game_ms))
+	if has_meta("t") and int(game_ms) - int(get_meta("t")) > 1500 and not has_meta("t_done") and set_done("t"):
 		for r in get_first_node_in_group("kingdom").rooms:
 			print("   pièce: fermée ", r.enclosed, " portes ", r.doors, " meubles ", r.counts, " cases ", r.cells.size(), " type ", r.type.display_name if r.type else "-")
 		print("   meubles posés: ", w.build.furniture.values().map(func(x): return x.item.id), " plans restants ", bo.orders.size())
@@ -115,8 +118,8 @@ func _process(_d) -> bool:
 		bm.toggle(true)
 		bm.furniture_index = bm._furniture_items.find(items.get_item("torche")); plan(5, 0, s + Vector2i(1, 4), s + Vector2i(1, 4), H + 1)
 		bm.toggle(false)
-		set_meta("t2", Time.get_ticks_msec())
-	if has_meta("t2") and Time.get_ticks_msec() - int(get_meta("t2")) > 1500 and not has_meta("t2_done") and set_done("t2"):
+		set_meta("t2", int(game_ms))
+	if has_meta("t2") and int(game_ms) - int(get_meta("t2")) > 1500 and not has_meta("t2_done") and set_done("t2"):
 		gd._check_state()
 		print("   torche posée : ", w.build.furniture.values().map(func(x): return x.item.id))
 		check("torche posée -> étape 7 (repas)", gd.step == 6)
@@ -128,8 +131,8 @@ func _process(_d) -> bool:
 		var noon_bg: Color = dc._env.background_color
 		dc.hour = 20.05
 		set_meta("bg", noon_bg)
-		set_meta("t3", Time.get_ticks_msec())
-	if has_meta("t3") and Time.get_ticks_msec() - int(get_meta("t3")) > 800 and not has_meta("t3_done") and set_done("t3"):
+		set_meta("t3", int(game_ms))
+	if has_meta("t3") and int(game_ms) - int(get_meta("t3")) > 800 and not has_meta("t3_done") and set_done("t3"):
 		check("la nuit est tombée", dc.is_night())
 		var bg: Color = dc._env.background_color
 		check("ciel plus sombre la nuit", bg.v < (get_meta("bg") as Color).v * 0.5)
@@ -153,16 +156,25 @@ func _process(_d) -> bool:
 			return dc.sleep().begins_with("Impossible")).call())
 		for e in mons: e.queue_free()
 		for e in get_nodes_in_group("enemy_units"): e.queue_free()
-		set_meta("t4", Time.get_ticks_msec())
-	if has_meta("t4") and Time.get_ticks_msec() - int(get_meta("t4")) > 100 and not has_meta("t4_done") and set_done("t4"):
+		set_meta("t4", int(game_ms))
+	if has_meta("t4") and int(game_ms) - int(get_meta("t4")) > 100 and not has_meta("t4_done") and set_done("t4"):
 		# retour au lit
 		var bed: Vector3 = w.cell_center(s + Vector2i(-1, 4))
 		p.global_position = Vector3(bed.x, H, bed.z)
 		p.health.current = 10
-		var ev := InputEventAction.new(); ev.action = "interact"; ev.pressed = true
-		p._unhandled_input(ev)
-		set_meta("t5", Time.get_ticks_msec())
-	if has_meta("t5") and Time.get_ticks_msec() - int(get_meta("t5")) > 3000 and not has_meta("t5_done") and set_done("t5"):
+		# des monstres de nuit ont pu réapparaître depuis : on les retire avant de se coucher
+		for e in get_nodes_in_group("enemy_units"):
+			e.remove_from_group("enemy_units")
+			e.queue_free()
+		# (E près du lit appelle dc.sleep() ; un voyageur ou un personnage tout proche passerait avant,
+		# on vérifie donc le lit puis on dort directement)
+		var grid = get_first_node_in_group("build_grid")
+		check("un lit à portée du héros", grid.furniture_near(p.global_position, 2.2).has("lit"))
+		var msg: String = dc.sleep()
+		print("   ", msg)
+		check("dormir accepté (« %s »)" % msg, msg.begins_with("Tu dors"))
+		set_meta("t5", int(game_ms))
+	if has_meta("t5") and int(game_ms) - int(get_meta("t5")) > 3000 and not has_meta("t5_done") and set_done("t5"):
 		check("réveil le matin (%.2f h), jour 2" % dc.hour, not dc.is_night() and dc.day == 2)
 		check("vie rendue", p.health.current == p.health.max_health)
 		check("chapitre 1 fini -> chapitre 2 (âge du fer)", gd.step == 8)
@@ -171,8 +183,8 @@ func _process(_d) -> bool:
 		sg.save_game("3")
 		dc.hour = 3.0
 		sg.load_game("3")
-		set_meta("t6", Time.get_ticks_msec())
-	if has_meta("t6") and Time.get_ticks_msec() - int(get_meta("t6")) > 1500 and not has_meta("t6_done") and set_done("t6"):
+		set_meta("t6", int(game_ms))
+	if has_meta("t6") and int(game_ms) - int(get_meta("t6")) > 1500 and not has_meta("t6_done") and set_done("t6"):
 		dc = get_first_node_in_group("day_cycle"); gd = get_first_node_in_group("guide")
 		check("heure et jour rechargés (%.2f, jour %d)" % [dc.hour, dc.day], absf(dc.hour - 15.5) < 0.3 and dc.day == 2)
 		check("guide rechargé au chapitre 2", gd.step == 8 and gd.visible)

@@ -14,7 +14,7 @@ var _grid: GridContainer
 func _ready() -> void:
 	add_to_group("keys_help")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_theme_stylebox_override("panel", MenuKit.style(Color(0.08, 0.06, 0.05, 0.82), Color("8a6a3a"), 1, 4, 8))
+	add_theme_stylebox_override("panel", UiTheme.small_frame(10))
 	set_anchors_preset(Control.PRESET_CENTER_RIGHT)
 	position = Vector2(-10, -160)
 	var v := VBoxContainer.new()

@@ -100,23 +100,6 @@ func _style(bg: Color, border: Color = C_FRAME, width := 2, radius := 3) -> Styl
 	return s
 
 
-func _make_theme() -> Theme:
-	var th := Theme.new()
-	var normal := _style(Color("6a4a26"), Color("d8a84a"), 1, 3)
-	var hover := _style(Color("8a6230"), Color("f2c86a"), 1, 3)
-	var pressed := _style(Color("4a3218"), Color("f2c86a"), 1, 3)
-	var disabled := _style(Color("2a2220"), Color("4a3e34"), 1, 3)
-	th.set_stylebox("normal", "Button", normal)
-	th.set_stylebox("hover", "Button", hover)
-	th.set_stylebox("pressed", "Button", pressed)
-	th.set_stylebox("disabled", "Button", disabled)
-	th.set_stylebox("focus", "Button", StyleBoxEmpty.new())
-	th.set_color("font_color", "Button", Color("fff2d0"))
-	th.set_color("font_hover_color", "Button", Color.WHITE)
-	th.set_color("font_disabled_color", "Button", Color("6a5e50"))
-	return th
-
-
 func _label(text: String, size := 11, color := C_TEXT) -> Label:
 	var l := Label.new()
 	l.text = text
@@ -127,14 +110,14 @@ func _label(text: String, size := 11, color := C_TEXT) -> Label:
 
 func _column(title: String, width: float, parent: Control) -> VBoxContainer:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _style(C_PANEL, C_FRAME.darkened(0.3)))
+	panel.add_theme_stylebox_override("panel", UiTheme.small_frame(8))
 	panel.custom_minimum_size = Vector2(width, 0)
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
 	panel.add_child(box)
-	box.add_child(_label(title, 13, Color("f2c86a")))
+	box.add_child(MenuKit.heading(title, 13))
 	return box
 
 
@@ -144,8 +127,8 @@ func _build() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 	var win := PanelContainer.new()
-	win.theme = _make_theme()
-	win.add_theme_stylebox_override("panel", _style(C_BG, C_FRAME, 3, 4))
+	win.add_theme_stylebox_override("panel", UiTheme.frame(14))
+	MenuKit.animate_open(win)
 	win.set_anchors_preset(Control.PRESET_CENTER)
 	win.custom_minimum_size = Vector2(920, 470)
 	win.position = Vector2(-460, -235)
@@ -230,10 +213,9 @@ func _build() -> void:
 
 func _icon_box(item: ItemData, size: float) -> Control:
 	var frame := PanelContainer.new()
-	var border := item.rarity_color().darkened(0.35) if item else C_FRAME.darkened(0.5)
-	var st := _style(C_SLOT, border, 2, 3)
-	st.set_content_margin_all(2)
-	frame.add_theme_stylebox_override("panel", st)
+	# case creusée ; la rareté teinte légèrement son cadre
+	var tint := Color.WHITE.lerp(item.rarity_color(), 0.4) if item else Color.WHITE
+	frame.add_theme_stylebox_override("panel", UiTheme.box("slot", 8, Vector4(3, 3, 3, 3), tint))
 	frame.custom_minimum_size = Vector2(size, size)
 	if item:
 		var tr := TextureRect.new()

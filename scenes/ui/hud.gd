@@ -15,6 +15,7 @@ var _hp_fill: ColorRect
 var _hp_lag: ColorRect
 var _hp_text: Label
 var _stats_text: Label
+var _stat_labels: Array[Label] = []
 var _death: Control
 var _death_label: Label
 var _feat: Label
@@ -78,6 +79,7 @@ var _hotbar: VBoxContainer
 var _hotbar_row: HBoxContainer
 var _hotbar_name: Label
 const HP_WIDTH := 220.0
+const BAR_X := 22.0
 
 
 func _ready() -> void:
@@ -122,66 +124,98 @@ func _ready() -> void:
 
 func _build_health_bar() -> void:
 	var box := Control.new()
-	box.position = Vector2(10, 12)
+	box.position = Vector2(8, 8)
 	add_child(box)
+	# plaque du héros : cadre de bois doré derrière les jauges
+	var plate := NinePatchRect.new()
+	plate.texture = UiTheme.tex("small_frame")
+	plate.patch_margin_left = 8
+	plate.patch_margin_right = 8
+	plate.patch_margin_top = 8
+	plate.patch_margin_bottom = 8
+	plate.axis_stretch_horizontal = NinePatchRect.AXIS_STRETCH_MODE_TILE_FIT
+	plate.axis_stretch_vertical = NinePatchRect.AXIS_STRETCH_MODE_TILE_FIT
+	plate.position = Vector2(-4, -4)
+	plate.size = Vector2(BAR_X + HP_WIDTH + 12, 54)
+	plate.modulate = Color(1, 1, 1, 0.92)
+	box.add_child(plate)
+	box.add_child(_hud_icon("heart", Vector2(2, 0), 18))
+	box.add_child(_hud_icon("star", Vector2(4, 21), 13))
+	box.add_child(_hud_icon("food", Vector2(4, 33), 13))
 	var frame := ColorRect.new()
 	frame.color = Color(0.05, 0.04, 0.04, 0.85)
+	frame.position = Vector2(BAR_X, 0)
 	frame.size = Vector2(HP_WIDTH + 4, 18)
 	box.add_child(frame)
 	_hp_lag = ColorRect.new()
 	_hp_lag.color = Color(0.95, 0.85, 0.5)
-	_hp_lag.position = Vector2(2, 2)
+	_hp_lag.position = Vector2(BAR_X + 2, 2)
 	_hp_lag.size = Vector2(HP_WIDTH, 14)
 	box.add_child(_hp_lag)
 	_hp_fill = ColorRect.new()
 	_hp_fill.color = Color(0.82, 0.18, 0.14)
-	_hp_fill.position = Vector2(2, 2)
+	_hp_fill.position = Vector2(BAR_X + 2, 2)
 	_hp_fill.size = Vector2(HP_WIDTH, 14)
 	box.add_child(_hp_fill)
 	var shine := ColorRect.new()
 	shine.color = Color(1, 1, 1, 0.18)
-	shine.position = Vector2(2, 2)
+	shine.position = Vector2(BAR_X + 2, 2)
 	shine.size = Vector2(HP_WIDTH, 5)
 	box.add_child(shine)
+	box.add_child(_bar_frame(Vector2(BAR_X - 1, -1), Vector2(HP_WIDTH + 6, 20)))
 	_hp_text = _outlined("", 11)
-	_hp_text.position = Vector2(8, 0)
+	_hp_text.position = Vector2(BAR_X + 8, -1)
 	box.add_child(_hp_text)
+	# attaque, défense, magie : des icônes plutôt que des mots
 	_stats_text = _outlined("", 11)
-	_stats_text.position = Vector2(HP_WIDTH + 12, 0)
+	_stats_text.visible = false
 	box.add_child(_stats_text)
+	var stats := HBoxContainer.new()
+	stats.position = Vector2(BAR_X + HP_WIDTH + 18, -1)
+	stats.add_theme_constant_override("separation", 4)
+	box.add_child(stats)
+	for k in ["sword", "shield", "magic"]:
+		stats.add_child(MenuKit.icon(k, 16))
+		var l := _outlined("", 12)
+		l.custom_minimum_size.x = 26
+		stats.add_child(l)
+		_stat_labels.append(l)
 	# barre d'expérience
 	var xb := ColorRect.new()
 	xb.color = Color(0.05, 0.04, 0.04, 0.85)
-	xb.position = Vector2(0, 20)
+	xb.position = Vector2(BAR_X, 22)
 	xb.size = Vector2(HP_WIDTH + 4, 8)
 	box.add_child(xb)
 	_xp_fill = ColorRect.new()
 	_xp_fill.color = Color(0.45, 0.8, 1.0)
-	_xp_fill.position = Vector2(2, 22)
+	_xp_fill.position = Vector2(BAR_X + 2, 24)
 	_xp_fill.size = Vector2(0, 4)
 	box.add_child(_xp_fill)
+	box.add_child(_bar_frame(Vector2(BAR_X - 1, 21), Vector2(HP_WIDTH + 6, 10)))
 	_xp_text = _outlined("", 10)
-	_xp_text.position = Vector2(HP_WIDTH + 12, 16)
+	_xp_text.position = Vector2(BAR_X + HP_WIDTH + 14, 17)
 	box.add_child(_xp_text)
 	# jauge de faim
 	var hb := ColorRect.new()
 	hb.color = Color(0.05, 0.04, 0.04, 0.85)
-	hb.position = Vector2(0, 30)
+	hb.position = Vector2(BAR_X, 34)
 	hb.size = Vector2(HP_WIDTH * 0.6 + 4, 8)
 	box.add_child(hb)
 	_hunger_fill = ColorRect.new()
 	_hunger_fill.color = Color(0.9, 0.6, 0.25)
-	_hunger_fill.position = Vector2(2, 32)
+	_hunger_fill.position = Vector2(BAR_X + 2, 36)
 	_hunger_fill.size = Vector2(HP_WIDTH * 0.6, 4)
 	box.add_child(_hunger_fill)
+	box.add_child(_bar_frame(Vector2(BAR_X - 1, 33), Vector2(HP_WIDTH * 0.6 + 6, 10)))
 	_hunger_text = _outlined("", 9)
-	_hunger_text.position = Vector2(HP_WIDTH * 0.6 + 10, 26)
+	_hunger_text.position = Vector2(BAR_X + HP_WIDTH * 0.6 + 12, 29)
 	box.add_child(_hunger_text)
 	if player:
 		player.hunger_changed.connect(func(_v): _update_hunger())
 	_update_hunger.call_deferred()
+	box.add_child(_hud_icon("crown", Vector2(2, 52), 14))
 	_kingdom_text = _outlined("", 11)
-	_kingdom_text.position = Vector2(0, 40)
+	_kingdom_text.position = Vector2(20, 50)
 	box.add_child(_kingdom_text)
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k:
@@ -270,6 +304,7 @@ func _build_combat_ui() -> void:
 	move_child(_slow_tint, 0)
 	# grand message au centre
 	_feat = _outlined("", 30)
+	_feat.add_theme_font_override("font", UiTheme.font("title"))
 	_feat.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_feat.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_feat.size = Vector2(600, 50)
@@ -303,13 +338,7 @@ func _build_combat_ui() -> void:
 
 func _build_skill_slot() -> void:
 	_skill_box = PanelContainer.new()
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.08, 0.06, 0.05, 0.85)
-	st.border_color = Color("8a6a3a")
-	st.set_border_width_all(2)
-	st.set_corner_radius_all(4)
-	st.set_content_margin_all(5)
-	_skill_box.add_theme_stylebox_override("panel", st)
+	_skill_box.add_theme_stylebox_override("panel", UiTheme.small_frame(6))
 	_skill_box.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_skill_box.position = Vector2(-130, -58)
 	_skill_box.custom_minimum_size = Vector2(260, 46)
@@ -421,7 +450,8 @@ func _build_maps() -> void:
 	mini.world = world
 	mini.player = player
 	add_child(mini)
-	_zone_title = _outlined("", 30)
+	_zone_title = _outlined("", 32)
+	_zone_title.add_theme_font_override("font", UiTheme.font("title"))
 	_zone_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_zone_title.add_theme_constant_override("outline_size", 8)
 	_zone_title.modulate.a = 0.0
@@ -581,9 +611,9 @@ func _update_kingdom() -> void:
 	var n := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
 	if n:
 		var m := n.members().size()
-		_kingdom_text.text = "♜ %s · %d hab. · bonheur %d %% · %d repas   (U : royaume · B : construire)" % [k.title(), m, roundi(n.average_happiness()), n.meals()]
+		_kingdom_text.text = "%s · %d hab. · bonheur %d %% · %d repas   (U : royaume · B : construire)" % [k.title(), m, roundi(n.average_happiness()), n.meals()]
 	else:
-		_kingdom_text.text = "♜ %s   (B : construire)" % k.title()
+		_kingdom_text.text = "%s   (B : construire)" % k.title()
 	_kingdom_text.add_theme_color_override("font_color", Kingdom.AGE_COLORS[k.age].lightened(0.2))
 
 
@@ -600,10 +630,32 @@ func show_feat(text: String, color: Color) -> void:
 	tw.tween_property(_feat, "modulate:a", 0.0, 0.3)
 
 
+func _hud_icon(name: String, pos: Vector2, px: float) -> TextureRect:
+	var r := MenuKit.icon(name, px)
+	r.position = pos
+	r.size = Vector2(px, px)
+	return r
+
+
+## Liseré doré autour d'une jauge.
+func _bar_frame(pos: Vector2, size: Vector2) -> NinePatchRect:
+	var f := NinePatchRect.new()
+	f.texture = UiTheme.tex("bar_frame")
+	f.patch_margin_left = 4
+	f.patch_margin_right = 4
+	f.patch_margin_top = 4
+	f.patch_margin_bottom = 4
+	f.draw_center = false
+	f.position = pos
+	f.size = size
+	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return f
+
+
 func _outlined(text: String, size: int) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", size + 1)
 	l.add_theme_color_override("font_color", Color("fff2dc"))
 	l.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.06))
 	l.add_theme_constant_override("outline_size", 4)
@@ -617,6 +669,9 @@ func _update_health() -> void:
 	_hp_fill.size.x = HP_WIDTH * h.ratio()
 	_hp_text.text = "Vie %d / %d" % [h.current, h.max_health]
 	_stats_text.text = "Attaque %d   Défense %d   Magie %d" % [player.attack_power(), player.defense_power(), player.magic_power()]
+	var vals := [player.attack_power(), player.defense_power(), player.magic_power()]
+	for i in mini(_stat_labels.size(), 3):
+		_stat_labels[i].text = str(vals[i])
 	_xp_fill.size.x = HP_WIDTH * float(player.xp) / float(player.xp_to_next())
 	var who := player.profile.hero_name if player.profile else ""
 	var cls := player.profile.hero_class.display_name if player.profile and player.profile.hero_class else ""
@@ -936,12 +991,7 @@ func _update_hotbar() -> void:
 		var on := it.id == sel
 		var cell := Panel.new()
 		cell.custom_minimum_size = Vector2(36, 36)
-		var st := StyleBoxFlat.new()
-		st.bg_color = Color(0.1, 0.08, 0.06, 0.85) if not on else Color(0.3, 0.24, 0.14, 0.95)
-		st.border_color = Color("f0d890") if on else Color("6a5030")
-		st.set_border_width_all(3 if on else 1)
-		st.set_corner_radius_all(3)
-		cell.add_theme_stylebox_override("panel", st)
+		cell.add_theme_stylebox_override("panel", UiTheme.box("slot_selected" if on else "slot", 8, Vector4.ZERO))
 		var icon := TextureRect.new()
 		icon.texture = Items.get_icon(it)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

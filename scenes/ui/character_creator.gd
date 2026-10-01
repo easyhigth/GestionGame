@@ -274,33 +274,35 @@ func _style(bg: Color, border: Color = C_FRAME, width := 2, radius := 4) -> Styl
 
 
 func _make_theme() -> Theme:
+	# mêmes planches et dorures que le reste de l'interface, en plus compact
 	var th := Theme.new()
-	th.default_font_size = 11
+	th.default_font_size = 12
 	th.set_color("font_color", "Label", C_TEXT)
-	th.set_stylebox("normal", "Button", _style(Color("3a2c22"), Color("6a5030"), 1, 3))
-	th.set_stylebox("hover", "Button", _style(Color("5a4028"), Color("d8a84a"), 1, 3))
-	th.set_stylebox("pressed", "Button", _style(Color("7a5428"), Color("f2c86a"), 2, 3))
-	th.set_stylebox("hover_pressed", "Button", _style(Color("7a5428"), Color("f2c86a"), 2, 3))
-	th.set_stylebox("focus", "Button", StyleBoxEmpty.new())
-	th.set_stylebox("disabled", "Button", _style(Color("2a2220"), Color("3a3028"), 1, 3))
+	var pad := Vector4(8, 3, 8, 3)
+	th.set_stylebox("normal", "Button", UiTheme.box("button", 10, pad))
+	th.set_stylebox("hover", "Button", UiTheme.box("button_hover", 10, pad))
+	th.set_stylebox("pressed", "Button", UiTheme.box("tab_selected", 10, pad))
+	th.set_stylebox("hover_pressed", "Button", UiTheme.box("tab_selected", 10, pad))
+	th.set_stylebox("focus", "Button", UiTheme.box("button_focus", 6))
+	th.set_stylebox("disabled", "Button", UiTheme.box("button_disabled", 10, pad))
 	th.set_color("font_color", "Button", Color("f0e2c8"))
-	th.set_color("font_pressed_color", "Button", Color("fff4d8"))
+	th.set_color("font_pressed_color", "Button", MenuKit.C_GOLD)
 	th.set_color("font_hover_color", "Button", Color.WHITE)
-	th.set_color("font_hover_pressed_color", "Button", Color.WHITE)
-	th.set_stylebox("panel", "TabContainer", _style(Color(0.13, 0.1, 0.09, 0.0), Color(0, 0, 0, 0), 0, 0))
-	th.set_stylebox("tab_selected", "TabContainer", _style(Color("7a5428"), Color("f2c86a"), 1, 3))
-	th.set_stylebox("tab_unselected", "TabContainer", _style(Color("2e231c"), Color("5a4430"), 1, 3))
-	th.set_stylebox("tab_hovered", "TabContainer", _style(Color("4a3624"), Color("d8a84a"), 1, 3))
-	th.set_color("font_selected_color", "TabContainer", Color("fff4d8"))
+	th.set_color("font_hover_pressed_color", "Button", MenuKit.C_GOLD)
+	th.set_stylebox("panel", "TabContainer", StyleBoxEmpty.new())
+	th.set_stylebox("tab_selected", "TabContainer", UiTheme.box("tab_selected", 10, Vector4(10, 4, 10, 4)))
+	th.set_stylebox("tab_unselected", "TabContainer", UiTheme.box("tab", 10, Vector4(10, 4, 10, 4)))
+	th.set_stylebox("tab_hovered", "TabContainer", UiTheme.box("tab_hover", 10, Vector4(10, 4, 10, 4)))
+	th.set_color("font_selected_color", "TabContainer", MenuKit.C_GOLD)
 	th.set_color("font_unselected_color", "TabContainer", C_DIM)
-	th.set_font_size("font_size", "TabContainer", 10)
-	th.set_stylebox("normal", "LineEdit", _style(Color("1c1614"), Color("8a6a3a"), 1, 3))
-	th.set_stylebox("focus", "LineEdit", _style(Color("1c1614"), Color("f2c86a"), 1, 3))
+	th.set_font_size("font_size", "TabContainer", 11)
+	th.set_stylebox("normal", "LineEdit", UiTheme.box("field", 6, Vector4(8, 4, 8, 4)))
+	th.set_stylebox("focus", "LineEdit", UiTheme.box("field_focus", 6, Vector4(8, 4, 8, 4)))
 	th.set_color("font_color", "LineEdit", Color("fff4d8"))
-	th.set_font_size("font_size", "LineEdit", 14)
+	th.set_font_size("font_size", "LineEdit", 15)
 	th.set_color("default_color", "RichTextLabel", C_TEXT)
-	th.set_font_size("normal_font_size", "RichTextLabel", 10)
-	th.set_font_size("bold_font_size", "RichTextLabel", 11)
+	th.set_font_size("normal_font_size", "RichTextLabel", 11)
+	th.set_font_size("bold_font_size", "RichTextLabel", 12)
 	th.set_color("font_color", "CheckBox", C_TEXT)
 	return th
 
@@ -314,7 +316,8 @@ func _label(text: String, size := 11, color := C_TEXT) -> Label:
 
 
 func _title(text: String) -> Label:
-	var l := _label(text, 12, C_GOLD)
+	var l := _label(text, 14, C_GOLD)
+	l.add_theme_font_override("font", UiTheme.font("title"))
 	l.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
 	l.add_theme_constant_override("outline_size", 3)
 	return l
@@ -331,7 +334,7 @@ func _rich() -> RichTextLabel:
 
 func _panel(pos: Vector2, size: Vector2) -> VBoxContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", _style(C_BG, C_FRAME, 2, 6))
+	p.add_theme_stylebox_override("panel", UiTheme.frame(14))
 	p.position = pos
 	p.size = size
 	add_child(p)
@@ -415,8 +418,10 @@ func _build_ui() -> void:
 	start.text = "Commencer l'aventure"
 	start.custom_minimum_size = Vector2(0, 36)
 	start.add_theme_font_size_override("font_size", 15)
-	start.add_theme_stylebox_override("normal", _style(Color("8a5a1e"), Color("f2c86a"), 2, 4))
-	start.add_theme_stylebox_override("hover", _style(Color("a8702a"), Color("fff0b0"), 2, 4))
+	start.add_theme_font_override("font", UiTheme.font("title"))
+	start.add_theme_stylebox_override("normal", UiTheme.box("button_hover", 10, Vector4(12, 4, 12, 4)))
+	start.add_theme_stylebox_override("hover", UiTheme.box("tab_selected", 10, Vector4(12, 4, 12, 4)))
+	start.add_theme_color_override("font_color", MenuKit.C_GOLD)
 	start.pressed.connect(_start)
 	right.add_child(start)
 	var back := Button.new()
