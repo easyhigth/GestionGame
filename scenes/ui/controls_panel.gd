@@ -46,6 +46,7 @@ const PAGES := [
 		["Familiers : ordre suivant (suivre, attendre, attaquer)", "P", "—"],
 		["Diplomatie : nations voisines, traités, guerre", "Y", "—"],
 		["Boire une potion (soin si blessé, sinon renfort)", "Z", "—"],
+		["Succès et bestiaire", "F1", "—"],
 		["Menu pause (sauvegarde, options)", "Échap", "Start"],
 	]],
 	["Construction", [

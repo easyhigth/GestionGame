@@ -52,6 +52,7 @@ var guide: GuidePanel
 var _clock: Label
 var kingdom_panel: KingdomPanel
 var diplomacy_panel: DiplomacyPanel
+var achievements_panel: AchievementsPanel
 var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
 var trade: Trade
@@ -619,6 +620,9 @@ func _update_health() -> void:
 	var cls := player.profile.hero_class.display_name if player.profile and player.profile.hero_class else ""
 	if player.hero_evo > 0:
 		who += " (%s)" % player.evo_title()
+	var ach := get_tree().get_first_node_in_group("achievements") as Achievements
+	if ach and ach.title != "":
+		who += " « %s »" % ach.title
 	_xp_text.text = "%s  ·  %s niveau %d  ·  XP %d / %d" % [who, cls, player.level, player.xp, player.xp_to_next()]
 	if not h.is_dead():
 		_death.hide()
@@ -832,6 +836,13 @@ func _build_day_and_guide() -> void:
 		if ok:
 			show_feat("%s : réussi !" % WorldEvents.EVENTS[ev.id].name, Color("ffd24a")))
 	get_parent().add_child.call_deferred(wev)
+	var ach := Achievements.new()
+	ach.name = "Achievements"
+	ach.changed.connect(_update_health)
+	get_parent().add_child.call_deferred(ach)
+	achievements_panel = AchievementsPanel.new()
+	achievements_panel.player = player
+	add_child(achievements_panel)
 	diplomacy_panel = DiplomacyPanel.new()
 	diplomacy_panel.player = player
 	add_child(diplomacy_panel)

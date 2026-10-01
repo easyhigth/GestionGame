@@ -479,6 +479,9 @@ func _on_raid_ended(r: Dictionary, repelled: bool, _text: String) -> void:
 		var n: Dictionary = NATIONS[id]
 		var tribute := [["piece_or", 400]] + (n.goods as Array)
 		_make_peace(id, "%s capitule après %d défaites et te paie un tribut." % [n.name, WINS_TO_SURRENDER], -10.0)
+		var ach := get_tree().get_first_node_in_group("achievements")
+		if ach:
+			ach.note("capitulation")
 		(states[id].treaties as Array).append("paix")
 		_deliver(id, tribute, "Tribut de %s" % n.name)
 		if player:
