@@ -1179,6 +1179,9 @@ func _pull_lever(it: Dictionary) -> void:
 ## Ouvre le mur de la salle secrète.
 func open_vault() -> void:
 	vault_open = true
+	var ach := get_tree().get_first_node_in_group("achievements")
+	if ach:
+		ach.note("vault")
 	for k in _vault_seal:
 		grid.remove_block(k)
 		VoxelBurst.spawn(self, Vector3(k.x + 0.5, k.y + 0.5, k.z + 0.5), Color(0.6, 0.55, 0.5), 10, 3.0, 0.1, 0.6)
@@ -1327,6 +1330,9 @@ func _add_miniboss(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> 
 
 
 func _on_miniboss_died(pos: Vector3) -> void:
+	var ach := get_tree().get_first_node_in_group("achievements")
+	if ach:
+		ach.note("gardien")
 	var loot := [[Items.get_item(RareDrops.GEM_IDS.pick_random()), 1], [Items.get_item("piece_or"), 15 + 3 * (zone.level as Vector2i).y]]
 	if randf() < 0.5:
 		loot.append([Items.get_item("mithril_brut"), 1])

@@ -393,6 +393,12 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
   - **Épidémie** : des habitants tombent malades (-20 bonheur) ; soigne-les dans le panneau du royaume (U), une soupe de légumes ou une potion de soin chacun.
 - Un événement dure jusqu'à la fin du lendemain, ou jusqu'à ce qu'il soit réglé.
 
+## Succès et bestiaire (touche F1)
+- **111 succès** en 11 catégories : combat (victoires, 25 de chaque monstre), boss (les 8 boss), héros (niveaux, évolution, or), royaume (habitants, rangs), histoire (16 actes, quêtes des personnages), familiers, forge (renforcement, gemmes, runes), Brume, diplomatie (traités, capitulation, provinces), événements du monde, exploration (salles secrètes, Gardiens, obélisques, bestiaire complet).
+- Chaque succès rapporte des points. **Titres** (affichés à côté du nom du héros) : Aventurier (50 points), Héros du royaume (150), Légende vivante (300), Mythe éternel (500), et des titres de succès (Tueur de boss, Empereur, Maître de la Brume, Dompteur, Cartographe, Naturaliste...). **Auras** (lumière et étincelles autour du héros) bleue, dorée et violette à 150, 300 et 500 points. Titre et aura se choisissent dans le panneau.
+- **Bestiaire** : les 23 monstres du monde, découverts en les battant : victoires, vie, attaque, régions, butin et ressources rares (avec leurs chances).
+- Panneau : touche F1, ou « Succès et bestiaire » dans le menu pause. Tout est sauvegardé.
+
 ## Diplomatie (touche Y)
 - Cinq nations voisines : **Horde de Karg** (orcs), **Cour de Sylvaë** (fées et dryades), **Sultanat des Sables** (hommes-lézards), **Jarls du Givre** (clans du nord), **Principauté des Cendres** (démons). Chacune a une relation de -100 à +100 et un caractère vers lequel elle revient peu à peu.
 - **Présents** (50 or, ou ce que la nation aime, une fois par jour) et **demandes** remplies (de l'or en échange) font monter la relation.

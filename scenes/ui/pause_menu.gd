@@ -34,7 +34,7 @@ func open() -> void:
 		k.title() if k else "", MenuKit.format_time(int(SaveGame.play_time)), SaveGame.DIFFICULTY_NAMES[int(SaveGame.options.difficulty)],
 		w.world_seed if w else 0]
 	_box.add_child(_info)
-	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Charger", _load], ["Royaume", _kingdom], ["Commandes", _controls], ["Options", _options],
+	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Charger", _load], ["Royaume", _kingdom], ["Succès et bestiaire", _achievements], ["Commandes", _controls], ["Options", _options],
 		["Menu principal", _to_title], ["Quitter le jeu", _quit]]
 	var first: Button = null
 	for it in items:
@@ -96,6 +96,13 @@ func _kingdom() -> void:
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud and hud.get("kingdom_panel"):
 		hud.kingdom_panel.open()
+
+
+func _achievements() -> void:
+	close()
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.get("achievements_panel"):
+		hud.achievements_panel.open()
 
 
 func _controls() -> void:
