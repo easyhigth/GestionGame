@@ -246,9 +246,17 @@ func _update_age_rank() -> void:
 func title() -> String:
 	# la nation nommée à la fin de l'histoire
 	var st := get_tree().get_first_node_in_group("story") if is_inside_tree() else null
+	var t := "%s · %s" % [RANK_NAMES[rank], AGE_NAMES[age]]
 	if st and st.nation_name() != "":
-		return "%s · %s" % [st.nation_name(), AGE_NAMES[age]]
-	return "%s · %s" % [RANK_NAMES[rank], AGE_NAMES[age]]
+		t = "%s · %s" % [st.nation_name(), AGE_NAMES[age]]
+	# provinces conquises (voir Diplomacy)
+	var dip := get_tree().get_first_node_in_group("diplomacy") if is_inside_tree() else null
+	var np: int = dip.provinces().size() if dip else 0
+	if np >= 3:
+		t = "Empire · " + t
+	if np > 0:
+		t += " · %d province%s" % [np, "s" if np > 1 else ""]
+	return t
 
 
 ## Ce qu'il faut pour le rang suivant (texte).

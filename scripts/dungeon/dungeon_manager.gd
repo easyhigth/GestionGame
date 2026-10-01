@@ -17,6 +17,8 @@ signal entered(zone: Dictionary)
 signal exited(zone: Dictionary)
 signal boss_awoken(boss: Boss, title: String)
 signal boss_defeated(zone: Dictionary, soul_text: String)
+signal siege_started(nation: String)
+signal siege_ended(nation: String, won: bool)
 
 ## Hauteur du sol des donjons.
 const FLOOR_Y := -100
@@ -34,6 +36,15 @@ const BRUME_LORD_TIERS := [3, 6, 9, 10]
 const BRUME_COLOR := Color("b48cff")
 ## Âme d'un Seigneur de Brume (une par région et par palier).
 const BRUME_LORD_SOUL := {"attack": 3.0, "defense": 2.0}
+## Siège d'une capitale ennemie (voir Diplomacy) : une place forte générée sous terre, comme un donjon.
+## Trois vagues de soldats sortent du donjon, puis le champion de la nation ; sa défaite annexe la nation.
+const SIEGE_WAVES := 3
+const SIEGE_W := 34
+const SIEGE_H := 28
+const SIEGE_KEEP_Y := 8
+const CHAMPIONS := {"karg": "Grukk le Brise-Remparts", "sylvae": "Ysolde, la Dryade-Reine", "sables": "Ssarak, Sultan des Sables",
+	"givre": "Fenrök, le Loup du Jarl", "cendres": "Azhar, Prince des Cendres"}
+const SIEGE_STONE := {"karg": "bloc_rondins", "sylvae": "bloc_planches", "sables": "bloc_sable", "givre": "bloc_ardoise", "cendres": "bloc_marbre_noir"}
 ## Équipement légendaire que peut laisser un Seigneur de Brume.
 const BRUME_LORD_LOOT := ["lame_eveil", "lance_draconique", "armure_draconique", "baton_larmes", "cape_brume", "couronne_pactes"]
 
@@ -60,6 +71,15 @@ var _busy := false
 var brume_tier := 0
 var _brume_known := -1
 var _brume_check := 0.0
+## Siège en cours : identifiant de la nation ("" sinon).
+var siege := ""
+var siege_wave := 0
+var _siege_alive: Array = []
+var _siege_timer := 0.0
+var _siege_won := false
+var _siege_throne := Vector2i.ZERO
+var _siege_gate := Vector2i.ZERO
+var _siege_spawn := Vector2i.ZERO
 
 
 func _ready() -> void:
@@ -192,6 +212,8 @@ func try_interact(p: Player) -> bool:
 					_open_chest(it, false)
 				"boss_chest":
 					_open_chest(it, true)
+				"siege_chest":
+					_open_siege_chest(it)
 			return true
 	return false
 
@@ -249,6 +271,8 @@ func _process(delta: float) -> void:
 		_check_brume()
 	if not active or player == null:
 		return
+	if siege != "" and player.global_position.y <= WorldGenerator.UNDERGROUND:
+		_siege_process(delta)
 	# mort dans le donjon : le héros s'est réveillé au village
 	if player.global_position.y > WorldGenerator.UNDERGROUND:
 		var z := zone
@@ -452,7 +476,7 @@ func _decorate(rng: RandomNumberGenerator, r: RegionData) -> void:
 	_add_portal(entrance_room.get_center() + Vector2i(0, -2))
 
 
-func _add_portal(c: Vector2i) -> void:
+func _add_portal(c: Vector2i, text := "Sortie\nE : remonter") -> void:
 	var n := _add_model(PORTAL_MODEL, c, 0.0, 0.8)
 	var l := OmniLight3D.new()
 	l.light_color = Color("8af0ff")
@@ -460,7 +484,7 @@ func _add_portal(c: Vector2i) -> void:
 	l.omni_range = 5.0
 	l.position.y = 2.2
 	n.add_child(l)
-	_label(n, "Sortie\nE : remonter", 4.2, Color("bff6ff"))
+	_label(n, text, 4.2, Color("bff6ff"))
 	_interactables.append({"node": n, "pos": n.global_position, "kind": "exit", "used": false})
 
 
@@ -719,6 +743,14 @@ func _set_lighting(dark: bool, r: RegionData) -> void:
 
 func _cleanup() -> void:
 	active = false
+	if siege != "":
+		var s := siege
+		var won := _siege_won
+		siege = ""
+		siege_wave = 0
+		_siege_alive.clear()
+		if not won:
+			siege_ended.emit(s, false)
 	brume_tier = 0
 	_set_lighting(false, null)
 	grid.clear()
@@ -728,3 +760,220 @@ func _cleanup() -> void:
 	_interactables.clear()
 	_sealed.clear()
 	rooms.clear()
+
+
+# ---------------------------------------------------------------- siège d'une capitale
+
+## Lance le siège de la capitale d'une nation en guerre (appelé par la diplomatie).
+func enter_siege(id: String, instant := false) -> void:
+	_find_player()
+	if active or player == null or _busy or not Diplomacy.NATIONS.has(id):
+		return
+	_busy = true
+	var go := func():
+		_build_siege(id)
+		_busy = false
+	if instant:
+		go.call()
+		return
+	var tw := create_tween()
+	tw.tween_property(_fade, "color:a", 1.0, 0.35)
+	tw.tween_callback(go)
+	tw.tween_property(_fade, "color:a", 0.0, 0.5)
+
+
+func _build_siege(id: String) -> void:
+	var n: Dictionary = Diplomacy.NATIONS[id]
+	siege = id
+	siege_wave = 0
+	_siege_won = false
+	_siege_alive.clear()
+	_siege_timer = 4.0
+	zone = {"name": "Capitale de " + n.name, "siege": id}
+	active = true
+	brume_tier = 0
+	_boss_state = 2
+	boss = null
+	_sealed.clear()
+	_interactables.clear()
+	rooms.clear()
+	_return_pos = player.global_position
+	var pc := world.cell_at(player.global_position)
+	var o := Vector2i(clampi(pc.x - SIEGE_W / 2, 1, world.world_size.x - SIEGE_W - 1), clampi(pc.y - SIEGE_H / 2, 1, world.world_size.y - SIEGE_H - 1))
+	var floor_item: ItemData = Items.get_item("bloc_pierre_polie")
+	var wall: ItemData = Items.get_item("bloc_briques")
+	var accent: ItemData = Items.get_item(SIEGE_STONE.get(id, "bloc_marbre"))
+	var put := func(x: int, y: int, h: int, it: ItemData) -> void:
+		grid.place_block(Vector3i(o.x + x, FLOOR_Y + h, o.y + y), it)
+	for y in SIEGE_H:
+		for x in SIEGE_W:
+			put.call(x, y, -1, floor_item)
+	# l'enceinte, crénelée aux couleurs de la nation
+	for y in range(-1, SIEGE_H + 1):
+		for x in range(-1, SIEGE_W + 1):
+			if x >= 0 and x < SIEGE_W and y >= 0 and y < SIEGE_H:
+				continue
+			put.call(x, y, -1, wall)
+			for h in 5:
+				if h == 4 and (x + y) % 2 == 1:
+					continue
+				put.call(x, y, h, accent if h >= 3 else wall)
+	# quatre tours
+	for corner in [Vector2i(0, 0), Vector2i(SIEGE_W - 3, 0), Vector2i(0, SIEGE_H - 3), Vector2i(SIEGE_W - 3, SIEGE_H - 3)]:
+		for dy in 3:
+			for dx in 3:
+				for h in 7:
+					put.call(corner.x + dx, corner.y + dy, h, accent if h >= 5 else wall)
+	# le rempart du donjon (au nord), percé d'une porte
+	for x in range(3, SIEGE_W - 3):
+		if absi(x - SIEGE_W / 2) <= 2:
+			continue
+		for h in 3:
+			put.call(x, SIEGE_KEEP_Y, h, accent if h == 2 else wall)
+	_siege_throne = o + Vector2i(SIEGE_W / 2, 3)
+	_siege_gate = o + Vector2i(SIEGE_W / 2, SIEGE_KEEP_Y)
+	_siege_spawn = o + Vector2i(SIEGE_W / 2, SIEGE_H - 4)
+	rooms.append(Rect2i(o, Vector2i(SIEGE_W, SIEGE_H)))
+	# trône, statues, torches et bannière
+	_add_model(STATUE_MODEL, _siege_throne + Vector2i(-3, 0), 0.0)
+	_add_model(STATUE_MODEL, _siege_throne + Vector2i(3, 0), 0.0)
+	var banner := _add_model(TORCH_MODEL, _siege_throne + Vector2i(0, -1))
+	_label(banner, n.name, 3.6, n.color)
+	for p in [Vector2i(4, 4), Vector2i(SIEGE_W - 5, 4), Vector2i(4, SIEGE_H - 5), Vector2i(SIEGE_W - 5, SIEGE_H - 5),
+			Vector2i(SIEGE_W / 2 - 4, SIEGE_KEEP_Y + 1), Vector2i(SIEGE_W / 2 + 4, SIEGE_KEEP_Y + 1)]:
+		var t := _add_model(TORCH_MODEL, o + p)
+		var l := OmniLight3D.new()
+		l.light_color = Color(n.color).lightened(0.3)
+		l.light_energy = 1.8
+		l.omni_range = 10.0
+		l.position.y = 1.3
+		t.add_child(l)
+	_add_portal(_siege_spawn + Vector2i(0, 2), "Retraite\nE : lever le siège")
+	# lumière de plein jour
+	_set_lighting(true, null)
+	var scene_root: Node = world.get_parent() if world.get_parent() else get_tree().current_scene
+	var env_node := scene_root.get_node_or_null("Ambiance") as WorldEnvironment
+	if env_node and env_node.environment:
+		env_node.environment.background_color = Color(0.42, 0.55, 0.72)
+		env_node.environment.ambient_light_color = Color(0.95, 0.88, 0.78)
+		env_node.environment.ambient_light_energy = 0.95
+	player.global_position = _floor_pos(_siege_spawn)
+	player.snap_camera()
+	Villager.bring_companions(get_tree(), player.global_position)
+	siege_started.emit(id)
+
+
+func _siege_process(delta: float) -> void:
+	if _siege_won:
+		return
+	_siege_alive = _siege_alive.filter(func(e): return is_instance_valid(e) and e.is_alive())
+	if not _siege_alive.is_empty() or siege_wave > SIEGE_WAVES:
+		return
+	_siege_timer -= delta
+	if _siege_timer > 0.0:
+		return
+	_siege_timer = 4.0
+	siege_wave += 1
+	if siege_wave <= SIEGE_WAVES:
+		_spawn_siege_wave()
+	else:
+		_spawn_champion()
+
+
+func _siege_level() -> int:
+	return maxi(3, player.level if player else 5)
+
+
+func _spawn_siege_wave() -> void:
+	var n: Dictionary = Diplomacy.NATIONS[siege]
+	var army: Dictionary = n.army
+	var scene := load("res://scenes/enemies/enemy.tscn") as PackedScene
+	var lv := _siege_level()
+	var count := 3 + 2 * siege_wave
+	for i in count:
+		var e := scene.instantiate() as Enemy
+		var tid: String = army.leader if i == 0 and siege_wave == SIEGE_WAVES else army.types[i % army.types.size()]
+		e.data = load("res://data/enemies/%s.tres" % tid)
+		e.level = lv + siege_wave - 1
+		e.power = 1.0 + 0.06 * e.level
+		e.set_meta("siege", true)
+		_content.add_child(e)
+		var c: Vector2i = _siege_gate + Vector2i(randi_range(-2, 2), randi_range(-3, 0))
+		e.global_position = _floor_pos(c)
+		# ils marchent sur le héros
+		e.home = _floor_pos(_siege_spawn)
+		e.set("_wander_to", e.home)
+		e.set("_returning", true)
+		_siege_alive.append(e)
+	if player:
+		player.notify.emit("Vague %d / %d : les soldats de %s sortent du donjon !" % [siege_wave, SIEGE_WAVES, n.name])
+		Sound.play("horn", Vector3.INF, 0.0, 0.0)
+
+
+func _spawn_champion() -> void:
+	var n: Dictionary = Diplomacy.NATIONS[siege]
+	var army: Dictionary = n.army
+	var lv := _siege_level()
+	var b := BOSS_SCENE.instantiate() as Boss
+	var d := (load("res://data/enemies/%s.tres" % army.leader) as EnemyData).duplicate() as EnemyData
+	d.display_name = CHAMPIONS.get(siege, "Champion")
+	b.data = d
+	b.level = lv + 3
+	b.power = 1.2 + 0.03 * lv
+	b.powers = PackedStringArray(["onde", "charge", "invocation", "pluie"])
+	var summons: Array[EnemyData] = []
+	for t in army.types:
+		summons.append(load("res://data/enemies/%s.tres" % t))
+	b.summons = summons
+	b.title = "Champion · " + n.name
+	_content.add_child(b)
+	b.health.set_max(roundi((500.0 + 70.0 * lv) * SaveGame.enemy_hp_mult()), true)
+	b.visual.scale *= 1.5
+	b.global_position = _floor_pos(_siege_throne + Vector2i(0, 2))
+	b.home = b.global_position
+	b.facing = Vector3(0, 0, 1)
+	b.died_at.connect(_on_champion_died)
+	boss = b
+	_siege_alive.append(b)
+	b.wake()
+	boss_awoken.emit(b, b.title)
+
+
+func _on_champion_died(_pos: Vector3) -> void:
+	_siege_won = true
+	var id := siege
+	var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
+	if dip:
+		dip.annex(id)
+	# les derniers soldats se rendent
+	for e in _siege_alive:
+		if is_instance_valid(e) and e.is_alive() and e != boss:
+			VoxelBurst.spawn(e, e.global_position + Vector3(0, 0.8, 0), Color(0.9, 0.9, 0.8), 16, 3.0, 0.1, 0.5)
+			e.queue_free()
+	var n := _add_model(CHEST_MODEL, _siege_throne, PI, 1.6)
+	var lab := _label(n, "Trésor de la capitale\nE : ouvrir", 1.6, Color("ffd24a"))
+	_interactables.append({"node": n, "pos": n.global_position, "kind": "siege_chest", "used": false, "label": lab})
+	_add_portal(_siege_throne + Vector2i(0, -2) + Vector2i(4, 0), "Retour au royaume\nE : remonter")
+	if player:
+		player.gain_xp(400 + 30 * _siege_level())
+	siege_ended.emit(id, true)
+
+
+func _open_siege_chest(it: Dictionary) -> void:
+	it.used = true
+	var n: Dictionary = Diplomacy.NATIONS.get(zone.get("siege", ""), {})
+	var loot := [[Items.get_item("piece_or"), 500], [Items.get_item("orichalque"), 1]]
+	for pair in n.get("goods", []):
+		loot.append([Items.get_item(pair[0]), int(pair[1]) * 2])
+	for i in 2:
+		loot.append([Items.get_item(RareDrops.GEM_IDS.pick_random()), 1])
+	var pos: Vector3 = it.pos
+	for i in loot.size():
+		var a := TAU * i / loot.size()
+		if loot[i][0]:
+			world.spawn_pickup(loot[i][0], pos + Vector3(cos(a), 0, sin(a)) * 1.4, loot[i][1], _content)
+	VoxelBurst.spawn(self, pos + Vector3(0, 0.8, 0), Color("ffd24a"), 40, 5.0, 0.1, 0.8, "up", 6.0)
+	if it.has("label") and is_instance_valid(it.label):
+		it.label.text = "Vide"
+	if player:
+		player.notify.emit("Le trésor de la capitale est à toi : %d objets." % loot.size())

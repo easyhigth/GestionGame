@@ -478,6 +478,15 @@ func _build_maps() -> void:
 			var t: RegionData = z.type
 			show_banner("Donjon de %s" % z.name, "Niveau %d à %d  ·  Trouve et affronte le gardien du donjon." % [z.level.y, z.level.y + 2], Color("ffb0a0")))
 		dm.exited.connect(func(_z): show_message("Tu remontes à la surface."))
+		dm.siege_started.connect(func(id):
+			var n: Dictionary = Diplomacy.NATIONS[id]
+			show_banner("Siège : capitale de %s" % n.name, "Repousse %d vagues de soldats, puis bats leur champion." % DungeonManager.SIEGE_WAVES, n.color))
+		dm.siege_ended.connect(func(id, won):
+			var n: Dictionary = Diplomacy.NATIONS[id]
+			if won:
+				show_banner("Victoire !", "%s devient une province de ton royaume." % n.name, Color("ffd24a"))
+			else:
+				show_message("Le siège de la capitale de %s est levé. Reviens plus fort !" % n.name))
 		dm.boss_awoken.connect(func(b, title): show_banner(b.data.display_name, title, Color("ff6a4a")))
 		dm.boss_defeated.connect(func(_z, soul):
 			show_feat("Boss vaincu !", Color("ffd24a"))
