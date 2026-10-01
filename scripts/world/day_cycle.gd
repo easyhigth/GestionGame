@@ -154,6 +154,9 @@ func _apply_light() -> void:
 		_env.background_color = NIGHT_BG.lerp(_day_env[0], d).lerp(DUSK_TINT, dusk * 0.6 * (1.0 - cloud)).lerp(grey, cloud * 0.85).lerp(Color(0.85, 0.88, 1.0), flash * 0.5)
 		_env.ambient_light_color = NIGHT_AMBIENT.lerp(_day_env[1], d)
 		_env.ambient_light_energy = lerpf(0.26, float(_day_env[2]), d) * (1.0 - cloud * 0.25) + flash * 0.8
+		# la brume de distance prend la couleur du ciel (bleutée le jour, dorée au crépuscule, sombre la nuit)
+		_env.fog_light_color = _env.background_color.lerp(Color(0.85, 0.88, 0.95), 0.15 * d)
+		_env.fog_light_energy = lerpf(0.35, 1.0, d)
 
 
 ## 1 en plein jour, 0 la nuit, entre les deux à l'aube et au crépuscule.
