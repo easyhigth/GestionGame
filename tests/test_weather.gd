@@ -117,7 +117,7 @@ func _process(_d) -> bool:
 		var sheltered: int = vn.members().filter(func(v): return v.is_sheltered()).size()
 		print("   activités ", acts, " à l'abri ", sheltered, " / ", vn.members().size())
 		check("le soir sous la pluie : ils s'abritent", acts.count("abri") == acts.size())
-		check("rentrés dans les cabanes (%d)" % sheltered, sheltered >= vn.members().size() - 1)
+		check("rentrés à l'abri dans les pièces construites (%d)" % sheltered, sheltered >= vn.members().size() - 1)
 		we.set_kind("clair"); we._mix = [0.0, 0.0, 0.0]
 		start("b2")
 	if later("b2", 2500):

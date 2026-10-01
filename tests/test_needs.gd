@@ -50,7 +50,7 @@ func _process(_d) -> bool:
 		for e in get_nodes_in_group("enemy_units"): e.queue_free()
 		print("== départ")
 		var m: Array = vn.members()
-		check("besoins présents : %d habitants, %d lits (3 cabanes), réserve %d repas" % [m.size(), vn.total_beds(), vn.meals()], vn != null and m.size() > 0 and vn.total_beds() == 6 and vn.meals() == 5)
+		check("besoins présents : %d habitants, %d lits (rien de construit au départ), réserve %d repas" % [m.size(), vn.total_beds(), vn.meals()], vn != null and m.size() > 0 and vn.total_beds() == 0 and vn.meals() == 5)
 		print("== repas")
 		var v0 = m[0]
 		v0.food = 30.0
@@ -126,7 +126,14 @@ func _process(_d) -> bool:
 		set_meta("t2", Time.get_ticks_msec())
 	if later("t2", 1500):
 		vn._update(1.0)
-		check("maison construite : 8 lits (6 + 2)", vn.total_beds() == 8)
+		check("maison construite : 2 lits", vn.total_beds() == 2)
+		# plus de cabanes toutes faites : seuls les deux premiers restent, un lit chacun
+		var keep: Array = vn.members().slice(0, vn.total_beds())
+		for v in vn.members():
+			if not keep.has(v):
+				v.remove_from_group("villagers")
+				v.queue_free()
+		vn._update(1.0)
 		gd.import_state({"step": 14, "progress": 0, "v": 2})
 		gd._check_state()
 		check("guide : un lit pour chacun -> étape bonheur", gd.step == 15)

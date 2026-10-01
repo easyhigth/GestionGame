@@ -294,7 +294,7 @@ func _check_state() -> void:
 			var vn := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
 			if vn:
 				var m := vn.members().size()
-				if current_id() == "lits" and m > 0 and vn.total_beds() >= m and vn.total_beds() > 6:
+				if current_id() == "lits" and m > 0 and vn.total_beds() >= m:
 					_advance("lits")
 				elif current_id() == "bonheur" and m > 0 and vn.average_happiness() >= 70.0:
 					_advance("bonheur")

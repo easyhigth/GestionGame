@@ -310,6 +310,7 @@ func generate(seed_value: int) -> void:
 	spawn_cell = _find_spawn(center)
 	_make_clearing(spawn_cell)
 	_place_sites()
+	_plan_structures()
 	_build_water()
 	_generated = true
 	var focus := cell_center(spawn_cell)
@@ -317,6 +318,7 @@ func generate(seed_value: int) -> void:
 	_place_player()
 	if not Engine.is_editor_hint():
 		_build_village()
+		_build_structures()
 		reveal(focus, REVEAL_RADIUS + 10)
 	world_generated.emit(seed_value)
 
@@ -1882,18 +1884,32 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	body.global_position = cell_center(z.obelisk)
 
 
+## Hauteur du seuil de l'arche par rapport au sol de la case de la porte (fondations comprises).
+func _gate_floor_offset(cell: Vector2i) -> float:
+	var top := -100000
+	for x in range(-2, 3):
+		top = maxi(top, roundi(terrain_height(cell + Vector2i(x, 0))))
+	return float(top) - terrain_height(cell)
+
+
 func _add_gate(holder: Node3D, z: Dictionary) -> void:
 	var body := StaticBody3D.new()
 	body.name = "Donjon"
-	for sx in [-0.7, 0.7]:
-		var cs := CollisionShape3D.new()
-		var box := BoxShape3D.new()
-		box.size = Vector3(0.5, 2.0, 0.6)
-		cs.shape = box
-		cs.position = Vector3(sx, 1.0, 0)
-		body.add_child(cs)
-	if dungeon_gate_model:
-		body.add_child(dungeon_gate_model.instantiate())
+	# l'arche est faite de blocs (WorldStructures.gate_plan) ; dans l'ouverture, un voile de ténèbres
+	var veil := MeshInstance3D.new()
+	var qm := QuadMesh.new()
+	qm.size = Vector2(1.0, 2.6)
+	veil.mesh = qm
+	var vm := StandardMaterial3D.new()
+	vm.albedo_color = Color(0.05, 0.02, 0.08, 0.92)
+	vm.emission_enabled = true
+	vm.emission = Color(0.25, 0.08, 0.35)
+	vm.emission_energy_multiplier = 0.6
+	vm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	vm.cull_mode = BaseMaterial3D.CULL_DISABLED
+	veil.material_override = vm
+	veil.position = Vector3(0, 1.3 + _gate_floor_offset(z.gate), 0)
+	body.add_child(veil)
 	var label := Label3D.new()
 	var dm := get_node_or_null("Donjons") as DungeonManager
 	var gt: Array = dm.gate_text(z) if dm else [("Donjon de %s\nVaincu ✔" if z.get("cleared", false) else "Donjon de %s\nE : entrer") % z.name, Color("b0ffb0") if z.get("cleared", false) else Color("ffb0a0")]
@@ -1907,6 +1923,77 @@ func _add_gate(holder: Node3D, z: Dictionary) -> void:
 	body.add_child(label)
 	holder.add_child(body)
 	body.global_position = cell_center(z.gate)
+
+
+# ---------------------------------------------------------------- constructions du monde (en blocs)
+
+## Maisons et ruines des régions : [{"kind", "cell", "region", "seed"}].
+var structure_sites: Array = []
+
+
+## Choisit l'emplacement des maisons et des ruines (avant le premier affichage : le sol y est aplani).
+func _plan_structures() -> void:
+	structure_sites.clear()
+	for z in zones:
+		if float(z.dist) == 0.0:
+			continue
+		var rid: String = (z.type as RegionData).id if z.type else "prairie"
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([world_seed, int(z.id), 77])
+		for k in 2:
+			var dir := Vector2.from_angle(rng.randf() * TAU)
+			var c := _find_site(Vector2i((z.site as Vector2) + dir * (16.0 + 12.0 * k)), z.id, 30)
+			if c.x < 0:
+				continue
+			var mid := c + Vector2i(2, 2)
+			var ok := true
+			for other in [z.obelisk, z.gate]:
+				if (other as Vector2i).x >= 0 and mid.distance_to(other) < 9.0:
+					ok = false
+			for st in structure_sites:
+				if mid.distance_to(st.cell) < 12.0:
+					ok = false
+			if not ok:
+				continue
+			_flatten_spot(mid, 4)
+			structure_sites.append({"kind": "house" if k == 0 else "ruin", "cell": c, "region": rid, "seed": rng.randi()})
+
+
+## Pose les blocs de toutes les constructions du monde (une partie chargée les remplace ensuite
+## par les blocs sauvegardés : ce qui a été cassé le reste).
+func _build_structures() -> void:
+	if build == null:
+		return
+	for st in structure_sites:
+		var style: Dictionary = WorldStructures.STYLES.get(st.region, WorldStructures.STYLES.prairie)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = int(st.seed)
+		var plan: Dictionary = WorldStructures.house_plan(style) if st.kind == "house" else WorldStructures.ruin_plan(style, rng)
+		_clear_decor_under(plan, st.cell)
+		WorldStructures.build(self, plan, st.cell, rng, 0.08 if st.kind == "house" else 0.0, style)
+	for z in zones:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([world_seed, int(z.id), 91])
+		if (z.gate as Vector2i).x >= 0:
+			var gp := WorldStructures.gate_plan()
+			_clear_decor_under(gp, z.gate)
+			WorldStructures.build(self, gp, z.gate, rng, 0.0, {})
+		if (z.obelisk as Vector2i).x >= 0:
+			var op := WorldStructures.obelisk_plan()
+			_clear_decor_under(op, z.obelisk)
+			WorldStructures.build(self, op, z.obelisk, rng)
+
+
+func _clear_decor_under(plan: Dictionary, origin: Vector2i) -> void:
+	for k in plan:
+		var c := Vector2i(origin.x + k.x, origin.y + k.z)
+		if not _inside(c):
+			continue
+		_ensure_chunk_of(c)
+		if _decor[_idx(c)] != D_NONE:
+			_decor[_idx(c)] = D_NONE
+			if _decor_nodes.has(_chunk_of(c)):
+				_build_decor_chunk(_chunk_of(c))
 
 
 # ---------------------------------------------------------------- carte
@@ -2299,6 +2386,21 @@ func remove_village_prop(id: String) -> Array:
 	return out
 
 
+## Pose un meuble du campement (dans la grille de construction, tourné vers le feu).
+func _place_camp_furniture(id: String, offset: Vector2) -> void:
+	var it := Items.get_item(id) as ItemData
+	if it == null or build == null:
+		return
+	var origin := cell_center(spawn_cell)
+	var col := cell_at(Vector3(origin.x + offset.x, 0, origin.z + offset.y))
+	_ensure_chunk_of(col)
+	if _decor[_idx(col)] != D_NONE:
+		remove_decor(col, false)
+	var to := Vector2(-offset.x, -offset.y)
+	var rot := posmod(roundi(atan2(to.x, to.y) / (PI * 0.5)), 4)
+	build.place_furniture(col, terrain_height(col), it, rot)
+
+
 ## Tourne un objet pour que sa face avant (+Z) regarde le feu.
 func _face_center(n: Node3D) -> void:
 	if n == null:
@@ -2310,17 +2412,11 @@ func _face_center(n: Node3D) -> void:
 func _build_village() -> void:
 	_village_props.clear()
 	_spawn(campfire_scene, Vector2(0, 0))
-	_face_center(_prop("hut_1", _spawn(hut_scene, Vector2(-7.0, -3.5))))
-	_face_center(_prop("hut_2", _spawn(hut_scene, Vector2(7.0, -4.0))))
-	_face_center(_prop("hut_3", _spawn(hut_scene, Vector2(0.5, -8.5))))
-	_prop("barrel_1", _spawn(barrel_scene, Vector2(-3.8, -5.8)))
-	_prop("barrel_2", _spawn(barrel_scene, Vector2(-3.0, -6.3)))
-	_prop("barrel_3", _spawn(barrel_scene, Vector2(-3.4, -5.1)))
-	_prop("crate_1", _spawn(crate_scene, Vector2(3.6, -6.4))).rotation.y = 0.3
-	_prop("crate_2", _spawn(crate_scene, Vector2(9.8, -1.2)))
-	_prop("crate_3", _spawn(crate_scene, Vector2(4.4, -6.9))).rotation.y = -0.2
-	_face_center(_prop("workbench", _spawn(workbench_scene, Vector2(-8.5, 3.5))))
-	_face_center(_prop("rack", _spawn(weapon_rack_scene, Vector2(9.0, 2.5))))
+	# pas de cabanes toutes faites : le campement n'a que des meubles posés comme ceux du joueur
+	# (ils se cassent et se ramassent pareil) ; les maisons, c'est au joueur de les bâtir
+	for f in [["etabli", Vector2(-8.5, 3.5)], ["ratelier", Vector2(9.0, 2.5)], ["tonneau", Vector2(-3.8, -5.8)],
+			["tonneau", Vector2(-3.0, -6.6)], ["coffre", Vector2(3.6, -6.4)]]:
+		_place_camp_furniture(f[0], f[1])
 	# objets posés autour du feu
 	for i in starting_loot.size():
 		var a := PI * 0.15 + PI * 0.7 * float(i) / maxf(1.0, starting_loot.size() - 1.0)

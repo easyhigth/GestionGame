@@ -88,7 +88,7 @@ func _process(_d) -> bool:
 		bm.furniture_index = bm._furniture_items.find(items.get_item("torche")); plan(5, 0, s + Vector2i(-1, 1), s + Vector2i(-1, 1), H)
 		bm.toggle(false)
 		k.recompute()
-		# un habitant de plus que de lits : il dormira par terre
+		# plus d'habitants que de lits : les autres dormiront par terre
 		while villagers().size() < 9:
 			var v = w.villager_scene.instantiate()
 			v.race = w.villager_races[randi() % w.villager_races.size()]
@@ -103,10 +103,10 @@ func _process(_d) -> bool:
 		var kinds := {}
 		for sp in spots: kinds[sp[1]] = int(kinds.get(sp[1], 0)) + 1
 		print("   pièces : ", k.typed_rooms().map(func(r): return r.type.display_name), " places : ", kinds)
-		check("places pour dormir : 2 lits (maison) + 6 dans les cabanes", kinds.get("lit", 0) == 2 and kinds.get("cabane", 0) == 6)
+		check("places pour dormir : 2 lits (maison), plus de cabanes toutes faites", kinds.get("lit", 0) == 2 and kinds.get("cabane", 0) == 0)
 		var in_bed := villagers().filter(func(v): return v.bed_kind == "lit").size()
 		var none := villagers().filter(func(v): return v.bed_kind == "").size()
-		check("lits attribués : 2 dans la maison, %d sans lit" % none, in_bed == 2 and none == 1)
+		check("lits attribués : 2 dans la maison, %d sans lit" % none, in_bed == 2 and none == villagers().size() - 2)
 		print("== repas (12 h)")
 		dc.hour = 12.1
 		start("a")
@@ -142,9 +142,6 @@ func _process(_d) -> bool:
 		var lit_ok := villagers().filter(func(v): return v.bed_kind == "lit" and v.is_sleeping() and v.visual.is_downed() and v.global_position.distance_to(v.bed_spot) < 0.3)
 		var lit_n := villagers().filter(func(v): return v.bed_kind == "lit" and v != guard).size()
 		check("dans la maison : couchés sur leur lit (%d / %d)" % [lit_ok.size(), lit_n], lit_ok.size() == lit_n and lit_n >= 1)
-		var hut_ok := villagers().filter(func(v): return v.bed_kind == "cabane" and v.is_sleeping() and not v.visual.visible)
-		var hut_n := villagers().filter(func(v): return v.bed_kind == "cabane" and v != guard).size()
-		check("dans les cabanes : rentrés à l'intérieur (%d / %d)" % [hut_ok.size(), hut_n], hut_ok.size() == hut_n)
 		var ground := villagers().filter(func(v): return v.bed_kind == "" and v.is_sleeping() and v.visual.is_downed())
 		var no_bed := villagers().filter(func(v): return v.bed_kind == "" and v != guard).size()
 		check("sans lit : par terre près du feu (%d)" % ground.size(), ground.size() == no_bed)
