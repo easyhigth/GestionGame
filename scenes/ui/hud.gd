@@ -69,6 +69,7 @@ var story_dialog: StoryDialog
 var journal: JournalPanel
 var mountain_caves: MountainCaves
 var city_life: CityLife
+var console: CommandConsole
 var fishing: Fishing
 var caves: UnderwaterCaves
 var _breath_box: Control
@@ -501,6 +502,10 @@ func _build_maps() -> void:
 	shop_dialog = ShopDialog.new()
 	shop_dialog.player = player
 	add_child(shop_dialog)
+	console = CommandConsole.new()
+	console.player = player
+	console.world = world
+	add_child(console)
 	if player:
 		# le marchand ambulant ouvre sa boutique, les autres voyageurs se présentent
 		player.talk.connect(func(s):

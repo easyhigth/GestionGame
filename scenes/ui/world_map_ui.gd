@@ -198,14 +198,17 @@ func _draw() -> void:
 	var rs := 48.0
 	draw_texture_rect(rose, Rect2(map_rect.end - Vector2(rs + 10, rs + 10), Vector2(rs, rs)), false)
 	# noms des zones découvertes
+	# (sur un monde immense, les noms n'apparaissent qu'en zoomant, pour rester lisibles)
+	var names := world.zones.size() <= 40 or zoom >= 1.8
 	for z in world.zones:
-		if not z.discovered or z.type == null:
+		if not names or not z.discovered or z.type == null:
 			continue
 		var p := cell_to_screen(z.site)
 		var t: RegionData = z.type
 		var fs := 13 if zoom < 2.0 else 16
 		_text_center(z.name, p + Vector2(0, -8), fs, t.map_color.lightened(0.45))
-		_text_center("%s · Nv %d-%d" % [t.display_name, z.level.x, z.level.y], p + Vector2(0, 8), 10, C_DIM)
+		if world.zones.size() <= 40 or zoom >= 3.0:
+			_text_center("%s · Nv %d-%d" % [t.display_name, z.level.x, z.level.y], p + Vector2(0, 8), 10, C_DIM)
 	# donjons et obélisques
 	for z in world.zones:
 		if (z.gate as Vector2i).x >= 0 and world.is_revealed(z.gate):
@@ -220,6 +223,7 @@ func _draw() -> void:
 			draw_polyline(PackedVector2Array([q + Vector2(0, -r), q + Vector2(r * 0.7, 0), q + Vector2(0, r), q + Vector2(-r * 0.7, 0), q + Vector2(0, -r)]), Color.BLACK, 1.5)
 			if z.id == selected or z.id == _hover:
 				_text_center("Voyager : %s" % z.name, q + Vector2(0, -r - 10), 12, C_OBELISK.lightened(0.4))
+	_draw_places()
 	# village
 	var v := cell_to_screen(Vector2(world.spawn_cell) + Vector2(0.5, 0.5))
 	draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color("f2c86a"))
@@ -262,6 +266,18 @@ func _draw() -> void:
 	# légende
 	var lx := 20.0
 	var ly := size.y - 120.0
+	# lieux remarquables
+	var lx2 := 196.0
+	draw_rect(Rect2(lx2 - 6, ly - 16, 170, 92), Color(0, 0, 0, 0.45))
+	_castle_icon(Vector2(lx2 + 5, ly), 5.0, Color("ffd24a"))
+	draw_string(_font, Vector2(lx2 + 18, ly + 4), "Capitale", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
+	_castle_icon(Vector2(lx2 + 5, ly + 20), 4.0, Color("d8c8a8"))
+	draw_string(_font, Vector2(lx2 + 18, ly + 24), "Château (gris : abandonné)", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
+	_wreck_icon(Vector2(lx2 + 5, ly + 40))
+	draw_string(_font, Vector2(lx2 + 18, ly + 44), "Épave", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
+	draw_circle(Vector2(lx2 + 5, ly + 60), 4.0, Color("2a1e14"))
+	draw_arc(Vector2(lx2 + 5, ly + 60), 4.0, 0, TAU, 12, Color("c8a070"), 1.5)
+	draw_string(_font, Vector2(lx2 + 18, ly + 64), "Grotte (en zoomant)", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
 	draw_rect(Rect2(lx - 6, ly - 16, 170, 92), Color(0, 0, 0, 0.45))
 	draw_rect(Rect2(lx, ly - 5, 10, 10), Color("f2c86a"))
 	draw_string(_font, Vector2(lx + 18, ly + 4), "Ton royaume", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
@@ -271,6 +287,57 @@ func _draw() -> void:
 	draw_string(_font, Vector2(lx + 18, ly + 44), "Donjon (vert : vaincu)", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
 	draw_colored_polygon(PackedVector2Array([Vector2(lx + 5, ly + 54), Vector2(lx + 10, ly + 66), Vector2(lx, ly + 66)]), Color.WHITE)
 	draw_string(_font, Vector2(lx + 18, ly + 64), "Toi", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
+
+
+## Capitales, châteaux, épaves et entrées de grottes déjà vus (ou dévoilés par /carte).
+func _draw_places() -> void:
+	var mc := get_tree().get_first_node_in_group("mountain_caves")
+	if mc and zoom >= 2.0:
+		for e in mc._entrances.values():
+			if (e as Dictionary).is_empty() or not world.is_revealed(e.cell):
+				continue
+			var q := cell_to_screen(Vector2(e.cell) + Vector2(0.5, 0.5))
+			draw_circle(q, 3.5, Color("2a1e14"))
+			draw_arc(q, 3.5, 0, TAU, 12, Color("c8a070"), 1.5)
+	for st in world.structure_sites:
+		if st.kind == "castle":
+			var c: Vector2i = st.cell + Vector2i(10, 10)
+			if world.is_revealed(c):
+				var q := cell_to_screen(Vector2(c))
+				_castle_icon(q, 5.0, Color(0.6, 0.6, 0.62) if st.abandoned else Color("d8c8a8"))
+				if zoom >= 2.0:
+					_text_center("Château abandonné" if st.abandoned else "Château", q + Vector2(0, -12), 10, C_DIM)
+		elif st.kind == "wreck":
+			var c: Vector2i = st.cell + Vector2i(1, 6)
+			if world.is_revealed(c):
+				_wreck_icon(cell_to_screen(Vector2(c)))
+	for city in world.cities:
+		var c: Vector2i = city.center
+		if not world.is_revealed(c):
+			continue
+		var q := cell_to_screen(Vector2(c) + Vector2(0.5, 0.5))
+		var col: Color = Diplomacy.NATIONS.get(city.nation, {}).get("color", Color("ffd24a"))
+		draw_arc(q, float(city.radius) * _scale(), 0, TAU, 48, Color(col, 0.7), 2.0)
+		_castle_icon(q, 8.0, Color("ffd24a"))
+		_text_center(city.name, q + Vector2(0, -18), 15, col.lightened(0.4), UiTheme.font("title"))
+		_text_center("%d habitants" % int(city.population), q + Vector2(0, 18), 10, C_DIM)
+
+
+func _castle_icon(q: Vector2, r: float, col: Color) -> void:
+	var pts := PackedVector2Array([q + Vector2(-r, r), q + Vector2(-r, -r), q + Vector2(-r * 0.5, -r), q + Vector2(-r * 0.5, -r * 0.5),
+		q + Vector2(0, -r * 0.5), q + Vector2(0, -r), q + Vector2(r * 0.5, -r), q + Vector2(r * 0.5, -r * 0.5),
+		q + Vector2(r, -r * 0.5), q + Vector2(r, r)])
+	draw_colored_polygon(pts, col)
+	pts.append(pts[0])
+	draw_polyline(pts, Color.BLACK, 1.2)
+
+
+func _wreck_icon(q: Vector2) -> void:
+	var hull := PackedVector2Array([q + Vector2(-6, 0), q + Vector2(6, 0), q + Vector2(4, 4), q + Vector2(-4, 4)])
+	draw_colored_polygon(hull, Color("8a5a32"))
+	draw_line(q + Vector2(0, 0), q + Vector2(1, -7), Color("4a3020"), 1.5)
+	hull.append(hull[0])
+	draw_polyline(hull, Color.BLACK, 1.0)
 
 
 func _text_center(text: String, pos: Vector2, fs: int, col: Color, fnt: Font = null) -> void:

@@ -14,6 +14,8 @@ signal changed(current: int, maximum: int)
 @export var regen_delay: float = 6.0
 
 var current: int = 0
+## Aucun dégât (terminal de commandes : /dieu).
+var invulnerable := false
 var _since_hit := 999.0
 var _regen_acc := 0.0
 
@@ -39,7 +41,7 @@ func set_max(value: int, refill := false) -> void:
 
 
 func take_damage(amount: int, source: Node = null) -> int:
-	if is_dead() or amount <= 0:
+	if is_dead() or amount <= 0 or invulnerable:
 		return 0
 	var dealt := mini(amount, current)
 	current -= dealt

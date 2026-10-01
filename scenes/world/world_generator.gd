@@ -2524,6 +2524,47 @@ func load_area(pos: Vector3) -> void:
 		_stream(pos, true)
 
 
+## Téléporte le héros n'importe où (terminal de commandes) : au sol, ou sur les blocs de la case.
+func teleport(pos: Vector3) -> void:
+	if player == null:
+		return
+	var c := cell_at(pos)
+	if not _inside(c):
+		c = Vector2i(clampi(c.x, 1, world_size.x - 2), clampi(c.y, 1, world_size.y - 2))
+	var dest := Vector3(c.x + 0.5, 0.0, c.y + 0.5)
+	_stream(dest, true)
+	dest.y = terrain_height(c)
+	dest.y = support_height(dest, dest.y + 0.3)
+	player.global_position = dest
+	if player.has_method("snap_camera"):
+		player.snap_camera()
+	Villager.bring_companions(get_tree(), dest)
+	reveal(dest, REVEAL_RADIUS)
+
+
+## Dévoile les lignes [y0, y1[ de la carte (le terminal dévoile tout le monde, quelques lignes par image).
+## Une couleur par carré de 2 × 2 cases : quatre fois plus rapide, et invisible à l'échelle de la carte.
+func reveal_rows(y0: int, y1: int) -> void:
+	if map_image == null:
+		return
+	y0 = maxi(0, y0 - y0 % 2)
+	for y in range(y0, mini(y1, world_size.y), 2):
+		for x in range(0, world_size.x, 2):
+			var i := y * world_size.x + x
+			if _revealed[i] != 0:
+				continue
+			var col := map_color(Vector2i(x, y))
+			for d in [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)]:
+				var cx: int = x + d.x
+				var cy: int = y + d.y
+				if cx < world_size.x and cy < world_size.y:
+					var j := cy * world_size.x + cx
+					if _revealed[j] == 0:
+						_revealed[j] = 1
+						map_image.set_pixel(cx, cy, col)
+	_map_dirty = true
+
+
 ## Téléporte le héros près d'un obélisque activé (ou au village).
 func travel_to(z: Dictionary) -> bool:
 	if player == null or z.is_empty() or not z.obelisk_on:

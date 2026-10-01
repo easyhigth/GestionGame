@@ -358,7 +358,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Modèles : `tools/voxel_blocks_generator.py` (textures des blocs), `tools/voxel_furniture_generator.py` (31 meubles), `tools/build_database.py` (objets, recettes et types de pièces).
 
 ## Monde ouvert
-- Un monde de 640 × 640 m (réglable : nœud **World** > **World Size**) découpé en 25 zones d'environ 128 m (**Zone Size**), chacune avec un nom et un type de région tiré selon le climat (nord froid, sud chaud), l'humidité et l'éloignement du village. Les frontières sont fondues sur une dizaine de mètres (**Region Blend**).
+- Un monde immense de 1 536 × 1 536 m (plus de 2 km², réglable : nœud **World** > **World Size**) découpé en 144 zones d'environ 128 m (**Zone Size**), chacune avec un nom et un type de région tiré selon le climat (nord froid, sud chaud), l'humidité et l'éloignement du village. Les frontières sont fondues sur une dizaine de mètres (**Region Blend**).
 - Le terrain est calculé et affiché par morceaux de 16 m autour du héros (**View Distance**) : seuls les morceaux proches existent en 3D, avec leurs camps de monstres et leurs objets au sol. Un objet ramassé ne revient pas.
 - Plus on s'éloigne du village, plus les monstres sont forts : chaque zone a sa fourchette de niveaux (« Loup · Nv 3 ») et des camps d'élite (loup alpha, ogre des cimes, seigneur squelette, dryade corrompue, seigneur démon...).
 - Nouveaux monstres : slimes (bleu, acide, de magma), araignée géante, loup de givre, ours des neiges, scorpion géant, salamandre de feu, homme-lézard, harpie, ogre, esprit follet, fée sauvage, dryade corrompue, démons, seigneur squelette.
@@ -368,6 +368,25 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Un bandeau annonce chaque nouvelle zone (nom, région, niveaux) ; la découverte d'une zone donne de l'expérience.
 - Les feuillages et les murs entre la caméra et le héros deviennent transparents.
 - Modèles : `tools/voxel_region_props.py` (cactus, sapins enneigés, arbres morts, champignons géants, cerisiers, roseaux, cristaux, roches volcaniques, obélisque, porte de donjon), `tools/voxel_creature_generator.py` (créatures), `tools/regions_database.py` (monstres et régions).
+
+## Un monde immense à explorer
+- **Hautes montagnes** : dans les montagnes, la toundra et les volcans, des crêtes montent jusqu'à 35 m au-dessus du sol, en falaises étagées. Chaque zone porte un nom composé (« Pics de Sombreval », « Brasiers de Loupmont »...).
+- **Grottes dans les montagnes** : au pied des falaises, des entrées sombres mènent à trois niveaux de cavernes naturelles, de plus en plus profondes. Les murs cachent du fer, puis de l'or et des cristaux, et du mithril tout au fond. À la pioche, on creuse où l'on veut : chaque bloc cassé ouvre un passage et révèle la roche derrière (on peut creuser sans fin). Monstres et coffres à chaque niveau, sortie et descente balisées. Ce qui a été creusé est sauvegardé.
+- **Châteaux forts** : une douzaine dans le monde, en blocs comme le reste. Certains sont **abandonnés** : murs écroulés, squelettes et seigneur squelette qui hantent la cour, trésor au donjon. Les autres sont **habités** : une garnison et un seigneur à qui parler.
+- **Épaves** : des navires échoués sur les plages, avec un coffre dans la cale (or, perles, gemmes). Un coffre ouvert le reste, même après rechargement.
+
+## Les capitales des nations
+Les cinq nations voisines (voir Diplomatie) ont chacune une capitale bâtie dans une de leurs régions, loin du village. Elles sont faites des mêmes blocs que les constructions du joueur (des milliers chacune : on peut les casser, et ce qui est cassé est sauvegardé), à l'échelle de vraies villes de 110 à 140 m de large, et s'inspirent des cités du Seigneur des Anneaux :
+- **Hrodgard** (Jarls du Givre), façon Edoras : une colline en paliers ceinte d'une palissade de rondins pointus, trois anneaux de maisons longues au toit de chaume, et le grand hall au toit doré au sommet. 380 habitants.
+- **Lothëlia** (Cour de Sylvaë), façon Fondcombe : des terrasses de marbre blanc reliées par une longue rampe, des demeures claires aux toits de tuiles et la maison du seigneur sur la plus haute terrasse. 420 habitants.
+- **Qasr-Ammar** (Sultanat des Sables) : de hauts remparts de grès percés de quatre portes, des rues en damier bordées de maisons à toit plat, un grand bazar d'une douzaine d'étals et le palais au dôme doré. 900 habitants.
+- **Gor-Karath** (Horde de Karg), façon Isengard : une enceinte noire hérissée de pointes autour d'une tour noire de 40 m à quatre cornes, avec des huttes et des forges. 650 habitants.
+- **Minas Cendrys** (Principauté des Cendres), façon Minas Tirith : sept cercles étagés de 4 m chacun, un rempart par cercle avec sa porte alternativement d'un côté puis de l'autre, des rampes entre les niveaux et la tour blanche de la citadelle tout en haut (près de 50 m). On monte à pied de la grande porte jusqu'à la citadelle. 1 200 habitants.
+
+Dans les rues :
+- À l'approche, la ville s'anime : une quarantaine de citadins des peuples de la nation flânent dans les rues, des gardes tiennent chaque porte et le souverain attend devant son palais (Jarl, Dame, Sultan, Chef de guerre, Prince). Ils disparaissent quand on s'éloigne, ce qui garde le jeu fluide. Un bandeau annonce la ville, sa population et ses marchands.
+- **E** près d'un habitant : il parle (chaque ville a ses répliques).
+- **Marchands** : 4 à 13 étals par ville, chacun avec son métier (forgeron, épicier, herboriste, joaillier, maçon, charpentier, tisserand). **E** ouvre sa boutique : on achète son stock et on lui vend tout ce qui a de la valeur. Les prix varient de 20 % selon les relations avec sa nation, et un marchand refuse de commercer en temps de guerre. Le stock acheté ne revient pas tant que la partie tourne.
 
 ## Donjons et boss
 - Chaque zone (sauf celle du village) a une entrée de donjon. **E** devant l'entrée : on descend dans un donjon généré sous la surface, toujours le même pour une partie donnée : une dizaine de salles reliées par des couloirs, bâties avec les blocs de la région (réglables dans `data/regions/*.tres` > groupe **Donjon** : sol, murs, piliers, couleur des torches et de l'ambiance).
@@ -437,6 +456,30 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Panneau : touche Y, ou bouton « Diplomatie » du panneau du royaume (U).
 - **Conquête** : en guerre, à partir du niveau 6, le bouton « Assiéger la capitale » emmène le héros (et ses compagnons) devant la place forte de la nation. Trois vagues de soldats sortent du donjon, puis leur champion (Grukk le Brise-Remparts, Ysolde la Dryade-Reine, Ssarak Sultan des Sables, Fenrök le Loup du Jarl, Azhar Prince des Cendres). Le portail « Retraite » permet de lever le siège.
 - Champion vaincu : la nation devient une **province** (trésor de la capitale, +2 attaque et +2 défense pour le héros, impôts tous les 2 jours, un colon de sa race tous les 5 jours). Avec 3 provinces, ton royaume devient un **Empire**.
+
+## Terminal de commandes (Entrée ou /)
+Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas à gauche. Le jeu continue pendant qu'on écrit ; la ligne se ferme après chaque commande et les réponses restent affichées quelques secondes. **Échap** referme, **↑ / ↓** rappellent les commandes précédentes, **Tab** complète le nom d'une commande. Les accents sont facultatifs.
+
+| Commande | Effet |
+|---|---|
+| `/aide` | la liste des commandes |
+| `/carte` | dévoile toute la carte (en une dizaine de secondes, sans figer le jeu) : zones, capitales, châteaux, épaves, grottes |
+| `/lieux` | les capitales et les châteaux, avec leurs coordonnées |
+| `/tp <x> <z>` | téléporte à des coordonnées |
+| `/tp <lieu>` | téléporte devant une capitale (`/tp minas`, `/tp hrodgard`...), dans une zone par son nom, ou au plus proche : `village`, `château` (`château abandonné`, `château habité`), `épave`, `grotte`, `donjon` |
+| `/pos` | ta position et ta zone |
+| `/donner <objet> [nombre]` | un objet par son identifiant ou son nom (`/donner épée en fer`, `/donner mithril 20`) |
+| `/or <nombre>` | des pièces d'or |
+| `/soin` | vie et faim au maximum |
+| `/dieu` | invincible (encore une fois pour arrêter) |
+| `/vitesse <x>` | vitesse de marche multipliée (1 = normale, jusqu'à 10) |
+| `/niveau <n>` | monte jusqu'au niveau n |
+| `/heure <0-24>`, `/meteo <clair, nuageux, pluie, orage, brouillard>` | l'heure et le temps |
+| `/obelisques` | active tous les obélisques (voyage rapide partout depuis la carte) |
+| `/tuer` | terrasse les monstres à moins de 30 m |
+| `/graine` | la graine du monde |
+
+La carte montre maintenant les **capitales** (avec leur enceinte et leur population), les **châteaux** (gris : abandonnés), les **épaves** et, en zoomant, les **entrées de grottes**. Sur le monde immense, les noms des zones apparaissent en zoomant.
 
 ## Sauvegarde, menus et options
 - **3 emplacements de sauvegarde** et une **sauvegarde automatique** toutes les 5 minutes (désactivable). Menu pause > Sauvegarder ; écran titre > Continuer (la plus récente) ou Charger. Chaque emplacement affiche le héros, son niveau, le rang du royaume, la zone, le temps de jeu et la date.

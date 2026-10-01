@@ -121,6 +121,9 @@ var _orbit_moved := 0.0
 var _orbit_pressed_at := 0
 var level := 1
 var xp := 0
+## Terminal de commandes : vitesse multipliée (/vitesse) et invincibilité (/dieu).
+var cheat_speed := 1.0
+var cheat_god := false
 ## En mode construction (les clics servent à construire, pas à frapper).
 var building := false
 ## Compétence unique (peut être null).
@@ -641,7 +644,7 @@ func _physics_process(delta: float) -> void:
 			dig()
 	if input.length() > 1.0:
 		input = input.normalized()
-	var speed: float = stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0) * (0.85 if hunger <= 0.0 else 1.0) * _weather_speed() * (_mounts_node().speed_mult() if _mounts_node() else 1.0)
+	var speed: float = cheat_speed * stats.move_speed * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier() * (1.0 + _job_bonus("bonus_speed")) * (skill.speed_mult() if skill else 1.0) * (0.85 if hunger <= 0.0 else 1.0) * _weather_speed() * (_mounts_node().speed_mult() if _mounts_node() else 1.0)
 
 	if can_input and can_act() and not building:
 		_handle_combat_input(input, delta)
