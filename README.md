@@ -357,6 +357,10 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Boss vaincu : trésor (or, lingots, équipements rares), portail de sortie, beaucoup d'expérience, et ton héros **absorbe l'âme du boss** : un bonus permanent propre à chaque boss (**Boss Soul**, par exemple « Prédation du Slime Primordial : +2,5 vie/s »). L'entrée du donjon devient verte sur la carte (« Vaincu »).
 - Si tu tombes dans un donjon, tu te réveilles au village comme d'habitude. On ne peut pas construire dans un donjon.
 
+- **Pièges à piques** dans les couloirs : le sol rougit, puis les piques jaillissent (le héros, les habitants et les monstres y perdent de la vie).
+- **Le Gardien** : un monstre d'élite plus grand et bien plus résistant garde une salle du milieu (gemme, or, parfois du mithril).
+- **Salle secrète** (la plupart des donjons) : un mur fissuré cache un trésor. Une stèle grave l'ordre de trois leviers (◆ ● ▲ ★) ; dans le bon ordre, le mur s'ouvre ; sinon les leviers se remettent en place et blessent le héros. Deux coffres : gemme, or, lingots, mithril, parfois une larme d'esprit.
+
 ### Fin de jeu : la Brume
 - Quand l'histoire est finie (ou que tous les donjons sont vaincus), **la Brume s'éveille** : les donjons déjà vaincus affichent « Brume : palier N » à leur entrée.
 - 10 paliers par donjon, à franchir l'un après l'autre : monstres « brumeux » (+4 niveaux par palier), boss « Écho de Brume », lumière violette. Dès le palier 4, le boss a les 4 pouvoirs.
