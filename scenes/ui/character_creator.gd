@@ -759,6 +759,7 @@ func _randomize() -> void:
 func _start() -> void:
 	profile.hero_name = _name_edit.text.strip_edges() if _name_edit.text.strip_edges() != "" else "Héros"
 	GameState.hero = profile
+	GameState.play_intro = true
 	SaveGame.pending = {}
 	SaveGame.play_time = 0.0
 	# la nouvelle partie prend le premier emplacement libre

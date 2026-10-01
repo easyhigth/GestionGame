@@ -79,15 +79,28 @@ func _row(dip: Diplomacy, id: String) -> Control:
 	var n: Dictionary = Diplomacy.NATIONS[id]
 	var s: Dictionary = dip.states[id]
 	var pc := PanelContainer.new()
-	pc.add_theme_stylebox_override("panel", MenuKit.style(Color("2f2622"), Color(n.color, 0.6), 1, 4, 6))
+	pc.add_theme_stylebox_override("panel", MenuKit.card(false, 6))
+	# blason de la nation à gauche de sa fiche
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	pc.add_child(row)
+	var crest := TextureRect.new()
+	crest.texture = UiTheme.tex("crest_" + id)
+	crest.custom_minimum_size = Vector2(40, 46)
+	crest.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	crest.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	crest.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(crest)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 3)
-	pc.add_child(v)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(v)
 	# ligne 1 : nom, peuple, statut, relation, traités
 	var h1 := HBoxContainer.new()
 	h1.add_theme_constant_override("separation", 10)
-	var name_l := MenuKit.label(n.name, 14, n.color)
-	name_l.custom_minimum_size.x = 190
+	var name_l := MenuKit.heading(n.name, 14, n.color)
+	name_l.custom_minimum_size.x = 180
 	h1.add_child(name_l)
 	var status := dip.status(id)
 	var st_l := MenuKit.label(status, 12, Diplomacy.status_color(status))

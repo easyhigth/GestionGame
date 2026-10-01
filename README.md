@@ -261,6 +261,8 @@ Une fois le Pacte conclu avec Orvane (acte I de l'histoire), les liens font **é
 - Tous les sons sont fabriqués par programme (`tools/audio_generator.py`, synthèse en Python pur) dans `assets/audio/sfx/` et `assets/audio/music/`. Pour mettre un vrai son, remplace le fichier en gardant son nom (un `.ogg` du même nom est pris en priorité). Le code est dans `scripts/audio/sound.gd` (autoload `Sound` : `Sound.play("hit", position)`).
 - Bruitages des systèmes récents : leviers, piques des pièges, mur secret qui coulisse, potions, sertissage des gemmes, gravure des runes, succès, cloches des événements, tambours de guerre (sièges, invasions, déclarations de guerre), fanfares (tournoi, annexion, victoire de siège), sceau des traités.
 
+- **Une musique par région** (`tools/audio_generator.py`, générée comme les autres) : flûte et harpe pour la forêt profonde, cloches et battements sourds pour les marais, oud et percussions à main dans le désert, cors pour les montagnes, carillons glacés dans la toundra, célesta pour le bois enchanté, tambours de guerre pour les terres de cendres, marimba et maracas dans la jungle. Près du village, on garde le thème « de chez soi » ; la nuit, le thème nocturne.
+- **Donjons et grottes** : un thème souterrain inquiétant. **Boss** : un thème de combat à part, plus lourd que celui des raids.
 ## Jour et nuit
 - Un jour dure 10 minutes (6 h → 20 h) et une nuit 4 minutes (20 h → 6 h). L'heure et le jour s'affichent sous la mini-carte ; le ciel, le soleil et la lune changent avec l'heure.
 - **La nuit**, des monstres de la région apparaissent dans le noir, à 15-24 m du héros, et marchent vers lui : un peu plus chaque nuit (4 la première, jusqu'à 8). Ils n'apparaissent pas près d'une lumière (torche, lanterne posée, feu de camp du village) ni dans une pièce fermée. Au lever du jour, ils fuient.
@@ -314,6 +316,10 @@ Règles :
   - `voxel_creature_generator.py` : régénère les créatures (loup, loup alpha, sanglier) dans `assets/characters/creatures/`.
   - `voxel_equipment_generator.py` : régénère les équipements de toutes les races (`python voxel_equipment_generator.py`). Pour ajouter une pièce : écris sa fonction, ajoute-la à `ITEMS`, relance le script, puis crée son fichier dans `data/items/` avec le même `id`.
 
+## Introduction
+- Chaque nouvelle partie (après la création du héros) s'ouvre sur une courte cinématique : la légende du Cœur d'Aube écrite en calligraphie sur fond noir, puis la caméra survole le cristal d'Orvane (« un cristal murmure ton nom »), glisse jusqu'au héros au village, et le titre « L'Éveil du Royaume — Acte I » apparaît entre deux bandes de cinéma. Musique du titre, interface cachée pendant la scène.
+- Espace, E, Échap ou un clic la passent. On peut la revoir depuis le journal (O → « Revoir l'introduction »).
+
 ## Interface : bois sombre, dorures et parchemin
 - **Polices** (libres, licence OFL, dans `assets/ui/fonts/`) : **Almendra** pour les titres (une calligraphie de manuscrit médiéval, faite pour les jeux de fantasy) et **Alegreya Sans** pour le texte (humaniste et très lisible, même petite ; chiffres alignés pour les statistiques).
 - **Thème commun** à toute l'interface (`scripts/ui/ui_theme.gd`, chargé au démarrage) : cadres en bois sombre aux coins dorés sertis d'un rubis, boutons en planche avec fermoirs de fer (dorés au survol), onglets, ascenseurs dorés, barres, champs de saisie, infobulles, listes déroulantes. Les titres des panneaux sont posés sur un **ruban rouge** à queues d'aronde, les sections séparées par un filet doré.
@@ -323,6 +329,12 @@ Règles :
 - **Bestiaire illustré** : chaque créature et chaque boss a son **portrait** (rendu de son modèle 3D, vue de trois quarts : `assets/ui/portraits/`, régénérés par `tools/render_portraits.gd`). Les créatures jamais vaincues apparaissent en silhouette avec un « ? ». Un clic sur une carte ouvre sa **fiche sur parchemin** : grand portrait, vie / attaque / défense / victoires, régions, butin, ressources rares, notes du naturaliste et un conseil de combat. Les 9 seigneurs des donjons ont leur section.
 - **Succès** : cartes par catégorie avec icône, barre de progression et points.
 - Dialogues de l'histoire : portrait du personnage dans un médaillon doré ; inventaire, création du héros, carte du monde, journal, royaume, pause et écran titre suivent le même style.
+- **Portraits des personnages** : les 25 personnages de l'histoire (en buste) et les 21 races ont leur portrait (`npc_<id>.png`, `race_<race>.png`, même outil). Le **journal** (O) a un onglet « Personnages » : la galerie de ceux qu'on a rencontrés (silhouettes pour les autres), avec leur titre et où ils en sont. Les portraits apparaissent aussi au recrutement, dans les quêtes et dans la liste des habitants du royaume. Les personnages de l'histoire gardent toujours la même apparence que leur portrait.
+- **Blasons** : chaque nation a son écu (hache de la Horde de Karg, feuille de Sylvaë, soleil des Sables, flocon du Givre, flamme des Cendres) dans le panneau de diplomatie.
+- **Guide** : une icône par chapitre (boussole, épée, maison, blé, or, habitants, gemme, crâne, bouclier).
+- **Inventaire** : la fiche de l'objet survolé montre sa grande image dans une case, son nom aux couleurs de sa rareté, ses effets et sa description.
+- **Carte du monde** sur un vieux parchemin (« Terra incognita » tant qu'on n'a pas exploré), dans un cadre doré, avec une rose des vents.
+- **Sons d'interface** : un parchemin qu'on déroule à l'ouverture d'un panneau et qu'on roule à la fermeture, une page tournée pour changer d'onglet, un « toc » de bois pour les boutons, un tic très doux au survol.
 
 ## Construction du royaume (façon Going Medieval)
 Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur place et une **caméra libre** survole le village : ZQSD/flèches pour la déplacer (Maj : plus vite), molette pour zoomer, clic molette + glisser ou A/E (Q/E en QWERTY) pour tourner. B ou Échap pour revenir au héros (on y revient aussi tout seul si le héros est attaqué).
@@ -441,7 +453,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
 
 ## Tests automatiques
-- Le dossier `tests/` contient 40 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
+- Le dossier `tests/` contient 41 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
 - Tout lancer : `GODOT=/chemin/vers/godot tests/run_tests.sh` (ou seulement quelques-uns : `tests/run_tests.sh save story`). Il faut l'éditeur Godot 4.7 ; sans écran, `xvfb-run` est utilisé automatiquement. Importer le projet une première fois : `godot --headless --editor --quit --path .`.
 - Le monde des tests est toujours le même (graine 4242, ou `TEST_SEED=...`). Les captures d'écran vont dans `tests/captures/`, les journaux dans `tests/logs/` (ignorés par git).
 - Un test réussi affiche `RÉSULTAT : tout est bon` sans erreur de script ; le lanceur fait le résumé et renvoie un code d'erreur si un test échoue.

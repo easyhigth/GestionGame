@@ -77,20 +77,21 @@ static func heading(text: String, size := 16, color := C_GOLD) -> Label:
 	return l
 
 
-static func button(text: String, width := 260.0, size := 15) -> Button:
+static func button(text: String, width := 260.0, size := 15, sfx := "ui_click") -> Button:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(width, 34)
 	b.add_theme_font_size_override("font_size", size + 2)
 	b.focus_mode = Control.FOCUS_ALL
-	b.pressed.connect(func(): Sound.ui("ui_click"))
+	b.pressed.connect(func(): Sound.ui(sfx))
 	b.mouse_entered.connect(func(): _hover_pulse(b))
 	return b
 
 
 ## Bouton d'onglet (actif : planche claire et texte doré).
 static func tab(text: String, active: bool, width := 0.0, size := 13) -> Button:
-	var b := button(text, width, size)
+	# changer d'onglet : bruit de page tournée
+	var b := button(text, width, size, "ui_hover" if active else "ui_page")
 	b.custom_minimum_size.y = 32
 	if active:
 		b.add_theme_stylebox_override("normal", UiTheme.box("tab_selected", 10, Vector4(14, 6, 14, 6)))
@@ -106,6 +107,7 @@ static func tab(text: String, active: bool, width := 0.0, size := 13) -> Button:
 static func _hover_pulse(c: Control) -> void:
 	if not c.is_inside_tree() or (c is BaseButton and c.disabled):
 		return
+	Sound.play("ui_hover", Vector3.INF, -16.0, 0.03)
 	c.pivot_offset = c.size / 2.0
 	var tw := c.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tw.tween_property(c, "scale", Vector2(1.03, 1.03), 0.06)
@@ -134,7 +136,11 @@ static func panel(parent: Control, width := 420.0) -> VBoxContainer:
 static func animate_open(c: Control) -> void:
 	c.visibility_changed.connect(func():
 		if c.is_visible_in_tree():
-			pop_in(c))
+			pop_in(c)
+		elif c.has_meta("opened") and c.is_inside_tree() and not c.is_queued_for_deletion():
+			# le parchemin se roule à la fermeture
+			c.remove_meta("opened")
+			Sound.ui("ui_close"))
 	# un panneau trop haut pour l'écran est réduit plutôt que coupé
 	c.resized.connect(func():
 		if not c.has_meta("popping"):
@@ -155,6 +161,7 @@ static func pop_in(c: Control, dur := 0.16) -> void:
 	if not c.is_inside_tree():
 		return
 	var target := fit_scale(c)
+	c.set_meta("opened", true)
 	c.modulate.a = 0.0
 	c.scale = Vector2.ONE * target * 0.97
 	c.pivot_offset = c.size / 2.0
@@ -217,6 +224,16 @@ static func icon_label(icon_name: String, text: String, size := 13, color := C_T
 static func portrait_texture(id: String) -> Texture2D:
 	var p := PORTRAIT_DIR + id + ".png"
 	return load(p) as Texture2D if ResourceLoader.exists(p) else null
+
+
+## Portrait d'un habitant : celui du personnage de l'histoire, sinon celui de sa race.
+static func villager_portrait_id(v: Node) -> String:
+	if v == null:
+		return ""
+	if v.has_meta("story"):
+		return "npc_" + str(v.get_meta("story"))
+	var race = v.get("race")
+	return "race_" + race.resource_path.get_file().get_basename() if race else ""
 
 
 ## Portrait dans un médaillon doré. `known` faux : silhouette sombre (créature jamais vaincue).

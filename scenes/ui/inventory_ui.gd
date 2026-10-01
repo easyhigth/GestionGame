@@ -26,6 +26,7 @@ var _slots_box: VBoxContainer
 var _stats: Label
 var _bag: GridContainer
 var _info_name: Label
+var _info_icon: TextureRect
 var _info_text: Label
 var _recipes: VBoxContainer
 var _bench: Label
@@ -169,17 +170,31 @@ func _build() -> void:
 	_bag.add_theme_constant_override("h_separation", 4)
 	_bag.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(_bag)
+	# fiche de l'objet survolé : grande image dans sa case, nom, rareté, effets, description
 	var info := PanelContainer.new()
-	info.add_theme_stylebox_override("panel", _style(C_SLOT, C_FRAME.darkened(0.4), 1))
-	info.custom_minimum_size = Vector2(0, 92)
+	info.add_theme_stylebox_override("panel", MenuKit.card(false, 8))
+	info.custom_minimum_size = Vector2(0, 96)
 	c2.add_child(info)
+	var irow := HBoxContainer.new()
+	irow.add_theme_constant_override("separation", 8)
+	info.add_child(irow)
+	_info_icon = TextureRect.new()
+	_info_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_info_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_info_icon.custom_minimum_size = Vector2(52, 52)
+	var islot := PanelContainer.new()
+	islot.add_theme_stylebox_override("panel", UiTheme.box("slot", 8, Vector4(4, 4, 4, 4)))
+	islot.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	islot.add_child(_info_icon)
+	irow.add_child(islot)
 	var ib := VBoxContainer.new()
-	info.add_child(ib)
-	_info_name = _label("Survole un objet", 12)
+	ib.add_theme_constant_override("separation", 1)
+	irow.add_child(ib)
+	_info_name = MenuKit.heading("Survole un objet", 12, C_TEXT)
 	ib.add_child(_info_name)
 	_info_text = _label("", 10, C_DIM)
 	_info_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_info_text.custom_minimum_size = Vector2(270, 0)
+	_info_text.custom_minimum_size = Vector2(210, 0)
 	ib.add_child(_info_text)
 
 	# 3. artisanat
@@ -533,6 +548,7 @@ func _recipe_row(r: RecipeData, near: bool) -> Control:
 
 
 func _show_info(item: ItemData) -> void:
+	_info_icon.texture = Items.get_icon(item)
 	_info_name.text = "%s  ·  %s" % [item.display_name, item.slot_name()]
 	_info_name.add_theme_color_override("font_color", item.rarity_color())
 	var st := item.stats_text()

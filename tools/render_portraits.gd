@@ -1,6 +1,7 @@
 extends SceneTree
 ## Photographie chaque créature (data/enemies/*.tres) pour le bestiaire et les fiches :
-## assets/ui/portraits/<id>.png (256 × 256, fond transparent, vue de trois quarts).
+## assets/ui/portraits/<id>.png (256 × 256, fond transparent, vue de trois quarts),
+## les personnages de l'histoire en buste (npc_<id>.png) et chaque race (race_<fichier>.png).
 ##
 ##   godot --path . --resolution 640x480 -s tools/render_portraits.gd   (avec un affichage, ex. xvfb-run)
 ##   ONLY=loup,ogre pour n'en refaire que quelques-uns.
@@ -22,6 +23,13 @@ func _initialize() -> void:
 	for f in DirAccess.get_files_at("res://data/enemies"):
 		if f.ends_with(".tres") and (only.is_empty() or f.get_basename() in only):
 			_queue.append(f.get_basename())
+	var npcs: Dictionary = load("res://scripts/story/story_data.gd").NPCS
+	for id in npcs:
+		if only.is_empty() or "npc_" + id in only:
+			_queue.append("npc_" + id)
+	for f in DirAccess.get_files_at("res://data/races"):
+		if f.ends_with(".tres") and (only.is_empty() or "race_" + f.get_basename() in only):
+			_queue.append("race_" + f.get_basename())
 	_vp = SubViewport.new()
 	_vp.size = Vector2i(SIZE, SIZE)
 	_vp.transparent_bg = true
@@ -68,23 +76,45 @@ func _process(_d: float) -> bool:
 	if _queue.is_empty():
 		return true
 	_id = _queue.pop_front()
-	var data = load("res://data/enemies/%s.tres" % _id)
-	if data == null or data.model == null:
-		return false
 	var vc = load("res://scripts/voxel_character.gd").new()
-	_vp.add_child(vc)
-	vc.set_equipment_library(data.equipment_library)
-	vc.set_model(data.model)
-	for it in data.equipment:
-		vc.show_equipment(it.slot, it.id)
+	var bust := false
+	if _id.begins_with("npc_") or _id.begins_with("race_"):
+		# personnage : modèle de sa race (première palette, comme en jeu), équipement de départ
+		var info: Dictionary = {}
+		var race_path := "res://data/races/%s.tres" % _id.substr(5)
+		if _id.begins_with("npc_"):
+			info = load("res://scripts/story/story_data.gd").NPCS[_id.substr(4)]
+			race_path = info.race
+		var race = load(race_path)
+		if race == null:
+			vc.free()
+			return false
+		_vp.add_child(vc)
+		vc.set_equipment_library(race.equipment)
+		vc.set_model(race.villager_models[0] if not race.villager_models.is_empty() else race.model)
+		for it_id in info.get("kit", []):
+			var it = root.get_node("Items").get_item(it_id)
+			if it:
+				vc.show_equipment(it.slot, it.model_id())
+		bust = true
+	else:
+		var data = load("res://data/enemies/%s.tres" % _id)
+		if data == null or data.model == null:
+			vc.free()
+			return false
+		_vp.add_child(vc)
+		vc.set_equipment_library(data.equipment_library)
+		vc.set_model(data.model)
+		for it in data.equipment:
+			vc.show_equipment(it.slot, it.id)
 	_current = vc
-	_frame(vc)
+	_frame(vc, bust)
 	_wait = 4
 	return false
 
 
 ## Cadre la créature : boîte englobante de tous ses maillages, vue de trois quarts.
-func _frame(n: Node3D) -> void:
+func _frame(n: Node3D, bust := false) -> void:
 	var box := AABB()
 	var first := true
 	for m in n.find_children("*", "MeshInstance3D", true, false):
@@ -96,6 +126,11 @@ func _frame(n: Node3D) -> void:
 	var dir := Vector3(0.62, 0.32, 1.0).normalized()
 	var reach := box.size.length()
 	_cam.size = maxf(box.size.y, maxf(box.size.x, box.size.z) * 0.95) * 1.18
+	if bust and box.size.y > 1.3:
+		# buste : la tête et les épaules (le haut de la silhouette)
+		center = Vector3(center.x, box.end.y - box.size.y * 0.27, center.z)
+		dir = Vector3(0.45, 0.12, 1.0).normalized()
+		_cam.size = box.size.y * 0.62
 	_cam.near = 0.05
 	_cam.far = reach * 6.0 + 10.0
 	_cam.look_at_from_position(center + dir * (reach * 2.5 + 2.0), center)

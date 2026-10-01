@@ -19,6 +19,7 @@ var _dragging := false
 var _hover := -1
 var _font: Font
 var _frame_box: StyleBox
+var _paper_box: StyleBox
 
 
 func _ready() -> void:
@@ -28,6 +29,7 @@ func _ready() -> void:
 	visible = false
 	_font = get_theme_default_font()
 	_frame_box = UiTheme.frame(0)
+	_paper_box = UiTheme.parchment(0)
 
 
 func open() -> void:
@@ -185,8 +187,16 @@ func _draw() -> void:
 	var map_rect := Rect2(o, Vector2(world.world_size) * s)
 	# cadre de bois doré autour du parchemin de la carte
 	draw_style_box(_frame_box, map_rect.grow(18))
-	draw_rect(map_rect.grow(2), C_PAPER)
+	# terres inconnues : un vieux parchemin, les régions explorées s'y peignent par-dessus
+	draw_style_box(_paper_box, map_rect.grow(3))
+	var tf := UiTheme.font("title")
+	var tw := tf.get_string_size("Terra incognita", HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
+	draw_string(tf, map_rect.get_center() + Vector2(-tw / 2.0, map_rect.size.y * 0.34), "Terra incognita", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.35, 0.24, 0.14, 0.4))
 	draw_texture_rect(world.map_texture, map_rect, false)
+	# rose des vents
+	var rose := UiTheme.tex("icon_compass")
+	var rs := 48.0
+	draw_texture_rect(rose, Rect2(map_rect.end - Vector2(rs + 10, rs + 10), Vector2(rs, rs)), false)
 	# noms des zones découvertes
 	for z in world.zones:
 		if not z.discovered or z.type == null:

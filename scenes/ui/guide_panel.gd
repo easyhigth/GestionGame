@@ -56,6 +56,10 @@ const STEPS := [
 ## Chapitres : [titre, première étape, étape suivant la dernière].
 const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26], ["L'EAU", 26, 29],
 	["L'AVENTURE", 29, 33], ["LES VOISINS", 33, 38]]
+## Icône de chaque chapitre (assets/ui/icon_*.png).
+const CHAPTER_ICONS := {"PREMIERS PAS": "compass", "L'ÂGE DU FER": "sword", "LE VILLAGE": "house", "LES CHAMPS": "food",
+	"LE COMMERCE": "coin", "L'ÉLEVAGE": "people", "L'EAU": "gem", "L'AVENTURE": "skull", "LES VOISINS": "shield"}
+var _icon: TextureRect
 ## Astuces affichées une seule fois, la première fois que la situation se présente : [identifiant, texte].
 const TIPS := [
 	["gemme", "Une gemme ! Sertis-la à l'enclume (I → Artisanat → Forge) sur une arme ou une armure."],
@@ -95,8 +99,13 @@ func _ready() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
 	add_child(v)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 5)
+	v.add_child(top)
+	_icon = MenuKit.icon("compass", 16)
+	top.add_child(_icon)
 	_title = _label("", 10, Color("c8a870"))
-	v.add_child(_title)
+	top.add_child(_title)
 	_task = _label("", 13, Color("fff2c8"))
 	_task.add_theme_font_override("font", UiTheme.font("title"))
 	v.add_child(_task)
@@ -448,6 +457,7 @@ func _refresh() -> void:
 	var first := int(ch[1])
 	var total := int(ch[2]) - first
 	_title.text = "%s · %d / %d" % [ch[0], step - first + 1, total]
+	_icon.texture = UiTheme.tex("icon_" + str(CHAPTER_ICONS.get(ch[0], "compass")))
 	var n := int(s[3])
 	_task.text = s[1] + ("  (%d / %d)" % [progress, n] if n > 1 else "")
 	_hint.text = s[2]

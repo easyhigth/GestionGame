@@ -284,14 +284,40 @@ def sfx_horn():
 
 
 def sfx_ui_click():
-    return env(osc('square', 1400, 0.035), 0.001, 0.034, 0, 0)
+    """Bouton en planche : un petit « toc » de bois."""
+    knock = expdecay(osc('sine', lambda t: 520 - 900 * t, 0.07), 0.018)
+    tick = expdecay(bandpass(noise(0.03, 401), 1500, 5000), 0.006)
+    return mix(gain(knock, 0.9), gain(tick, 0.5))
 
 
 def sfx_ui_open():
-    out = silence(0.18)
-    place(out, env(osc('tri', note(72), 0.08), 0.002, 0.078, 0, 0), 0.0, 0.6)
-    place(out, env(osc('tri', note(79), 0.1), 0.002, 0.098, 0, 0), 0.06, 0.6)
+    """Parchemin qu'on déroule : un froissement qui glisse, puis un léger claquement."""
+    out = silence(0.42)
+    rustle = env(bandpass(noise(0.34, 403), lambda t: 900 + 2600 * t, 6500), 0.03, 0.12, 0.6, 0.15)
+    place(out, rustle, 0.0, 0.55)
+    place(out, expdecay(lowpass(noise(0.05, 404), 1800), 0.012), 0.33, 0.6)
     return out
+
+
+def sfx_ui_close():
+    """Parchemin qu'on roule : froissement plus court, vers le grave."""
+    rustle = env(bandpass(noise(0.24, 405), lambda t: 3200 - 6000 * t, 6000), 0.01, 0.1, 0.4, 0.1)
+    return gain(rustle, 0.6)
+
+
+def sfx_ui_page():
+    """Page tournée (changement d'onglet) : un souffle de papier."""
+    swish = env(bandpass(noise(0.2, 407), lambda t: 1400 + 5000 * t, 8000), 0.02, 0.06, 0.3, 0.1)
+    flick = expdecay(highpass(noise(0.03, 408), 3000), 0.008)
+    out = silence(0.24)
+    place(out, swish, 0.0, 0.6)
+    place(out, flick, 0.16, 0.35)
+    return out
+
+
+def sfx_ui_hover():
+    """Survol : un tic très doux."""
+    return gain(expdecay(osc('sine', 1900, 0.03), 0.006), 0.35)
 
 
 def sfx_craft():
@@ -615,9 +641,179 @@ def sfx_treaty():
     return out
 
 
+# ---------------------------------------------------------------- musiques des régions, des donjons et des boss
+
+CHORDS.update({
+    'D': [38, 45, 50, 54, 57], 'Eb': [39, 46, 51, 55, 58], 'Cm': [36, 43, 48, 51, 55], 'Ab': [44, 51, 56, 60, 63],
+    'B': [47, 54, 59, 63, 66], 'Fm': [41, 48, 53, 56, 60], 'Bm': [47, 54, 59, 62, 66], 'Gsus': [43, 50, 55, 60, 62],
+})
+
+
+def flute(n, sec):
+    """Flûte : sinus avec un vibrato qui s'installe."""
+    f = note(n)
+    s = osc('sine', lambda t: f * (1 + 0.006 * min(1.0, t * 3) * math.sin(TAU * 5.2 * t)), sec)
+    breath = gain(bandpass(noise(sec, 501), f, f * 3), 0.06)
+    return env(mix(s, breath), 0.06, 0.1, 0.8, min(0.25, sec * 0.3))
+
+
+def bell(n, sec, decay=0.9):
+    f = note(n)
+    return mix(*[gain(expdecay(osc('sine', f * h, sec), decay / h), g) for h, g in ((1, 1.0), (2.76, 0.35), (5.4, 0.15))])
+
+
+def marimba(n, sec):
+    f = note(n)
+    return mix(expdecay(osc('sine', f, sec), 0.18), gain(expdecay(osc('sine', f * 4, sec), 0.04), 0.3))
+
+
+def oud(n, sec):
+    return expdecay(lowpass(osc('saw', note(n), sec), 2400), 0.22)
+
+
+def horn(n, sec):
+    f = note(n)
+    s = mix(osc('saw', f, sec), gain(osc('saw', f * 1.003, sec), 0.7))
+    return env(lowpass(s, 1300), 0.12, 0.2, 0.75, min(0.3, sec * 0.3))
+
+
+def tom(pitch=110):
+    return expdecay(osc('sine', lambda t: pitch - 120 * t, 0.3), 0.09)
+
+
+LEADS = {'flute': flute, 'bell': lambda n, d: bell(n, d + 0.6), 'marimba': marimba, 'oud': oud, 'horn': horn,
+         'square': lambda n, d: env(lowpass(osc('square', note(n), d), 1500), 0.01, d * 0.4, 0.5, d * 0.3)}
+
+
+def region_song(prog, bpm, melody, lead, accomp, drums='', bass=True, lead_gain=0.32, pad_cut=900, pad_vol=0.08):
+    """Boucle d'une région : accords (pad), accompagnement (arpège ou accords frappés), percussions, mélodie."""
+    beat = 60.0 / bpm
+    bar = beat * 4
+    out = [0.0] * int(bar * len(prog) * SR)
+    t = 0.0
+    for ch in prog:
+        notes = CHORDS[ch]
+        place(out, pad([note(n) for n in notes[1:4]], bar * 1.02, pad_vol, pad_cut), t, 1.0)
+        if bass:
+            place(out, pluck(note(notes[0]), bar, 'sine', 0.9), t, 0.4)
+        if accomp == 'harp':
+            for k in range(8):
+                place(out, pluck(note(notes[1 + (k % 4)] + 12), beat, 'tri', 0.3), t + k * beat / 2, 0.14)
+        elif accomp == 'celesta':
+            for k in range(8):
+                place(out, bell(notes[1 + (k * 3) % 4] + 24, beat, 0.4), t + k * beat / 2, 0.08)
+        elif accomp == 'marimba':
+            for k in range(16):
+                if k % 3 != 2:
+                    place(out, marimba(notes[1 + (k % 4)] + 12, beat / 2), t + k * beat / 4, 0.16)
+        elif accomp == 'oud':
+            for k, at in enumerate((0, 1.5, 2, 3, 3.5)):
+                place(out, oud(notes[1 + k % 3], beat), t + at * beat, 0.18)
+        elif accomp == 'drops':
+            for k, at in enumerate((0.5, 2.75)):
+                place(out, bell(notes[2 + k] + 24, 1.2, 0.3), t + at * beat, 0.07)
+        elif accomp == 'stabs':
+            for at in (0, 0.75, 2, 2.75):
+                place(out, horn(notes[2], beat * 0.4), t + at * beat, 0.12)
+                place(out, horn(notes[3], beat * 0.4), t + at * beat, 0.1)
+        if drums == 'hand':
+            for at, p, g in ((0, 120, 0.5), (1.5, 160, 0.35), (2, 120, 0.45), (3, 180, 0.3), (3.5, 160, 0.3)):
+                place(out, tom(p), t + at * beat, g)
+        elif drums == 'shaker':
+            for k in range(8):
+                place(out, hat(), t + k * beat / 2, 0.18 if k % 2 else 0.1)
+            place(out, tom(90), t, 0.4)
+            place(out, tom(130), t + 2.5 * beat, 0.3)
+        elif drums == 'war':
+            for k in range(4):
+                place(out, kick(), t + k * beat, 0.7)
+                place(out, tom(70), t + k * beat + beat / 2, 0.35 if k % 2 else 0.0)
+            place(out, snare(), t + 3 * beat, 0.4)
+        elif drums == 'battle':
+            for k in range(8):
+                place(out, kick(), t + k * beat / 2, 0.6 if k % 2 == 0 else 0.25)
+                place(out, hat(), t + k * beat / 2 + beat / 4, 0.2)
+            place(out, snare(), t + beat, 0.5)
+            place(out, snare(), t + 3 * beat, 0.5)
+        elif drums == 'heart':
+            place(out, kick(), t, 0.5)
+            place(out, kick(), t + beat * 0.4, 0.3)
+        t += bar
+    fn = LEADS[lead]
+    for (tb, n, d) in melody:
+        place(out, fn(n, d * beat), tb * beat, lead_gain)
+    return fade(out, 0.0, 0.0)
+
+
+def music_foret():
+    mel = [(0, 69, 2), (2, 72, 1), (3, 74, 1), (4, 72, 3), (8, 69, 1), (9, 67, 1), (10, 69, 2), (12, 64, 4),
+           (16, 69, 2), (18, 72, 1), (19, 76, 1), (20, 74, 3), (24, 72, 1), (25, 71, 1), (26, 67, 2), (28, 69, 4)]
+    return region_song(['Dm', 'C', 'G', 'Dm', 'Dm', 'C', 'Gsus', 'Am'], 80, mel, 'flute', 'harp')
+
+
+def music_marais():
+    mel = [(2, 64, 3), (8, 67, 2), (10, 66, 4), (18, 64, 3), (24, 71, 2), (26, 69, 4)]
+    return region_song(['Em', 'C', 'Am', 'B', 'Em', 'C', 'Am', 'B'], 60, mel, 'bell', 'drops', 'heart', pad_cut=600, lead_gain=0.22)
+
+
+def music_desert():
+    mel = [(0, 74, 1), (1, 75, 0.5), (1.5, 78, 0.5), (2, 79, 1), (3, 78, 0.5), (3.5, 75, 0.5), (4, 74, 2),
+           (8, 81, 1), (9, 79, 0.5), (9.5, 78, 0.5), (10, 75, 1), (11, 74, 1), (12, 74, 4),
+           (16, 74, 1), (17, 75, 0.5), (17.5, 78, 0.5), (18, 79, 2), (20, 81, 1), (21, 82, 1), (22, 81, 2),
+           (24, 79, 1), (25, 78, 1), (26, 75, 1), (27, 74, 1), (28, 74, 4)]
+    return region_song(['D', 'Eb', 'D', 'Cm', 'D', 'Eb', 'Cm', 'D'], 96, mel, 'oud', 'oud', 'hand', lead_gain=0.3)
+
+
+def music_montagnes():
+    mel = [(0, 67, 3), (3, 71, 1), (4, 74, 4), (8, 72, 2), (10, 71, 2), (12, 67, 4),
+           (16, 67, 3), (19, 71, 1), (20, 76, 4), (24, 74, 2), (26, 72, 2), (28, 71, 4)]
+    return region_song(['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'D'], 70, mel, 'horn', 'harp', pad_vol=0.1, pad_cut=1100, lead_gain=0.22)
+
+
+def music_toundra():
+    mel = [(0, 81, 2), (4, 76, 2), (8, 79, 2), (12, 72, 4), (16, 81, 2), (20, 84, 2), (24, 79, 2), (28, 76, 4)]
+    return region_song(['Am', 'F', 'C', 'Em', 'Am', 'F', 'C', 'Em'], 56, mel, 'bell', 'drops', bass=False, pad_cut=700, lead_gain=0.2)
+
+
+def music_bois_enchante():
+    mel = [(0, 77, 1), (1, 79, 1), (2, 81, 2), (4, 83, 1), (5, 81, 1), (6, 79, 2), (8, 77, 3), (12, 72, 4),
+           (16, 77, 1), (17, 79, 1), (18, 81, 2), (20, 84, 2), (22, 83, 2), (24, 81, 3), (28, 79, 4)]
+    return region_song(['F', 'G', 'Am', 'F', 'F', 'G', 'Em', 'F'], 76, mel, 'flute', 'celesta', lead_gain=0.28)
+
+
+def music_volcan():
+    mel = [(0, 60, 1), (1, 63, 1), (2, 67, 2), (4, 68, 2), (6, 67, 2), (8, 65, 1), (9, 63, 1), (10, 62, 2), (12, 60, 4),
+           (16, 60, 1), (17, 63, 1), (18, 67, 2), (20, 72, 2), (22, 71, 2), (24, 68, 2), (26, 67, 2), (28, 67, 4)]
+    return region_song(['Cm', 'Ab', 'Bb', 'G', 'Cm', 'Ab', 'Fm', 'G'], 100, mel, 'square', 'stabs', 'war', pad_cut=700, lead_gain=0.2)
+
+
+def music_jungle():
+    mel = [(0, 72, 0.5), (0.5, 74, 0.5), (1, 76, 1), (2, 79, 1), (3, 76, 1), (4, 74, 2), (6, 72, 2),
+           (8, 69, 1), (9, 72, 1), (10, 74, 2), (12, 76, 4),
+           (16, 79, 0.5), (16.5, 81, 0.5), (17, 79, 1), (18, 76, 1), (19, 74, 1), (20, 72, 2), (22, 74, 2), (24, 69, 4), (28, 72, 4)]
+    return region_song(['Am', 'C', 'G', 'Am', 'F', 'C', 'G', 'Am'], 112, mel, 'flute', 'marimba', 'shaker', lead_gain=0.24)
+
+
+def music_dungeon():
+    mel = [(4, 64, 2), (12, 65, 2), (20, 64, 2), (26, 68, 4)]
+    return region_song(['Am', 'Am', 'Dm', 'E', 'Am', 'Fm', 'Dm', 'E'], 58, mel, 'bell', 'drops', 'heart', pad_cut=500, pad_vol=0.1, lead_gain=0.18)
+
+
+def music_boss():
+    mel = []
+    riff = [(0, 72, 0.5), (0.5, 72, 0.5), (1, 75, 0.5), (1.5, 72, 0.5), (2, 79, 1), (3, 77, 0.5), (3.5, 75, 0.5)]
+    for b in range(8):
+        sh = {1: -4, 2: -2, 3: -5, 5: -4, 6: -7, 7: -5}.get(b, 0)
+        mel += [(t + b * 4, n + sh, d) for t, n, d in riff]
+    return region_song(['Cm', 'Ab', 'Bb', 'G', 'Cm', 'Ab', 'Fm', 'G'], 150, mel, 'horn', 'stabs', 'battle', pad_cut=1400, pad_vol=0.1, lead_gain=0.22)
+
+
 SFX = {k[4:]: v for k, v in globals().items() if k.startswith('sfx_')}
 AMB = {'amb_day': amb_day, 'amb_night': amb_night, 'amb_fire': amb_fire, 'amb_rain': amb_rain, 'amb_wind': amb_wind}
-MUSIC = {'day': music_day, 'night': music_night, 'combat': music_combat, 'title': music_title}
+MUSIC = {'day': music_day, 'night': music_night, 'combat': music_combat, 'title': music_title,
+         'region_foret': music_foret, 'region_marais': music_marais, 'region_desert': music_desert,
+         'region_montagnes': music_montagnes, 'region_toundra': music_toundra, 'region_bois_enchante': music_bois_enchante,
+         'region_volcan': music_volcan, 'region_jungle': music_jungle, 'dungeon': music_dungeon, 'boss': music_boss}
 
 
 def main():

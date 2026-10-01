@@ -179,8 +179,14 @@ func _refresh() -> void:
 		var job := "Sans poste"
 		if v.work_room != null and v.work_room.type:
 			job = (v.work_room.type as RoomTypeData).job_name
+		var face := TextureRect.new()
+		face.texture = MenuKit.portrait_texture(MenuKit.villager_portrait_id(v))
+		face.custom_minimum_size = Vector2(24, 24)
+		face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		h.add_child(face)
 		var name_l := MenuKit.label("%s (%s)" % [v.villager_name, v.race.display_name if v.race else "?"], 12)
-		name_l.custom_minimum_size.x = 165
+		name_l.custom_minimum_size.x = 150
 		h.add_child(name_l)
 		var doing: String = v.ACTIVITY_NAMES.get(v.activity, "")
 		var job_l := MenuKit.label(job + ((" · " + doing) if doing != "" else ""), 11, MenuKit.C_DIM)

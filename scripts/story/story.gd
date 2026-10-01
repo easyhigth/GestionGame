@@ -358,6 +358,8 @@ func _npc_race(id: String) -> String:
 func _make_npc(id: String, where: String) -> Node3D:
 	var info: Dictionary = NPCS[id]
 	var v := world.villager_scene.instantiate() as Villager
+	# première palette de sa race : il ressemble toujours à son portrait
+	v.model_variant = 0
 	v.race = load(_npc_race(id))
 	v.villager_name = info.name
 	v.level = int(info.level) + (6 if id == "pip" and passed("pip_eveil") else 0)
