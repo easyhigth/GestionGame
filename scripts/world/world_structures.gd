@@ -146,3 +146,84 @@ static func build(world: WorldGenerator, plan: Dictionary, origin: Vector2i, rng
 		if it and grid.place_block(key, it):
 			n += 1
 	return n
+
+
+## Château fort (repère local 0..S-1) : enceinte crénelée, quatre tours d'angle coiffées d'ardoise,
+## porte au sud (z = S-1), donjon carré au centre. `mat` : murs, `trim` : créneaux et encadrements.
+static func castle_plan(size := 21, wall_h := 5, mat := "bloc_briques", trim := "bloc_pierre_polie") -> Dictionary:
+	var out := {}
+	var s := size
+	var m := s / 2
+	# enceinte
+	for i in s:
+		for y in wall_h:
+			for k in [Vector2i(i, 0), Vector2i(i, s - 1), Vector2i(0, i), Vector2i(s - 1, i)]:
+				# porte : 3 de large, 3 de haut
+				if k.y == s - 1 and absi(k.x - m) <= 1 and y < 3:
+					continue
+				out[Vector3i(k.x, y, k.y)] = mat
+		# créneaux
+		for k in [Vector2i(i, 0), Vector2i(i, s - 1), Vector2i(0, i), Vector2i(s - 1, i)]:
+			if i % 2 == 0:
+				out[Vector3i(k.x, wall_h, k.y)] = trim
+	# encadrement de la porte
+	for x in range(m - 2, m + 3):
+		out[Vector3i(x, 3, s - 1)] = trim
+	# tours d'angle 5 × 5, plus hautes, toit d'ardoise
+	for c in [Vector2i(0, 0), Vector2i(s - 5, 0), Vector2i(0, s - 5), Vector2i(s - 5, s - 5)]:
+		for y in wall_h + 3:
+			for x in 5:
+				for z in 5:
+					if x == 0 or x == 4 or z == 0 or z == 4:
+						if y == 1 and (x == 2 or z == 2):
+							out[Vector3i(c.x + x, y, c.y + z)] = "bloc_verre"
+						else:
+							out[Vector3i(c.x + x, y, c.y + z)] = mat
+		for x in 5:
+			for z in 5:
+				out[Vector3i(c.x + x, wall_h + 3, c.y + z)] = "bloc_ardoise"
+		for x in range(1, 4):
+			for z in range(1, 4):
+				out[Vector3i(c.x + x, wall_h + 4, c.y + z)] = "bloc_ardoise"
+		out[Vector3i(c.x + 2, wall_h + 5, c.y + 2)] = "bloc_ardoise"
+	# donjon central 7 × 7
+	var d0 := m - 3
+	for y in wall_h + 4:
+		for x in 7:
+			for z in 7:
+				if x == 0 or x == 6 or z == 0 or z == 6:
+					if z == 6 and x == 3 and y < 2:
+						continue
+					out[Vector3i(d0 + x, y, d0 + z)] = mat if not (y % 3 == 1 and (x == 3 or z == 3)) else "bloc_verre"
+	for x in 7:
+		for z in 7:
+			out[Vector3i(d0 + x, wall_h + 4, d0 + z)] = trim
+			if (x == 0 or x == 6 or z == 0 or z == 6) and (x + z) % 2 == 0:
+				out[Vector3i(d0 + x, wall_h + 5, d0 + z)] = trim
+	# sol de pierre polie dans la cour, devant le donjon
+	for x in range(m - 1, m + 2):
+		for z in range(d0 + 7, s - 1):
+			out[Vector3i(x, -1, z)] = trim
+	return out
+
+
+## Épave de navire échouée (repère local : x de 0 à 3, z de 0 à 11), penchée et à demi brisée.
+static func shipwreck_plan(rng: RandomNumberGenerator) -> Dictionary:
+	var out := {}
+	for z in 12:
+		var w := 1 if z < 2 or z > 9 else 2
+		for x in range(2 - w, 2 + w):
+			out[Vector3i(x, 0, z)] = "bloc_rondins"
+			if x == 2 - w or x == 1 + w:
+				out[Vector3i(x, 1, z)] = "bloc_planches"
+				if z > 2 and z < 10 and rng.randf() < 0.7:
+					out[Vector3i(x, 2, z)] = "bloc_planches"
+	# mât brisé et une vergue tombée
+	for y in range(1, 6):
+		out[Vector3i(1, y, 5)] = "bloc_rondins"
+	for z in range(3, 8):
+		out[Vector3i(3, 1, z)] = "bloc_rondins"
+	# la proue relevée
+	out[Vector3i(1, 1, 11)] = "bloc_planches"
+	out[Vector3i(1, 2, 11)] = "bloc_planches"
+	return out
