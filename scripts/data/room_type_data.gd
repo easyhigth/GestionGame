@@ -22,6 +22,8 @@ extends Resource
 @export var production: ItemData
 @export var production_count: int = 1
 @export var production_interval: float = 90.0
+## Plusieurs produits possibles : l'un d'eux au hasard à chaque fois (à la place de `production`).
+@export var production_pool: Array[ItemData] = []
 
 @export_group("Effets")
 ## Lits : habitants logés.

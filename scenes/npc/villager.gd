@@ -103,9 +103,10 @@ const SHELTER_ROOMS := ["taverne", "maison", "dortoir", "temple", "bibliotheque"
 var _in_hut := false
 const JOB_NAMES := {"forgeron": "Forgeron", "boulanger": "Boulanger", "garde": "Garde", "fermier": "Fermier",
 	"bucheron": "Bûcheron", "macon": "Maçon", "verrier": "Verrier", "aubergiste": "Aubergiste", "marchand": "Marchand",
-	"erudit": "Érudit", "pretre": "Prêtre", "mage": "Mage", "tisserand": "Tisserand"}
+	"erudit": "Érudit", "pretre": "Prêtre", "mage": "Mage", "tisserand": "Tisserand",
+	"alchimiste": "Alchimiste", "enchanteur": "Enchanteur", "dresseur": "Dresseur", "architecte": "Architecte"}
 const JOBS := ["forgeron", "boulanger", "garde", "fermier", "bucheron", "macon", "verrier", "aubergiste",
-	"marchand", "erudit", "pretre", "mage", "tisserand"]
+	"marchand", "erudit", "pretre", "mage", "tisserand", "alchimiste", "enchanteur", "dresseur", "architecte"]
 
 
 func _ready() -> void:

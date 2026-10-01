@@ -907,6 +907,37 @@ func _on_hunger_state() -> void:
 		notify.emit("Tu meurs de faim ! Mange vite (H).")
 
 
+## Boit une potion (touche Z) : une potion de soin si le héros est blessé, sinon une potion de renfort
+## dont l'effet n'est pas déjà actif. Renvoie la potion bue (null sinon).
+func drink_potion() -> ItemData:
+	var hurt := health.ratio() < 0.9
+	var heal: ItemData = null
+	var buff: ItemData = null
+	for e in inventory.entries:
+		var it := e.item as ItemData
+		if it == null or not it.is_potion():
+			continue
+		if it.potion_heal > 0.0 and heal == null:
+			heal = it
+		elif not it.potion_buff.is_empty() and buff == null and skill and not skill.buffs.has(it.potion_buff.keys()[0]):
+			buff = it
+	var pick: ItemData = heal if hurt and heal else buff
+	if pick == null:
+		notify.emit("Aucune potion à boire." if heal == null else "Tu es en pleine forme : garde ta potion de soin.")
+		return null
+	inventory.remove(pick, 1)
+	if pick.potion_heal > 0.0:
+		health.heal(roundi(health.max_health * pick.potion_heal))
+	if skill:
+		for k in pick.potion_buff:
+			skill.buffs[k] = [float(pick.potion_buff[k]), pick.potion_time]
+	refresh_stats()
+	Sound.play("eat", Vector3.INF, 2.0)
+	VoxelBurst.spawn(self, global_position + Vector3(0, 1.2, 0), Color(0.9, 0.3, 0.4) if pick.potion_heal > 0.0 else Color(0.5, 0.8, 1.0), 20, 2.5, 0.07, 0.6, "up", -2.0, false)
+	notify.emit("Tu bois : %s." % pick.display_name)
+	return pick
+
+
 ## Mange la nourriture du sac la mieux adaptée à sa faim. Renvoie l'objet mangé (null sinon).
 func eat(item: ItemData = null) -> ItemData:
 	if item == null:
@@ -1335,6 +1366,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 	if event.is_action_pressed("eat"):
 		eat()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("potion"):
+		drink_potion()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("place_block"):

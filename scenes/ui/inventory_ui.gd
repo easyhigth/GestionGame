@@ -432,7 +432,7 @@ func _evolution_box() -> void:
 ## Onglet « Forge » : renforcer (+1 à +10) et sertir des gemmes, à l'enclume.
 func _forge_rows() -> void:
 	var anvil := _stations.has("enclume")
-	var head := _label("Renforce ton équipement (+1 à +10) et sertis des gemmes." + ("" if anvil else "  Approche-toi d'une enclume."), 9, C_OK if anvil else C_DIM)
+	var head := _label("Renforce ton équipement (+1 à +10), sertis des gemmes et grave des runes." + ("" if anvil else "  Approche-toi d'une enclume."), 9, C_OK if anvil else C_DIM)
 	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	head.custom_minimum_size = Vector2(300, 0)
 	_recipes.add_child(head)
@@ -486,6 +486,24 @@ func _forge_rows() -> void:
 				gems.add_child(gb)
 			if gems.get_child_count() > 0:
 				col.add_child(gems)
+		# runes de l'enchanteur
+		var runes := HBoxContainer.new()
+		runes.add_theme_constant_override("separation", 3)
+		for rid in Forge.RUNES:
+			var n := player.inventory.count(Items.get_item(rid))
+			if n <= 0:
+				continue
+			var rb := Button.new()
+			rb.text = "Rune %s (%d)" % [Forge.RUNES[rid].name, n]
+			rb.add_theme_font_size_override("font_size", 9)
+			rb.tooltip_text = "Graver : %s%s" % [Forge.RUNES[rid].text, " (remplace la rune actuelle)" if it.rune != "" else ""]
+			rb.disabled = Forge.rune_block(player, it, rid, _stations) != ""
+			rb.pressed.connect(func():
+				Forge.inscribe(player, it, rid, _stations)
+				_refresh())
+			runes.add_child(rb)
+		if runes.get_child_count() > 0:
+			col.add_child(runes)
 		_recipes.add_child(panel)
 
 

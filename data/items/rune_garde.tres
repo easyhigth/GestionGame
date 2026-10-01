@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "rune_garde"
+display_name = "Rune de garde"
+description = "Gravée par l'enchanteur. À l'enclume (onglet Forge) : +4 défense."
+rarity = 3
+max_stack = 20

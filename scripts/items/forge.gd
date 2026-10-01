@@ -25,6 +25,14 @@ static func _item(id: String) -> ItemData:
 	var db := (Engine.get_main_loop() as SceneTree).root.get_node_or_null("Items")
 	return db.get_item(id) if db else null
 
+## Runes (gravées par les enchanteurs, voir le Sanctuaire des runes) : une par objet, remplaçable.
+const RUNES := {
+	"rune_force": {"name": "Force", "bonus": {"atk_pct": 0.06}, "text": "+6 % d'attaque"},
+	"rune_garde": {"name": "Garde", "bonus": {"def_flat": 4.0}, "text": "+4 défense"},
+	"rune_vie": {"name": "Vie", "bonus": {"hp_pct": 0.08}, "text": "+8 % de vie"},
+	"rune_celerite": {"name": "Célérité", "bonus": {"spd_pct": 0.05, "aspd_pct": 0.05}, "text": "+5 % de vitesse et de vitesse d'attaque"},
+}
+
 
 static func is_upgradable(item: ItemData) -> bool:
 	return item != null and item.is_equipment() and (item.attack > 0 or item.defense > 0 or item.magic > 0)
@@ -34,31 +42,40 @@ static func base_of(item: ItemData) -> String:
 	return item.base_id if item.base_id != "" else item.id
 
 
-static func variant_id(base: String, level: int, gems: PackedStringArray) -> String:
+static func variant_id(base: String, level: int, gems: PackedStringArray, rune := "") -> String:
 	var id := "%s@%d" % [base, level]
 	if not gems.is_empty():
 		id += "~" + ",".join(gems)
+	if rune != "":
+		id += "!" + rune
 	return id
 
 
-## [identifiant de base, niveau, gemmes] d'un identifiant de variante.
+## [identifiant de base, niveau, gemmes, rune] d'un identifiant de variante.
 static func parse(id: String) -> Array:
 	var base := id.get_slice("@", 0)
 	var rest := id.get_slice("@", 1)
+	var rune := ""
+	if rest.contains("!"):
+		rune = rest.get_slice("!", 1)
+		rest = rest.get_slice("!", 0)
+		if not RUNES.has(rune):
+			rune = ""
 	var level := int(rest.get_slice("~", 0))
 	var gems := PackedStringArray()
 	if rest.contains("~"):
 		for g in rest.get_slice("~", 1).split(","):
 			if GEMS.has(g):
 				gems.append(g)
-	return [base, level, gems]
+	return [base, level, gems, rune]
 
 
 ## Fabrique la variante améliorée d'un objet de base.
-static func make_variant(base: ItemData, level: int, gems: PackedStringArray) -> ItemData:
+static func make_variant(base: ItemData, level: int, gems: PackedStringArray, rune := "") -> ItemData:
 	var v := base.duplicate() as ItemData
 	v.base_id = base.id
-	v.id = variant_id(base.id, level, gems)
+	v.id = variant_id(base.id, level, gems, rune)
+	v.rune = rune
 	v.upgrade = level
 	v.gems = gems
 	var mult := 1.0 + 0.1 * level
@@ -79,6 +96,9 @@ static func make_variant(base: ItemData, level: int, gems: PackedStringArray) ->
 	for g in gems:
 		for k in GEMS[g].bonus:
 			bonus[k] = float(bonus.get(k, 0.0)) + float(GEMS[g].bonus[k])
+	if rune != "":
+		for k in RUNES[rune].bonus:
+			bonus[k] = float(bonus.get(k, 0.0)) + float(RUNES[rune].bonus[k])
 	v.bonus = bonus
 	v.max_stack = 1
 	return v
@@ -139,7 +159,7 @@ static func upgrade(p: Player, item: ItemData, stations: Array) -> ItemData:
 		return null
 	for pair in cost(item.upgrade + 1):
 		p.inventory.remove(_item(pair[0]), int(pair[1]))
-	var v := _item(variant_id(base_of(item), item.upgrade + 1, item.gems))
+	var v := _item(variant_id(base_of(item), item.upgrade + 1, item.gems, item.rune))
 	_replace(p, item, v)
 	p.feat.emit("Forge : %s" % v.display_name, v.rarity_color())
 	var snd := p.get_tree().root.get_node_or_null("Sound")
@@ -155,9 +175,32 @@ static func socket(p: Player, item: ItemData, gem: String, stations: Array) -> I
 	p.inventory.remove(_item(gem), 1)
 	var gems := item.gems.duplicate()
 	gems.append(gem)
-	var v := _item(variant_id(base_of(item), item.upgrade, gems))
+	var v := _item(variant_id(base_of(item), item.upgrade, gems, item.rune))
 	_replace(p, item, v)
 	p.feat.emit("Serti : %s dans %s" % [GEMS[gem].name, v.display_name], Color("c8a8ff"))
+	return v
+
+
+static func rune_block(p: Player, item: ItemData, rune: String, stations: Array) -> String:
+	if not is_upgradable(item):
+		return "Cet objet ne se grave pas."
+	if item.rune == rune:
+		return "Cette rune y est déjà gravée."
+	if not stations.has("enclume"):
+		return "Approche-toi d'une enclume."
+	if p.inventory.count(_item(rune)) <= 0:
+		return "Tu n'as pas de rune de %s." % RUNES[rune].name.to_lower()
+	return ""
+
+
+## Grave une rune (elle remplace l'ancienne) ; renvoie la nouvelle version, ou null.
+static func inscribe(p: Player, item: ItemData, rune: String, stations: Array) -> ItemData:
+	if rune_block(p, item, rune, stations) != "":
+		return null
+	p.inventory.remove(_item(rune), 1)
+	var v := _item(variant_id(base_of(item), item.upgrade, item.gems, rune))
+	_replace(p, item, v)
+	p.feat.emit("Rune de %s gravée : %s" % [RUNES[rune].name.to_lower(), v.display_name], Color("8ad0ff"))
 	return v
 
 

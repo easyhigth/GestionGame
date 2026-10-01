@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "potion_soin"
+display_name = "Potion de soin"
+description = "Un breuvage rouge de l'alchimiste. Z : la boire (rend la moitié de la vie). Soigne aussi les malades."
+rarity = 1
+max_stack = 20
+potion_heal = 0.5

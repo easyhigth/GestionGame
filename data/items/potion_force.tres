@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "potion_force"
+display_name = "Potion de force"
+description = "Z : la boire quand tu es en pleine forme (+25 % d'attaque pendant 90 s)."
+rarity = 2
+max_stack = 20
+potion_buff = {"atk_pct": 0.25}
+potion_time = 90.0
