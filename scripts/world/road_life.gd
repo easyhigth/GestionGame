@@ -10,6 +10,8 @@ const CHANCE := 0.55
 const SPAWN_MIN := 40.0
 const SPAWN_MAX := 70.0
 const DESPAWN := 120.0
+## Pas de rencontre à moins de cette distance du village de départ.
+const VILLAGE_CALM := 160.0
 
 var world: WorldGenerator
 var player: Player
@@ -39,6 +41,10 @@ func _process(delta: float) -> void:
 		return
 	_timer = CHECK_EVERY
 	if player.global_position.y < WorldGenerator.UNDERGROUND or _rng.randf() > CHANCE:
+		return
+	# pas de rencontre aux portes du village (le début de partie reste tranquille)
+	var sp := world.cell_center(world.spawn_cell)
+	if Vector2(player.global_position.x - sp.x, player.global_position.z - sp.z).length() < VILLAGE_CALM:
 		return
 	var near := nearest_road_point(player.global_position, 25.0)
 	if near.is_empty():
