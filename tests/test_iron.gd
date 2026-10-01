@@ -110,8 +110,12 @@ func _process(_d) -> bool:
 		check("pioche en pierre : l'or résiste", mine(gold, 3) == 3 and w.decor_at(gold) == 8)
 		# four et enclume près de l'établi du village
 		print("== forge")
-		var bench: Node3D = get_first_node_in_group("workbench")
-		p.global_position = bench.global_position + Vector3(0, 0, 2.2)
+		# l'établi du campement est un meuble posé (grille de construction)
+		var bench_pos := Vector3.ZERO
+		for fk in w.build.furniture:
+			if w.build.furniture[fk].item.id == "etabli":
+				bench_pos = Vector3(fk.x + 0.5, w.build.furniture[fk].base, fk.z + 0.5)
+		p.global_position = bench_pos + Vector3(0, 0, 2.2)
 		p.global_position.y = w.ground_height_at(p.global_position + Vector3(0, 2, 0))
 		p.facing = Vector3(0, 0, 1)
 		p.inventory.add(items.get_item("stone"), 10)

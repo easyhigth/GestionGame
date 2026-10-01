@@ -127,6 +127,13 @@ func _process(_d) -> bool:
 	if later("t2", 1500):
 		vn._update(1.0)
 		check("maison construite : 2 lits", vn.total_beds() == 2)
+		# plus de cabanes toutes faites : seuls les deux premiers restent, un lit chacun
+		var keep: Array = vn.members().slice(0, vn.total_beds())
+		for v in vn.members():
+			if not keep.has(v):
+				v.remove_from_group("villagers")
+				v.queue_free()
+		vn._update(1.0)
 		gd.import_state({"step": 14, "progress": 0, "v": 2})
 		gd._check_state()
 		check("guide : un lit pour chacun -> étape bonheur", gd.step == 15)
