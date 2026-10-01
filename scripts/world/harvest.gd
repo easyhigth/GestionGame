@@ -101,8 +101,11 @@ static func strike(p: Player, reach: float, power: float, with_blocks := false) 
 ## Les décors du village d'abord, puis arbres et rochers, puis les petites plantes.
 static func find_target(p: Player, reach: float, with_blocks := false) -> Dictionary:
 	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
-	if world == null or p.global_position.y < WorldGenerator.UNDERGROUND:
+	if world == null:
 		return {}
+	if p.global_position.y < WorldGenerator.UNDERGROUND:
+		# dans une grotte de montagne : on creuse les parois
+		return _built_target(p, world) if with_blocks and _cave(p) != null else {}
 	var fwd := Vector3(p.facing.x, 0, p.facing.z).normalized()
 	var best_prop: Node3D = null
 	var best_d := INF
@@ -174,8 +177,15 @@ static func harvest_crop(p: Player, cell: Vector2i) -> void:
 
 
 ## Bloc ou meuble posé juste devant le héros (aux pieds, puis au-dessus, puis le sol posé devant).
+## La grotte de montagne où se trouve le héros (null ailleurs).
+static func _cave(p: Player) -> MountainCaves:
+	var mc := p.get_tree().get_first_node_in_group("mountain_caves") as MountainCaves
+	return mc if mc and mc.active and p.global_position.y < WorldGenerator.UNDERGROUND else null
+
+
 static func _built_target(p: Player, world: WorldGenerator) -> Dictionary:
-	var grid := world.build
+	var cave := _cave(p)
+	var grid := world.dungeon_grid if cave else world.build
 	var fwd := Vector3(p.facing.x, 0, p.facing.z).normalized()
 	var here := world.cell_at(p.global_position)
 	var col := world.cell_at(p.global_position + fwd * 1.1)
@@ -194,7 +204,8 @@ static func _built_target(p: Player, world: WorldGenerator) -> Dictionary:
 
 ## Frappe un bloc ou un meuble posé : il se casse après quelques coups et revient à ramasser.
 static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Player) -> void:
-	var grid := world.build
+	var cave := _cave(p)
+	var grid := world.dungeon_grid if cave else world.build
 	var it: ItemData
 	var key: Vector3i
 	var at: Vector3
@@ -225,8 +236,16 @@ static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Pla
 		return
 	Sound.play("break_stone" if stone else "break_wood", at)
 	world.block_damage.erase(dkey)
-	var got: ItemData = grid.remove_block(key) if t.has("block") else grid.remove_furniture(key)
 	VoxelBurst.spawn(p, at, col, 20, 3.2, 0.1, 0.55, "sphere", 9.0, false)
+	if cave and t.has("block"):
+		# grotte : la paroi s'ouvre, la roche continue derrière ; un minerai rend son métal
+		if not cave.can_mine(key):
+			return
+		var res := cave.mine(key)
+		if not res.is_empty() and res[0]:
+			_drop(world, res[0], int(res[1]), at - Vector3(0, 0.4, 0), cave._content)
+		return
+	var got: ItemData = grid.remove_block(key) if t.has("block") else grid.remove_furniture(key)
 	if got:
 		_drop(world, got, 1, at - Vector3(0, 0.4, 0))
 
@@ -404,9 +423,12 @@ static func dig(p: Player) -> ItemData:
 
 
 ## Laisse tomber des objets à ramasser (ils se ramassent en marchant dessus).
-static func _drop(world: WorldGenerator, it: ItemData, n: int, at: Vector3) -> void:
+static func _drop(world: WorldGenerator, it: ItemData, n: int, at: Vector3, parent: Node = null) -> void:
 	if it == null or n <= 0:
 		return
 	var a := randf() * TAU
 	var pos := at + Vector3(cos(a), 0, sin(a)) * randf_range(0.1, 0.45)
-	world.spawn_pickup(it, pos, n)
+	if parent:
+		world.spawn_pickup(it, pos, n, parent)
+	else:
+		world.spawn_pickup(it, pos, n)

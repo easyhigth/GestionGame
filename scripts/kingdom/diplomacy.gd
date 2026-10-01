@@ -226,6 +226,9 @@ func block(id: String, action: String) -> String:
 			var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
 			if dm == null or dm.active:
 				return "Impossible depuis un donjon."
+			var cs := get_tree().get_first_node_in_group("city_siege")
+			if cs and cs.active():
+				return "Un siège est déjà en cours."
 		"gift", "like":
 			if at_war(id):
 				return "En guerre : elle refuse tes présents."
@@ -318,6 +321,10 @@ func act(id: String, action: String) -> bool:
 func start_siege(id: String) -> bool:
 	if block(id, "siege") != "":
 		return false
+	# la vraie capitale si le monde en a une (voir CitySiege), sinon une place forte souterraine
+	var cs := get_tree().get_first_node_in_group("city_siege")
+	if cs and cs.start(id):
+		return true
 	var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
 	dm.enter_siege(id)
 	return true

@@ -166,7 +166,7 @@ func _process(_d) -> bool:
 		check("E près de la berge : on débarque", not mo.is_sailing() and w.terrain_type(w.cell_at(p.global_position)) not in [0, 1])
 		print("== îles")
 		var found := []
-		for r in [3, 5, 7]:
+		for r in [3, 5, 7, 12, 20, 32]:
 			found = w.islands_near(w.cell_center(w.spawn_cell), r)
 			if not found.is_empty(): break
 		check("des îles au large (%d)" % found.size(), not found.is_empty())

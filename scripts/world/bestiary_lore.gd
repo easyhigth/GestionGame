@@ -6,6 +6,8 @@ const NOTES := {
 	"slime_bleu": ["Petite gelée curieuse des prairies. Elle rebondit vers tout ce qui brille.", "Inoffensive seule : idéale pour apprendre à esquiver."],
 	"slime_acide": ["Sa gelée verte ronge le cuir et le bois. Elle aime l'humidité des marais.", "Frappe puis recule : son contact brûle."],
 	"slime_magma": ["Une coulée de lave qui a appris à ramper. Elle laisse le sol fumant derrière elle.", "Ne reste pas au corps à corps trop longtemps."],
+	"bandit": ["Détrousseur des grandes routes, qui guette les caravanes entre les capitales.", "Ils attaquent en groupe : recule pour les prendre un par un."],
+	"bandit_chef": ["Le chef d'une bande de brigands, plus solide et mieux armé que ses hommes.", "Abats-le en premier : sans lui, la bande se disperse."],
 	"gobelin_pillard": ["Voleur rusé, toujours en bande, attiré par les réserves des villages.", "Pare son premier coup : il se découvre aussitôt."],
 	"loup": ["Chasseur des forêts et des plaines. Il attaque en meute à la tombée du jour.", "Garde ton dos contre un arbre ou un mur."],
 	"loup_alpha": ["Le chef de meute, plus massif, au pelage sombre et aux crocs usés par les combats.", "Abats-le d'abord : la meute se disperse."],

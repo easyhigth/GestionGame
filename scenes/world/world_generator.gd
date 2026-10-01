@@ -20,7 +20,7 @@ signal obelisk_activated(zone: Dictionary)
 
 @export_group("Monde")
 ## Taille du monde en cases (1 case = 1 m).
-@export var world_size: Vector2i = Vector2i(640, 640)
+@export var world_size: Vector2i = Vector2i(1536, 1536)
 ## Taille (en mètres) d'une zone : le monde est découpé en zones d'environ cette taille.
 @export var zone_size: int = 128
 ## Distance d'affichage autour du héros (en morceaux de 16 m).
@@ -171,6 +171,8 @@ const UNDERGROUND := -40.0
 const SEA_FLOOR := -2.0
 ## Rayon (m) autour du héros dévoilé sur la carte.
 const REVEAL_RADIUS := 26
+## Amplitude des crêtes de montagne par région (0 : pas de grands sommets).
+const PEAKS := {"montagnes": 1.3, "toundra": 0.7, "volcan": 0.9}
 const GRAIN_SCALE := 1.0 / 0.8
 const GRAIN := preload("res://assets/environment/voxel_grain.png")
 
@@ -200,6 +202,7 @@ var _map_dirty := false
 var _map_timer := 0.0
 var _last_reveal := Vector3.INF
 var _warp_noise: FastNoiseLite
+var _ridge_noise: FastNoiseLite
 var _mesh_cache := {}
 var _terrain_nodes := {}   # morceau -> MeshInstance3D
 var _decor_nodes := {}     # morceau -> Node3D
@@ -282,6 +285,7 @@ func generate(seed_value: int) -> void:
 	height_noise.seed = seed_value
 	moisture_noise.seed = seed_value + 1
 	_warp_noise.seed = seed_value + 2
+	_ridge_noise.seed = seed_value + 3
 	_rng.seed = seed_value
 	clear()
 	_load_region_types()
@@ -299,6 +303,7 @@ func generate(seed_value: int) -> void:
 	_island_cache.clear()
 	_recruited.clear()
 	removed_props.clear()
+	opened_chests.clear()
 	decor_damage.clear()
 	prop_damage.clear()
 	_camp_cells.clear()
@@ -311,8 +316,11 @@ func generate(seed_value: int) -> void:
 	var center := Vector2(world_size) / 2.0
 	spawn_cell = _find_spawn(center)
 	_make_clearing(spawn_cell)
+	_plan_cities()
+	_plan_roads()
 	_place_sites()
 	_plan_structures()
+	_plan_hamlets()
 	_build_water()
 	_generated = true
 	var focus := cell_center(spawn_cell)
@@ -321,8 +329,35 @@ func generate(seed_value: int) -> void:
 	if not Engine.is_editor_hint():
 		_build_village()
 		_build_structures()
+		_build_cities()
+		_build_bridges()
 		reveal(focus, REVEAL_RADIUS + 10)
 	world_generated.emit(seed_value)
+
+
+const NAME_KINDS := {
+	"prairie": ["Prés", "Plaines", "Vallon", "Collines", "Champs", "Coteaux"],
+	"foret": ["Forêt", "Bois", "Futaie", "Sylve", "Hallier"],
+	"bois_enchante": ["Clairière", "Jardins", "Vallée", "Sylve", "Bosquets"],
+	"marais": ["Marais", "Tourbières", "Fondrières", "Marécages"],
+	"desert": ["Désert", "Dunes", "Erg", "Plateau", "Oasis"],
+	"montagnes": ["Pics", "Monts", "Cols", "Crêtes", "Hauts"],
+	"toundra": ["Toundra", "Glaciers", "Steppes", "Plaines gelées"],
+	"volcan": ["Terres", "Caldeira", "Coulées", "Brasiers"],
+	"jungle": ["Jungle", "Canopée", "Forêt vierge", "Mangroves"],
+}
+const NAME_START := ["Clair", "Mor", "Bel", "Haut", "Ros", "Fon", "Ver", "Aube", "Gris", "Sombre", "Or", "Lune",
+	"Brume", "Roc", "Val", "Ombre", "Givre", "Cendre", "Saule", "Ronce", "Aigle", "Loup", "Fer", "Étoile"]
+const NAME_END := ["val", "mont", "bois", "fleur", "combe", "lande", "pierre", "rive", "garde", "fosse", "croix",
+	"pré", "lac", "roche", "vent", "court", "brune", "ciel", "sang", "dor"]
+
+
+## Un nom de zone inventé : « Monts de Grisroche », « Dunes d'Orvent »...
+func _compose_name(region_id: String, rng: RandomNumberGenerator) -> String:
+	var kinds: Array = NAME_KINDS.get(region_id, ["Terres"])
+	var root: String = NAME_START[rng.randi() % NAME_START.size()] + NAME_END[rng.randi() % NAME_END.size()]
+	var de := "d'" if "AEÉIOUY".contains(root.substr(0, 1)) else "de "
+	return "%s %s%s" % [kinds[rng.randi() % kinds.size()], de, root]
 
 
 func _load_region_types() -> void:
@@ -411,8 +446,14 @@ func _make_zones() -> void:
 			if not used_names.has(cand):
 				nm = cand
 				break
-		if nm == "":
-			nm = "%s %d" % [t.display_name, zones.filter(func(o): return o.type == t).size()]
+		# monde immense : quand les noms de la région sont épuisés, on en compose de nouveaux
+		var tries := 0
+		while nm == "" or used_names.has(nm):
+			nm = _compose_name(t.id, zrng)
+			tries += 1
+			if tries > 40:
+				nm = "%s %d" % [t.display_name, zones.filter(func(o): return o.type == t).size()]
+				break
 		used_names[nm] = true
 		z.name = nm
 		# niveau : plus loin du village = plus fort
@@ -512,6 +553,11 @@ func _gen_chunk_data(ch: Vector2i) -> void:
 			var d := (Vector2(x, y) - center) / center
 			var edge := maxf(absf(d.x), absf(d.y))
 			var h := height_noise.get_noise_2d(x, y) * relief + bias - pow(edge, 4.0) * island_falloff + land_bias
+			# hautes montagnes : des crêtes qui montent très haut dans les régions de montagne
+			var peak := lerpf(float(PEAKS.get(r1.id if r1 else "", 0.0)), float(PEAKS.get(r2.id if r2 else "", 0.0)), f)
+			if peak > 0.0 and h > sand_level:
+				var ridge := 1.0 - absf(_ridge_noise.get_noise_2d(x, y))
+				h += peak * ridge * ridge * ridge * clampf((h - sand_level) * 4.0, 0.0, 1.0)
 			# îles au trésor, au large
 			var isl := _island_height(x, y)
 			if isl > h:
@@ -533,6 +579,35 @@ func _gen_chunk_data(ch: Vector2i) -> void:
 			_decor[i] = _pick_decor(x, y, t, h, m, r1)
 			if isl > -INF and _island_center_cell(x, y):
 				_decor[i] = D_NONE
+
+
+## Type et hauteur d'une case calculés directement (comme _gen_chunk_data, sans les îles ni les retouches),
+## sans générer son morceau : pour évaluer vite un emplacement lointain.
+func _quick_cell(x: int, y: int) -> Vector2:
+	var nz := _nearest_zones(x, y)
+	var f: float = nz[2]
+	var r1 := _zone_type(nz[0])
+	var r2 := _zone_type(nz[1])
+	var bias := lerpf(r1.height_bias if r1 else 0.0, r2.height_bias if r2 else 0.0, f)
+	var relief := lerpf(r1.relief if r1 else 1.0, r2.relief if r2 else 1.0, f)
+	var center := Vector2(world_size) / 2.0
+	var d := (Vector2(x, y) - center) / center
+	var edge := maxf(absf(d.x), absf(d.y))
+	var h := height_noise.get_noise_2d(x, y) * relief + bias - pow(edge, 4.0) * island_falloff + land_bias
+	var peak := lerpf(float(PEAKS.get(r1.id if r1 else "", 0.0)), float(PEAKS.get(r2.id if r2 else "", 0.0)), f)
+	if peak > 0.0 and h > sand_level:
+		var ridge := 1.0 - absf(_ridge_noise.get_noise_2d(x, y))
+		h += peak * ridge * ridge * ridge * clampf((h - sand_level) * 4.0, 0.0, 1.0)
+	var t := GRASS
+	if h < deep_water_level:
+		t = DEEP
+	elif h < water_level:
+		t = WATER
+	elif h < sand_level:
+		t = SAND
+	elif h > stone_level:
+		t = STONE
+	return Vector2(t, _terrain_height(t, h))
 
 
 # ---------------------------------------------------------------- îles au trésor
@@ -620,8 +695,9 @@ func _terrain_height(t: int, h: float) -> float:
 		SAND:
 			return 0.0
 		STONE:
+			# la roche monte deux fois plus vite par marches de 0,5 m (on peut gravir les pentes douces)
 			var top := step_height * (1.0 + floorf((stone_level - sand_level) / terrace_size))
-			return top + step_height * stone_step_multiplier * (1.0 + floorf((h - stone_level) / terrace_size))
+			return top + step_height * stone_step_multiplier * (1.0 + floorf((h - stone_level) / (terrace_size * 0.5)))
 	return step_height * (1.0 + floorf((h - sand_level) / terrace_size))
 
 
@@ -749,6 +825,8 @@ func _find_site(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
 				if t != GRASS and t != SAND and t != STONE:
 					continue
 				if zone_id >= 0 and _zone[_idx(c)] != zone_id:
+					continue
+				if not city_at(Vector3(c.x, 0, c.y), 8.0).is_empty():
 					continue
 				if not _is_dry_area(c, 3):
 					continue
@@ -1657,11 +1735,22 @@ func _build_content(ch: Vector2i) -> void:
 			_add_obelisk(holder, z)
 		if _chunk_of(z.gate) == ch and (z.gate as Vector2i).x >= 0:
 			_add_gate(holder, z)
+	# châteaux et épaves : coffres, garnison ou morts-vivants
+	for st in structure_sites:
+		if st.kind == "hamlet":
+			if _chunk_of(st.cell) == ch:
+				_add_hamlet_content(holder, st)
+			continue
+		if st.kind != "castle" and st.kind != "wreck":
+			continue
+		var center: Vector2i = st.cell + (Vector2i(10, 10) if st.kind == "castle" else Vector2i(1, 6))
+		if _chunk_of(center) == ch:
+			_add_structure_content(holder, st, center)
 	# camp de monstres (un au plus par morceau)
 	var crng := RandomNumberGenerator.new()
 	crng.seed = hash(Vector3i(ch.x, ch.y, world_seed + 555))
 	var cell := Vector2i(ch.x * CHUNK + crng.randi_range(2, CHUNK - 3), ch.y * CHUNK + crng.randi_range(2, CHUNK - 3))
-	if _inside(cell):
+	if _inside(cell) and city_at(Vector3(cell.x, 0, cell.y), 30.0).is_empty():
 		var z: Dictionary = zones[_zone[_idx(cell)]]
 		var r: RegionData = z.type
 		var chance := (r.camp_density if r else 0.5) * CHUNK * CHUNK / 1000.0
@@ -1676,7 +1765,7 @@ func _build_content(ch: Vector2i) -> void:
 	var trng := RandomNumberGenerator.new()
 	trng.seed = hash(Vector3i(ch.x, ch.y, world_seed + 909))
 	var tcell := Vector2i(ch.x * CHUNK + trng.randi_range(3, CHUNK - 4), ch.y * CHUNK + trng.randi_range(3, CHUNK - 4))
-	if _inside(tcell):
+	if _inside(tcell) and city_at(Vector3(tcell.x, 0, tcell.y), 20.0).is_empty():
 		var tz: Dictionary = zones[_zone[_idx(tcell)]]
 		var tr: RegionData = tz.type
 		var tchance := (tr.traveler_density if tr else 0.15) * CHUNK * CHUNK / 1000.0
@@ -1774,15 +1863,15 @@ func _add_travelers(holder: Node3D, cell: Vector2i, z: Dictionary, trng: RandomN
 	if campfire_scene:
 		var fire := campfire_scene.instantiate() as Node3D
 		node.add_child(fire)
-	var sign := Label3D.new()
-	sign.text = "Campement de voyageurs"
-	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sign.font_size = 44
-	sign.pixel_size = 0.008
-	sign.outline_size = 9
-	sign.modulate = Color("ffe0a0")
-	sign.position.y = 3.4
-	node.add_child(sign)
+	var plate := Label3D.new()
+	plate.text = "Campement de voyageurs"
+	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	plate.font_size = 44
+	plate.pixel_size = 0.008
+	plate.outline_size = 9
+	plate.modulate = Color("ffe0a0")
+	plate.position.y = 3.4
+	node.add_child(plate)
 	var r: RegionData = z.type
 	var races: Array = r.recruit_races if r and not r.recruit_races.is_empty() else villager_races
 	var n := trng.randi_range(1, 3)
@@ -1816,6 +1905,70 @@ func _add_travelers(holder: Node3D, cell: Vector2i, z: Dictionary, trng: RandomN
 func mark_recruited(v: Node) -> void:
 	if v.has_meta("recruit_key"):
 		_recruited[v.get_meta("recruit_key")] = true
+
+
+## Coffres ouverts dans le monde (châteaux, épaves) : identifiant -> vrai.
+var opened_chests := {}
+const GUARD_LINES := ["Halte ! ... Ah, un voyageur. Passe ton chemin en paix.", "Le seigneur reçoit dans le donjon.",
+	"Rien à signaler sur les remparts.", "On raconte que des morts rôdent dans les châteaux abandonnés.", "Belle journée pour monter la garde."]
+
+
+func _add_structure_content(holder: Node3D, st: Dictionary, center: Vector2i) -> void:
+	var z: Dictionary = zones[int(st.zone)]
+	var floor_y := float(st.get("base", roundi(terrain_height(center))))
+	var pos := Vector3(center.x + 0.5, floor_y, center.y + 0.5)
+	if st.kind == "wreck":
+		_add_chest(holder, st.id, "wreck", pos + Vector3(0, 1.0, 0))
+		return
+	if st.abandoned:
+		# château abandonné : les morts y montent la garde, le trésor dort dans le donjon
+		var camp := EnemyCamp.new()
+		camp.name = "MortsVivants"
+		var types: Array[EnemyData] = [load("res://data/enemies/squelette.tres"), load("res://data/enemies/squelette.tres"),
+			load("res://data/enemies/seigneur_squelette.tres")]
+		camp.enemy_types = types
+		camp.count = 5
+		camp.levels = Vector2i((z.level as Vector2i).y, (z.level as Vector2i).y + 2)
+		camp.base_level = 1
+		camp.radius = 7.0
+		holder.add_child(camp)
+		camp.global_position = pos + Vector3(0, 0, 5)
+		_add_chest(holder, st.id, "castle", pos)
+	else:
+		# château habité : une garnison et son seigneur
+		var race := load("res://data/races/humain.tres") as RaceData
+		for i in 4:
+			var g := Townsfolk.new()
+			g.name = "Garde_%d" % i
+			g.race = race
+			g.role = "guard"
+			g.kit = ["sword_iron", "iron_helmet", "cape_red"]
+			g.display_name = "Garde"
+			g.lines = GUARD_LINES
+			g.wander = 8.0
+			g.home = pos + Vector3([-6, 6, -6, 6][i], 0, [-4, -4, 6, 6][i])
+			holder.add_child(g)
+			g.global_position = g.home
+		var lord := Townsfolk.new()
+		lord.name = "Seigneur"
+		lord.race = race
+		lord.role = "lord"
+		lord.kit = ["cape_red"]
+		lord.display_name = "Seigneur de %s" % z.name
+		lord.color = Color("f2c86a")
+		lord.lines = ["Bienvenue en mes terres, voyageur.", "Mes gens vivent en paix derrière ces murs.", "Les morts-vivants hantent les forts abandonnés : méfie-t'en."]
+		lord.home = pos + Vector3(0, 0, 4.5)
+		holder.add_child(lord)
+		lord.global_position = lord.home
+
+
+func _add_chest(holder: Node3D, id: String, kind: String, pos: Vector3) -> void:
+	var c := WorldChest.new()
+	c.chest_id = id
+	c.kind = kind
+	c.opened = opened_chests.has(id)
+	holder.add_child(c)
+	c.global_position = pos
 
 
 func _add_camp(holder: Node3D, cell: Vector2i, z: Dictionary, crng: RandomNumberGenerator) -> void:
@@ -1961,6 +2114,575 @@ func _plan_structures() -> void:
 				continue
 			_flatten_spot(mid, 4)
 			structure_sites.append({"kind": "house" if k == 0 else "ruin", "cell": c, "region": rid, "seed": rng.randi()})
+	# châteaux forts (environ une zone sur cinq, loin du village) et épaves échouées sur les côtes
+	for z in zones:
+		if float(z.dist) < 0.2:
+			continue
+		var rid: String = (z.type as RegionData).id if z.type else "prairie"
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([world_seed, int(z.id), 313])
+		if rng.randf() < 0.2:
+			var a0 := rng.randf() * TAU
+			var c := Vector2i(-1, -1)
+			var mid := c
+			var ok := false
+			for attempt in 8:
+				var dir := Vector2.from_angle(a0 + attempt * TAU / 8.0)
+				c = _find_site(Vector2i((z.site as Vector2) + dir * (30.0 + 6.0 * (attempt % 3))), z.id, 24)
+				mid = c + Vector2i(10, 10)
+				ok = _castle_spot_ok(c, mid, z)
+				if ok:
+					break
+			if ok:
+				_flatten_spot(mid, 12)
+				var abandoned := rng.randf() < 0.55 or rid in ["volcan", "marais"]
+				structure_sites.append({"kind": "castle", "cell": c, "region": rid, "seed": rng.randi(), "abandoned": abandoned,
+					"id": "castle_%d" % int(z.id), "zone": int(z.id)})
+		if rng.randf() < 0.15:
+			var wc := _find_coast(Vector2i(z.site), int(z.id), 80)
+			if wc.x >= 0:
+				structure_sites.append({"kind": "wreck", "cell": wc, "region": rid, "seed": rng.randi(), "id": "wreck_%d" % int(z.id), "zone": int(z.id)})
+
+
+func _castle_spot_ok(c: Vector2i, mid: Vector2i, z: Dictionary) -> bool:
+	if c.x < 10 or c.y < 10 or c.x >= world_size.x - 32 or c.y >= world_size.y - 32:
+		return false
+	# tout le château sur la terre ferme
+	for o in [Vector2i(0, 0), Vector2i(20, 0), Vector2i(0, 20), Vector2i(20, 20), Vector2i(10, 10), Vector2i(10, 0), Vector2i(0, 10), Vector2i(20, 10), Vector2i(10, 20)]:
+		if not _is_dry_area(c + o, 2):
+			return false
+	for other in [z.obelisk, z.gate]:
+		if (other as Vector2i).x >= 0 and mid.distance_to(other) < 18.0:
+			return false
+	for st in structure_sites:
+		if mid.distance_to(st.cell) < 22.0:
+			return false
+	return true
+
+
+# ---------------------------------------------------------------- routes et hameaux
+
+## Routes pavées entre le village et les capitales : [[case, case, ...], ...] (points tous les ROAD_STEP mètres).
+var roads: Array = []
+var _bridges: Array = []
+const ROAD_STEP := 6
+## Hameaux le long des routes : un tous les ~HAMLET_EVERY mètres de route.
+const HAMLET_EVERY := 170.0
+
+
+## Relie le village et les capitales (arbre couvrant le plus court) par des routes qui évitent l'eau
+## et les pentes raides (A* sur une grille de 6 m), puis les pave, les lisse et prévoit les ponts.
+func _plan_roads() -> void:
+	roads.clear()
+	_bridges.clear()
+	_road_cache.clear()
+	var nodes: Array = [spawn_cell]
+	for c in cities:
+		nodes.append(c.center)
+	if nodes.size() < 2:
+		return
+	# arbre couvrant minimal (Prim)
+	var linked := [0]
+	var edges: Array = []
+	while linked.size() < nodes.size():
+		var best := [-1, -1, INF]
+		for i in linked:
+			for j in nodes.size():
+				if j in linked:
+					continue
+				var d := Vector2(nodes[i] - nodes[j]).length()
+				if d < float(best[2]):
+					best = [i, j, d]
+		linked.append(best[1])
+		edges.append([nodes[best[0]], nodes[best[1]]])
+	for e in edges:
+		var path := _road_path(e[0], e[1])
+		if path.size() >= 2:
+			roads.append(path)
+			_pave(path)
+
+
+func _road_path(a: Vector2i, b: Vector2i) -> Array:
+	var S := ROAD_STEP
+	var start := Vector2i(a.x / S, a.y / S)
+	var goal := Vector2i(b.x / S, b.y / S)
+	var gw := world_size.x / S
+	var gh := world_size.y / S
+	var heap: Array = []
+	var came := {start: start}
+	var g := {start: 0.0}
+	var closed := {}
+	_heap_push(heap, [Vector2(start - goal).length(), 0, start])
+	var seq := 0
+	var found := false
+	while not heap.is_empty():
+		var cur: Vector2i = _heap_pop(heap)[2]
+		if closed.has(cur):
+			continue
+		closed[cur] = true
+		if cur == goal:
+			found = true
+			break
+		var hc := _road_sample(cur, S).y
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)]:
+			var n: Vector2i = cur + d
+			if n.x < 1 or n.y < 1 or n.x >= gw - 1 or n.y >= gh - 1 or closed.has(n):
+				continue
+			var cell := n * S
+			var q := _road_sample(n, S)
+			var t := int(q.x)
+			var step := Vector2(d).length()
+			var cost := step
+			if t == WATER or t == DEEP:
+				cost *= 7.0    # un pont, si vraiment il le faut
+			else:
+				var slope := absf(q.y - hc) / (S * step)
+				cost *= 1.0 + slope * 40.0 + (25.0 if slope > 0.12 else 0.0)
+			# on traverse les capitales par leurs rues, pas au travers des murs : on passe au large sauf au but
+			var inside := city_at(Vector3(cell.x, 0, cell.y), 4.0)
+			if not inside.is_empty() and Vector2(cell - b).length() > float(inside.radius) + 6.0 and Vector2(cell - a).length() > float(inside.radius) + 6.0:
+				cost *= 20.0
+			var ng: float = float(g[cur]) + cost
+			if not g.has(n) or ng < float(g[n]):
+				g[n] = ng
+				came[n] = cur
+				seq += 1
+				_heap_push(heap, [ng + Vector2(n - goal).length(), seq, n])
+	if not found:
+		return []
+	var path: Array = [goal * S]
+	var c: Vector2i = goal
+	while c != start:
+		c = came[c]
+		path.push_front(c * S)
+	return path
+
+
+## Terrain d'un point de la grille des routes : celui déjà calculé, sinon une estimation rapide (et mise en cache).
+var _road_cache := {}
+
+
+func _road_sample(g: Vector2i, S: int) -> Vector2:
+	if _road_cache.has(g):
+		return _road_cache[g]
+	var cell := g * S
+	var out: Vector2
+	var ch := _chunk_of(cell)
+	if _inside(cell) and _chunk_ready[ch.y * _chunks.x + ch.x] != 0:
+		out = Vector2(_types[_idx(cell)], _heights[_idx(cell)])
+	else:
+		out = _quick_cell(cell.x, cell.y)
+	_road_cache[g] = out
+	return out
+
+
+## Pave une route : 3 cases de large, hauteur lissée d'un point à l'autre (on y marche partout), ponts sur l'eau.
+func _pave(path: Array) -> void:
+	for i in path.size() - 1:
+		var a: Vector2i = path[i]
+		var b: Vector2i = path[i + 1]
+		var ha := _h(a)
+		var hb := _h(b)
+		var n := maxi(1, int(Vector2(b - a).length()))
+		for k in n + 1:
+			var t := float(k) / n
+			var p := Vector2(a).lerp(Vector2(b), t)
+			var hgt := snappedf(lerpf(ha, hb, t), step_height)
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					var c := Vector2i(roundi(p.x) + ox, roundi(p.y) + oy)
+					if not _inside(c):
+						continue
+					if not city_at(Vector3(c.x, 0, c.y), 0.0).is_empty():
+						continue    # les rues de la ville prennent le relais
+					if Vector2(c - spawn_cell).length() <= spawn_clearing_radius:
+						continue
+					_ensure_chunk_of(c)
+					var idx := _idx(c)
+					if _types[idx] == WATER or _types[idx] == DEEP:
+						_bridges.append(c)
+						continue
+					_decor[idx] = D_NONE
+					_types[idx] = PLAZA
+					if ha > SEA_FLOOR and hb > SEA_FLOOR:
+						_heights[idx] = maxf(hgt, 0.0)
+
+
+## Les ponts de planches au-dessus des rivières traversées par les routes.
+func _build_bridges() -> void:
+	if build == null or _bridges.is_empty():
+		return
+	build.generating = true
+	var plank := Items.get_item("bloc_planches")
+	var post := Items.get_item("bloc_rondins")
+	for c in _bridges:
+		build.place_block(Vector3i(c.x, -1, c.y), plank)
+	# des rambardes de rondins sur les bords
+	var set := {}
+	for c in _bridges:
+		set[c] = true
+	for c in _bridges:
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var n: Vector2i = c + d
+			var t := _type(n)
+			if not set.has(n) and (t == WATER or t == DEEP) and (c.x + c.y) % 2 == 0:
+				build.place_block(Vector3i(c.x, 0, c.y), post)
+				break
+	build.generating = false
+	build.changed.emit()
+
+
+## Vrai si la case est sur une route pavée (ou un pont).
+func on_road(cell: Vector2i) -> bool:
+	return _inside(cell) and _types[_idx(cell)] == PLAZA and city_at(Vector3(cell.x, 0, cell.y), 2.0).is_empty() \
+		and Vector2(cell - spawn_cell).length() > plaza_radius + 2
+
+
+## Hameaux : quelques maisons autour d'une petite place, au bord des routes, tous les ~170 m.
+func _plan_hamlets() -> void:
+	var n := 0
+	for path in roads:
+		var walked := HAMLET_EVERY * 0.6
+		for i in range(1, path.size() - 1):
+			walked += Vector2(path[i] - path[i - 1]).length()
+			if walked < HAMLET_EVERY:
+				continue
+			var a: Vector2i = path[i]
+			var dir := Vector2(path[i + 1] - path[i - 1]).normalized()
+			var side := Vector2(-dir.y, dir.x) * (1.0 if (i / 3) % 2 == 0 else -1.0)
+			var c := a + Vector2i(roundi(side.x * 15.0), roundi(side.y * 15.0))
+			if not _hamlet_spot_ok(c):
+				continue
+			walked = 0.0
+			var zid := _zone[_idx(c)]
+			var z: Dictionary = zones[zid]
+			var rid: String = (z.type as RegionData).id if z.type else "prairie"
+			var rng := RandomNumberGenerator.new()
+			rng.seed = hash([world_seed, c.x, c.y, 515])
+			_flatten_spot(c, 13)
+			var id := "hamlet_%d" % n
+			n += 1
+			var nearest := ""
+			var nd := INF
+			for city in cities:
+				var d := Vector2(c - (city.center as Vector2i)).length()
+				if d < nd:
+					nd = d
+					nearest = city.nation
+			var hname := "%s%s" % [NAME_START[rng.randi() % NAME_START.size()], NAME_END[rng.randi() % NAME_END.size()]]
+			structure_sites.append({"kind": "hamlet", "cell": c, "region": rid, "seed": rng.randi(), "id": id, "zone": zid,
+				"name": hname, "nation": nearest})
+			# ses maisons, au nord de la place (porte vers la place) et au sud
+			var count := rng.randi_range(4, 6)
+			for k in count:
+				var hx := -11 + (k % 3) * 8
+				var hz := -10 if k < 3 else 5
+				structure_sites.append({"kind": "house", "cell": c + Vector2i(hx, hz), "region": rid, "seed": rng.randi(), "hamlet": id})
+
+
+func _hamlet_spot_ok(c: Vector2i) -> bool:
+	if not _inside(c) or c.x < 20 or c.y < 20 or c.x >= world_size.x - 20 or c.y >= world_size.y - 20:
+		return false
+	if Vector2(c - spawn_cell).length() < 110.0 or not city_at(Vector3(c.x, 0, c.y), 60.0).is_empty():
+		return false
+	for o in [Vector2i(0, 0), Vector2i(-12, -10), Vector2i(12, -10), Vector2i(-12, 10), Vector2i(12, 10)]:
+		var t := _type(c + o)
+		if t == WATER or t == DEEP or t == PLAZA:
+			return false
+		if absf(_h(c + o) - _h(c)) > 2.5:
+			return false
+	for st in structure_sites:
+		if Vector2(c - (st.cell as Vector2i)).length() < (120.0 if st.kind == "hamlet" else 24.0):
+			return false
+	for z in zones:
+		if (z.obelisk as Vector2i).x >= 0 and Vector2(c - (z.obelisk as Vector2i)).length() < 16.0:
+			return false
+		if (z.gate as Vector2i).x >= 0 and Vector2(c - (z.gate as Vector2i)).length() < 16.0:
+			return false
+	return true
+
+
+## Les habitants d'un hameau : quelques villageois, un colporteur et le chef (qui a souvent une quête).
+func _add_hamlet_content(holder: Node3D, st: Dictionary) -> void:
+	var c: Vector2i = st.cell
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(st.seed)
+	var races: Array = CityPlans.CITIES.get(st.nation, {}).get("races", ["humain"])
+	var cl := get_tree().get_first_node_in_group("city_life")
+	var plate := Label3D.new()
+	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	plate.text = "Hameau de %s" % st.name
+	plate.font_size = 44
+	plate.pixel_size = 0.008
+	plate.outline_size = 10
+	plate.modulate = Color("f2dca0")
+	holder.add_child(plate)
+	plate.global_position = cell_center(c) + Vector3(0, 4.0, 0)
+	for k in 6:
+		var t := Townsfolk.new()
+		t.race = load("res://data/races/%s.tres" % races[rng.randi() % races.size()]) as RaceData
+		t.name = "Hameau_%d" % k
+		t.home = cell_center(c + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-3, 3)))
+		t.display_name = CityLife.random_name(st.nation, rng) if cl else "Villageois"
+		t.lines = ["Bienvenue à %s, voyageur." % st.name, "La route est longue jusqu'à la capitale.", "Méfie-toi des bandits sur les routes, la nuit."]
+		t.wander = 7.0
+		match k:
+			0:
+				t.role = "merchant"
+				t.trade_name = "Colporteur"
+				t.color = Color("ffe08a")
+				var trade := get_tree().get_first_node_in_group("trade") as Trade
+				if trade:
+					if not st.has("shop"):
+						st["shop"] = CityMerchant.new(trade, {"name": st.name, "nation": st.nation}, ["Épicier", "Herboriste", "Charpentier"][rng.randi() % 3], t.display_name, rng)
+					t.shop = st.shop
+					t.trade_name = "Colporteur (%s)" % (st.shop as CityMerchant).trade_name.to_lower()
+				t.home = cell_center(c + Vector2i(0, -2))
+			1:
+				t.display_name = "Chef " + t.display_name
+				t.color = Color("f2c86a")
+				t.quest_key = "hamlet:" + str(st.id)
+				t.home = cell_center(c + Vector2i(2, 1))
+		holder.add_child(t)
+		t.global_position = t.home
+		if t.quest_key != "" and cl:
+			cl._refresh_mark(t)
+
+
+# ---------------------------------------------------------------- capitales
+
+## Les capitales des nations voisines (voir CityPlans) : {nation, name, center, base, radius, population, races,
+## stalls, streets, gates, hall, seed}. Leurs blocs sont posés par _build_cities.
+var cities: Array = []
+var _city_plans := {}
+
+
+## La capitale qui contient `pos` (à `margin` mètres près), ou {}.
+func city_at(pos: Vector3, margin := 0.0) -> Dictionary:
+	for c in cities:
+		var ctr: Vector2i = c.center
+		if Vector2(pos.x - ctr.x, pos.z - ctr.y).length() <= float(c.radius) + margin:
+			return c
+	return {}
+
+
+## Choisit où bâtir les cinq capitales (dans les régions de leur peuple, loin du village et les unes des autres,
+## sur un terrain sec et pas trop accidenté) puis façonne leur relief.
+func _plan_cities() -> void:
+	cities.clear()
+	_city_plans.clear()
+	for nation in CityPlans.CITIES:
+		var info: Dictionary = CityPlans.CITIES[nation]
+		var r := int(info.radius)
+		var margin := r + 16
+		var best := Vector2i(-1, -1)
+		var best_score := -INF
+		# d'abord les régions du peuple de la nation ; les autres seulement si aucune ne convient
+		# (évaluer tout le monde obligerait à calculer le terrain de 2 km² dès le départ)
+		for pass_i in 2:
+			if best.x >= 0:
+				break
+			for z in zones:
+				if float(z.dist) < 0.3:
+					continue
+				var rid: String = (z.type as RegionData).id if z.type else "prairie"
+				var pref := (info.regions as Array).find(rid)
+				if (pass_i == 0) != (pref >= 0):
+					continue
+				var cand := _city_candidate(z, info.regions, r, margin)
+				if cand.size() == 2 and float(cand[1]) > best_score:
+					best_score = float(cand[1])
+					best = cand[0]
+		if best.x < 0:
+			continue
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([world_seed, nation, 4011])
+		var city_seed := rng.seed
+		var plan := CityPlans.plan(nation, rng)
+		var city := {"nation": nation, "name": info.name, "center": best, "radius": r, "population": int(info.population),
+			"races": info.races, "stalls": plan.stalls, "streets": plan.streets, "gates": plan.gates, "hall": plan.hall,
+			"seed": city_seed, "style": info.style, "houses": plan.houses}
+		_shape_city(city, plan)
+		_city_plans[nation] = plan
+		cities.append(city)
+
+
+## Le meilleur emplacement de capitale autour du cœur d'une zone : [case, score] ou [].
+func _city_candidate(z: Dictionary, regions: Array, r: int, margin: int) -> Array:
+	var best: Array = []
+	for off in [Vector2i.ZERO, Vector2i(32, 0), Vector2i(-32, 0), Vector2i(0, 32), Vector2i(0, -32),
+			Vector2i(32, 32), Vector2i(-32, 32), Vector2i(32, -32), Vector2i(-32, -32)]:
+		var c: Vector2i = Vector2i(z.site) + off
+		if c.x < margin or c.y < margin or c.x >= world_size.x - margin or c.y >= world_size.y - margin:
+			continue
+		if Vector2(c - spawn_cell).length() < r + 160:
+			continue
+		var far := true
+		for o in cities:
+			if Vector2(c - (o.center as Vector2i)).length() < r + int(o.radius) + 80:
+				far = false
+		if not far:
+			continue
+		# la région au centre même de la ville (le cœur de la zone peut être à la frontière)
+		var zr := _zone_type(_nearest_zones(c.x, c.y)[0])
+		var pref := regions.find(zr.id if zr else "prairie")
+		var site := _city_site_quality(c, r + 6, pref == 0)
+		if site.x < 0.0:
+			continue
+		var score := (40.0 if pref == 0 else (30.0 if pref > 0 else 0.0)) - site.y * 0.5 - absf(float(z.dist) - 0.6) * 4.0 \
+			+ _rand(int(z.id), off.x + 3 * off.y, 77) * 0.5
+		if best.is_empty() or score > float(best[1]):
+			best = [c, score]
+	return best
+
+
+## x : -1 si l'endroit ne convient pas (trop d'eau ou de relief) ; y : sa pénalité (relief, part d'eau).
+func _city_site_quality(c: Vector2i, r: int, lenient := false) -> Vector2:
+	var lo := INF
+	var hi := -INF
+	var wet := 0
+	var n := 0
+	for y in range(-r, r + 1, 9):
+		for x in range(-r, r + 1, 9):
+			if Vector2(x, y).length() > r:
+				continue
+			var cell := c + Vector2i(x, y)
+			n += 1
+			var q := _quick_cell(cell.x, cell.y)
+			var t := int(q.x)
+			if t == WATER or t == DEEP:
+				wet += 1
+				continue
+			lo = minf(lo, q.y)
+			hi = maxf(hi, q.y)
+	# dans la région préférée de la nation, on accepte un terrain plus difficile (la ville le façonne)
+	if n == 0 or wet > n * (0.4 if lenient else 0.2) or hi - lo > (36.0 if lenient else 30.0):
+		return Vector2(-1, 0)
+	# la ville comble l'eau de son emprise, mais mieux vaut peu d'eau et peu de relief
+	return Vector2(1, hi - lo + 60.0 * wet / n)
+
+
+## Aplani la ville au niveau moyen du terrain, y ajoute son relief (collines, terrasses), pave les rues
+## et adoucit les abords jusqu'au terrain naturel.
+func _shape_city(city: Dictionary, plan: Dictionary) -> void:
+	var ctr: Vector2i = city.center
+	var R: int = city.radius
+	var sum := 0.0
+	var n := 0
+	for y in range(-R, R + 1, 4):
+		for x in range(-R, R + 1, 4):
+			if Vector2(x, y).length() <= R:
+				var t := _type(ctr + Vector2i(x, y))
+				if t != WATER and t != DEEP:
+					sum += _h(ctr + Vector2i(x, y))
+					n += 1
+	var base := roundi(sum / maxf(1.0, n))
+	city["base"] = base
+	var ground := SAND if city.style == "harad" else GRASS
+	# des abords d'autant plus longs que le terrain autour est accidenté (pente de marche)
+	var rough := 0.0
+	for k in 24:
+		var a := TAU * k / 24.0
+		var c := ctr + Vector2i(roundi(cos(a) * (R + 20)), roundi(sin(a) * (R + 20)))
+		if _inside(c) and _type(c) != WATER and _type(c) != DEEP:
+			rough = maxf(rough, absf(_h(c) - base))
+	var blend := clampi(int(rough * 2.2), 16, 44)
+	for y in range(-R - blend - 2, R + blend + 3):
+		for x in range(-R - blend - 2, R + blend + 3):
+			var c := ctr + Vector2i(x, y)
+			if not _inside(c):
+				continue
+			_ensure_chunk_of(c)
+			var i := _idx(c)
+			var d := Vector2(x, y).length()
+			if d <= R + 2:
+				_heights[i] = base + float(plan.relief.get(Vector2i(x, y), 0.0))
+				_types[i] = ground
+				_decor[i] = D_NONE
+			elif d <= R + 2 + blend:
+				if _types[i] == WATER or _types[i] == DEEP:
+					continue
+				var k := (d - R - 2) / float(blend)
+				_heights[i] = snappedf(lerpf(base, _heights[i], k), step_height)
+				if k < 0.5:
+					_decor[i] = D_NONE
+	# une rampe pavée devant chaque porte de l'enceinte : on entre toujours à pied, même en montagne
+	for g in plan.gates:
+		var gv := Vector2(g)
+		if gv.length() < R - 12:
+			continue
+		var dir := gv.normalized()
+		var side := Vector2(-dir.y, dir.x)
+		var length := blend + 14
+		var end_cell := ctr + Vector2i((gv + dir * length).round())
+		# devant un lac (ou une coulée de lave), la rampe devient une chaussée jusqu'à la terre ferme
+		while length < blend + 70 and _inside(end_cell) and (_type(end_cell) == WATER or _type(end_cell) == DEEP):
+			length += 4
+			end_cell = ctr + Vector2i((gv + dir * length).round())
+		var start_h := base + float(plan.relief.get(g, 0.0))
+		var end_h := maxf(_h(end_cell), 0.25)
+		for k in range(1, length + 1):
+			var hk := snappedf(lerpf(start_h, end_h, float(k) / length), step_height)
+			for w2 in range(-2, 3):
+				var p2 := gv + dir * k + side * w2
+				var c2 := ctr + Vector2i(p2.round())
+				if not _inside(c2):
+					continue
+				_ensure_chunk_of(c2)
+				var i2 := _idx(c2)
+				_heights[i2] = maxf(hk, 0.25)
+				_types[i2] = PLAZA
+				_decor[i2] = D_NONE
+	# rues pavées : chaque point de passage et ses voisins
+	for s in plan.streets:
+		for o in [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var c: Vector2i = ctr + (s as Vector2i) + o
+			if _inside(c):
+				_types[_idx(c)] = PLAZA
+
+
+## Pose les blocs des capitales (même mécanisme que les autres constructions : destructibles, sauvegardés en différence).
+func _build_cities() -> void:
+	if build == null:
+		return
+	build.generating = true
+	var items := {}
+	for city in cities:
+		var plan: Dictionary = _city_plans.get(city.nation, {})
+		if plan.is_empty():
+			continue
+		var ctr: Vector2i = city.center
+		var base: int = city.base
+		var n := 0
+		for k in plan.blocks:
+			var id: String = plan.blocks[k]
+			if not items.has(id):
+				items[id] = Items.get_item(id)
+			if build.place_block(Vector3i(ctr.x + k.x, base + k.y, ctr.y + k.z), items[id]):
+				n += 1
+		city["blocks"] = n
+	_city_plans.clear()
+	build.generating = false
+	build.changed.emit()
+
+
+## Une plage de sable au bord de l'eau, près de `from` (dans la zone), pour une épave.
+func _find_coast(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
+	for r in range(6, max_r, 3):
+		for i in 24:
+			var a := TAU * i / 24.0
+			var c := from + Vector2i(roundi(cos(a) * r), roundi(sin(a) * r))
+			if not _inside(c) or c.x < 6 or c.y < 6 or c.x >= world_size.x - 16 or c.y >= world_size.y - 16:
+				continue
+			if _type(c) != SAND or _zone[_idx(c)] != zone_id:
+				continue
+			if not city_at(Vector3(c.x, 0, c.y), 10.0).is_empty():
+				continue
+			for d in [Vector2i(3, 0), Vector2i(-3, 0), Vector2i(0, 3), Vector2i(0, -3)]:
+				var t := _type(c + d)
+				if t == WATER or t == DEEP:
+					return c
+	return Vector2i(-1, -1)
 
 
 ## Pose les blocs de toutes les constructions du monde (une partie chargée les remplace ensuite
@@ -1968,13 +2690,37 @@ func _plan_structures() -> void:
 func _build_structures() -> void:
 	if build == null:
 		return
+	build.generating = true
 	for st in structure_sites:
+		if st.kind == "hamlet":
+			continue    # ses maisons sont des sites « house » à part
 		var style: Dictionary = WorldStructures.STYLES.get(st.region, WorldStructures.STYLES.prairie)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = int(st.seed)
-		var plan: Dictionary = WorldStructures.house_plan(style) if st.kind == "house" else WorldStructures.ruin_plan(style, rng)
+		var plan: Dictionary
+		var broken := 0.0
+		match st.kind:
+			"house":
+				plan = WorldStructures.house_plan(style)
+				broken = 0.08
+			"ruin":
+				plan = WorldStructures.ruin_plan(style, rng)
+			"castle":
+				var mats: Array = WorldStructures.CASTLE_MATS.get(st.region, ["bloc_briques", "bloc_pierre_polie"])
+				plan = WorldStructures.castle_plan(21, 5, mats[0], mats[1])
+				broken = 0.22 if st.abandoned else 0.0
+				style = {}
+			"wreck":
+				plan = WorldStructures.shipwreck_plan(rng)
+				style = {}
 		_clear_decor_under(plan, st.cell)
-		WorldStructures.build(self, plan, st.cell, rng, 0.08 if st.kind == "house" else 0.0, style)
+		if st.kind == "castle":
+			# la cour aussi : pas d'arbres dans l'enceinte
+			for y in 21:
+				for x in 21:
+					_clear_decor_cell(st.cell + Vector2i(x, y))
+		WorldStructures.build(self, plan, st.cell, rng, broken, style)
+		st["base"] = WorldStructures.last_base
 	for z in zones:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash([world_seed, int(z.id), 91])
@@ -1986,18 +2732,23 @@ func _build_structures() -> void:
 			var op := WorldStructures.obelisk_plan()
 			_clear_decor_under(op, z.obelisk)
 			WorldStructures.build(self, op, z.obelisk, rng)
+	build.generating = false
+	build.changed.emit()
 
 
 func _clear_decor_under(plan: Dictionary, origin: Vector2i) -> void:
 	for k in plan:
-		var c := Vector2i(origin.x + k.x, origin.y + k.z)
-		if not _inside(c):
-			continue
-		_ensure_chunk_of(c)
-		if _decor[_idx(c)] != D_NONE:
-			_decor[_idx(c)] = D_NONE
-			if _decor_nodes.has(_chunk_of(c)):
-				_build_decor_chunk(_chunk_of(c))
+		_clear_decor_cell(Vector2i(origin.x + k.x, origin.y + k.z))
+
+
+func _clear_decor_cell(c: Vector2i) -> void:
+	if not _inside(c):
+		return
+	_ensure_chunk_of(c)
+	if _decor[_idx(c)] != D_NONE:
+		_decor[_idx(c)] = D_NONE
+		if _decor_nodes.has(_chunk_of(c)):
+			_build_decor_chunk(_chunk_of(c))
 
 
 # ---------------------------------------------------------------- carte
@@ -2074,13 +2825,20 @@ func export_state() -> Dictionary:
 		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0))])
 	return {
 		"seed": world_seed, "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
-		"removed_props": removed_props.keys(),
+		"removed_props": removed_props.keys(), "chests": opened_chests.keys(),
 		"revealed": Marshalls.raw_to_base64(_revealed.compress(FileAccess.COMPRESSION_ZSTD)),
 		"map": Marshalls.raw_to_base64(map_image.save_png_to_buffer()),
 	}
 
 
 func import_state(d: Dictionary) -> void:
+	opened_chests.clear()
+	for id in d.get("chests", []):
+		opened_chests[str(id)] = true
+	if is_inside_tree():
+		for c in get_tree().get_nodes_in_group("world_chests"):
+			c.opened = opened_chests.has(c.chest_id)
+			c._refresh()
 	for e in d.get("edits", []):
 		var c := Vector2i(int(e[0]), int(e[1]))
 		if not _inside(c):
@@ -2143,6 +2901,47 @@ func refresh_content(cell: Vector2i) -> void:
 func load_area(pos: Vector3) -> void:
 	if _generated:
 		_stream(pos, true)
+
+
+## Téléporte le héros n'importe où (terminal de commandes) : au sol, ou sur les blocs de la case.
+func teleport(pos: Vector3) -> void:
+	if player == null:
+		return
+	var c := cell_at(pos)
+	if not _inside(c):
+		c = Vector2i(clampi(c.x, 1, world_size.x - 2), clampi(c.y, 1, world_size.y - 2))
+	var dest := Vector3(c.x + 0.5, 0.0, c.y + 0.5)
+	_stream(dest, true)
+	dest.y = terrain_height(c)
+	dest.y = support_height(dest, dest.y + 0.3)
+	player.global_position = dest
+	if player.has_method("snap_camera"):
+		player.snap_camera()
+	Villager.bring_companions(get_tree(), dest)
+	reveal(dest, REVEAL_RADIUS)
+
+
+## Dévoile les lignes [y0, y1[ de la carte (le terminal dévoile tout le monde, quelques lignes par image).
+## Une couleur par carré de 2 × 2 cases : quatre fois plus rapide, et invisible à l'échelle de la carte.
+func reveal_rows(y0: int, y1: int) -> void:
+	if map_image == null:
+		return
+	y0 = maxi(0, y0 - y0 % 2)
+	for y in range(y0, mini(y1, world_size.y), 2):
+		for x in range(0, world_size.x, 2):
+			var i := y * world_size.x + x
+			if _revealed[i] != 0:
+				continue
+			var col := map_color(Vector2i(x, y))
+			for d in [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)]:
+				var cx: int = x + d.x
+				var cy: int = y + d.y
+				if cx < world_size.x and cy < world_size.y:
+					var j := cy * world_size.x + cx
+					if _revealed[j] == 0:
+						_revealed[j] = 1
+						map_image.set_pixel(cx, cy, col)
+	_map_dirty = true
 
 
 ## Téléporte le héros près d'un obélisque activé (ou au village).
@@ -2487,3 +3286,8 @@ func _ensure_noises() -> void:
 	if _warp_noise == null:
 		_warp_noise = FastNoiseLite.new()
 		_warp_noise.frequency = 0.012
+	if _ridge_noise == null:
+		# crêtes des grandes chaînes de montagnes
+		_ridge_noise = FastNoiseLite.new()
+		_ridge_noise.frequency = 0.011
+		_ridge_noise.fractal_octaves = 4

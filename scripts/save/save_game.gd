@@ -57,6 +57,8 @@ var trade_state := {}
 var weather_state := {}
 var livestock_state := {}
 var caves_state := {}
+var mountain_caves_state := {}
+var city_life_state := {}
 var story_state := {}
 var seasons_state := {}
 var mounts_state := {}
@@ -241,6 +243,12 @@ func save_game(slot: String) -> bool:
 	var cv := get_tree().get_first_node_in_group("caves") as UnderwaterCaves
 	if cv:
 		d.caves = cv.export_state()
+	var mcv := get_tree().get_first_node_in_group("mountain_caves") as MountainCaves
+	if mcv:
+		d.mountain_caves = mcv.export_state()
+	var cl := get_tree().get_first_node_in_group("city_life")
+	if cl:
+		d.city_life = cl.export_state()
 	var sto := get_tree().get_first_node_in_group("story") as Story
 	if sto:
 		d.story = sto.export_state()
@@ -306,6 +314,10 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 	if pos.y < WorldGenerator.UNDERGROUND and cv and cv.active:
 		# dans une grotte sous-marine : on reprendra au-dessus de son entrée
 		pos = cv._return_pos
+	var mcv := get_tree().get_first_node_in_group("mountain_caves") as MountainCaves
+	if pos.y < WorldGenerator.UNDERGROUND and mcv and mcv.active:
+		# dans une grotte de montagne : on reprendra devant son entrée
+		pos = mcv._return_pos
 	var inv := []
 	for e in p.inventory.entries:
 		inv.append([e.item.id, e.count])
@@ -329,14 +341,19 @@ func _equip_ids(eq: CharacterEquipment) -> Array:
 
 
 func _save_build(grid: BuildGrid) -> Dictionary:
+	# seuls les blocs du joueur, et les blocs du monde qu'il a cassés (le monde repose les autres)
 	var blocks := []
 	for k in grid.blocks:
-		blocks.append([k.x, k.y, k.z, (grid.blocks[k] as ItemData).id])
+		if grid.is_player_block(k):
+			blocks.append([k.x, k.y, k.z, (grid.blocks[k] as ItemData).id])
+	var removed := []
+	for k in grid.removed_generated:
+		removed.append([k.x, k.y, k.z])
 	var furn := []
 	for k in grid.furniture:
 		var f: Dictionary = grid.furniture[k]
 		furn.append([f.col.x, f.col.y, f.base, (f.item as ItemData).id, f.rot])
-	return {"blocks": blocks, "furniture": furn}
+	return {"blocks": blocks, "furniture": furn, "removed": removed, "v": 2}
 
 
 func _save_villagers() -> Array:
@@ -399,6 +416,8 @@ func new_game() -> void:
 	weather_state = {}
 	livestock_state = {}
 	caves_state = {}
+	mountain_caves_state = {}
+	city_life_state = {}
 	story_state = {}
 	seasons_state = {}
 	mounts_state = {}
@@ -433,7 +452,14 @@ func apply_pending(world: WorldGenerator) -> void:
 	world.import_state(d.world)
 	# constructions
 	var grid := world.build
-	grid.clear()
+	if int(d.build.get("v", 1)) >= 2:
+		# le monde vient de reposer ses constructions : on enlève ce que le joueur avait cassé
+		grid.clear_furniture()
+		for r in d.build.get("removed", []):
+			grid.remove_block(Vector3i(int(r[0]), int(r[1]), int(r[2])))
+	else:
+		# ancienne sauvegarde : toutes les constructions y sont
+		grid.clear()
 	for b in d.build.blocks:
 		var it := Items.get_item(b[3])
 		if it:
@@ -600,6 +626,16 @@ func apply_pending(world: WorldGenerator) -> void:
 	if cv and not caves_state.is_empty():
 		cv.import_state(caves_state)
 		caves_state = {}
+	mountain_caves_state = d.get("mountain_caves", {})
+	var mcv := get_tree().get_first_node_in_group("mountain_caves") as MountainCaves
+	if mcv and not mountain_caves_state.is_empty():
+		mcv.import_state(mountain_caves_state)
+		mountain_caves_state = {}
+	city_life_state = d.get("city_life", {})
+	var cl := get_tree().get_first_node_in_group("city_life")
+	if cl and not city_life_state.is_empty():
+		cl.import_state(city_life_state)
+		city_life_state = {}
 	livestock_state = d.get("livestock", {"animals": []})
 	var ls := get_tree().get_first_node_in_group("livestock") as Livestock
 	if ls:

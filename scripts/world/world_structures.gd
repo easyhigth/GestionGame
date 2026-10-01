@@ -18,6 +18,12 @@ const STYLES := {
 	"jungle": {"wall": "bloc_planches", "post": "bloc_rondins", "roof": "bloc_chaume", "window": "", "stilts": true},
 }
 const FOUNDATION := "bloc_pierre_brute"
+## Matériaux des châteaux selon la région : [murs, créneaux].
+const CASTLE_MATS := {"desert": ["bloc_sable", "bloc_pierre_polie"], "volcan": ["bloc_marbre_noir", "bloc_briques"],
+	"toundra": ["bloc_pierre_brute", "bloc_pierre_polie"], "bois_enchante": ["bloc_marbre", "bloc_pierre_polie"],
+	"marais": ["bloc_pierre_brute", "bloc_briques"]}
+## Niveau du rez-de-chaussée de la dernière construction posée.
+static var last_base := 0
 
 
 ## Plan d'une maison 5 × 5 (repère local : x, z de 0 à 4, porte au milieu du côté z = 4).
@@ -116,6 +122,7 @@ static func build(world: WorldGenerator, plan: Dictionary, origin: Vector2i, rng
 	var stilts: bool = style.get("stilts", false)
 	if stilts:
 		base += 1
+	last_base = base
 	var lo := Vector2i(100000, 100000)
 	var hi := Vector2i(-100000, -100000)
 	for c in cols:

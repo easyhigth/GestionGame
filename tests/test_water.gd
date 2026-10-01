@@ -202,7 +202,7 @@ func _process(_d) -> bool:
 		print("== grotte sous-marine")
 		var best := {}
 		var bd := INF
-		for r in [4, 8, 12, 16]:
+		for r in [4, 8, 12, 16, 24, 32, 48]:
 			for e in cv.entrances_near(w.cell_center(w.spawn_cell), r):
 				var dd: float = e.pos.distance_to(w.cell_center(w.spawn_cell))
 				if dd < bd: bd = dd; best = e

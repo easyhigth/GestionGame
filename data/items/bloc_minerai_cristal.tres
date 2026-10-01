@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/blocks/bloc_minerai_cristal.png" id="t"]
+
+[resource]
+script = ExtResource("1")
+id = "bloc_minerai_cristal"
+display_name = "Cristal (bloc)"
+description = "Des cristaux poussent dans la roche ; on y trouve parfois des gemmes."
+max_stack = 99
+block_texture = ExtResource("t")
+block_tier = 2
+rarity = 1

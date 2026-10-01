@@ -33,6 +33,8 @@ func refresh() -> void:
 	for r in SHOWN:
 		_grid.add_child(MenuKit.label(KeyBindings.key_text(r[0]), 11, Color("fff2c8")))
 		_grid.add_child(MenuKit.label(r[1], 11, MenuKit.C_TEXT))
+	_grid.add_child(MenuKit.label("Entrée", 11, Color("fff2c8")))
+	_grid.add_child(MenuKit.label("Terminal (/aide)", 11, MenuKit.C_TEXT))
 	reset_size()
 	# à gauche, sous le guide (la droite est prise par la carte, l'horloge et l'histoire)
 	var vp := get_viewport_rect().size

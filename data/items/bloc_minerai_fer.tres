@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/blocks/bloc_minerai_fer.png" id="t"]
+
+[resource]
+script = ExtResource("1")
+id = "bloc_minerai_fer"
+display_name = "Minerai de fer (bloc)"
+description = "Du fer pris dans la roche. À casser à la pioche."
+max_stack = 99
+block_texture = ExtResource("t")
+block_tier = 1
+rarity = 1

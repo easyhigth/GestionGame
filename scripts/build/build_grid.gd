@@ -97,6 +97,13 @@ var _cut := [Vector3.ZERO, 10000.0, 0.0]
 
 ## Grille du joueur (construction) ; faux pour la grille d'un donjon.
 var register := true
+## Blocs posés par le monde lui-même (maisons, ruines, villes...) : clé -> identifiant d'objet.
+## Ils ne sont pas sauvegardés un par un (le monde les repose à chaque chargement) :
+## la sauvegarde ne garde que ceux que le joueur a cassés (`removed_generated`).
+var generated := {}
+var removed_generated := {}
+## Vrai pendant que le monde pose ses constructions (pas de signal à chaque bloc).
+var generating := false
 
 
 func _ready() -> void:
@@ -110,6 +117,8 @@ func _ready() -> void:
 
 func clear() -> void:
 	blocks.clear()
+	generated.clear()
+	removed_generated.clear()
 	for k in furniture:
 		var n: Node = furniture[k].node
 		if is_instance_valid(n):
@@ -152,13 +161,16 @@ func place_block(key: Vector3i, item: ItemData) -> bool:
 	if item == null or not item.is_block() or not can_place_block(key, item):
 		return false
 	blocks[key] = item
+	if generating:
+		generated[key] = item.id
 	var col := Vector2i(key.x, key.z)
 	var arr: Array = _block_cols.get(col, [])
 	arr.append(key.y)
 	arr.sort()
 	_block_cols[col] = arr
 	_mark(col)
-	changed.emit()
+	if not generating:
+		changed.emit()
 	return true
 
 
@@ -167,12 +179,33 @@ func remove_block(key: Vector3i) -> ItemData:
 	if item == null:
 		return null
 	blocks.erase(key)
+	if generated.has(key):
+		removed_generated[key] = true
 	var col := Vector2i(key.x, key.z)
 	var arr: Array = _block_cols.get(col, [])
 	arr.erase(key.y)
 	_mark(col)
 	changed.emit()
 	return item
+
+
+## Retire tous les meubles (les blocs restent).
+func clear_furniture() -> void:
+	for k in furniture:
+		var n: Node = furniture[k].node
+		if is_instance_valid(n):
+			n.queue_free()
+	furniture.clear()
+	_furn_cols.clear()
+	changed.emit()
+
+
+## Vrai si ce bloc est à sauvegarder : posé par le joueur (ou à la place d'un bloc du monde).
+func is_player_block(key: Vector3i) -> bool:
+	var it: ItemData = blocks.get(key)
+	if it == null:
+		return false
+	return not generated.has(key) or removed_generated.has(key) or generated[key] != it.id
 
 
 ## Blocs d'une colonne : [[niveau, bas, haut, item], ...] du bas vers le haut.
