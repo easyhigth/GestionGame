@@ -314,6 +314,16 @@ Règles :
   - `voxel_creature_generator.py` : régénère les créatures (loup, loup alpha, sanglier) dans `assets/characters/creatures/`.
   - `voxel_equipment_generator.py` : régénère les équipements de toutes les races (`python voxel_equipment_generator.py`). Pour ajouter une pièce : écris sa fonction, ajoute-la à `ITEMS`, relance le script, puis crée son fichier dans `data/items/` avec le même `id`.
 
+## Interface : bois sombre, dorures et parchemin
+- **Polices** (libres, licence OFL, dans `assets/ui/fonts/`) : **Almendra** pour les titres (une calligraphie de manuscrit médiéval, faite pour les jeux de fantasy) et **Alegreya Sans** pour le texte (humaniste et très lisible, même petite ; chiffres alignés pour les statistiques).
+- **Thème commun** à toute l'interface (`scripts/ui/ui_theme.gd`, chargé au démarrage) : cadres en bois sombre aux coins dorés sertis d'un rubis, boutons en planche avec fermoirs de fer (dorés au survol), onglets, ascenseurs dorés, barres, champs de saisie, infobulles, listes déroulantes. Les titres des panneaux sont posés sur un **ruban rouge** à queues d'aronde, les sections séparées par un filet doré.
+- **Textures** en pixels, assorties aux modèles voxel : `tools/ui_texture_generator.py` (Pillow) dessine les cadres, le parchemin, les boutons, les cases d'inventaire et 17 petites icônes (cœur, épée, bouclier, magie, nourriture, or, couronne, crâne, parchemin, maison, habitants, étoile, lune, soleil, gemme, livre, boussole) dans `assets/ui/`.
+- **Navigation** : les panneaux s'ouvrent en fondu avec un léger zoom, les pages changent en fondu, les boutons réagissent au survol ; un panneau trop grand pour l'écran est réduit au lieu d'être coupé. Tout se joue aussi à la manette (focus doré).
+- **HUD** : plaque du héros encadrée (cœur, étoile d'expérience, épi de blé), jauges serties d'or, attaque / défense / magie en icônes, couronne devant le royaume ; noms de régions et grands messages en calligraphie.
+- **Bestiaire illustré** : chaque créature et chaque boss a son **portrait** (rendu de son modèle 3D, vue de trois quarts : `assets/ui/portraits/`, régénérés par `tools/render_portraits.gd`). Les créatures jamais vaincues apparaissent en silhouette avec un « ? ». Un clic sur une carte ouvre sa **fiche sur parchemin** : grand portrait, vie / attaque / défense / victoires, régions, butin, ressources rares, notes du naturaliste et un conseil de combat. Les 9 seigneurs des donjons ont leur section.
+- **Succès** : cartes par catégorie avec icône, barre de progression et points.
+- Dialogues de l'histoire : portrait du personnage dans un médaillon doré ; inventaire, création du héros, carte du monde, journal, royaume, pause et écran titre suivent le même style.
+
 ## Construction du royaume (façon Going Medieval)
 Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur place et une **caméra libre** survole le village : ZQSD/flèches pour la déplacer (Maj : plus vite), molette pour zoomer, clic molette + glisser ou A/E (Q/E en QWERTY) pour tourner. B ou Échap pour revenir au héros (on y revient aussi tout seul si le héros est attaqué).
 - On trace des **plans** : ils apparaissent en fantômes bleus, et les **habitants libres** (sans poste de travail ni expédition) viennent les construire eux-mêmes, du bas vers le haut, avec les matériaux de ton sac. Un plan sans matériaux devient rouge et attend. Clic droit : effacer le plan visé. Case « Construction instantanée » pour tout réaliser tout de suite.
@@ -399,7 +409,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 ## Succès et bestiaire (touche F1)
 - **116 succès** en 11 catégories : combat (victoires, 25 de chaque monstre), boss (les 9 boss), héros (niveaux, évolution, or), royaume (habitants, rangs), histoire (16 actes, quêtes des personnages), familiers, forge (renforcement, gemmes, runes), Brume, diplomatie (traités, capitulation, provinces), événements du monde, exploration (salles secrètes, Gardiens, obélisques, bestiaire complet).
 - Chaque succès rapporte des points. **Titres** (affichés à côté du nom du héros) : Aventurier (50 points), Héros du royaume (150), Légende vivante (300), Mythe éternel (500), et des titres de succès (Tueur de boss, Empereur, Maître de la Brume, Dompteur, Cartographe, Naturaliste...). **Auras** (lumière et étincelles autour du héros) bleue, dorée et violette à 150, 300 et 500 points. Titre et aura se choisissent dans le panneau.
-- **Bestiaire** : les 27 monstres du monde, découverts en les battant : victoires, vie, attaque, régions, butin et ressources rares (avec leurs chances).
+- **Bestiaire illustré** : les 27 monstres du monde et les 9 seigneurs des donjons, chacun avec son portrait (silhouette tant qu'il n'est pas vaincu) et sa fiche sur parchemin : victoires, vie, attaque, défense, régions, butin, ressources rares (avec leurs chances), notes du naturaliste et conseil de combat.
 - Panneau : touche F1, ou « Succès et bestiaire » dans le menu pause. Tout est sauvegardé.
 
 ## Bannière et trophées
@@ -431,7 +441,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
 
 ## Tests automatiques
-- Le dossier `tests/` contient 34 tests de jeu (histoire, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
+- Le dossier `tests/` contient 40 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
 - Tout lancer : `GODOT=/chemin/vers/godot tests/run_tests.sh` (ou seulement quelques-uns : `tests/run_tests.sh save story`). Il faut l'éditeur Godot 4.7 ; sans écran, `xvfb-run` est utilisé automatiquement. Importer le projet une première fois : `godot --headless --editor --quit --path .`.
 - Le monde des tests est toujours le même (graine 4242, ou `TEST_SEED=...`). Les captures d'écran vont dans `tests/captures/`, les journaux dans `tests/logs/` (ignorés par git).
 - Un test réussi affiche `RÉSULTAT : tout est bon` sans erreur de script ; le lanceur fait le résumé et renvoie un code d'erreur si un test échoue.

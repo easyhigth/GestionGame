@@ -81,7 +81,7 @@ func _build_ui() -> void:
 	col.offset_top = -250
 	col.offset_right = 560
 	col.offset_bottom = 250
-	var t := MenuKit.title(GAME_TITLE, 46)
+	var t := MenuKit.title(GAME_TITLE, 50)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	t.add_theme_constant_override("outline_size", 12)
 	col.add_child(t)
@@ -91,13 +91,16 @@ func _build_ui() -> void:
 	sub.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.03))
 	sub.add_theme_constant_override("outline_size", 4)
 	col.add_child(sub)
+	var div := MenuKit.divider(440)
+	div.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	col.add_child(div)
 	var gap := Control.new()
-	gap.custom_minimum_size = Vector2(0, 22)
+	gap.custom_minimum_size = Vector2(0, 10)
 	col.add_child(gap)
 	_menu = VBoxContainer.new()
 	_menu.add_theme_constant_override("separation", 10)
 	col.add_child(_menu)
-	var ver := MenuKit.label("Étapes 1 à 7 · Godot 4.7", 11, MenuKit.C_DIM)
+	var ver := MenuKit.label("Godot 4.7", 11, MenuKit.C_DIM)
 	root.add_child(ver)
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	ver.offset_left = -220
@@ -106,6 +109,11 @@ func _build_ui() -> void:
 	ver.offset_bottom = -10
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_refresh_menu()
+	# le menu apparaît en glissant doucement
+	col.modulate.a = 0.0
+	var tw := col.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(col, "modulate:a", 1.0, 0.9)
+	tw.tween_property(col, "offset_left", 70.0, 0.9).from(40.0)
 
 
 func _refresh_menu() -> void:

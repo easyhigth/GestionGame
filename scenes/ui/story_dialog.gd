@@ -34,7 +34,8 @@ func _ready() -> void:
 	add_child(dim)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", MenuKit.style(Color(MenuKit.C_BG, 0.96), MenuKit.C_FRAME, 2, 6, 16))
+	panel.add_theme_stylebox_override("panel", UiTheme.frame(16))
+	MenuKit.animate_open(panel)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	panel.offset_left = -400
 	panel.offset_right = 400
@@ -46,17 +47,16 @@ func _ready() -> void:
 	panel.add_child(row)
 	# portrait : une petite scène 3D avec le personnage
 	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", MenuKit.style(Color("141018"), MenuKit.C_FRAME, 2, 4, 2))
+	frame.add_theme_stylebox_override("panel", UiTheme.box("portrait_frame", 14, Vector4(6, 6, 6, 6)))
 	row.add_child(frame)
 	_vp = SubViewport.new()
 	_vp.size = Vector2i(150, 150)
 	_vp.own_world_3d = true
-	_vp.transparent_bg = false
+	_vp.transparent_bg = true
 	_vp.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	add_child(_vp)
 	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("2a2030")
+	env.background_mode = Environment.BG_CLEAR_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.85, 0.82, 0.9)
 	env.ambient_light_energy = 0.7
@@ -78,7 +78,7 @@ func _ready() -> void:
 	_box.add_theme_constant_override("separation", 8)
 	_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(_box)
-	_name = MenuKit.label("", 18, MenuKit.C_GOLD)
+	_name = MenuKit.heading("", 18)
 	_box.add_child(_name)
 	_text = MenuKit.label("", 14, MenuKit.C_TEXT)
 	_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

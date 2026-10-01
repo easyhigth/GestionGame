@@ -18,6 +18,7 @@ var selected := -1                # zone dont l'obélisque est sélectionné
 var _dragging := false
 var _hover := -1
 var _font: Font
+var _frame_box: StyleBox
 
 
 func _ready() -> void:
@@ -26,6 +27,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
 	_font = get_theme_default_font()
+	_frame_box = UiTheme.frame(0)
 
 
 func open() -> void:
@@ -181,8 +183,9 @@ func _draw() -> void:
 	var s := _scale()
 	var o := _map_origin()
 	var map_rect := Rect2(o, Vector2(world.world_size) * s)
-	draw_rect(map_rect.grow(6), C_PAPER)
-	draw_rect(map_rect.grow(6), Color("8a6a40"), false, 2.0)
+	# cadre de bois doré autour du parchemin de la carte
+	draw_style_box(_frame_box, map_rect.grow(18))
+	draw_rect(map_rect.grow(2), C_PAPER)
 	draw_texture_rect(world.map_texture, map_rect, false)
 	# noms des zones découvertes
 	for z in world.zones:
@@ -241,7 +244,7 @@ func _draw() -> void:
 	var title := "Carte du monde"
 	if not zc.is_empty():
 		title = "Carte du monde  —  %s" % zc.name
-	_text_center(title, Vector2(size.x / 2.0, 30), 22, C_TEXT)
+	_text_center(title, Vector2(size.x / 2.0, 32), 26, MenuKit.C_GOLD, UiTheme.font("title"))
 	var found := world.zones.filter(func(z): return z.discovered).size()
 	var obs := world.zones.filter(func(z): return z.obelisk_on).size()
 	_text_center("Zones découvertes : %d / %d     Obélisques activés : %d / %d" % [found, world.zones.size(), obs, world.zones.size()], Vector2(size.x / 2.0, 52), 12, C_DIM)
@@ -260,9 +263,10 @@ func _draw() -> void:
 	draw_string(_font, Vector2(lx + 18, ly + 64), "Toi", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, C_TEXT)
 
 
-func _text_center(text: String, pos: Vector2, fs: int, col: Color) -> void:
-	var w := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+func _text_center(text: String, pos: Vector2, fs: int, col: Color, fnt: Font = null) -> void:
+	var ft := fnt if fnt else _font
+	var w := ft.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var p := pos - Vector2(w / 2.0, -fs / 3.0)
 	for off in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2(1, 1)]:
-		draw_string(_font, p + off * 1.5, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0.03, 0.02, 0.04))
-	draw_string(_font, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		draw_string(ft, p + off * 1.5, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0.03, 0.02, 0.04))
+	draw_string(ft, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)

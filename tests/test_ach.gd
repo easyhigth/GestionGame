@@ -95,6 +95,7 @@ func _process(_d) -> bool:
 	if later("p1", 700):
 		shot("02_succes.png")
 		hud.achievements_panel._tab = "bestiaire"
+		hud.achievements_panel._selected = "loup"
 		hud.achievements_panel._refresh()
 		start("p2")
 	if later("p2", 700):

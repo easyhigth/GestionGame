@@ -28,13 +28,8 @@ func _ready() -> void:
 	add_child(dim)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var panel := PanelContainer.new()
-	var st := StyleBoxFlat.new()
-	st.bg_color = C_BG
-	st.border_color = C_FRAME
-	st.set_border_width_all(2)
-	st.set_corner_radius_all(4)
-	st.set_content_margin_all(16)
-	panel.add_theme_stylebox_override("panel", st)
+	panel.add_theme_stylebox_override("panel", UiTheme.frame(16))
+	MenuKit.animate_open(panel)
 	add_child(panel)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	panel.custom_minimum_size = Vector2(460, 0)

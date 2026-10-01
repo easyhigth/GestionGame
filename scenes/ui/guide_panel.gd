@@ -87,14 +87,8 @@ var _tips_timer := 1.5
 
 func _ready() -> void:
 	add_to_group("guide")
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.08, 0.06, 0.05, 0.78)
-	st.border_color = Color("8a6a3a")
-	st.set_border_width_all(1)
-	st.border_width_left = 3
-	st.set_corner_radius_all(4)
-	st.set_content_margin_all(7)
-	add_theme_stylebox_override("panel", st)
+	add_theme_stylebox_override("panel", UiTheme.small_frame(9))
+	modulate.a = 0.94
 	position = Vector2(10, 118)
 	custom_minimum_size = Vector2(250, 0)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -104,6 +98,7 @@ func _ready() -> void:
 	_title = _label("", 10, Color("c8a870"))
 	v.add_child(_title)
 	_task = _label("", 13, Color("fff2c8"))
+	_task.add_theme_font_override("font", UiTheme.font("title"))
 	v.add_child(_task)
 	_hint = _label("", 10, Color("c8b89a"))
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -201,7 +196,7 @@ func _connect_day(dc: DayCycle) -> void:
 func _label(text: String, size: int, col: Color) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", size + 1)
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.03))
 	l.add_theme_constant_override("outline_size", 3)
