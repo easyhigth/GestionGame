@@ -231,7 +231,8 @@ func _process(_d) -> bool:
 		print("   après : ", sm, " réserve ", vn.food_stock, " graines ", fm.seed_store, " tâche ", farmer._farm_task, " au travail ", farmer.is_at_work(), " activité ", farmer.activity)
 		check("le fermier récolte : réserve %d -> %d" % [roundi(food0), roundi(vn.food_stock)], vn.food_stock > food0 + 20.0)
 		check("il ressème (%d semées sur %d)" % [sm.planted, sm.plots], sm.planted >= sm.plots - 1)
-		check("graines en trop gardées pour semer", fm.seeds_count() > 0)
+		# les graines récoltées sont aléatoires : soit il en garde, soit il a tout ressemé
+		check("graines en trop gardées ou tout ressemé", fm.seeds_count() > 0 or sm.planted >= sm.plots)
 		# des cases vides : il sème avec les graines confiées
 		for c in fm.crops.keys().slice(0, 3):
 			fm._remove(c)

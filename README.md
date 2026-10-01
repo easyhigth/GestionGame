@@ -424,6 +424,12 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - **Difficulté** : Facile (monstres −25 % de vie et −30 % de dégâts, raids 40 % plus espacés), Normal, Difficile (monstres +35 % de vie et de dégâts, raids 25 % plus fréquents). Les valeurs sont dans `scripts/save/save_game.gd` (ENEMY_HP, ENEMY_DMG, RAID_DELAY).
 - **Équilibrage** : à niveau égal avec l'équipement de sa tranche de niveau, un monstre normal tombe en 3 à 7 coups et le héros encaisse 12 à 25 coups ; un boss demande 35 à 75 coups et le héros tombe en 7 à 9 de ses coups (ils sont tous annoncés : esquive-les !).
 
+## Confort et options
+- **Touches configurables** : menu pause → Commandes → onglet **Personnaliser** : clique sur une touche puis appuie sur la nouvelle (Échap : annuler). Les conflits sont signalés ; « Touches par défaut » remet tout comme au départ. La souris et la manette gardent leurs boutons. Les touches choisies sont gardées dans `user://options.cfg` et s'affichent partout (onglets des commandes, aide-mémoire).
+- **Aide-mémoire** (F2) : un petit cadre à droite de l'écran avec les touches principales.
+- **Qualité graphique** (Options) : basse, moyenne ou haute (ombres, distance d'affichage du monde, petite végétation au loin). **Images par seconde** : à afficher en haut à gauche.
+- Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
+
 ## Tests automatiques
 - Le dossier `tests/` contient 34 tests de jeu (histoire, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
 - Tout lancer : `GODOT=/chemin/vers/godot tests/run_tests.sh` (ou seulement quelques-uns : `tests/run_tests.sh save story`). Il faut l'éditeur Godot 4.7 ; sans écran, `xvfb-run` est utilisé automatiquement. Importer le projet une première fois : `godot --headless --editor --quit --path .`.

@@ -103,6 +103,12 @@ func _process(_d) -> bool:
 		print("== écran titre")
 		change_scene_to_file("res://scenes/ui/title_screen.tscn")
 	if wait(7000, "e"):
+		# sur une machine lente, l'écran titre peut mettre du temps à arriver
+		if current_scene == null or not current_scene.scene_file_path.ends_with("title_screen.tscn"):
+			if has_meta("e_done"):
+				remove_meta("e_done")
+			if f < 20000:
+				return false
 		snd._think = 0.0; snd._process(0.1); print("   dbg after process: ", snd.music_track)
 		print("   dbg forced=", snd.forced_music, " path=", current_scene.scene_file_path, " think=", snd._think, " proc=", snd.can_process())
 		print("   scène : ", current_scene.name if current_scene else "?", " héros : ", get_first_node_in_group("player"))

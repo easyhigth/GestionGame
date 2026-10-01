@@ -43,6 +43,12 @@ func _build() -> void:
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help.custom_minimum_size = Vector2(430, 0)
 	_box.add_child(help)
+	var gfx := OptionButton.new()
+	for i in SaveGame.GRAPHICS_NAMES.size():
+		gfx.add_item(SaveGame.GRAPHICS_NAMES[i])
+	gfx.select(int(o.get("graphics", 2)))
+	gfx.item_selected.connect(func(i): o.graphics = i; _save())
+	_row("Qualité graphique", gfx)
 	var cam := HSlider.new()
 	cam.min_value = 0.6
 	cam.max_value = 1.6
@@ -67,9 +73,9 @@ func _build() -> void:
 		sl.value_changed.connect(func(v): o[key] = v; _save())
 		sl.drag_ended.connect(func(_c): Sound.ui("pickup"))
 		_row(pair[1], sl)
-	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"]]:
+	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"], ["show_fps", "Afficher les images par seconde"]]:
 		var cb := CheckButton.new()
-		cb.button_pressed = bool(o[pair[0]])
+		cb.button_pressed = bool(o.get(pair[0], false))
 		var key: String = pair[0]
 		cb.toggled.connect(func(on): o[key] = on; _save())
 		_row(pair[1], cb)
