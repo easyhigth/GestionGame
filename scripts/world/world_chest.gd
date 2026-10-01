@@ -9,6 +9,8 @@ const LOOT := {
 	"castle": [["piece_or", 40, 90, 1.0], ["iron_ingot", 2, 5, 0.7], ["lingot_or", 1, 3, 0.5], ["gemme_rubis", 1, 1, 0.3],
 		["gemme_saphir", 1, 1, 0.3], ["potion_soin", 1, 2, 0.6]],
 	"castle_lord": [["piece_or", 20, 40, 1.0], ["pain", 2, 4, 0.8], ["iron_ingot", 1, 2, 0.5]],
+	"capital": [["piece_or", 400, 700, 1.0], ["orichalque", 1, 2, 1.0], ["lingot_or", 3, 6, 1.0], ["gemme_rubis", 1, 2, 0.6],
+		["gemme_saphir", 1, 2, 0.6], ["gemme_emeraude", 1, 2, 0.6], ["potion_soin", 2, 4, 1.0]],
 	"wreck": [["piece_or", 25, 60, 1.0], ["perle", 1, 3, 0.7], ["lingot_or", 1, 1, 0.3], ["gemme_emeraude", 1, 1, 0.25],
 		["potion_force", 1, 1, 0.4]],
 }
@@ -34,7 +36,7 @@ func _ready() -> void:
 
 
 func _refresh() -> void:
-	_label.text = "Vide" if opened else ("Trésor\nE : ouvrir" if kind != "wreck" else "Coffre de l'épave\nE : ouvrir")
+	_label.text = "Vide" if opened else {"wreck": "Coffre de l'épave\nE : ouvrir", "capital": "Trésor de la capitale\nE : ouvrir"}.get(kind, "Trésor\nE : ouvrir")
 	_label.modulate = Color(0.7, 0.7, 0.7) if opened else Color("ffd24a")
 
 

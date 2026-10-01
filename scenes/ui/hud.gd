@@ -70,6 +70,7 @@ var journal: JournalPanel
 var mountain_caves: MountainCaves
 var city_life: CityLife
 var console: CommandConsole
+var city_siege: CitySiege
 var fishing: Fishing
 var caves: UnderwaterCaves
 var _breath_box: Control
@@ -904,6 +905,22 @@ func _build_day_and_guide() -> void:
 	city_life.world = world
 	city_life.player = player
 	get_parent().add_child.call_deferred(city_life)
+	city_siege = CitySiege.new()
+	city_siege.name = "CitySiege"
+	city_siege.world = world
+	city_siege.player = player
+	get_parent().add_child.call_deferred(city_siege)
+	city_siege.started.connect(func(id):
+		var n: Dictionary = Diplomacy.NATIONS[id]
+		var c := city_siege.city_of(id)
+		show_banner("Siège de %s" % c.get("name", ""), "Repousse %d vagues de soldats devant la grande porte, puis va vaincre le souverain dans son palais.\nS'éloigner de la ville lève le siège." % CitySiege.WAVES, n.color))
+	city_siege.ended.connect(func(id, won):
+		var n: Dictionary = Diplomacy.NATIONS[id]
+		var c := city_siege.city_of(id)
+		if won:
+			show_banner("%s est tombée !" % c.get("name", ""), "%s devient une province de ton royaume : ta bannière flotte sur ses portes." % n.name, Color("ffd24a"))
+		else:
+			show_message("Le siège de %s est levé. Reviens plus fort !" % c.get("name", "")))
 	add_child(FishingBar.new())
 	_build_breath()
 	livestock = Livestock.new()

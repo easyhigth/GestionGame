@@ -34,11 +34,13 @@ func _dip() -> Diplomacy:
 	return _trade.get_tree().get_first_node_in_group("diplomacy") as Diplomacy if _trade and _trade.is_inside_tree() else null
 
 
-## Remise (ou majoration) selon les relations avec la nation du marchand : de -20 % à +20 %.
+## Remise (ou majoration) selon les relations avec la nation du marchand : de -20 % à +20 % (-25 % / +25 % dans une province).
 func _rel_mult(buying: bool) -> float:
 	var dip := _dip()
 	if dip == null or not dip.states.has(nation):
 		return 1.0
+	if dip.annexed(nation):
+		return 0.75 if buying else 1.25    # ta province : les meilleurs prix
 	var k := clampf(dip.rel(nation) / 100.0, -1.0, 1.0) * 0.2
 	return 1.0 - k if buying else 1.0 + k
 
