@@ -374,6 +374,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - **Obélisques** : un par zone. Passe à côté pour l'activer, puis voyage vers n'importe quel obélisque activé depuis la carte. Celui du village est actif dès le départ.
 - **Carte** (M) : se dévoile là où tu passes, avec les noms et niveaux des zones découvertes, les obélisques, les entrées de donjon (vertes une fois vaincues) et ton royaume. Molette ou gâchettes : zoom. **Mini-carte** en haut à droite, avec le nom de la zone.
 - Un bandeau annonce chaque nouvelle zone (nom, région, niveaux) ; la découverte d'une zone donne de l'expérience.
+- Les arbres poussent en quinconce, toujours à au moins 2 m l'un de l'autre : on circule entre les troncs même au cœur des forêts profondes, qui ont aussi leurs clairières.
 - Les feuillages et les murs entre la caméra et le héros deviennent transparents.
 - Modèles : `tools/voxel_region_props.py` (cactus, sapins enneigés, arbres morts, champignons géants, cerisiers, roseaux, cristaux, roches volcaniques, obélisque, porte de donjon), `tools/voxel_creature_generator.py` (créatures), `tools/regions_database.py` (monstres et régions).
 
@@ -461,7 +462,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
 
 ## Tests automatiques
-- Le dossier `tests/` contient 42 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
+- Le dossier `tests/` contient 43 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
 - Tout lancer : `GODOT=/chemin/vers/godot tests/run_tests.sh` (ou seulement quelques-uns : `tests/run_tests.sh save story`). Il faut l'éditeur Godot 4.7 ; sans écran, `xvfb-run` est utilisé automatiquement. Importer le projet une première fois : `godot --headless --editor --quit --path .`.
 - Le monde des tests est toujours le même (graine 4242, ou `TEST_SEED=...`). Les captures d'écran vont dans `tests/captures/`, les journaux dans `tests/logs/` (ignorés par git).
 - Un test réussi affiche `RÉSULTAT : tout est bon` sans erreur de script ; le lanceur fait le résumé et renvoie un code d'erreur si un test échoue.
