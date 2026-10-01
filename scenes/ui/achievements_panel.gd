@@ -35,6 +35,7 @@ func open(tab := "") -> void:
 	Sound.ui("ui_open")
 	show()
 	player.ui_open = true
+	player.set_meta("seen_achievements", true)
 	get_tree().paused = true
 	_ach().check_all()
 	_refresh()

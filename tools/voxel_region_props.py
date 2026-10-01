@@ -160,6 +160,73 @@ def dungeon_gate():
     return g
 
 
+
+# ---------------------------------------------------------------- jungle d'émeraude
+JUNGLE = [0x1e6a2a, 0x2a7a30, 0x1a5a24, 0x2e8a3a]
+
+
+def palm(seed):
+    rnd = mk(seed * 53 + 3)
+    g = Node('Tree')
+    bark = pick(rnd, [0x8a6a44, 0x7a5a3a, 0x9a7a50])
+    h = 34 + int(rnd() * 12)
+    lean = (rnd() - 0.5) * 6
+    for i in range(int(h / 4)):
+        V(5 - (i % 2) * 0.6, 4, 5 - (i % 2) * 0.6, bark if i % 2 else shade(bark, 0.9), lean * i / (h / 4), 2 + i * 4, 0, g)
+    top = (lean, h, 0)
+    for k in range(6):
+        a = k * 1.047 + rnd() * 0.3
+        import math
+        dx, dz = math.cos(a), math.sin(a)
+        for j in range(4):
+            V(5 - j * 0.6, 1.4, 3.2, pick(rnd, JUNGLE), top[0] + dx * (3 + j * 3.6), top[1] + 1 - j * 1.4, dz * (3 + j * 3.6), g, ry=-a)
+    for d in ((1.5, 0), (-1.2, 1.2), (0, -1.5)):
+        V(2.2, 2.2, 2.2, 0x6a4a2a, top[0] + d[0], top[1] - 1.5, d[1], g)
+    return g
+
+
+def jungle_tree(seed):
+    """Grand arbre de la jungle : tronc épais, contreforts, canopée en étages et lianes."""
+    rnd = mk(seed * 59 + 7)
+    g = Node('Tree')
+    bark = pick(rnd, [0x5a4a34, 0x4e4030, 0x6a5a40])
+    h = 44 + int(rnd() * 14)
+    trunk(g, rnd, h, 8, bark)
+    for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        V(2 + abs(dz) * 6, 10, 2 + abs(dx) * 6, shade(bark, 0.9), dx * 5, 5, dz * 5, g)
+    for lvl, (y, w) in enumerate(((h - 8, 34), (h, 28), (h + 7, 18))):
+        V(w, 7, w, pick(rnd, JUNGLE), (rnd() - 0.5) * 4, y, (rnd() - 0.5) * 4, g)
+        V(w - 6, 3, w - 6, shade(pick(rnd, JUNGLE), 1.15), 0, y + 4.6, 0, g)
+    for k in range(5):
+        x = (rnd() - 0.5) * 26
+        z = (rnd() - 0.5) * 26
+        l = 10 + int(rnd() * 14)
+        V(1, l, 1, 0x2a5a1a, x, h - 10 - l / 2, z, g)
+        if rnd() < 0.5:
+            V(2, 2, 2, pick(rnd, [0xd02a5a, 0xf0b020, 0xf06a2a]), x, h - 10 - l, z, g)
+    return g
+
+
+def fern(seed):
+    rnd = mk(seed * 61 + 11)
+    g = Node('Plant')
+    import math
+    for k in range(7):
+        a = k * 0.9 + rnd() * 0.4
+        c = pick(rnd, JUNGLE)
+        for j in range(3):
+            V(2.6 - j * 0.5, 1, 3, shade(c, 1 + j * 0.06), math.cos(a) * (2 + j * 2.6), 2 + j * 1.6 - (j * j) * 0.4, math.sin(a) * (2 + j * 2.6), g, ry=-a)
+    V(2, 3, 2, 0x2a5a1a, 0, 1.5, 0, g)
+    return g
+
+
+def mossy_rock(seed):
+    g = rock(seed + 40)
+    for b in list(g.boxes):
+        if b['h'] >= 4:
+            V(b['w'] * 0.9, 1.4, b['d'] * 0.9, pick(mk(seed * 7 + int(b['w'])), [0x3a7a2a, 0x2e6a24, 0x4a8a34]), b['x'], b['y'] + b['h'] / 2 + 0.6, b['z'], g)
+    return g
+
 CHERRY = [0xf0a8c8, 0xe890b8, 0xf8c0d8, 0xd87aa8]
 MAGIC = [0x4ad0c0, 0x6ae0d8, 0x3ab0b0, 0x8a6ae0]
 SWAMP = [0x4a5a2a, 0x3e4e24, 0x56663a, 0x5a6a30]
@@ -179,15 +246,22 @@ PROPS = {
     'lava_rock_1': lambda: lava_rock(1), 'lava_rock_2': lambda: lava_rock(2),
     'snow_rock_1': lambda: snow_rock(1), 'snow_rock_2': lambda: snow_rock(2),
     'obelisk': obelisk, 'dungeon_gate': dungeon_gate,
+    'palm_1': lambda: palm(1), 'palm_2': lambda: palm(2),
+    'jungle_tree_1': lambda: jungle_tree(1), 'jungle_tree_2': lambda: jungle_tree(2),
+    'fern_1': lambda: fern(1), 'fern_2': lambda: fern(2), 'mossy_rock_1': lambda: mossy_rock(1), 'mossy_rock_2': lambda: mossy_rock(2),
 }
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default='../assets/environment/models')
+    ap.add_argument('--only', default='', help='noms séparés par des virgules (par défaut : tous)')
     a = ap.parse_args()
+    only = [n for n in a.only.split(',') if n]
     os.makedirs(a.out, exist_ok=True)
     for name, fn in PROPS.items():
+        if only and name not in only:
+            continue
         export_glb(fn(), os.path.join(a.out, name + '.glb'))
     print('%d décor(s) .glb écrit(s) dans %s' % (len(PROPS), a.out))
 

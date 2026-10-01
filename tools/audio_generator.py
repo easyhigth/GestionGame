@@ -521,6 +521,100 @@ def music_title():
     return song(prog, 84, 1, mel, 'title')
 
 
+# ---------------------------------------------------------------- nouveaux systèmes (leviers, pièges, potions, succès, événements...)
+
+def sfx_hit_light():
+    click = expdecay(bandpass(noise(0.06, 81), 1200, 5000), 0.012)
+    body = expdecay(osc('sine', lambda t: 260 - 300 * t, 0.1), 0.03)
+    return mix(gain(click, 0.8), gain(body, 0.6))
+
+
+def sfx_lever():
+    out = silence(0.5)
+    clunk = expdecay(lowpass(noise(0.12, 83), 900), 0.04)
+    place(out, mix(clunk, gain(expdecay(osc('sine', 110, 0.2), 0.06), 0.8)), 0.0, 1.0)
+    place(out, expdecay(bandpass(noise(0.08, 84), 1500, 6000), 0.015), 0.22, 0.6)
+    return out
+
+
+def sfx_spikes():
+    shink = mix(*[gain(expdecay(osc('sine', f, 0.35), 0.09), g) for f, g in ((2100, 0.6), (3150, 0.4), (4400, 0.3))])
+    scrape = env(bandpass(noise(0.18, 85), 2500, 9000), 0.005, 0.17, 0, 0)
+    return mix(shink, gain(scrape, 0.7))
+
+
+def sfx_stone_grind():
+    s = lowpass(noise(1.2, 87), lambda t: 300 + 500 * math.sin(math.pi * t / 1.2))
+    rumble = osc('sine', lambda t: 55 + 10 * math.sin(t * 9), 1.2)
+    return env(mix(s, gain(rumble, 0.6)), 0.15, 0.6, 0.6, 0.4)
+
+
+def sfx_potion():
+    out = silence(0.7)
+    for i in range(5):
+        b = env(osc('sine', lambda t, i=i: 300 + 90 * i + 900 * t, 0.09), 0.005, 0.085, 0, 0)
+        place(out, b, 0.05 + i * 0.1, 0.6)
+    place(out, env(bandpass(noise(0.3, 89), 2000, 7000), 0.05, 0.25, 0, 0), 0.35, 0.3)
+    return out
+
+
+def sfx_socket():
+    out = silence(0.8)
+    place(out, expdecay(osc('sine', 1800, 0.08), 0.02), 0.0, 0.6)
+    for i, n in enumerate((88, 91, 95, 100)):
+        place(out, env(osc('sine', note(n), 0.35), 0.003, 0.34, 0, 0), 0.08 + i * 0.06, 0.35)
+    return out
+
+
+def sfx_rune():
+    hum = mix(osc('sine', lambda t: 220 + 30 * t, 1.0), gain(osc('sine', lambda t: 331 + 50 * t, 1.0), 0.6))
+    sh = bandpass(noise(1.0, 91), 4000, 9000)
+    return env(mix(hum, gain(sh, 0.25)), 0.2, 0.5, 0.4, 0.3)
+
+
+def sfx_achievement():
+    out = silence(1.4)
+    for i, n in enumerate((72, 76, 79, 84)):
+        place(out, env(osc('tri', note(n), 0.6), 0.005, 0.59, 0, 0), i * 0.09, 0.6)
+    for n in (84, 88, 91):
+        place(out, env(osc('sine', note(n), 0.9), 0.01, 0.89, 0, 0), 0.38, 0.3)
+    return out
+
+
+def sfx_event():
+    out = silence(1.8)
+    for i, f in enumerate((note(67), note(72))):
+        bell = mix(*[gain(expdecay(osc('sine', f * h, 1.4), 0.5 / h), g) for h, g in ((1, 1.0), (2.01, 0.5), (3.02, 0.3), (4.2, 0.2))])
+        place(out, bell, i * 0.35, 0.6)
+    return out
+
+
+def sfx_war_drums():
+    out = silence(2.0)
+    for i, t in enumerate((0.0, 0.25, 0.5, 1.0, 1.25, 1.5, 1.75)):
+        d = expdecay(osc('sine', lambda tt: 70 - 40 * tt, 0.35), 0.12)
+        place(out, mix(d, gain(expdecay(lowpass(noise(0.1, 93 + i), 600), 0.03), 0.6)), t, 1.0 if i % 3 == 0 else 0.7)
+    return out
+
+
+def sfx_fanfare():
+    out = silence(1.6)
+    seq = ((67, 0.0, 0.18), (67, 0.2, 0.18), (72, 0.4, 0.18), (76, 0.6, 0.7))
+    for n, at, d in seq:
+        s = mix(osc('saw', note(n), d), gain(osc('saw', note(n) * 1.004, d), 0.6))
+        place(out, env(lowpass(s, 2200), 0.02, d * 0.4, 0.6, d * 0.4), at, 0.6)
+    return out
+
+
+def sfx_treaty():
+    out = silence(0.9)
+    scratch = env(bandpass(noise(0.4, 95), 2500, 8000), 0.02, 0.38, 0, 0)
+    place(out, scratch, 0.0, 0.4)
+    seal = mix(expdecay(osc('sine', 140, 0.25), 0.06), expdecay(lowpass(noise(0.08, 96), 1500), 0.02))
+    place(out, seal, 0.45, 1.0)
+    return out
+
+
 SFX = {k[4:]: v for k, v in globals().items() if k.startswith('sfx_')}
 AMB = {'amb_day': amb_day, 'amb_night': amb_night, 'amb_fire': amb_fire, 'amb_rain': amb_rain, 'amb_wind': amb_wind}
 MUSIC = {'day': music_day, 'night': music_night, 'combat': music_combat, 'title': music_title}

@@ -157,6 +157,7 @@ func start(id: String) -> void:
 	if player:
 		player.feat.emit(ev.name, ev.color)
 		player.notify.emit(ev.text)
+	Sound.ui("war_drums" if id == "invasion" else ("fanfare" if id == "tournoi" else "event"))
 	started.emit(current)
 
 
@@ -297,6 +298,7 @@ func _tournament_step() -> void:
 			if int(current.round) >= CHAMPIONS.size():
 				_give([["piece_or", 300], [RareDrops.GEM_IDS.pick_random(), 1], ["lingot_or", 2]], "Vainqueur du tournoi")
 				player.absorb_soul("tournoi", {"attack": 1.0})
+				Sound.ui("fanfare")
 				_finish(true, "Tu remportes le Grand tournoi ! Le royaume acclame son champion (+1 attaque).")
 			else:
 				player.notify.emit("Champion vaincu ! Le suivant entre dans l'arène.")
