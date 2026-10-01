@@ -120,6 +120,29 @@ func _ready() -> void:
 	add_child(pause)
 	set_help_visible(bool(SaveGame.options.show_help))
 	SaveGame.saved.connect(func(s): if s != SaveGame.AUTO: show_message("Partie sauvegardée."))
+	if GameState.play_intro:
+		GameState.play_intro = false
+		play_intro.call_deferred()
+
+
+## Lance l'introduction : le reste de l'interface se cache le temps de la cinématique.
+func play_intro() -> IntroCinematic:
+	# transparents plutôt que cachés : certains éléments se réaffichent d'eux-mêmes
+	var hidden := {}
+	for c in get_children():
+		if c is CanvasItem:
+			hidden[c] = c.modulate.a
+			c.modulate.a = 0.0
+	var intro := IntroCinematic.new()
+	intro.player = player
+	intro.muted = hidden.keys()
+	add_child(intro)
+	intro.finished.connect(func():
+		for c in hidden:
+			if is_instance_valid(c):
+				c.modulate.a = hidden[c]
+		_update_health())
+	return intro
 
 
 func _build_health_bar() -> void:

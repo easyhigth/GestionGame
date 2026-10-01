@@ -147,9 +147,20 @@ func _refresh() -> void:
 	var dm := get_tree().get_first_node_in_group("dungeons") as DungeonManager
 	if dm and dm.brume_unlocked():
 		_add_foot(_label("Fin de jeu — " + dm.brume_summary(), 13, DungeonManager.BRUME_COLOR))
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	var intro := MenuKit.button("Revoir l'introduction", 220, 12)
+	intro.pressed.connect(func():
+		close()
+		var hud := get_tree().get_first_node_in_group("hud")
+		if hud:
+			hud.play_intro())
+	row.add_child(intro)
 	var b := MenuKit.button("Fermer (O)", 200, 13)
 	b.pressed.connect(close)
-	_add_foot(b)
+	row.add_child(b)
+	_add_foot(row)
 	b.grab_focus.call_deferred()
 
 
