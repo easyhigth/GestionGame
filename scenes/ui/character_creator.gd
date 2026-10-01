@@ -768,7 +768,7 @@ func _start() -> void:
 		if not SaveGame.has_save(sl):
 			SaveGame.current_slot = sl
 			break
-	get_tree().change_scene_to_file(GAME_SCENE)
+	LoadingScreen.go(get_tree(), GAME_SCENE, "Création du monde...")
 
 
 # ---------------------------------------------------------------- mise à jour

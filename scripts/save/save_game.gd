@@ -400,7 +400,7 @@ func load_game(slot: String) -> bool:
 	current_slot = slot if slot != AUTO else current_slot
 	play_time = float(d.get("play_time", 0.0))
 	get_tree().paused = false
-	get_tree().change_scene_to_file(GAME_SCENE)
+	LoadingScreen.go(get_tree(), GAME_SCENE, "Chargement de la partie...")
 	return true
 
 
@@ -508,6 +508,9 @@ func apply_pending(world: WorldGenerator) -> void:
 		p._give_class_talent()
 		p._apply_talents()
 		var pos := Vector3(pd.pos[0], pd.pos[1], pd.pos[2])
+		# sécurité : un héros hors du monde (sauvegarde abîmée) revient au village
+		if pos.y > WorldGenerator.UNDERGROUND and (pos.x < 0 or pos.z < 0 or pos.x >= world.world_size.x or pos.z >= world.world_size.y):
+			pos = world.cell_center(world.spawn_cell + Vector2i(0, 3))
 		world.load_area(pos)
 		p.global_position = pos
 		p.refresh_stats()

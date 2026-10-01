@@ -247,6 +247,9 @@ func _ready() -> void:
 	if generate_on_start:
 		var loaded_seed := SaveGame.pending_seed()
 		if loaded_seed >= 0:
+			# la taille du monde de la sauvegarde (les parties d'avant le monde immense : 640 × 640 m)
+			var sz: Array = SaveGame.pending.world.get("size", [640, 640])
+			world_size = Vector2i(int(sz[0]), int(sz[1]))
 			generate(loaded_seed)
 			SaveGame.apply_pending.call_deferred(self)
 		else:
@@ -2824,7 +2827,7 @@ func export_state() -> Dictionary:
 	for z in zones:
 		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0))])
 	return {
-		"seed": world_seed, "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
+		"seed": world_seed, "size": [world_size.x, world_size.y], "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
 		"removed_props": removed_props.keys(), "chests": opened_chests.keys(),
 		"revealed": Marshalls.raw_to_base64(_revealed.compress(FileAccess.COMPRESSION_ZSTD)),
 		"map": Marshalls.raw_to_base64(map_image.save_png_to_buffer()),
