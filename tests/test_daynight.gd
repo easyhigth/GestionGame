@@ -159,6 +159,10 @@ func _process(_d) -> bool:
 		var bed: Vector3 = w.cell_center(s + Vector2i(-1, 4))
 		p.global_position = Vector3(bed.x, H, bed.z)
 		p.health.current = 10
+		# des monstres de nuit ont pu réapparaître depuis : on les retire avant de se coucher
+		for e in get_nodes_in_group("enemy_units"):
+			e.remove_from_group("enemy_units")
+			e.queue_free()
 		var ev := InputEventAction.new(); ev.action = "interact"; ev.pressed = true
 		p._unhandled_input(ev)
 		set_meta("t5", Time.get_ticks_msec())
