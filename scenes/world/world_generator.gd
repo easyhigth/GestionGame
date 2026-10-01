@@ -581,6 +581,35 @@ func _gen_chunk_data(ch: Vector2i) -> void:
 				_decor[i] = D_NONE
 
 
+## Type et hauteur d'une case calculés directement (comme _gen_chunk_data, sans les îles ni les retouches),
+## sans générer son morceau : pour évaluer vite un emplacement lointain.
+func _quick_cell(x: int, y: int) -> Vector2:
+	var nz := _nearest_zones(x, y)
+	var f: float = nz[2]
+	var r1 := _zone_type(nz[0])
+	var r2 := _zone_type(nz[1])
+	var bias := lerpf(r1.height_bias if r1 else 0.0, r2.height_bias if r2 else 0.0, f)
+	var relief := lerpf(r1.relief if r1 else 1.0, r2.relief if r2 else 1.0, f)
+	var center := Vector2(world_size) / 2.0
+	var d := (Vector2(x, y) - center) / center
+	var edge := maxf(absf(d.x), absf(d.y))
+	var h := height_noise.get_noise_2d(x, y) * relief + bias - pow(edge, 4.0) * island_falloff + land_bias
+	var peak := lerpf(float(PEAKS.get(r1.id if r1 else "", 0.0)), float(PEAKS.get(r2.id if r2 else "", 0.0)), f)
+	if peak > 0.0 and h > sand_level:
+		var ridge := 1.0 - absf(_ridge_noise.get_noise_2d(x, y))
+		h += peak * ridge * ridge * ridge * clampf((h - sand_level) * 4.0, 0.0, 1.0)
+	var t := GRASS
+	if h < deep_water_level:
+		t = DEEP
+	elif h < water_level:
+		t = WATER
+	elif h < sand_level:
+		t = SAND
+	elif h > stone_level:
+		t = STONE
+	return Vector2(t, _terrain_height(t, h))
+
+
 # ---------------------------------------------------------------- îles au trésor
 
 ## Une île possible par carré de ISLAND_GRID cases, au milieu des eaux profondes.
@@ -2146,6 +2175,7 @@ const HAMLET_EVERY := 170.0
 func _plan_roads() -> void:
 	roads.clear()
 	_bridges.clear()
+	_road_cache.clear()
 	var nodes: Array = [spawn_cell]
 	for c in cities:
 		nodes.append(c.center)
@@ -2193,19 +2223,20 @@ func _road_path(a: Vector2i, b: Vector2i) -> Array:
 		if cur == goal:
 			found = true
 			break
-		var hc := _h(cur * S)
+		var hc := _road_sample(cur, S).y
 		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)]:
 			var n: Vector2i = cur + d
 			if n.x < 1 or n.y < 1 or n.x >= gw - 1 or n.y >= gh - 1 or closed.has(n):
 				continue
 			var cell := n * S
-			var t := _type(cell)
+			var q := _road_sample(n, S)
+			var t := int(q.x)
 			var step := Vector2(d).length()
 			var cost := step
 			if t == WATER or t == DEEP:
 				cost *= 7.0    # un pont, si vraiment il le faut
 			else:
-				var slope := absf(_h(cell) - hc) / (S * step)
+				var slope := absf(q.y - hc) / (S * step)
 				cost *= 1.0 + slope * 40.0 + (25.0 if slope > 0.12 else 0.0)
 			# on traverse les capitales par leurs rues, pas au travers des murs : on passe au large sauf au but
 			var inside := city_at(Vector3(cell.x, 0, cell.y), 4.0)
@@ -2225,6 +2256,24 @@ func _road_path(a: Vector2i, b: Vector2i) -> Array:
 		c = came[c]
 		path.push_front(c * S)
 	return path
+
+
+## Terrain d'un point de la grille des routes : celui déjà calculé, sinon une estimation rapide (et mise en cache).
+var _road_cache := {}
+
+
+func _road_sample(g: Vector2i, S: int) -> Vector2:
+	if _road_cache.has(g):
+		return _road_cache[g]
+	var cell := g * S
+	var out: Vector2
+	var ch := _chunk_of(cell)
+	if _inside(cell) and _chunk_ready[ch.y * _chunks.x + ch.x] != 0:
+		out = Vector2(_types[_idx(cell)], _heights[_idx(cell)])
+	else:
+		out = _quick_cell(cell.x, cell.y)
+	_road_cache[g] = out
+	return out
 
 
 ## Pave une route : 3 cases de large, hauteur lissée d'un point à l'autre (on y marche partout), ponts sur l'eau.
@@ -2428,32 +2477,22 @@ func _plan_cities() -> void:
 		var margin := r + 16
 		var best := Vector2i(-1, -1)
 		var best_score := -INF
-		for z in zones:
-			if float(z.dist) < 0.3:
-				continue
-			var rid: String = (z.type as RegionData).id if z.type else "prairie"
-			var pref := (info.regions as Array).find(rid)
-			for off in [Vector2i.ZERO, Vector2i(32, 0), Vector2i(-32, 0), Vector2i(0, 32), Vector2i(0, -32),
-					Vector2i(32, 32), Vector2i(-32, 32), Vector2i(32, -32), Vector2i(-32, -32)]:
-				var c: Vector2i = Vector2i(z.site) + off
-				if c.x < margin or c.y < margin or c.x >= world_size.x - margin or c.y >= world_size.y - margin:
+		# d'abord les régions du peuple de la nation ; les autres seulement si aucune ne convient
+		# (évaluer tout le monde obligerait à calculer le terrain de 2 km² dès le départ)
+		for pass_i in 2:
+			if best.x >= 0:
+				break
+			for z in zones:
+				if float(z.dist) < 0.3:
 					continue
-				if Vector2(c - spawn_cell).length() < r + 160:
+				var rid: String = (z.type as RegionData).id if z.type else "prairie"
+				var pref := (info.regions as Array).find(rid)
+				if (pass_i == 0) != (pref >= 0):
 					continue
-				var far := true
-				for o in cities:
-					if Vector2(c - (o.center as Vector2i)).length() < r + int(o.radius) + 80:
-						far = false
-				if not far:
-					continue
-				var site := _city_site_quality(c, r + 6, pref == 0)
-				if site.x < 0.0:
-					continue
-				var score := (40.0 if pref == 0 else (30.0 if pref > 0 else 0.0)) - site.y * 0.5 - absf(float(z.dist) - 0.6) * 4.0 \
-					+ _rand(int(z.id), off.x + 3 * off.y, 77) * 0.5
-				if score > best_score:
-					best_score = score
-					best = c
+				var cand := _city_candidate(z, info.regions, r, margin)
+				if cand.size() == 2 and float(cand[1]) > best_score:
+					best_score = float(cand[1])
+					best = cand[0]
 		if best.x < 0:
 			continue
 		var rng := RandomNumberGenerator.new()
@@ -2468,24 +2507,54 @@ func _plan_cities() -> void:
 		cities.append(city)
 
 
+## Le meilleur emplacement de capitale autour du cœur d'une zone : [case, score] ou [].
+func _city_candidate(z: Dictionary, regions: Array, r: int, margin: int) -> Array:
+	var best: Array = []
+	for off in [Vector2i.ZERO, Vector2i(32, 0), Vector2i(-32, 0), Vector2i(0, 32), Vector2i(0, -32),
+			Vector2i(32, 32), Vector2i(-32, 32), Vector2i(32, -32), Vector2i(-32, -32)]:
+		var c: Vector2i = Vector2i(z.site) + off
+		if c.x < margin or c.y < margin or c.x >= world_size.x - margin or c.y >= world_size.y - margin:
+			continue
+		if Vector2(c - spawn_cell).length() < r + 160:
+			continue
+		var far := true
+		for o in cities:
+			if Vector2(c - (o.center as Vector2i)).length() < r + int(o.radius) + 80:
+				far = false
+		if not far:
+			continue
+		# la région au centre même de la ville (le cœur de la zone peut être à la frontière)
+		var zr := _zone_type(_nearest_zones(c.x, c.y)[0])
+		var pref := regions.find(zr.id if zr else "prairie")
+		var site := _city_site_quality(c, r + 6, pref == 0)
+		if site.x < 0.0:
+			continue
+		var score := (40.0 if pref == 0 else (30.0 if pref > 0 else 0.0)) - site.y * 0.5 - absf(float(z.dist) - 0.6) * 4.0 \
+			+ _rand(int(z.id), off.x + 3 * off.y, 77) * 0.5
+		if best.is_empty() or score > float(best[1]):
+			best = [c, score]
+	return best
+
+
 ## x : -1 si l'endroit ne convient pas (trop d'eau ou de relief) ; y : sa pénalité (relief, part d'eau).
 func _city_site_quality(c: Vector2i, r: int, lenient := false) -> Vector2:
 	var lo := INF
 	var hi := -INF
 	var wet := 0
 	var n := 0
-	for y in range(-r, r + 1, 6):
-		for x in range(-r, r + 1, 6):
+	for y in range(-r, r + 1, 9):
+		for x in range(-r, r + 1, 9):
 			if Vector2(x, y).length() > r:
 				continue
 			var cell := c + Vector2i(x, y)
 			n += 1
-			var t := _type(cell)
+			var q := _quick_cell(cell.x, cell.y)
+			var t := int(q.x)
 			if t == WATER or t == DEEP:
 				wet += 1
 				continue
-			lo = minf(lo, _h(cell))
-			hi = maxf(hi, _h(cell))
+			lo = minf(lo, q.y)
+			hi = maxf(hi, q.y)
 	# dans la région préférée de la nation, on accepte un terrain plus difficile (la ville le façonne)
 	if n == 0 or wet > n * (0.4 if lenient else 0.2) or hi - lo > (36.0 if lenient else 30.0):
 		return Vector2(-1, 0)
@@ -2537,6 +2606,33 @@ func _shape_city(city: Dictionary, plan: Dictionary) -> void:
 				_heights[i] = snappedf(lerpf(base, _heights[i], k), step_height)
 				if k < 0.5:
 					_decor[i] = D_NONE
+	# une rampe pavée devant chaque porte de l'enceinte : on entre toujours à pied, même en montagne
+	for g in plan.gates:
+		var gv := Vector2(g)
+		if gv.length() < R - 12:
+			continue
+		var dir := gv.normalized()
+		var side := Vector2(-dir.y, dir.x)
+		var length := blend + 14
+		var end_cell := ctr + Vector2i((gv + dir * length).round())
+		# devant un lac (ou une coulée de lave), la rampe devient une chaussée jusqu'à la terre ferme
+		while length < blend + 70 and _inside(end_cell) and (_type(end_cell) == WATER or _type(end_cell) == DEEP):
+			length += 4
+			end_cell = ctr + Vector2i((gv + dir * length).round())
+		var start_h := base + float(plan.relief.get(g, 0.0))
+		var end_h := maxf(_h(end_cell), 0.25)
+		for k in range(1, length + 1):
+			var hk := snappedf(lerpf(start_h, end_h, float(k) / length), step_height)
+			for w2 in range(-2, 3):
+				var p2 := gv + dir * k + side * w2
+				var c2 := ctr + Vector2i(p2.round())
+				if not _inside(c2):
+					continue
+				_ensure_chunk_of(c2)
+				var i2 := _idx(c2)
+				_heights[i2] = maxf(hk, 0.25)
+				_types[i2] = PLAZA
+				_decor[i2] = D_NONE
 	# rues pavées : chaque point de passage et ses voisins
 	for s in plan.streets:
 		for o in [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:

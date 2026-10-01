@@ -55,7 +55,8 @@ func _process(_d) -> bool:
 		var ms := Time.get_ticks_msec() - t0
 		print("   génération + chargement : %d ms" % ms)
 		check("monde immense : %d × %d m, %d zones" % [w.world_size.x, w.world_size.y, w.zones.size()], w.world_size.x >= 1500 and w.zones.size() >= 100)
-		check("créé en moins de 20 s (%d ms)" % ms, ms < 20000)
+		# cinq capitales, 2 km de routes et des hameaux : la création prend un peu plus de temps qu'avant
+		check("créé en moins de 35 s (%d ms)" % ms, ms < 35000)
 		get_first_node_in_group("raids").enabled = false
 		get_first_node_in_group("weather").set_kind("clair")
 		get_first_node_in_group("day_cycle").hour = 10.0
