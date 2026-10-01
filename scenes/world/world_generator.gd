@@ -1289,6 +1289,34 @@ func apply_quality(q: int) -> void:
 		if dm == null or not dm.active:
 			sun.shadow_enabled = bool(cfg.shadow)
 		sun.directional_shadow_max_distance = maxf(10.0, float(cfg.shadow_dist))
+	_apply_post(q)
+
+
+## Rendu de l'image : tons « filmiques », halo des lumières (torches, lave, feu), brume de distance
+## (la couleur suit le ciel, voir DayCycle) et couleurs un peu plus riches. Allégé en qualité basse.
+func _apply_post(q: int) -> void:
+	var we := get_parent().get_node_or_null("Ambiance") as WorldEnvironment if get_parent() else null
+	if we == null or we.environment == null:
+		return
+	var env := we.environment
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = 0.98
+	env.tonemap_white = 4.0
+	env.glow_enabled = q >= 1
+	env.glow_intensity = 0.45
+	env.glow_strength = 0.9
+	env.glow_bloom = 0.0
+	env.glow_hdr_threshold = 1.3
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
+	env.fog_enabled = q >= 1
+	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
+	env.fog_density = 0.003 if q >= 2 else 0.0042
+	env.fog_sky_affect = 0.0
+	env.fog_aerial_perspective = 0.0
+	env.adjustment_enabled = true
+	env.adjustment_saturation = 0.98
+	env.adjustment_contrast = 1.08
+	env.adjustment_brightness = 1.0
 
 
 ## Crée les morceaux proches de `focus` et libère les morceaux lointains.
@@ -1482,8 +1510,19 @@ func _add_column(st: SurfaceTool, cell: Vector2i) -> void:
 	# l'alpha dit au shader si la neige peut tenir ici (pas dans les contrées chaudes)
 	var zr := _zone_type(_zone[_idx(cell)])
 	top.a = 0.0 if zr and zr.precipitation in ["sable", "cendres"] else 1.0
+	# ombrage des coins : le sol s'assombrit au pied des talus et des murs (UV2.x, 1 = à découvert)
+	var ao := []
+	for corner in [Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, 0), Vector2i(0, 0)]:
+		var higher := 0.0
+		for o in [Vector2i(corner.x - 1, corner.y - 1), Vector2i(corner.x, corner.y - 1), Vector2i(corner.x - 1, corner.y), Vector2i(corner.x, corner.y)]:
+			if o == Vector2i.ZERO:
+				continue
+			var dh := _h(cell + o) - h
+			if dh > 0.2:
+				higher += clampf(dh, 0.0, 1.5) / 1.5
+		ao.append(Vector2(1.0 - 0.22 * higher, -1.0))
 	_quad(st, Vector3(x0, h, z0 + 1), Vector3(x0 + 1, h, z0 + 1), Vector3(x0 + 1, h, z0), Vector3(x0, h, z0),
-		Vector3.UP, top, Vector2(x0, z0), true)
+		Vector3.UP, top, Vector2(x0, z0), true, ao)
 	var side := _side_color(cell)
 	var t := _type(cell)
 	var lip := top.darkened(0.12) if t == GRASS else side
@@ -1493,30 +1532,35 @@ func _add_column(st: SurfaceTool, cell: Vector2i) -> void:
 			continue
 		# bande d'herbe en haut du talus, terre en dessous
 		var lip_bottom := maxf(nh, h - 0.12) if t == GRASS else nh
-		_side(st, cell, dir, lip_bottom, h, lip)
+		_side(st, cell, dir, lip_bottom, h, lip, nh, h)
 		if lip_bottom > nh:
-			_side(st, cell, dir, nh, lip_bottom, side)
+			_side(st, cell, dir, nh, lip_bottom, side, nh, h)
 
 
-func _side(st: SurfaceTool, cell: Vector2i, dir: Vector2i, y0: float, y1: float, color: Color) -> void:
+## Face d'un talus entre y0 et y1 ; [bottom, top] : le talus entier (le shader l'assombrit vers le pied).
+func _side(st: SurfaceTool, cell: Vector2i, dir: Vector2i, y0: float, y1: float, color: Color, bottom := 0.0, top := 0.0) -> void:
 	var x0 := float(cell.x)
 	var z0 := float(cell.y)
 	var n := Vector3(dir.x, 0, dir.y)
+	var drop := maxf(top - bottom, 0.01)
+	var g0 := Vector2(clampf((y0 - bottom) / drop, 0.0, 1.0), drop)
+	var g1 := Vector2(clampf((y1 - bottom) / drop, 0.0, 1.0), drop)
+	var g := [g0, g0, g1, g1]
 	# couleur un peu plus sombre sur les côtés pour marquer les blocs
 	var c := color.darkened(0.05 + 0.04 * absf(dir.x))
 	match dir:
 		Vector2i(1, 0):
-			_quad(st, Vector3(x0 + 1, y0, z0 + 1), Vector3(x0 + 1, y0, z0), Vector3(x0 + 1, y1, z0), Vector3(x0 + 1, y1, z0 + 1), n, c, Vector2(z0, y0), false)
+			_quad(st, Vector3(x0 + 1, y0, z0 + 1), Vector3(x0 + 1, y0, z0), Vector3(x0 + 1, y1, z0), Vector3(x0 + 1, y1, z0 + 1), n, c, Vector2(z0, y0), false, g)
 		Vector2i(-1, 0):
-			_quad(st, Vector3(x0, y0, z0), Vector3(x0, y0, z0 + 1), Vector3(x0, y1, z0 + 1), Vector3(x0, y1, z0), n, c, Vector2(z0, y0), false)
+			_quad(st, Vector3(x0, y0, z0), Vector3(x0, y0, z0 + 1), Vector3(x0, y1, z0 + 1), Vector3(x0, y1, z0), n, c, Vector2(z0, y0), false, g)
 		Vector2i(0, 1):
-			_quad(st, Vector3(x0, y0, z0 + 1), Vector3(x0 + 1, y0, z0 + 1), Vector3(x0 + 1, y1, z0 + 1), Vector3(x0, y1, z0 + 1), n, c, Vector2(x0, y0), false)
+			_quad(st, Vector3(x0, y0, z0 + 1), Vector3(x0 + 1, y0, z0 + 1), Vector3(x0 + 1, y1, z0 + 1), Vector3(x0, y1, z0 + 1), n, c, Vector2(x0, y0), false, g)
 		_:
-			_quad(st, Vector3(x0 + 1, y0, z0), Vector3(x0, y0, z0), Vector3(x0, y1, z0), Vector3(x0 + 1, y1, z0), n, c, Vector2(x0, y0), false)
+			_quad(st, Vector3(x0 + 1, y0, z0), Vector3(x0, y0, z0), Vector3(x0, y1, z0), Vector3(x0 + 1, y1, z0), n, c, Vector2(x0, y0), false, g)
 
 
 ## Quadrilatère a-b-c-d (sens anti-horaire vu de face).
-func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: Vector3, color: Color, uv0: Vector2, is_top: bool) -> void:
+func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: Vector3, color: Color, uv0: Vector2, is_top: bool, uv2s := []) -> void:
 	var verts := [a, b, c, d]
 	var uvs := []
 	for v in verts:
@@ -1532,6 +1576,7 @@ func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: V
 		st.set_normal(n)
 		st.set_color(color)
 		st.set_uv(uvs[k])
+		st.set_uv2(uv2s[k] if uv2s.size() == 4 else Vector2(1.0, -1.0))
 		st.add_vertex(verts[k])
 
 
@@ -1541,16 +1586,39 @@ func _build_water() -> void:
 shader_type spatial;
 render_mode blend_mix, cull_disabled, depth_draw_opaque;
 uniform vec4 water_color : source_color;
-uniform sampler2D grain : filter_nearest, repeat_enable;
+uniform sampler2D grain : filter_linear_mipmap, repeat_enable;
+// hauteur des petites vagues (deux couches de grain qui glissent en sens contraires)
+float waves(vec2 p) {
+	float a = texture(grain, p * 0.11 + vec2(TIME * 0.018, TIME * 0.011)).r;
+	float b = texture(grain, p * 0.07 - vec2(TIME * 0.012, -TIME * 0.016)).r;
+	float c = texture(grain, p * 0.31 + vec2(-TIME * 0.035, TIME * 0.02)).r;
+	return a * 0.5 + b * 0.35 + c * 0.15;
+}
 void fragment() {
-	vec2 p = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
-	float g = texture(grain, p * 1.25 + vec2(TIME * 0.05, TIME * 0.03)).r;
-	float g2 = texture(grain, p * 0.6 - vec2(TIME * 0.04, -TIME * 0.02)).r;
-	float sparkle = step(0.985, g * g2 + 0.03 * sin(TIME * 2.0 + p.x));
-	ALBEDO = water_color.rgb * (0.9 + 0.2 * g * g2) + vec3(sparkle * 0.5);
-	ALPHA = water_color.a;
-	ROUGHNESS = 0.15;
-	SPECULAR = 0.6;
+	vec3 wp = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	vec2 p = wp.xz;
+	// normale des vagues (différences finies), passée dans l'espace de la vue
+	float e = 0.35;
+	float h0 = waves(p);
+	float hx = waves(p + vec2(e, 0.0));
+	float hz = waves(p + vec2(0.0, e));
+	vec3 n_world = normalize(vec3((h0 - hx) * 2.2, 1.0, (h0 - hz) * 2.2));
+	NORMAL = normalize((VIEW_MATRIX * vec4(n_world, 0.0)).xyz);
+	// de haut, on voit au travers ; en rasant, l'eau reflète le ciel (Fresnel)
+	float fres = pow(1.0 - clamp(dot(normalize(VIEW), NORMAL), 0.0, 1.0), 4.0);
+	vec3 deep = water_color.rgb * vec3(0.55, 0.65, 0.75);
+	vec3 sky = vec3(0.62, 0.78, 0.95);
+	vec3 col = mix(water_color.rgb, deep, smoothstep(0.35, 0.75, h0));
+	col = mix(col, sky, fres * 0.55);
+	// écume légère sur les crêtes, et reflets du soleil qui scintillent
+	col += vec3(smoothstep(0.78, 0.86, h0) * 0.15);
+	float glint = step(0.985, texture(grain, p * 1.25 + vec2(TIME * 0.05, TIME * 0.03)).r * texture(grain, p * 0.6 - vec2(TIME * 0.04, -TIME * 0.02)).r + 0.03 * sin(TIME * 2.0 + p.x));
+	col += vec3(glint * 0.55);
+	ALBEDO = col;
+	ALPHA = clamp(water_color.a + fres * 0.25, 0.0, 0.97);
+	ROUGHNESS = 0.06;
+	SPECULAR = 0.9;
+	METALLIC = 0.0;
 }
 """
 	var mat := ShaderMaterial.new()
@@ -2972,8 +3040,22 @@ global uniform vec3 see_from;
 global uniform vec3 see_to;
 global uniform float see_radius;
 global uniform vec4 season_leaf;
+uniform float wind = 1.0;
 varying vec3 wpos;
-void vertex() { wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+varying float tint;
+float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void vertex() {
+	vec3 origin = MODEL_MATRIX[3].xyz;
+	tint = hash2(floor(origin.xz * 3.0));
+	// le vent dans les feuillages : seulement les parties vertes, et d'autant plus qu'elles sont hautes
+	vec3 tc = textureLod(tex, UV, 0.0).rgb;
+	float leafy = clamp((tc.g - max(tc.r, tc.b)) * 5.0, 0.0, 1.0);
+	float h = max(VERTEX.y - 0.6, 0.0);
+	float ph = origin.x * 0.37 + origin.z * 0.23;
+	vec3 sway = vec3(sin(TIME * 1.7 + ph) + 0.4 * sin(TIME * 4.1 + ph * 2.0), 0.0, cos(TIME * 1.3 + ph)) * 0.035 * h * leafy * wind;
+	VERTEX += sway;
+	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
 vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
 void fragment() {
 	// les feuillages entre la caméra et le héros deviennent transparents
@@ -2993,8 +3075,16 @@ void fragment() {
 		vec3 target = lin(season_leaf.rgb) * mix(0.7, 1.15, n) * clamp(lum * 3.2, 0.45, 1.3);
 		col = mix(col, target, green * season_leaf.a);
 	}
+	// chaque arbre a sa nuance (un peu plus clair, plus sombre, plus jaune...)
+	float leaf = clamp((col.g - max(col.r, col.b)) * 6.0, 0.0, 1.0);
+	col *= 0.9 + 0.2 * tint;
+	col = mix(col, col * vec3(1.08, 1.02, 0.85), leaf * step(0.6, tint) * 0.6);
+	// le dessous des feuillages est plus sombre (ombre portée de la couronne)
+	col *= mix(1.0, 0.82, leaf * (1.0 - smoothstep(-0.2, 0.6, (INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).y)));
 	ALBEDO = col;
 	EMISSION = emission;
+	// les feuilles laissent passer un peu de lumière
+	BACKLIGHT = vec3(0.25, 0.3, 0.15) * leaf;
 	ROUGHNESS = 0.95;
 }
 """
@@ -3009,22 +3099,39 @@ global uniform vec4 season_ground;
 global uniform float season_snow;
 varying vec3 wpos;
 varying float up;
+varying vec2 shade;
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	up = (MODEL_MATRIX * vec4(NORMAL, 0.0)).y;
+	shade = UV2;
 }
 vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
+float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void fragment() {
 	vec3 c = lin(COLOR.rgb);
+	vec2 cell = floor(wpos.xz);
 	if (up > 0.7 && wpos.y > water_y + 0.05) {
 		float green = clamp((COLOR.g - max(COLOR.r, COLOR.b)) * 6.0, 0.0, 1.0);
 		float lum = dot(c, vec3(0.3, 0.59, 0.11));
 		c = mix(c, lin(season_ground.rgb) * clamp(lum * 3.0, 0.5, 1.2), green * season_ground.a);
-		float n = fract(sin(dot(floor(wpos.xz), vec2(12.9898, 78.233))) * 43758.5453);
+		float n = hash2(cell);
 		c = mix(c, vec3(0.86, 0.9, 0.96) * (0.92 + 0.08 * n), season_snow * COLOR.a);
+		// légères variations d'une case à l'autre (l'herbe n'est jamais d'un vert uni) et taches plus larges
+		float big = hash2(floor(wpos.xz / 5.0) + 17.0);
+		c *= 0.93 + 0.1 * n + 0.06 * (big - 0.5);
+		c = mix(c, c * vec3(1.04, 1.0, 0.9), green * big * 0.5);
+		// ombrage des coins au pied des talus
+		c *= clamp(shade.x, 0.55, 1.0);
+	} else if (shade.y > 0.0) {
+		// talus : plus sombre vers le pied, d'autant plus que le talus est haut
+		float depth = clamp(shade.y / 2.5, 0.0, 1.0);
+		c *= mix(1.0 - 0.38 * depth, 1.0, smoothstep(0.0, 0.85, shade.x));
 	}
+	// sol mouillé au bord de l'eau
+	float wet = 1.0 - smoothstep(water_y + 0.02, water_y + 0.35, wpos.y);
+	c *= 1.0 - 0.25 * wet;
 	ALBEDO = c * texture(grain, UV).rgb;
-	ROUGHNESS = 1.0;
+	ROUGHNESS = mix(1.0, 0.45, wet);
 }
 """
 var _decor_shader: Shader

@@ -320,6 +320,13 @@ Règles :
 - Chaque nouvelle partie (après la création du héros) s'ouvre sur une courte cinématique : la légende du Cœur d'Aube écrite en calligraphie sur fond noir, puis la caméra survole le cristal d'Orvane (« un cristal murmure ton nom »), glisse jusqu'au héros au village, et le titre « L'Éveil du Royaume — Acte I » apparaît entre deux bandes de cinéma. Musique du titre, interface cachée pendant la scène.
 - Espace, E, Échap ou un clic la passent. On peut la revoir depuis le journal (O → « Revoir l'introduction »).
 
+## Rendu : ombrages, vent et eau
+- **Sol** : ombrage des coins au pied des talus et des murs, talus plus sombres vers leur pied (d'autant plus qu'ils sont hauts), légères nuances d'une case à l'autre et par taches, sol mouillé au bord de l'eau.
+- **Arbres et buissons** : les feuillages ondulent au vent (davantage en haut des arbres), chaque arbre a sa nuance, le dessous des couronnes est plus sombre et les feuilles laissent passer un peu de lumière.
+- **Blocs** : un léger biseau au bord de chaque face et une nuance propre à chaque bloc, pour bien lire les constructions.
+- **Eau** : petites vagues animées (reflets qui bougent), effet Fresnel (on voit au travers de haut, elle reflète le ciel en rasant), écume sur les crêtes et scintillement du soleil.
+- **Image** : tons « filmiques », halo autour des lumières (torches, lave, feu), brume de distance qui prend la couleur du ciel (bleutée le jour, dorée au crépuscule, sombre la nuit). Le halo et la brume sont coupés en qualité graphique basse.
+
 ## Interface : bois sombre, dorures et parchemin
 - **Polices** (libres, licence OFL, dans `assets/ui/fonts/`) : **Almendra** pour les titres (une calligraphie de manuscrit médiéval, faite pour les jeux de fantasy) et **Alegreya Sans** pour le texte (humaniste et très lisible, même petite ; chiffres alignés pour les statistiques).
 - **Thème commun** à toute l'interface (`scripts/ui/ui_theme.gd`, chargé au démarrage) : cadres en bois sombre aux coins dorés sertis d'un rubis, boutons en planche avec fermoirs de fer (dorés au survol), onglets, ascenseurs dorés, barres, champs de saisie, infobulles, listes déroulantes. Les titres des panneaux sont posés sur un **ruban rouge** à queues d'aronde, les sections séparées par un filet doré.

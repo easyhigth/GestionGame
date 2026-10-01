@@ -26,7 +26,22 @@ uniform vec3 see_from = vec3(0.0);
 uniform vec3 see_to = vec3(0.0);
 uniform float see_radius = 0.0;
 varying vec3 wpos;
-void vertex() { wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+varying vec3 wnorm;
+void vertex() {
+	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	wnorm = (MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz;
+}
+// relief des blocs : un léger biseau sombre au bord de chaque face, et une nuance propre à chaque bloc
+float bevel() {
+	vec3 a = abs(wnorm);
+	vec2 f = a.y > 0.5 ? fract(wpos.xz) : (a.x > 0.5 ? fract(wpos.zy) : fract(wpos.xy));
+	float e = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y));
+	return mix(0.84, 1.0, smoothstep(0.0, 0.12, e));
+}
+float block_tint() {
+	vec3 b = floor(wpos - wnorm * 0.5);
+	return 0.95 + 0.08 * fract(sin(dot(b, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
 bool hidden(vec2 frag) {
 	if (wpos.y > cut_y && distance(wpos.xz, cut_center.xz) < cut_radius) { return true; }
 	// fenêtre de vision : on perce les blocs entre la caméra et le héros
@@ -42,7 +57,7 @@ bool hidden(vec2 frag) {
 void fragment() {
 	if (hidden(FRAGCOORD.xy)) { discard; }
 	vec4 c = texture(tex, UV);
-	ALBEDO = c.rgb * COLOR.rgb;
+	ALBEDO = c.rgb * COLOR.rgb * bevel() * block_tint();
 	ROUGHNESS = 0.95;
 }
 """
@@ -57,7 +72,22 @@ uniform vec3 see_from = vec3(0.0);
 uniform vec3 see_to = vec3(0.0);
 uniform float see_radius = 0.0;
 varying vec3 wpos;
-void vertex() { wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+varying vec3 wnorm;
+void vertex() {
+	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	wnorm = (MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz;
+}
+// relief des blocs : un léger biseau sombre au bord de chaque face, et une nuance propre à chaque bloc
+float bevel() {
+	vec3 a = abs(wnorm);
+	vec2 f = a.y > 0.5 ? fract(wpos.xz) : (a.x > 0.5 ? fract(wpos.zy) : fract(wpos.xy));
+	float e = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y));
+	return mix(0.84, 1.0, smoothstep(0.0, 0.12, e));
+}
+float block_tint() {
+	vec3 b = floor(wpos - wnorm * 0.5);
+	return 0.95 + 0.08 * fract(sin(dot(b, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
 bool hidden(vec2 frag) {
 	if (wpos.y > cut_y && distance(wpos.xz, cut_center.xz) < cut_radius) { return true; }
 	// fenêtre de vision : on perce les blocs entre la caméra et le héros
