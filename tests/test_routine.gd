@@ -158,9 +158,11 @@ func _process(_d) -> bool:
 	if later("c3", 500):
 		shot("04_nuit_village.png")
 		print("== matin (7 h)")
-		# beau temps : sous la pluie, les habitants s'abritent au lieu de travailler
-		get_first_node_in_group("weather").set_kind("clair")
 		dc.hour = 7.0
+		start("d0")
+	if later("d0", 400):
+		# beau temps (le lever du jour a pu tirer une nouvelle météo) : sous l'orage, ils s'abritent au lieu de travailler
+		get_first_node_in_group("weather").set_kind("clair")
 		start("d")
 	if later("d", 1500):
 		check("au matin : tout le monde est réveillé et visible", villagers().all(func(v): return not v.is_sleeping() and v.visual.visible and not v.visual.is_downed()))
