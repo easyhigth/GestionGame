@@ -18,6 +18,10 @@ func _ready() -> void:
 	SaveGame.pending = {}
 	get_tree().paused = false
 	_main = (load(SaveGame.GAME_SCENE) as PackedScene).instantiate()
+	# un petit monde suffit pour le décor de l'écran titre (le monde immense prendrait de longues secondes)
+	var bw := _main.get_node_or_null("World") as WorldGenerator
+	if bw:
+		bw.world_size = Vector2i(320, 320)
 	# pas d'interface de jeu ni de héros sur l'écran titre
 	var hud := _main.get_node_or_null("HUD")
 	if hud:
