@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/bloc_pierre_polie.tres" id="p_bloc_pierre_polie"]
+[ext_resource type="Resource" path="res://data/items/bloc_planches.tres" id="p_bloc_planches"]
+[ext_resource type="Resource" path="res://data/items/bloc_tuiles.tres" id="p_bloc_tuiles"]
+[ext_resource type="Resource" path="res://data/items/bloc_verre.tres" id="p_bloc_verre"]
+[ext_resource type="Resource" path="res://data/items/bloc_briques.tres" id="p_bloc_briques"]
+
+[resource]
+script = ExtResource("1")
+id = "bureau_architecte"
+display_name = "Bureau d'architecte"
+description = "Plans, compas et maquettes du royaume."
+color = Color(0.85, 0.7, 0.4, 1)
+required = {"pupitre": 1, "table": 1, "bibliotheque": 1}
+min_cells = 6
+job_id = "architecte"
+job_name = "Architecte"
+job_slots = 2
+production_pool = Array[ExtResource("2")]([ExtResource("p_bloc_pierre_polie"), ExtResource("p_bloc_planches"), ExtResource("p_bloc_tuiles"), ExtResource("p_bloc_verre"), ExtResource("p_bloc_briques")])
+production_count = 8
+production_interval = 100.0
+hero_bonus = {}
+effect_text = "Les architectes taillent des blocs de construction pour le héros."

@@ -42,6 +42,9 @@ var player: Player
 var list: Array = []
 var order := "suivre"
 var _wait_pos := Vector3.INF
+var _train := 60.0
+## Entraînement des dresseurs (Ménagerie) : une « victoire » toutes les TRAIN_EVERY secondes par dresseur au travail.
+const TRAIN_EVERY := 60.0
 
 
 func _ready() -> void:
@@ -55,6 +58,23 @@ static func can_tame(e: Enemy) -> bool:
 	return e != null and not e.tamed and e.data != null and not (e is Boss) and e.is_alive() \
 		and e.health.ratio() < 0.3 and not e.has_meta("raider") and not e.has_meta("story_pack") \
 		and not e.has_meta("quest") and Evolution.pact_known(e.get_tree())
+
+
+## Familiers en tout : 2 de plus avec une Ménagerie.
+static func max_total(tree: SceneTree) -> int:
+	return MAX_TOTAL + (2 if has_menagerie(tree) else 0)
+
+
+static func has_menagerie(tree: SceneTree) -> bool:
+	var k := tree.get_first_node_in_group("kingdom") as Kingdom
+	return k != null and k.rooms.any(func(r): return r.type != null and r.type.id == "menagerie")
+
+
+## Dresseurs au travail en ce moment.
+func trainers() -> Array:
+	return get_tree().get_nodes_in_group("villagers").filter(func(v):
+		var wr = v.get("work_room")
+		return wr != null and wr.type != null and wr.type.job_id == "dresseur" and v.call("is_at_work"))
 
 
 static func title_of(entry: Dictionary) -> String:
@@ -81,8 +101,8 @@ func try_interact(p: Player) -> bool:
 				best = e
 	if best == null:
 		return false
-	if list.size() >= MAX_TOTAL:
-		p.notify.emit("Tu as déjà %d familiers : libères-en un (panneau du royaume, U) pour en lier un autre." % MAX_TOTAL)
+	if list.size() >= max_total(get_tree()):
+		p.notify.emit("Tu as déjà %d familiers : libères-en un (panneau du royaume, U) pour en lier un autre." % max_total(get_tree()))
 		return true
 	tame(best)
 	return true
@@ -256,18 +276,23 @@ func on_enemy_died(dead: Enemy) -> void:
 		var n = entry.node
 		if n == null or not is_instance_valid(n) or not n.is_alive():
 			continue
-		entry.kills = int(entry.kills) + 1
-		var changed := false
-		if int(entry.kills) % LEVEL_KILLS == 0:
-			entry.level = int(entry.level) + 1
-			changed = true
-		var evo := int(entry.evo)
-		if evo < 2 and int(entry.kills) >= EVO_KILLS[evo]:
-			entry.evo = evo + 1
-			changed = true
-			_evolve_fx(entry)
-		if changed:
-			_refresh(entry)
+		_gain(entry)
+
+
+## Une victoire (ou un entraînement) pour ce familier : niveaux et évolutions.
+func _gain(entry: Dictionary) -> void:
+	entry.kills = int(entry.kills) + 1
+	var changed := false
+	if int(entry.kills) % LEVEL_KILLS == 0:
+		entry.level = int(entry.level) + 1
+		changed = true
+	var evo := int(entry.evo)
+	if evo < 2 and int(entry.kills) >= EVO_KILLS[evo]:
+		entry.evo = evo + 1
+		changed = true
+		_evolve_fx(entry)
+	if changed:
+		_refresh(entry)
 
 
 func _evolve_fx(entry: Dictionary) -> void:
@@ -300,12 +325,23 @@ func _process(delta: float) -> void:
 		return
 	if world == null:
 		world = get_tree().get_first_node_in_group("world") as WorldGenerator
+	# les dresseurs entraînent les familiers qui vivent au village
+	_train -= delta
+	if _train <= 0.0:
+		_train = TRAIN_EVERY
+		var tr := trainers()
+		if not tr.is_empty():
+			for entry in list:
+				if entry.get("place", "equipe") == "village":
+					for i in tr.size():
+						_gain(entry)
+	var heal_mult := 2.0 if has_menagerie(get_tree()) else 1.0
 	for entry in list:
 		var n = entry.node
 		if n != null and is_instance_valid(n):
 			continue
 		entry.node = null
-		entry.down = maxf(0.0, float(entry.down) - delta)
+		entry.down = maxf(0.0, float(entry.down) - delta * heal_mult)
 		if entry.down <= 0.0 and player.is_alive():
 			var a := randf() * TAU
 			var pos := player.global_position + Vector3(cos(a), 0.3, sin(a)) * 2.0

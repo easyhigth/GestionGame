@@ -34,6 +34,8 @@ const VALUES := {
 	"graines_ble": 0.5, "ble": 1.0, "carotte": 1.0, "pomme_de_terre": 1.0,
 	"oeuf": 1.0, "lait": 1.5, "laine": 2.0,
 	"gardon": 1.5, "carpe": 2.5, "truite": 3.0, "saumon": 4.0, "brochet": 6.0, "anguille": 6.0, "omble": 6.0,
+	"potion_soin": 6.0, "potion_force": 10.0, "potion_garde": 10.0, "potion_celerite": 10.0,
+	"rune_force": 25.0, "rune_garde": 25.0, "rune_vie": 25.0, "rune_celerite": 25.0,
 	"poisson_scorpion": 8.0, "poisson_lave": 20.0, "poisson_lune": 25.0, "perle": 15.0, "vieille_botte": 0.5,
 }
 const CRAFT_BONUS := 1.3

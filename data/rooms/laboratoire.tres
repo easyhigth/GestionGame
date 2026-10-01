@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/potion_soin.tres" id="p_potion_soin"]
+[ext_resource type="Resource" path="res://data/items/potion_soin.tres" id="p_potion_soin"]
+[ext_resource type="Resource" path="res://data/items/potion_force.tres" id="p_potion_force"]
+[ext_resource type="Resource" path="res://data/items/potion_garde.tres" id="p_potion_garde"]
+[ext_resource type="Resource" path="res://data/items/potion_celerite.tres" id="p_potion_celerite"]
+
+[resource]
+script = ExtResource("1")
+id = "laboratoire"
+display_name = "Laboratoire d'alchimie"
+description = "Fioles, chaudrons et vapeurs colorées."
+color = Color(0.85, 0.3, 0.45, 1)
+required = {"chaudron": 1, "table": 1, "tonneau": 1}
+min_cells = 6
+job_id = "alchimiste"
+job_name = "Alchimiste"
+job_slots = 2
+production_pool = Array[ExtResource("2")]([ExtResource("p_potion_soin"), ExtResource("p_potion_soin"), ExtResource("p_potion_force"), ExtResource("p_potion_garde"), ExtResource("p_potion_celerite")])
+production_count = 1
+production_interval = 110.0
+hero_bonus = {}
+effect_text = "Les alchimistes préparent des potions (soin, force, garde, célérité)."

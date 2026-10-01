@@ -31,7 +31,7 @@ func get_item(id: String) -> ItemData:
 		var spec := Forge.parse(id)
 		var base: ItemData = items.get(spec[0])
 		if base:
-			it = Forge.make_variant(base, spec[1], spec[2])
+			it = Forge.make_variant(base, spec[1], spec[2], spec[3])
 			items[id] = it
 	return it
 

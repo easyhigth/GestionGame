@@ -133,7 +133,7 @@ func _refresh() -> void:
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam and not fam.list.is_empty():
 		_box.add_child(MenuKit.label("Familiers : %d avec toi (max %d), %d en tout (max %d)  ·  P : %s" % [fam.team().size(), Familiars.MAX,
-			fam.list.size(), Familiars.MAX_TOTAL, Familiars.ORDER_TEXT[fam.order]], 11, Color("b8f0a0")))
+			fam.list.size(), Familiars.max_total(get_tree()), Familiars.ORDER_TEXT[fam.order]], 11, Color("b8f0a0")))
 		for entry in fam.list.duplicate():
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 6)

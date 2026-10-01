@@ -41,6 +41,8 @@ const RARITY_COLORS := {
 @export var upgrade := 0
 @export var gems: PackedStringArray = PackedStringArray()
 @export var bonus: Dictionary = {}
+## Rune gravée (voir Forge.RUNES) : "" ou identifiant de la rune.
+@export var rune := ""
 ## Arme à deux mains : retire le bouclier quand on l'équipe.
 @export var two_handed: bool = false
 ## Nombre maximum d'exemplaires dans une case d'inventaire.
@@ -73,6 +75,12 @@ const RARITY_COLORS := {
 @export var food_heal: int = 0
 ## Plat cuisiné (compte pour le guide, rassasie mieux).
 @export var food_cooked: bool = false
+
+@export_group("Potion")
+## Potion (touche Z) : part de la vie rendue, et bonus temporaires (clés des compétences) pendant potion_time secondes.
+@export var potion_heal: float = 0.0
+@export var potion_buff: Dictionary = {}
+@export var potion_time: float = 0.0
 
 @export_group("Agriculture")
 ## Culture qu'on obtient en semant cet objet sur de la terre labourée (« ble », « carotte »...). Vide = ne se sème pas.
@@ -108,6 +116,10 @@ func is_furniture() -> bool:
 
 func is_food() -> bool:
 	return food > 0.0
+
+
+func is_potion() -> bool:
+	return potion_heal > 0.0 or not potion_buff.is_empty()
 
 
 func is_seed() -> bool:
@@ -165,4 +177,7 @@ func stats_text() -> String:
 		for gem in gems:
 			g.append(all_gems[gem].name if all_gems.has(gem) else gem)
 		t += "\nGemmes : " + ", ".join(PackedStringArray(g))
+	if rune != "":
+		var all_runes: Dictionary = load("res://scripts/items/forge.gd").RUNES
+		t += "\nRune : " + (all_runes[rune].name + " (" + all_runes[rune].text + ")" if all_runes.has(rune) else rune)
 	return t

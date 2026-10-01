@@ -1041,8 +1041,37 @@ GEMS = [_gem(n, c) for n, c in (('gemme_rubis', 0xd8203a), ('gemme_saphir', 0x2a
                                  ('gemme_topaze', 0xf0b020), ('gemme_amethyste', 0x9a4ad8), ('gemme_diamant', 0xe8f4ff))]
 
 
+def _potion(pid, col):
+    def f():
+        g = Node(pid)
+        V(5.6, 1, 5.6, 0xcfe8f0, 0, 0.5, 0, g)
+        VG(5.4, 4.8, 5.4, col, 0, 3.4, 0, g)
+        V(5.8, 0.8, 5.8, 0xcfe8f0, 0, 5.9, 0, g)
+        V(2.2, 2.4, 2.2, 0xcfe8f0, 0, 7.2, 0, g)
+        V(2.6, 1.4, 2.6, 0x8a5a3a, 0, 8.8, 0, g)
+        VG(1.0, 1.6, 0.6, 0xffffff, 1.6, 4.4, 2.6, g)
+        return g
+    return f
+
+
+def _rune(rid, col):
+    def f():
+        g = Node(rid)
+        V(7, 9, 2.4, 0x6a6a72, 0, 4.5, 0, g, rx=-0.2)
+        VG(1.2, 5, 0.8, col, 0, 4.8, 1.3, g, rx=-0.2)
+        VG(3.6, 1.2, 0.8, col, 0, 6.0, 1.1, g, rx=-0.2)
+        VG(1.2, 1.2, 0.8, col, -1.6, 3.2, 1.6, g, rx=-0.2)
+        VG(1.2, 1.2, 0.8, col, 1.6, 3.2, 1.6, g, rx=-0.2)
+        return g
+    return f
+
+
+POTIONS = [_potion(n, c) for n, c in (('potion_soin', 0xe03a4a), ('potion_force', 0xf08a2a), ('potion_garde', 0x3a8ae0), ('potion_celerite', 0x4ae08a))]
+RUNES = [_rune(n, c) for n, c in (('rune_force', 0xff7a3a), ('rune_garde', 0x5aa8ff), ('rune_vie', 0x6aff8a), ('rune_celerite', 0xfff06a))]
+
+
 MATERIALS = [m_baies, m_viande_crue, m_viande_cuite, m_ragout, m_pain, m_wood, m_stone, m_iron_ore, m_iron_ingot, m_leather, m_fiber,
-             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer] + FARM + RARE + GEMS
+             m_hache_bois, m_hache_pierre, m_pioche_bois, m_pioche_pierre, m_hache_fer, m_pioche_fer] + FARM + RARE + GEMS + POTIONS + RUNES
 
 
 # ---------------------------------------------------------------- export

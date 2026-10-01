@@ -20,13 +20,13 @@ const RANK_ROOMS := [0, 1, 3, 6, 10, 15, 22]
 const RANK_AGE := [0, 0, 0, 1, 2, 3, 4]
 ## Affinités des races pour les métiers (identifiant du modèle -> métiers préférés).
 const RACE_AFFINITY := {
-	"dwarf": ["forgeron", "macon"], "human": ["marchand", "fermier", "boulanger"], "elf": ["erudit", "mage", "tisserand"],
-	"orc": ["garde", "bucheron"], "ogre": ["garde", "macon"], "goblin": ["marchand", "bucheron"],
+	"dwarf": ["forgeron", "macon", "architecte"], "human": ["marchand", "fermier", "boulanger", "architecte"], "elf": ["erudit", "mage", "tisserand", "alchimiste"],
+	"orc": ["garde", "bucheron"], "ogre": ["garde", "macon"], "goblin": ["marchand", "bucheron", "dresseur"],
 	"hobgoblin": ["forgeron", "garde"], "kijin": ["garde", "forgeron"], "lizard": ["fermier", "garde"],
-	"lycan": ["garde", "bucheron"], "beastfolk": ["fermier", "bucheron"], "dryad": ["fermier", "tisserand"],
-	"fairy": ["tisserand", "mage"], "slime": ["aubergiste", "verrier"], "vampire": ["erudit", "marchand"],
-	"demon": ["mage", "forgeron"], "dragonoid": ["forgeron", "garde"], "harpy": ["marchand", "tisserand"],
-	"spirit": ["mage", "pretre"], "angel": ["pretre", "erudit"], "insectoid": ["macon", "tisserand"],
+	"lycan": ["garde", "bucheron", "dresseur"], "beastfolk": ["fermier", "bucheron", "dresseur"], "dryad": ["fermier", "tisserand", "alchimiste"],
+	"fairy": ["tisserand", "mage", "alchimiste"], "slime": ["aubergiste", "verrier"], "vampire": ["erudit", "marchand", "alchimiste"],
+	"demon": ["mage", "forgeron", "enchanteur"], "dragonoid": ["forgeron", "garde"], "harpy": ["marchand", "tisserand"],
+	"spirit": ["mage", "pretre", "enchanteur"], "angel": ["pretre", "erudit", "enchanteur"], "insectoid": ["macon", "tisserand", "architecte"],
 	"undead": ["macon", "erudit"],
 }
 
@@ -404,21 +404,22 @@ func _produce(delta: float) -> void:
 		if room == null or not rooms.has(room) or room.type == null:
 			continue
 		var t: RoomTypeData = room.type
-		if t.production == null or not v.call("is_at_work"):
+		if (t.production == null and t.production_pool.is_empty()) or not v.call("is_at_work"):
 			continue
 		var speed: float = affinity(v, t.job_id) * (1.0 + 0.15 * room.tier)
 		_prod_timers[v] = float(_prod_timers.get(v, 0.0)) + delta * speed
 		if _prod_timers[v] >= t.production_interval:
 			_prod_timers[v] = 0.0
+			var prod: ItemData = t.production_pool.pick_random() if not t.production_pool.is_empty() else t.production
 			var needs := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
-			if t.production.is_food() and needs:
+			if prod.is_food() and needs:
 				# la nourriture va dans la réserve du village
-				needs.add_food(t.production.food * t.production_count)
+				needs.add_food(prod.food * t.production_count)
 				if player:
-					player.notify.emit("%s (%s) : réserve du village +%d %s" % [t.display_name, v.get("villager_name"), t.production_count, t.production.display_name])
+					player.notify.emit("%s (%s) : réserve du village +%d %s" % [t.display_name, v.get("villager_name"), t.production_count, prod.display_name])
 			elif player:
-				player.inventory.add(t.production, t.production_count)
-				player.notify.emit("%s (%s) : +%d %s" % [t.display_name, v.get("villager_name"), t.production_count, t.production.display_name])
+				player.inventory.add(prod, t.production_count)
+				player.notify.emit("%s (%s) : +%d %s" % [t.display_name, v.get("villager_name"), t.production_count, prod.display_name])
 
 
 ## Bonus des pièces pour le héros (un seul par type de pièce).

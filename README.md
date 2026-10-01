@@ -373,6 +373,13 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
 - Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
 
+## Métiers avancés
+- **Laboratoire d'alchimie** (chaudron, table, tonneau) : 2 alchimistes préparent des potions. **Z** : boire une potion (soin si le héros est blessé, sinon une potion de renfort : force +25 % d'attaque, garde +8 défense, célérité +20 % de vitesse, 90 s). La potion de soin se fabrique aussi au chaudron (8 baies) et soigne les malades d'une épidémie.
+- **Sanctuaire des runes** (autel, 2 bougeoirs, bibliothèque) : 2 enchanteurs gravent des runes (force, garde, vie, célérité). À l'enclume (onglet Forge), une rune se grave sur une arme ou une armure (une par objet, remplaçable). Héros : +5 % de magie.
+- **Ménagerie** (mangeoire, auge, 2 barrières) : 2 dresseurs entraînent les familiers qui vivent au village (une victoire par minute et par dresseur), les familiers K.O. reviennent 2 fois plus vite, et on peut en avoir 2 de plus.
+- **Bureau d'architecte** (pupitre, table, bibliothèque) : 2 architectes taillent des blocs de construction (pierre polie, planches, tuiles, verre, briques).
+- Nouvelles affinités : les nains et les humains font de bons architectes, les elfes, fées, dryades et vampires de bons alchimistes, les démons, esprits et anges de bons enchanteurs, les lycans, hommes-bêtes et gobelins de bons dresseurs.
+
 ## Événements du monde
 - Tous les 3 ou 4 jours (à partir du jour 3), un événement frappe le royaume, annoncé par un bandeau et suivi en haut de l'écran et dans le journal (O) :
   - **Pluie d'étoiles** : 4 éclats lumineux tombent autour du village (mithril, cristal d'aube, gemmes, parfois de l'orichalque).

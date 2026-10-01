@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "menagerie"
+display_name = "Ménagerie"
+description = "Un enclos couvert pour soigner et dresser les familiers."
+color = Color(0.55, 0.8, 0.35, 1)
+required = {"mangeoire": 1, "auge": 1, "barriere": 2}
+min_cells = 8
+job_id = "dresseur"
+job_name = "Dresseur"
+job_slots = 2
+production_interval = 60.0
+hero_bonus = {}
+effect_text = "Les dresseurs entraînent les familiers du village (expérience), les soignent plus vite, et permettent 2 familiers de plus."
