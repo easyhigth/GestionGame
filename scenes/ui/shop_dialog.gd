@@ -1,9 +1,12 @@
 class_name ShopDialog
 extends Control
 ## Boutique du marchand ambulant (E près de lui) : à gauche ce qu'il vend, à droite ce que tu peux lui vendre.
+## Sert aussi aux marchands des capitales (open_city), avec leur propre stock (CityMerchant).
 
 var player: Player
 var target: Node
+## Marchand de capitale en cours (sinon c'est le marchand ambulant).
+var city: CityMerchant
 var _box: VBoxContainer
 var _msg: Label
 var _buy_scroll := 0.0
@@ -27,9 +30,23 @@ func _trade() -> Trade:
 	return get_tree().get_first_node_in_group("trade") as Trade
 
 
+## La boutique en cours : le marchand de capitale ou le marchand ambulant.
+func _src():
+	return city if city else _trade()
+
+
+func open_city(m: CityMerchant, v: Node) -> void:
+	if player == null or player.ui_open:
+		return
+	city = m
+	open(v)
+
+
 func open(v: Node) -> void:
 	if player == null or player.ui_open:
 		return
+	if not (v is Townsfolk):
+		city = null
 	target = v
 	get_parent().move_child(self, get_parent().get_child_count() - 1)
 	Sound.ui("ui_open")
@@ -51,13 +68,21 @@ func close() -> void:
 func _refresh(message: String, focus := "") -> void:
 	for c in _box.get_children():
 		c.queue_free()
-	var tr := _trade()
+	var tr = _src()
 	if tr == null or not tr.is_here():
 		close()
 		return
-	_box.add_child(MenuKit.title("Marchand ambulant — %s" % target.get("villager_name"), 20))
-	var sub := MenuKit.label("Venu de %s  ·  spécialité : %s  ·  repart le jour %d au matin%s" % [
-		tr.origin, tr.specialty.to_lower(), tr.leave_day, "  ·  marché : meilleurs prix" if tr.has_market() else ""], 11, MenuKit.C_DIM)
+	var sub: Label
+	if city:
+		_box.add_child(MenuKit.title("%s — %s" % [city.trade_name, city.seller_name], 20))
+		var nat: Dictionary = Diplomacy.NATIONS.get(city.nation, {})
+		var no := city.refusal()
+		sub = MenuKit.label("Marchand de %s (%s)%s" % [city.city_name, nat.get("name", ""),
+			"  ·  " + no if no != "" else "  ·  prix selon tes relations avec sa nation"], 11, MenuKit.C_BAD if no != "" else MenuKit.C_DIM)
+	else:
+		_box.add_child(MenuKit.title("Marchand ambulant — %s" % target.get("villager_name"), 20))
+		sub = MenuKit.label("Venu de %s  ·  spécialité : %s  ·  repart le jour %d au matin%s" % [
+			tr.origin, tr.specialty.to_lower(), tr.leave_day, "  ·  marché : meilleurs prix" if tr.has_market() else ""], 11, MenuKit.C_DIM)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(sub)
 	var purse := MenuKit.label("Ta bourse : %d pièces d'or" % tr.gold(player), 15, MenuKit.C_GOLD)
@@ -109,7 +134,7 @@ func _refresh(message: String, focus := "") -> void:
 		if it == null or seen.has(it.id):
 			continue
 		seen[it.id] = true
-		var price := tr.sell_price(it)
+		var price: int = tr.sell_price(it)
 		if price <= 0:
 			continue
 		var n := player.inventory.count(it)
@@ -134,7 +159,8 @@ func _refresh(message: String, focus := "") -> void:
 	_msg = MenuKit.label(message, 12, MenuKit.C_BAD if message.begins_with("Pas") else MenuKit.C_OK)
 	_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(_msg)
-	var tip := MenuKit.label("Vendre beaucoup du même objet fait baisser son prix. Un marché (2 étals, un comptoir) le fait venir plus souvent, avec de meilleurs prix.", 10, MenuKit.C_DIM)
+	var tip := MenuKit.label("Vendre beaucoup du même objet fait baisser son prix." + (" Chaque marchand de la ville a son métier : cherche les étals." if city else
+		" Un marché (2 étals, un comptoir) le fait venir plus souvent, avec de meilleurs prix."), 10, MenuKit.C_DIM)
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tip.custom_minimum_size = Vector2(840, 0)
 	_box.add_child(tip)
@@ -188,19 +214,19 @@ func _row(it: ItemData, name: String, detail: String, ok: bool) -> HBoxContainer
 
 
 func _do_buy(entry: Dictionary, n: int, focus: String) -> void:
-	var tr := _trade()
+	var tr = _src()
 	if tr == null:
 		return
 	var it := Items.get_item(entry.id)
-	var err := tr.buy(player, entry, n)
+	var err: String = tr.buy(player, entry, n)
 	_refresh(err if err != "" else "Acheté : %d %s." % [n, it.display_name], focus)
 
 
 func _do_sell(it: ItemData, n: int, focus: String) -> void:
-	var tr := _trade()
+	var tr = _src()
 	if tr == null:
 		return
-	var got := tr.sell(player, it, n)
+	var got: int = tr.sell(player, it, n)
 	_refresh("Vendu : +%d pièces d'or." % got if got > 0 else "Le marchand n'en veut plus.", focus)
 
 

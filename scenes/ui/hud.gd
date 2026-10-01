@@ -68,6 +68,7 @@ var familiars: Familiars
 var story_dialog: StoryDialog
 var journal: JournalPanel
 var mountain_caves: MountainCaves
+var city_life: CityLife
 var fishing: Fishing
 var caves: UnderwaterCaves
 var _breath_box: Control
@@ -566,6 +567,12 @@ func _on_zone_entered(z: Dictionary) -> void:
 	show_banner(z.name, "%s  ·  Niveau %d à %d\n%s" % [t.display_name, z.level.x, z.level.y, t.description], t.map_color.lightened(0.55))
 
 
+## E près d'un marchand de capitale : sa boutique.
+func open_city_shop(t: Node) -> void:
+	if shop_dialog and t.get("shop"):
+		shop_dialog.open_city(t.shop, t)
+
+
 ## Grand titre au centre-haut de l'écran, qui s'efface après quelques secondes.
 func show_banner(title: String, sub: String, color: Color) -> void:
 	_zone_title.text = title
@@ -887,6 +894,11 @@ func _build_day_and_guide() -> void:
 	mountain_caves.world = world
 	mountain_caves.player = player
 	get_parent().add_child.call_deferred(mountain_caves)
+	city_life = CityLife.new()
+	city_life.name = "CityLife"
+	city_life.world = world
+	city_life.player = player
+	get_parent().add_child.call_deferred(city_life)
 	add_child(FishingBar.new())
 	_build_breath()
 	livestock = Livestock.new()

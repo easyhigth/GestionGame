@@ -15,8 +15,8 @@ var role := "citizen"
 var lines: Array = []
 var home := Vector3.ZERO
 var wander := 6.0
-## Marchand : ce qu'il vend [[objet, prix], ...] et son métier affiché.
-var goods: Array = []
+## Marchand : sa boutique (voir CityMerchant) et son métier affiché.
+var shop: CityMerchant
 var trade_name := ""
 var color := Color(0.95, 0.9, 0.8)
 var visual: VoxelCharacter
@@ -136,7 +136,7 @@ func talk(p: Player) -> void:
 	to.y = 0.0
 	if to.length() > 0.1:
 		_facing = to.normalized()
-	if role == "merchant" and not goods.is_empty():
+	if role == "merchant" and shop:
 		var hud := get_tree().get_first_node_in_group("hud")
 		if hud and hud.has_method("open_city_shop"):
 			hud.open_city_shop(self)

@@ -11,6 +11,7 @@ extends RefCounted
 ## Un plan : {"blocks": {Vector3i: id}, "relief": {Vector2i: hauteur en plus}, "stalls": [[Vector2i, métier]],
 ## "streets": [Vector2i], "gates": [Vector2i], "hall": Vector2i, "radius": int}
 ## Les clés sont relatives au centre de la ville ; y est compté depuis le sol de la ville (relief compris).
+## Le relief monte en pentes de 0,25 m par case (on y marche) et reste plat, en mètres entiers, sous les maisons.
 
 const CITIES := {
 	"givre": {"name": "Hrodgard", "style": "edoras", "radius": 58, "population": 380,
@@ -171,7 +172,19 @@ static func plan(nation: String, rng: RandomNumberGenerator) -> Dictionary:
 
 
 static func _relief_at(out: Dictionary, c: Vector2i) -> int:
-	return int(out.relief.get(c, 0))
+	return int(out.relief.get(c, 0.0))
+
+
+## Hauteur le long d'un profil [[distance, hauteur], ...] (plat avant le premier point, interpolé entre deux,
+## arrondi au quart de mètre).
+static func _slopes(d: float, prof: Array) -> float:
+	if d <= float(prof[0][0]):
+		return float(prof[0][1])
+	for i in range(1, prof.size()):
+		if d <= float(prof[i][0]):
+			var k := (d - float(prof[i - 1][0])) / (float(prof[i][0]) - float(prof[i - 1][0]))
+			return snappedf(lerpf(float(prof[i - 1][1]), float(prof[i][1]), k), 0.25)
+	return float(prof[-1][1])
 
 
 # ---------------------------------------------------------------- Hrodgard (Edoras)
@@ -179,12 +192,12 @@ static func _relief_at(out: Dictionary, c: Vector2i) -> int:
 static func _edoras(out: Dictionary, rng: RandomNumberGenerator) -> void:
 	var R: int = out.radius
 	var b: Dictionary = out.blocks
-	# une colline en pente douce (marches de 0,5 m arrondies au mètre pour les blocs)
+	# une colline en paliers : le hall en haut, puis trois anneaux de maisons, reliés par des pentes douces
 	for z in range(-R, R + 1):
 		for x in range(-R, R + 1):
 			var d := Vector2(x, z).length()
 			if d <= R:
-				out.relief[Vector2i(x, z)] = int(floor(clampf((R - 6 - d) / float(R - 6), 0.0, 1.0) * 10.0))
+				out.relief[Vector2i(x, z)] = _slopes(d, [[12.0, 6.0], [16.0, 4.0], [24.0, 4.0], [28.0, 2.0], [36.0, 2.0], [40.0, 0.0]])
 	# palissade de rondins pointus, porte au sud
 	ring_wall(b, R - 2, 3, 0, "bloc_rondins", "bloc_rondins", [PI / 2.0], true)
 	out.gates.append(Vector2i(0, R - 2))
@@ -231,31 +244,32 @@ static func _rivendell(out: Dictionary, rng: RandomNumberGenerator) -> void:
 		for x in range(-R, R + 1):
 			var d := Vector2(x, z).length()
 			if d <= R:
-				out.relief[Vector2i(x, z)] = 8 if d < 16 else (4 if d < 34 else 0)
+				out.relief[Vector2i(x, z)] = 8.0 if d < 16 else (4.0 if d < 34 else 0.0)
 	for rr in [16, 34]:
 		var h := 8 if rr == 16 else 4
 		for z in range(-rr - 1, rr + 2):
 			for x in range(-rr - 1, rr + 2):
+				if absi(x) <= 2 and z > 0:
+					continue    # la rampe
 				if absf(Vector2(x, z).length() - rr) <= 0.55:
 					for y in range(0, h):
 						if y >= h - 4 and y < h:
 							_put(b, Vector3i(x, y, z), "bloc_marbre")
 					_put(b, Vector3i(x, h, z), "bloc_pierre_polie" if (x + z) % 2 == 0 else "bloc_verre")
-	# escaliers : on les laisse en pentes de terrain (rampe au sud)
-	for z in range(14, 37):
+	# une longue rampe au sud, des hautes terrasses jusqu'en bas
+	for z in range(14, 38):
 		for x in range(-2, 3):
-			var d := float(z)
-			out.relief[Vector2i(x, z)] = int(clampf(8.0 - (d - 14.0) * 8.0 / 22.0, 0.0, 8.0))
+			out.relief[Vector2i(x, z)] = snappedf(clampf(8.0 - (z - 14.0) * 8.0 / 23.0, 0.0, 8.0), 0.25)
 	# la maison du seigneur (grande, à toit de tuiles et grandes fenêtres)
 	house(b, Vector2i(-7, -7), 15, 13, 5, 8, "bloc_marbre", "bloc_pierre_polie", "bloc_tuiles", "bloc_verre", 0, "steps")
 	out.hall = Vector2i(0, 7)
 	# demeures claires sur les terrasses
 	for ring in [[24, 9, 4], [44, 14, 0]]:
 		for i in ring[1]:
-			var a := TAU * (i + 0.5) / ring[1]
+			var a: float = TAU * (i + 0.5) / float(ring[1])
 			if absf(angle_difference(a, PI / 2.0)) < 0.2:
 				continue
-			var c := Vector2i(roundi(cos(a) * ring[0]), roundi(sin(a) * ring[0]))
+			var c: Vector2i = Vector2i(roundi(cos(a) * float(ring[0])), roundi(sin(a) * float(ring[0])))
 			house(b, c - Vector2i(3, 2), 7, 5, 3, int(ring[2]), "bloc_marbre", "bloc_pierre_polie", "bloc_tuiles", "bloc_verre",
 				[3, 2][int(cos(a) > 0)] if absf(cos(a)) > 0.7 else [1, 0][int(sin(a) < 0)], "steps")
 	for r in [10, 24, 44]:
@@ -354,7 +368,7 @@ static func _minas(out: Dictionary, rng: RandomNumberGenerator) -> void:
 		for x in range(-R, R + 1):
 			var d := Vector2(x, z).length()
 			if d <= R:
-				out.relief[Vector2i(x, z)] = (tiers - 1 - mini(tiers - 1, int(d / step))) * 4
+				out.relief[Vector2i(x, z)] = float((tiers - 1 - mini(tiers - 1, int(d / step))) * 4)
 	# un rempart à chaque terrasse, la porte change de côté à chaque niveau
 	for t in range(1, tiers):
 		var r := t * step
@@ -370,21 +384,25 @@ static func _minas(out: Dictionary, rng: RandomNumberGenerator) -> void:
 		for k in int(step):
 			for x in range(-1, 2):
 				var c := Vector2i(x, gate * roundi(r - k))
-				out.relief[c] = clampi(hi - 4 + int(4.0 * k / step), 0, 40)
+				out.relief[c] = snappedf(clampf(hi - 4 + 4.0 * k / step, 0.0, 40.0), 0.25)
 	# la citadelle et sa tour blanche
 	var top := (tiers - 1) * 4
 	tower(b, Vector2i.ZERO, 3, 24, top, "bloc_pierre_polie", "bloc_marbre_dore")
+	# sa porte, au bout de la dernière rampe
+	for x in range(-1, 2):
+		for y in 3:
+			b.erase(Vector3i(x, top + y, 3))
 	out.hall = Vector2i(0, 5)
 	# maisons de pierre le long de chaque terrasse
-	for t in range(1, tiers):
+	for t in range(1, tiers + 1):
 		var r := (t - 0.5) * step
 		var base := (tiers - t) * 4
 		var n := int(TAU * r / 9.0)
 		for i in n:
 			var a := TAU * (i + 0.5) / n
-			if absf(angle_difference(a, PI / 2.0)) < 0.18 or absf(angle_difference(a, -PI / 2.0)) < 0.18:
-				continue
 			var c := Vector2i(roundi(cos(a) * r), roundi(sin(a) * r))
+			if t == 1 or absi(c.x) < 6:
+				continue    # la citadelle, et le passage des rampes
 			house(b, c - Vector2i(2, 2), 5, 5, 3, base, "bloc_pierre_polie" if t < 4 else "bloc_marbre_noir", "bloc_briques",
 				"bloc_ardoise", "bloc_verre", rng.randi() % 4, "steps")
 		for i in 12:

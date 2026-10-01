@@ -314,6 +314,7 @@ func generate(seed_value: int) -> void:
 	var center := Vector2(world_size) / 2.0
 	spawn_cell = _find_spawn(center)
 	_make_clearing(spawn_cell)
+	_plan_cities()
 	_place_sites()
 	_plan_structures()
 	_build_water()
@@ -324,6 +325,7 @@ func generate(seed_value: int) -> void:
 	if not Engine.is_editor_hint():
 		_build_village()
 		_build_structures()
+		_build_cities()
 		reveal(focus, REVEAL_RADIUS + 10)
 	world_generated.emit(seed_value)
 
@@ -787,6 +789,8 @@ func _find_site(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
 				if t != GRASS and t != SAND and t != STONE:
 					continue
 				if zone_id >= 0 and _zone[_idx(c)] != zone_id:
+					continue
+				if not city_at(Vector3(c.x, 0, c.y), 8.0).is_empty():
 					continue
 				if not _is_dry_area(c, 3):
 					continue
@@ -1706,7 +1710,7 @@ func _build_content(ch: Vector2i) -> void:
 	var crng := RandomNumberGenerator.new()
 	crng.seed = hash(Vector3i(ch.x, ch.y, world_seed + 555))
 	var cell := Vector2i(ch.x * CHUNK + crng.randi_range(2, CHUNK - 3), ch.y * CHUNK + crng.randi_range(2, CHUNK - 3))
-	if _inside(cell):
+	if _inside(cell) and city_at(Vector3(cell.x, 0, cell.y), 30.0).is_empty():
 		var z: Dictionary = zones[_zone[_idx(cell)]]
 		var r: RegionData = z.type
 		var chance := (r.camp_density if r else 0.5) * CHUNK * CHUNK / 1000.0
@@ -1721,7 +1725,7 @@ func _build_content(ch: Vector2i) -> void:
 	var trng := RandomNumberGenerator.new()
 	trng.seed = hash(Vector3i(ch.x, ch.y, world_seed + 909))
 	var tcell := Vector2i(ch.x * CHUNK + trng.randi_range(3, CHUNK - 4), ch.y * CHUNK + trng.randi_range(3, CHUNK - 4))
-	if _inside(tcell):
+	if _inside(tcell) and city_at(Vector3(tcell.x, 0, tcell.y), 20.0).is_empty():
 		var tz: Dictionary = zones[_zone[_idx(tcell)]]
 		var tr: RegionData = tz.type
 		var tchance := (tr.traveler_density if tr else 0.15) * CHUNK * CHUNK / 1000.0
@@ -2116,6 +2120,175 @@ func _castle_spot_ok(c: Vector2i, mid: Vector2i, z: Dictionary) -> bool:
 	return true
 
 
+# ---------------------------------------------------------------- capitales
+
+## Les capitales des nations voisines (voir CityPlans) : {nation, name, center, base, radius, population, races,
+## stalls, streets, gates, hall, seed}. Leurs blocs sont posés par _build_cities.
+var cities: Array = []
+var _city_plans := {}
+
+
+## La capitale qui contient `pos` (à `margin` mètres près), ou {}.
+func city_at(pos: Vector3, margin := 0.0) -> Dictionary:
+	for c in cities:
+		var ctr: Vector2i = c.center
+		if Vector2(pos.x - ctr.x, pos.z - ctr.y).length() <= float(c.radius) + margin:
+			return c
+	return {}
+
+
+## Choisit où bâtir les cinq capitales (dans les régions de leur peuple, loin du village et les unes des autres,
+## sur un terrain sec et pas trop accidenté) puis façonne leur relief.
+func _plan_cities() -> void:
+	cities.clear()
+	_city_plans.clear()
+	for nation in CityPlans.CITIES:
+		var info: Dictionary = CityPlans.CITIES[nation]
+		var r := int(info.radius)
+		var margin := r + 16
+		var best := Vector2i(-1, -1)
+		var best_score := -INF
+		for z in zones:
+			if float(z.dist) < 0.3:
+				continue
+			var rid: String = (z.type as RegionData).id if z.type else "prairie"
+			var pref := (info.regions as Array).find(rid)
+			for off in [Vector2i.ZERO, Vector2i(32, 0), Vector2i(-32, 0), Vector2i(0, 32), Vector2i(0, -32),
+					Vector2i(32, 32), Vector2i(-32, 32), Vector2i(32, -32), Vector2i(-32, -32)]:
+				var c: Vector2i = Vector2i(z.site) + off
+				if c.x < margin or c.y < margin or c.x >= world_size.x - margin or c.y >= world_size.y - margin:
+					continue
+				if Vector2(c - spawn_cell).length() < r + 160:
+					continue
+				var far := true
+				for o in cities:
+					if Vector2(c - (o.center as Vector2i)).length() < r + int(o.radius) + 80:
+						far = false
+				if not far:
+					continue
+				var site := _city_site_quality(c, r + 6)
+				if site.x < 0.0:
+					continue
+				var score := (40.0 if pref == 0 else (30.0 if pref > 0 else 0.0)) - site.y * 0.5 - absf(float(z.dist) - 0.6) * 4.0 \
+					+ _rand(int(z.id), off.x + 3 * off.y, 77) * 0.5
+				if score > best_score:
+					best_score = score
+					best = c
+		if best.x < 0:
+			continue
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([world_seed, nation, 4011])
+		var city_seed := rng.seed
+		var plan := CityPlans.plan(nation, rng)
+		var city := {"nation": nation, "name": info.name, "center": best, "radius": r, "population": int(info.population),
+			"races": info.races, "stalls": plan.stalls, "streets": plan.streets, "gates": plan.gates, "hall": plan.hall,
+			"seed": city_seed, "style": info.style}
+		_shape_city(city, plan)
+		_city_plans[nation] = plan
+		cities.append(city)
+
+
+## x : -1 si l'endroit ne convient pas (trop d'eau ou de relief) ; y : sa pénalité (relief, part d'eau).
+func _city_site_quality(c: Vector2i, r: int) -> Vector2:
+	var lo := INF
+	var hi := -INF
+	var wet := 0
+	var n := 0
+	for y in range(-r, r + 1, 6):
+		for x in range(-r, r + 1, 6):
+			if Vector2(x, y).length() > r:
+				continue
+			var cell := c + Vector2i(x, y)
+			n += 1
+			var t := _type(cell)
+			if t == WATER or t == DEEP:
+				wet += 1
+				continue
+			lo = minf(lo, _h(cell))
+			hi = maxf(hi, _h(cell))
+	if n == 0 or wet > n * 0.2 or hi - lo > 30.0:
+		return Vector2(-1, 0)
+	# la ville comble l'eau de son emprise, mais mieux vaut peu d'eau et peu de relief
+	return Vector2(1, hi - lo + 60.0 * wet / n)
+
+
+## Aplani la ville au niveau moyen du terrain, y ajoute son relief (collines, terrasses), pave les rues
+## et adoucit les abords jusqu'au terrain naturel.
+func _shape_city(city: Dictionary, plan: Dictionary) -> void:
+	var ctr: Vector2i = city.center
+	var R: int = city.radius
+	var sum := 0.0
+	var n := 0
+	for y in range(-R, R + 1, 4):
+		for x in range(-R, R + 1, 4):
+			if Vector2(x, y).length() <= R:
+				var t := _type(ctr + Vector2i(x, y))
+				if t != WATER and t != DEEP:
+					sum += _h(ctr + Vector2i(x, y))
+					n += 1
+	var base := roundi(sum / maxf(1.0, n))
+	city["base"] = base
+	var ground := SAND if city.style == "harad" else GRASS
+	# des abords d'autant plus longs que le terrain autour est accidenté (pente de marche)
+	var rough := 0.0
+	for k in 24:
+		var a := TAU * k / 24.0
+		var c := ctr + Vector2i(roundi(cos(a) * (R + 20)), roundi(sin(a) * (R + 20)))
+		if _inside(c) and _type(c) != WATER and _type(c) != DEEP:
+			rough = maxf(rough, absf(_h(c) - base))
+	var blend := clampi(int(rough * 2.2), 16, 44)
+	for y in range(-R - blend - 2, R + blend + 3):
+		for x in range(-R - blend - 2, R + blend + 3):
+			var c := ctr + Vector2i(x, y)
+			if not _inside(c):
+				continue
+			_ensure_chunk_of(c)
+			var i := _idx(c)
+			var d := Vector2(x, y).length()
+			if d <= R + 2:
+				_heights[i] = base + float(plan.relief.get(Vector2i(x, y), 0.0))
+				_types[i] = ground
+				_decor[i] = D_NONE
+			elif d <= R + 2 + blend:
+				if _types[i] == WATER or _types[i] == DEEP:
+					continue
+				var k := (d - R - 2) / float(blend)
+				_heights[i] = snappedf(lerpf(base, _heights[i], k), step_height)
+				if k < 0.5:
+					_decor[i] = D_NONE
+	# rues pavées : chaque point de passage et ses voisins
+	for s in plan.streets:
+		for o in [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var c: Vector2i = ctr + (s as Vector2i) + o
+			if _inside(c):
+				_types[_idx(c)] = PLAZA
+
+
+## Pose les blocs des capitales (même mécanisme que les autres constructions : destructibles, sauvegardés en différence).
+func _build_cities() -> void:
+	if build == null:
+		return
+	build.generating = true
+	var items := {}
+	for city in cities:
+		var plan: Dictionary = _city_plans.get(city.nation, {})
+		if plan.is_empty():
+			continue
+		var ctr: Vector2i = city.center
+		var base: int = city.base
+		var n := 0
+		for k in plan.blocks:
+			var id: String = plan.blocks[k]
+			if not items.has(id):
+				items[id] = Items.get_item(id)
+			if build.place_block(Vector3i(ctr.x + k.x, base + k.y, ctr.y + k.z), items[id]):
+				n += 1
+		city["blocks"] = n
+	_city_plans.clear()
+	build.generating = false
+	build.changed.emit()
+
+
 ## Une plage de sable au bord de l'eau, près de `from` (dans la zone), pour une épave.
 func _find_coast(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
 	for r in range(6, max_r, 3):
@@ -2125,6 +2298,8 @@ func _find_coast(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
 			if not _inside(c) or c.x < 6 or c.y < 6 or c.x >= world_size.x - 16 or c.y >= world_size.y - 16:
 				continue
 			if _type(c) != SAND or _zone[_idx(c)] != zone_id:
+				continue
+			if not city_at(Vector3(c.x, 0, c.y), 10.0).is_empty():
 				continue
 			for d in [Vector2i(3, 0), Vector2i(-3, 0), Vector2i(0, 3), Vector2i(0, -3)]:
 				var t := _type(c + d)
