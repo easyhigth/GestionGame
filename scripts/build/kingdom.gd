@@ -249,6 +249,10 @@ func title() -> String:
 	var t := "%s · %s" % [RANK_NAMES[rank], AGE_NAMES[age]]
 	if st and st.nation_name() != "":
 		t = "%s · %s" % [st.nation_name(), AGE_NAMES[age]]
+	# le nom choisi par le joueur (Bannière et trophées)
+	var her := get_tree().get_first_node_in_group("heraldry") if is_inside_tree() else null
+	if her and str(her.custom_name) != "":
+		t = "%s · %s" % [her.custom_name, AGE_NAMES[age]]
 	# provinces conquises (voir Diplomacy)
 	var dip := get_tree().get_first_node_in_group("diplomacy") if is_inside_tree() else null
 	var np: int = dip.provinces().size() if dip else 0

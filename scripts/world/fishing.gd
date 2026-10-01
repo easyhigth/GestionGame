@@ -10,11 +10,11 @@ signal state_changed
 ## Poissons : identifiant -> [régions (vide = partout), eau (« peu », « profond » ou « »), rareté (poids),
 ## difficulté 0 (facile) à 1 (très dur)].
 const FISH := {
-	"gardon": [["prairie", "foret", "bois_enchante", "marais"], "", 10, 0.1],
+	"gardon": [["prairie", "foret", "bois_enchante", "marais", "jungle"], "", 10, 0.1],
 	"truite": [["prairie", "foret", "montagnes"], "peu", 5, 0.35],
 	"brochet": [["prairie", "foret", "marais"], "profond", 3, 0.6],
-	"carpe": [["marais", "prairie"], "", 6, 0.3],
-	"anguille": [["marais"], "profond", 3, 0.65],
+	"carpe": [["marais", "prairie", "jungle"], "", 6, 0.3],
+	"anguille": [["marais", "jungle"], "profond", 3, 0.65],
 	"saumon": [["montagnes", "toundra"], "", 6, 0.45],
 	"omble": [["toundra"], "profond", 3, 0.6],
 	"poisson_scorpion": [["desert"], "", 5, 0.5],

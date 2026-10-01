@@ -271,6 +271,13 @@ func _refresh() -> void:
 		if hud and hud.get("diplomacy_panel"):
 			hud.diplomacy_panel.open())
 	row.add_child(dip_b)
+	var her_b := MenuKit.button("Bannière et trophées", 220, 13)
+	her_b.pressed.connect(func():
+		close()
+		var hud := get_parent()
+		if hud and hud.get("heraldry_panel"):
+			hud.heraldry_panel.open())
+	row.add_child(her_b)
 	var close_b := MenuKit.button("Fermer (U)", 200, 13)
 	close_b.pressed.connect(close)
 	row.add_child(close_b)

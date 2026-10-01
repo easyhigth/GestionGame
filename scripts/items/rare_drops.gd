@@ -13,6 +13,8 @@ const ENEMY := {
 	"demon": [["sang_demon", 0.04], ["fragment_brume", 0.03]], "seigneur_demon": [["sang_demon", 0.25], ["fragment_brume", 0.15]],
 	"squelette": [["fragment_brume", 0.02]], "seigneur_squelette": [["fragment_brume", 0.2], ["mithril_brut", 0.1]],
 	"ogre": [["mithril_brut", 0.05]], "orc_brute": [["mithril_brut", 0.02]], "loup_alpha": [["mithril_brut", 0.02]],
+	"grenouille": [["larme_esprit", 0.03]], "serpent": [["ecaille_dragon", 0.02]], "panthere": [["mithril_brut", 0.02]],
+	"serpent_roi": [["ecaille_dragon", 0.15], ["gemme_emeraude", 0.1]],
 }
 ## Tous les boss : [objet, chance, minimum, maximum].
 const BOSS := [["mithril_brut", 0.7, 2, 3], ["fragment_brume", 0.4, 1, 2], ["orichalque", 0.06, 1, 1]]
@@ -25,6 +27,7 @@ const BOSS_EXTRA := {
 	"morvain_parjure": [["fragment_brume", 1.0, 3, 4], ["sang_demon", 0.6, 1, 2]],
 	"ren_possede": [["ecaille_dragon", 0.5, 1, 2], ["fragment_brume", 1.0, 2, 3]],
 	"aurele_epreuve": [["larme_esprit", 1.0, 3, 3], ["cristal_aube", 1.0, 1, 1]],
+	"boss_quetzal": [["cristal_aube", 1.0, 1, 1], ["gemme_emeraude", 1.0, 2, 3], ["ecaille_dragon", 0.5, 1, 2]],
 }
 ## Gemmes (serties à l'enclume, voir Forge) : une au hasard, avec cette chance.
 const GEM_IDS := ["gemme_rubis", "gemme_saphir", "gemme_emeraude", "gemme_topaze", "gemme_amethyste", "gemme_diamant"]

@@ -22,6 +22,7 @@ const WILD := {
 	"marais": {"poule": 1},
 	"montagnes": {"mouton": 3, "vache": 1},
 	"toundra": {"mouton": 2},
+	"jungle": {"poule": 2},
 }
 ## Distance à la mangeoire pour qu'une bête s'installe.
 const TAME_DISTANCE := 4.5
