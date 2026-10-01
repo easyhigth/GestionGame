@@ -132,12 +132,31 @@ BOSSES = {
                               900, 50, 16, 3.6, 3.2, ['enemy_chop', 'enemy_sweep'], 0.8, 900, 12.0, 1.1,
                               [('axe', 0.6), ('iron_armor', 0.6), ('lingot_or', 1.0), ('piece_or', 1.0), ('piece_or', 1.0)]),
 }
+# jungle d'émeraude
+ENEMIES.update({
+    'panthere': ("Panthère d'ombre", CREA % 'panther', None, [], 'c8a0ff', 1.0,
+                 150, 24, 4, 5.4, 1.7, ['bite', 'bite', 'charge_ram'], 1.25, 20, 4.0, 0.5, [('leather', 0.9), ('leather', 0.4)]),
+    'grenouille': ('Grenouille venimeuse', CREA % 'frog', None, [], '5ad8ff', 1.0,
+                   90, 20, 2, 4.0, 1.5, ['charge_ram', 'bite'], 1.1, 10, 3.0, 0.5, [('fiber', 0.6), ('baies', 0.5)]),
+    'serpent': ('Serpent géant', CREA % 'snake', None, [], '8ad04a', 1.0,
+                170, 26, 5, 3.8, 1.9, ['bite', 'charge_ram'], 1.0, 30, 4.5, 0.55, [('leather', 0.8), ('or_brut', 0.2)]),
+    'serpent_roi': ('Serpent royal', CREA % 'snake_king', None, [], 'ffd24a', 1.2,
+                    420, 34, 9, 3.8, 2.3, ['bite', 'charge_ram'], 0.9, 110, 8.0, 0.8, [('leather', 1.0), ('lingot_or', 0.6), ('or_brut', 0.6)]),
+    'boss_quetzal': ('Xochitl, le Serpent à Plumes', CREA % 'feathered_serpent', None, [], '4ae0a0', 2.4,
+                     1000, 46, 12, 4.0, 3.0, ['bite', 'charge_ram'], 0.85, 800, 10.0, 1.4,
+                     [('lingot_or', 1.0), ('or_brut', 1.0), ('piece_or', 1.0)]),
+})
 ENEMIES.update(BOSSES)
+
+
+ONLY = []
 
 
 def write_enemies():
     out = os.path.join(ROOT, 'data', 'enemies')
     for eid, (name, model, lib, equip, col, scale, hp, atk, dfn, spd, rng, moves, aspd, poise, kb, body, loot) in ENEMIES.items():
+        if ONLY and eid not in ONLY:
+            continue
         r = Res('EnemyData', 'res://scripts/data/enemy_data.gd')
         r.add('Script', 'res://scripts/data/item_data.gd', '2')
         props = [('display_name', '"%s"' % name), ('model', r.ref('PackedScene', model))]
@@ -235,6 +254,17 @@ REGIONS = [
          plants=[], plant=0.0,
          enemies=['slime_magma', 'salamandre', 'demon', 'salamandre'], elite=['seigneur_demon'], camps=0.6,
          res=['or_brut', 'stone', 'iron_ore', 'piece_or'], resc=0.012),
+    dict(id='jungle', races=['homme_lezard', 'fee', 'homme_bete', 'insectoide'], soul={'attack': 3, 'regen': 1.5, 'xp': 0.05}, soulname="Plumes de Xochitl : +3 attaque, +1,5 vie/s, +5 % d'expérience", boss='boss_quetzal', title='Les plumes du serpent sacré bruissent...', powers=['pluie', 'charge', 'invocation', 'onde'], dfloor='bloc_pierre_polie', dwall='bloc_pierre_brute', daccent='bloc_marbre_dore', dlight='6aff9a', damb='0c1a10', name="Jungle d'émeraude", map='1e8a4a', temp=0.85, moist=0.85, dist=0.6, lv=(11, 16),
+         names=["Jungle d'Émeraude", 'Canopée des Mille Cris', 'Temple Englouti', 'Rives du Fleuve Jade', 'Forêt des Brumes Chaudes'],
+         desc="Une jungle étouffante : panthères d'ombre, grenouilles venimeuses et serpents géants autour d'un temple oublié.",
+         grass=('2e8a3a', '247a30'), dirt='4a3a24', sand='c8b47a', stone='6a7a64', water_floor='3a6a4a',
+         liquid='2a7a6a', relief=0.9,
+         trees=['jungle_tree_1', 'jungle_tree_2', 'palm_1', 'palm_2'], forest=0.55, scattered=0.05,
+         bushes=['bush_1', 'bush_2'], bush=0.05, rocks=['mossy_rock_1', 'mossy_rock_2'], rock=0.04,
+         plants=['fern_1', 'fern_2', 'fern_1', 'flowers_2'], plant=0.18,
+         enemies=['panthere', 'grenouille', 'grenouille', 'serpent', 'homme_lezard'], elite=['serpent_roi'], camps=0.55,
+         res=['wood', 'fiber', 'leather', 'or_brut', 'piece_or'], resc=0.012,
+         weather={'clair': 2, 'nuageux': 2, 'pluie': 5, 'orage': 2, 'brouillard': 2}, precip='pluie'),
 ]
 
 
@@ -242,6 +272,8 @@ def write_regions():
     out = os.path.join(ROOT, 'data', 'regions')
     os.makedirs(out, exist_ok=True)
     for d in REGIONS:
+        if ONLY and d['id'] not in ONLY:
+            continue
         r = Res('RegionData', 'res://scripts/data/region_data.gd')
         r.add('Script', 'res://scripts/data/enemy_data.gd', '2')
         r.add('Script', 'res://scripts/data/item_data.gd', '3')
@@ -279,10 +311,16 @@ def write_regions():
                   ('resources', 'Array[ExtResource("3")]([%s])' % ', '.join(r.ref('Resource', 'res://data/items/%s.tres' % i) for i in d['res'])),
                   ('resource_chance', d['resc']),
                   ('recruit_races', 'Array[ExtResource("4")]([%s])' % ', '.join(r.ref('Resource', 'res://data/races/%s.tres' % x) for x in d['races']))]
+        if 'weather' in d:
+            props += [('weather_weights', '{%s}' % ', '.join('"%s": %d' % (k, v) for k, v in d['weather'].items())),
+                      ('precipitation', '"%s"' % d.get('precip', 'pluie'))]
         r.write(os.path.join(out, d['id'] + '.tres'), props)
     print('%d régions' % len(REGIONS))
 
 
 if __name__ == '__main__':
+    import sys
+    # python regions_database.py jungle panthere ... : n'écrit que ces fichiers (les autres ont pu être retouchés à la main)
+    ONLY.extend(sys.argv[1:])
     write_enemies()
     write_regions()

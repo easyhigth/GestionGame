@@ -303,6 +303,7 @@ func act(id: String, action: String) -> bool:
 			if action == "alliance":
 				s.last_gift = today()
 			player.feat.emit("Traité : %s avec %s" % [TREATY_NAMES[action], nm], NATIONS[id].color)
+			Sound.ui("treaty")
 		"war":
 			declare_war(id, true)
 		"peace":
@@ -336,6 +337,7 @@ func annex(id: String) -> void:
 	if player:
 		player.absorb_soul("province_" + id, PROVINCE_BONUS)
 		player.feat.emit("%s devient ta province !" % NATIONS[id].name, Color("ffd24a"))
+		Sound.ui("fanfare")
 		player.notify.emit("Province annexée : impôts tous les %d jours, colons de temps en temps, +2 attaque et +2 défense." % TAX_EVERY)
 	# les autres nations craignent l'empire
 	for o in NATIONS:
@@ -386,6 +388,7 @@ func declare_war(id: String, by_us: bool) -> void:
 		var nm: String = NATIONS[id].name
 		player.feat.emit(("Tu déclares la guerre à %s !" if by_us else "%s te déclare la guerre !") % nm, Color("ff5a4a"))
 		player.notify.emit("Guerre contre %s : ses armées vont attaquer le village. Repousse-en %d pour la faire capituler (Y : diplomatie)." % [nm, WINS_TO_SURRENDER])
+	Sound.ui("war_drums")
 	war_declared.emit(id, by_us)
 	changed.emit()
 

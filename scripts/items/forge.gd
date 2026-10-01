@@ -162,9 +162,7 @@ static func upgrade(p: Player, item: ItemData, stations: Array) -> ItemData:
 	var v := _item(variant_id(base_of(item), item.upgrade + 1, item.gems, item.rune))
 	_replace(p, item, v)
 	p.feat.emit("Forge : %s" % v.display_name, v.rarity_color())
-	var snd := p.get_tree().root.get_node_or_null("Sound")
-	if snd:
-		snd.play("hit_heavy", p.global_position)
+	_sound(p, "hit_heavy")
 	return v
 
 
@@ -178,6 +176,7 @@ static func socket(p: Player, item: ItemData, gem: String, stations: Array) -> I
 	var v := _item(variant_id(base_of(item), item.upgrade, gems, item.rune))
 	_replace(p, item, v)
 	p.feat.emit("Serti : %s dans %s" % [GEMS[gem].name, v.display_name], Color("c8a8ff"))
+	_sound(p, "socket")
 	return v
 
 
@@ -201,7 +200,14 @@ static func inscribe(p: Player, item: ItemData, rune: String, stations: Array) -
 	var v := _item(variant_id(base_of(item), item.upgrade, item.gems, rune))
 	_replace(p, item, v)
 	p.feat.emit("Rune de %s gravée : %s" % [RUNES[rune].name.to_lower(), v.display_name], Color("8ad0ff"))
+	_sound(p, "rune")
 	return v
+
+
+static func _sound(p: Player, name: String) -> void:
+	var snd := p.get_tree().root.get_node_or_null("Sound")
+	if snd:
+		snd.play(name, p.global_position)
 
 
 ## Remplace l'objet par sa nouvelle version, là où il est (porté ou dans le sac).
@@ -227,7 +233,12 @@ static func workable(p: Player) -> Array:
 	return out
 
 
-## Bonus des gemmes de tout ce que porte le héros.
+## Plafonds des bonus de gemmes et de runes cumulés sur tout l'équipement porté (équilibrage).
+const BONUS_CAPS := {"crit": 0.3, "crit_mult": 0.6, "lifesteal": 0.12, "burn": 0.4, "slow": 0.4, "atk_pct": 0.4,
+	"mag_pct": 0.4, "hp_pct": 0.4, "cdr_pct": 0.25, "spd_pct": 0.2, "aspd_pct": 0.2, "regen": 3.0, "def_flat": 20.0}
+
+
+## Bonus des gemmes et des runes de tout ce que porte le héros (plafonnés).
 static func equipment_bonus(p: Player) -> Dictionary:
 	var out := {}
 	for slot in p.equipment.slots:
@@ -235,4 +246,7 @@ static func equipment_bonus(p: Player) -> Dictionary:
 		if it and not it.bonus.is_empty():
 			for k in it.bonus:
 				out[k] = float(out.get(k, 0.0)) + float(it.bonus[k])
+	for k in out:
+		if BONUS_CAPS.has(k):
+			out[k] = minf(float(out[k]), float(BONUS_CAPS[k]))
 	return out

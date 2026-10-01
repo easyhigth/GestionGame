@@ -323,6 +323,105 @@ def horse(c, mane, hoof=0x2a2220, saddle=None):
     return g
 
 
+# ---------------------------------------------------------------- jungle d'émeraude
+
+def panther(c, spot, eye, scale=1.0):
+    """Panthère : un félin long et bas, longue queue, taches."""
+    g = Node('Root', (0, 8 * scale, 0))
+    g.scale = scale
+    for name, x in (('LegL', 3), ('LegR', -3)):
+        leg(g, name, x, -8, 0, 8, 2.6, c, 0xe8e0c8)
+    top = g.add(Node('Torso'))
+    V(9, 7, 24, c, 0, 3.6, 0, top)
+    V(7.6, 2, 20, shade(c, 1.12), 0, 7.4, -0.5, top)
+    V(7, 1.6, 18, shade(c, 0.85), 0, 0.2, 1, top)
+    for i, (x, z) in enumerate(((2, 6), (-2.6, 2), (2.4, -3), (-2, -7), (0.4, -10), (3, -12), (-3, 9))):
+        V(2, 0.6, 2, spot, x, 7.5 + (i % 2) * 0.2, z, top)
+    # longue queue relevée
+    for i, (y, z) in enumerate(((5, -13), (6, -15.5), (7.4, -17.8), (9.2, -19.6), (11.4, -20.6))):
+        V(2.2, 2.2, 3, c if i < 4 else spot, 0, y, z, top)
+    for name, x in (('ArmL', 3.1), ('ArmR', -3.1)):
+        leg(top, name, x, 8.5, 0.5, 8.5, 2.6, c, 0xe8e0c8)
+    h = top.add(Node('Head', (0, 7.4, 13.6)))
+    V(7.4, 6, 7, c, 0, 0, 0, h)
+    V(4.6, 3, 4.4, shade(c, 1.08), 0, -1.4, 5, h)
+    V(1.6, 1.2, 0.8, 0x1a1414, 0, -0.4, 7.4, h)
+    for s in (-1, 1):
+        VG(1.6, 1.1, 0.5, eye, s * 2, 1, 3.6, h)
+        V(2, 2.6, 1.2, c, s * 2.4, 4, -1.2, h)
+        V(0.5, 2, 0.5, 0xf4f0e0, s * 1.2, -3, 6.2, h)
+        V(3, 0.3, 0.3, 0xe8e0d0, s * 3.6, -1.2, 5.2, h)
+    return g
+
+
+def frog(c, belly, mark, eye, scale=1.0):
+    """Grenouille venimeuse : trapue, grosses pattes arrière, gros yeux, taches vives."""
+    g = Node('Root', (0, 4 * scale, 0))
+    g.scale = scale
+    for name, x in (('LegL', 5), ('LegR', -5)):
+        n = g.add(Node(name, (x, 0, -4)))
+        V(4, 4, 8, c, 0, -1, 0, n)
+        V(5, 1.4, 5, shade(c, 0.85), 0, -3.4, 3, n)
+    top = g.add(Node('Torso'))
+    V(14, 8, 14, c, 0, 2.6, 0, top)
+    V(12, 3, 12, belly, 0, -1, 1, top)
+    for x, z in ((3, 2), (-3.4, -2), (0, -4.6), (4, -3), (-4, 3)):
+        VG(2.4, 0.6, 2.4, mark, x, 6.8, z, top)
+    for name, x in (('ArmL', 5.4), ('ArmR', -5.4)):
+        n = top.add(Node(name, (x, 0, 5)))
+        V(2.4, 4, 2.4, c, 0, -2, 0, n)
+        V(3.4, 1, 3.4, shade(c, 0.85), 0, -4.2, 1, n)
+    h = top.add(Node('Head', (0, 4.6, 7)))
+    V(12, 5, 6, c, 0, 0, 0, h)
+    V(11, 1, 5, 0x3a1a1a, 0, -1.6, 1.4, h)
+    for s in (-1, 1):
+        V(3.6, 3.6, 3.6, c, s * 3.6, 3, -0.4, h)
+        VG(2.4, 2.4, 1, eye, s * 3.6, 3.2, 1.5, h)
+        V(1, 1.6, 0.6, 0x141414, s * 3.6, 3.2, 2.1, h)
+    return g
+
+
+def snake(c, belly, pattern, eye, scale=1.0, crest=None, wings=None):
+    """Serpent : un long corps qui ondule (pattes cachées). crest : plumes sur la tête ; wings : ailes de plumes."""
+    g = Node('Root', (0, 3 * scale, 0))
+    g.scale = scale
+    for name, x in (('LegL', 1.5), ('LegR', -1.5)):
+        n = g.add(Node(name, (x, 0, -6)))
+        V(2, 1, 2, shade(c, 0.8), 0, -2, 0, n)
+    top = g.add(Node('Torso'))
+    pts = [(0, 1.4, 6), (1.6, 1.2, 2), (2.6, 1.2, -2.5), (1.4, 1.1, -7), (-1.2, 1.0, -11), (-2.8, 0.9, -15), (-1.6, 0.8, -19), (0.8, 0.7, -22.5)]
+    for i, (x, y, z) in enumerate(pts):
+        w = 6.4 - i * 0.55
+        V(w, w * 0.8, 5, c, x, y + w * 0.4, z, top)
+        V(w * 0.7, 0.6, 4.4, belly, x, y + 0.1, z, top)
+        if i % 2 == 0:
+            V(w * 0.5, 0.5, 2, pattern, x, y + w * 0.82, z, top)
+    # le cou se dresse
+    for i, (y, z) in enumerate(((5, 9), (8, 10.5), (10.6, 11.6))):
+        V(5.4, 4, 4, c, 0, y, z, top)
+        V(3.6, 3, 0.6, belly, 0, y, z + 2.2, top)
+    if wings:
+        for name, sx in (('ArmL', 1), ('ArmR', -1)):
+            n = top.add(Node(name, (sx * 3, 8, 6)))
+            for j in range(5):
+                V(2.4, 1, 6 - j * 0.6, wings[j % len(wings)], sx * (2 + j * 2.4), 1 + j * 0.8, -1 - j * 0.8, n, rz=sx * 0.3)
+    else:
+        for name, sx in (('ArmL', 1), ('ArmR', -1)):
+            n = top.add(Node(name, (sx * 2, 4, 6)))
+            V(1, 1, 1, c, 0, 0, 0, n)
+    h = top.add(Node('Head', (0, 13.4, 13)))
+    V(6.4, 4.4, 7, c, 0, 0, 0, h)
+    V(5.4, 2.6, 4, shade(c, 1.08), 0, -0.8, 4.4, h)
+    V(0.6, 0.4, 2.4, 0xd02a3a, 0, -1.4, 7.2, h)
+    for s in (-1, 1):
+        VG(1.4, 1.2, 0.6, eye, s * 2.6, 1, 2.6, h)
+        V(0.5, 1.8, 0.5, 0xf4f0e0, s * 1.4, -2.6, 5, h)
+    if crest:
+        for j, cc in enumerate(crest):
+            V(1.2, 5 - j * 0.6, 1.2, cc, (j - len(crest) / 2) * 1.3, 4.4 - j * 0.1, -2 - j * 0.4, h, rx=-0.5)
+    return g
+
+
 CREATURES = {
     'wolf': lambda: wolf(0x8a8a8e, 0xd8d4cc, 0xffd24a),
     'wolf_alpha': lambda: wolf(0x3a3a40, 0x6a6a70, 0xff5a3a, 1.25, mane=0x24242a),
@@ -346,6 +445,13 @@ CREATURES = {
     'horse_brown_saddle': lambda: horse(0x8a5a32, 0x3a2418, saddle=0x8a2a2a),
     'horse_white_saddle': lambda: horse(0xe8e4dc, 0xb8b0a0, 0x5a5048, saddle=0x2a4a9a),
     'horse_black_saddle': lambda: horse(0x2e2a2a, 0x141212, saddle=0xc8a040),
+    'panther': lambda: panther(0x24222a, 0x14121a, 0xffd24a),
+    'frog': lambda: frog(0x2ab8e0, 0xf0e070, 0x141414, 0x141414),
+    'snake': lambda: snake(0x4a8a2a, 0xe0d070, 0x2a4a1a, 0xffd24a),
+    'snake_king': lambda: snake(0xd0a020, 0xf4e8b0, 0x1a1a1a, 0xff3a2a, 1.3, crest=[0xd02a2a, 0xf0b020]),
+    'feathered_serpent': lambda: snake(0x2ab88a, 0xf0e070, 0xd02a3a, 0xffd24a, 1.0,
+                                       crest=[0xd02a3a, 0xf0b020, 0x2a8ad0, 0x2ac84a, 0xd02a3a],
+                                       wings=[0x2ac84a, 0x2a8ad0, 0xf0b020, 0xd02a3a]),
 }
 
 

@@ -907,6 +907,10 @@ func _on_hunger_state() -> void:
 		notify.emit("Tu meurs de faim ! Mange vite (H).")
 
 
+## Potions bues depuis le début (pour le guide).
+var potions_drunk := 0
+
+
 ## Boit une potion (touche Z) : une potion de soin si le héros est blessé, sinon une potion de renfort
 ## dont l'effet n'est pas déjà actif. Renvoie la potion bue (null sinon).
 func drink_potion() -> ItemData:
@@ -926,13 +930,14 @@ func drink_potion() -> ItemData:
 		notify.emit("Aucune potion à boire." if heal == null else "Tu es en pleine forme : garde ta potion de soin.")
 		return null
 	inventory.remove(pick, 1)
+	potions_drunk += 1
 	if pick.potion_heal > 0.0:
 		health.heal(roundi(health.max_health * pick.potion_heal))
 	if skill:
 		for k in pick.potion_buff:
 			skill.buffs[k] = [float(pick.potion_buff[k]), pick.potion_time]
 	refresh_stats()
-	Sound.play("eat", Vector3.INF, 2.0)
+	Sound.play("potion", Vector3.INF, 0.0)
 	VoxelBurst.spawn(self, global_position + Vector3(0, 1.2, 0), Color(0.9, 0.3, 0.4) if pick.potion_heal > 0.0 else Color(0.5, 0.8, 1.0), 20, 2.5, 0.07, 0.6, "up", -2.0, false)
 	notify.emit("Tu bois : %s." % pick.display_name)
 	return pick

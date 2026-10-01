@@ -41,9 +41,33 @@ const STEPS := [
 	["canne", "Fabrique une canne à pêche", "Inventaire (I) → Artisanat → Outils : 3 bois et 2 fibres.", 1],
 	["pecher", "Pêche 3 poissons", "Canne en main (C), V face à l'eau pour lancer. Quand ça mord : V, puis V quand le curseur est dans le vert.", 3],
 	["grotte", "Ouvre un coffre englouti", "Nage (entre dans l'eau), plonge avec G et remonte avec Espace. Au fond des eaux profondes, des cristaux bleus marquent l'entrée d'une grotte (E).", 1],
+	# chapitre 8 : l'aventure
+	["donjon", "Vaincs le boss d'un donjon", "E devant une entrée de donjon. Attention aux dalles qui rougissent (piques) ; le Gardien et la salle secrète valent le détour.", 1],
+	["forge", "Renforce un objet à +1", "Près d'une enclume : Inventaire (I) → Artisanat → Forge. Les gemmes et les runes s'y posent aussi.", 1],
+	["potion", "Bois une potion (Z)", "Une potion de soin se prépare au chaudron avec 8 baies ; un Laboratoire d'alchimie en fabrique d'autres.", 1],
+	["succes", "Ouvre les succès et le bestiaire (F1)", "Chaque succès rapporte des points : titres et auras pour ton héros. Le bestiaire décrit les monstres vaincus.", 1],
+	# chapitre 9 : le royaume et ses voisins
+	["diplomatie", "Ouvre la diplomatie (Y)", "Cinq nations entourent ton royaume. Leur humeur change selon tes présents, tes traités... et tes guerres.", 1],
+	["cadeau", "Offre un présent à une nation", "50 pièces d'or, ou ce qu'elle aime, une fois par jour. Ses demandes rapportent de l'or.", 1],
+	["traite", "Signe un traité", "Paix dès que la relation est positive, commerce à 20 (caravanes, meilleurs prix), alliance à 60.", 1],
+	["metier", "Ouvre une pièce de métier avancé", "Laboratoire d'alchimie (chaudron, table, tonneau), Sanctuaire des runes, Ménagerie ou Bureau d'architecte.", 1],
+	["evenement", "Réussis un événement du monde", "Pluie d'étoiles, invasion, tournoi, fête, épidémie : il y en a un tous les 3 ou 4 jours.", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26], ["L'EAU", 26, 29]]
+const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26], ["L'EAU", 26, 29],
+	["L'AVENTURE", 29, 33], ["LES VOISINS", 33, 38]]
+## Astuces affichées une seule fois, la première fois que la situation se présente : [identifiant, texte].
+const TIPS := [
+	["gemme", "Une gemme ! Sertis-la à l'enclume (I → Artisanat → Forge) sur une arme ou une armure."],
+	["rune", "Une rune ! Grave-la sur une arme ou une armure à l'enclume (onglet Forge)."],
+	["potion", "Une potion ! Touche Z pour la boire : soin si tu es blessé, sinon un renfort de 90 secondes."],
+	["orichalque", "De l'orichalque ! Le métal du renforcement +10 à la forge et des armes légendaires."],
+	["piege", "Ce donjon est piégé : quand une dalle rougit, des piques vont en sortir."],
+	["levier", "Une stèle et des leviers : tire-les (E) dans l'ordre gravé sur la stèle pour ouvrir le mur fissuré."],
+	["guerre", "Tu es en guerre ! Repousse 3 armées pour faire capituler la nation, ou assiège sa capitale (Y, à partir du niveau 6)."],
+	["malade", "Des habitants sont malades : soigne-les dans le panneau du royaume (U) avec une soupe ou une potion."],
+	["succes", "Premier succès ! F1 : succès, titres, auras et bestiaire."],
+]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
 const VERSION := 2
 
@@ -56,6 +80,9 @@ var _hint: Label
 var _bar: ColorRect
 var _check_timer := 0.0
 var _hide_timer := -1.0
+## Astuces déjà montrées.
+var tips_seen := {}
+var _tips_timer := 1.5
 
 
 func _ready() -> void:
@@ -301,6 +328,36 @@ func _check_state() -> void:
 			var pf := Items.get_item("pioche_fer")
 			if pf and player.inventory.count(pf) > 0:
 				_advance("pioche_fer")
+		"donjon":
+			var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+			if w and w.zones.any(func(z): return z.get("cleared", false)):
+				_advance("donjon")
+		"forge":
+			if _best_item(func(it): return it.upgrade) >= 1:
+				_advance("forge")
+		"potion":
+			if player.potions_drunk > 0:
+				_advance("potion")
+		"succes", "diplomatie":
+			# les panneaux mettent le jeu en pause : ils laissent une marque sur le héros quand on les ouvre
+			if player.has_meta("seen_achievements" if current_id() == "succes" else "seen_diplomacy"):
+				_advance(current_id())
+		"cadeau", "traite":
+			var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
+			if dip:
+				for id in Diplomacy.NATIONS:
+					var s: Dictionary = dip.states[id]
+					if (current_id() == "cadeau" and int(s.gift_day) >= 0) or (current_id() == "traite" and not (s.treaties as Array).is_empty()):
+						_advance(current_id())
+						return
+		"metier":
+			var km2 := get_tree().get_first_node_in_group("kingdom") as Kingdom
+			if km2 and km2.typed_rooms().any(func(r): return ["laboratoire", "sanctuaire_runes", "menagerie", "bureau_architecte"].has((r.type as RoomTypeData).id)):
+				_advance("metier")
+		"evenement":
+			var ach := get_tree().get_first_node_in_group("achievements") as Achievements
+			if ach and ach.counters.keys().any(func(k): return str(k).begins_with("event_")):
+				_advance("evenement")
 		"torche":
 			var grid := get_tree().get_first_node_in_group("build_grid") as BuildGrid
 			if grid:
@@ -310,7 +367,64 @@ func _check_state() -> void:
 						return
 
 
+## Le meilleur d'une valeur parmi les objets portés et ceux du sac.
+func _best_item(f: Callable) -> int:
+	var best := 0
+	var all: Array = player.equipment.slots.values()
+	for e in player.inventory.entries:
+		all.append(e.item)
+	for it in all:
+		if it:
+			best = maxi(best, int(f.call(it)))
+	return best
+
+
+func _has_prefix(prefix: String) -> bool:
+	for e in player.inventory.entries:
+		if e.item and (e.item as ItemData).id.begins_with(prefix):
+			return true
+	return false
+
+
+## Les astuces de la première fois.
+func _check_tips() -> void:
+	if player == null:
+		return
+	var tree := get_tree()
+	for t in TIPS:
+		var id: String = t[0]
+		if tips_seen.has(id):
+			continue
+		var show_it := false
+		match id:
+			"gemme", "rune", "potion":
+				show_it = _has_prefix(id + ("_" if id != "gemme" else ""))
+			"orichalque":
+				show_it = player.inventory.count(Items.get_item("orichalque")) > 0
+			"piege", "levier":
+				var dm := tree.get_first_node_in_group("dungeons") as DungeonManager
+				show_it = dm != null and dm.active and (not dm.traps.is_empty() if id == "piege" else not dm.lever_order.is_empty())
+			"guerre":
+				var dip := tree.get_first_node_in_group("diplomacy") as Diplomacy
+				show_it = dip != null and not dip.wars().is_empty()
+			"malade":
+				var wev := tree.get_first_node_in_group("world_events") as WorldEvents
+				show_it = wev != null and not wev.sick().is_empty()
+			"succes":
+				var ach := tree.get_first_node_in_group("achievements") as Achievements
+				show_it = ach != null and not ach.done.is_empty()
+		if show_it:
+			tips_seen[id] = true
+			player.notify.emit("Astuce : " + t[1])
+			Sound.ui("ui_open")
+			return
+
+
 func _process(delta: float) -> void:
+	_tips_timer -= delta
+	if _tips_timer <= 0.0:
+		_tips_timer = 1.0
+		_check_tips()
 	if _hide_timer >= 0.0:
 		_hide_timer -= delta
 		if _hide_timer < 0.0:
@@ -346,12 +460,15 @@ func _refresh() -> void:
 
 
 func export_state() -> Dictionary:
-	return {"step": step, "progress": progress, "v": VERSION}
+	return {"step": step, "progress": progress, "v": VERSION, "tips": tips_seen.keys()}
 
 
 func import_state(d: Dictionary) -> void:
 	step = int(d.get("step", 0))
 	progress = int(d.get("progress", 0))
+	tips_seen = {}
+	for t in d.get("tips", []):
+		tips_seen[str(t)] = true
 	# version 1 : l'étape « repas » n'existait pas (elle est avant « nuit », 7e étape)
 	if int(d.get("v", 1)) < 2 and step >= 6 and step < 99:
 		step += 1

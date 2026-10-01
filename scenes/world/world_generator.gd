@@ -239,7 +239,8 @@ func _ready() -> void:
 			generate(loaded_seed)
 			SaveGame.apply_pending.call_deferred(self)
 		else:
-			generate(randi() if random_seed_on_start else world_seed)
+			var forced: int = GameState.world_seed
+			generate(forced if forced >= 0 else (randi() if random_seed_on_start else world_seed))
 
 
 func _editor_preview() -> void:

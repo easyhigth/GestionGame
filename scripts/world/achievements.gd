@@ -307,7 +307,7 @@ func _unlock(d: Dictionary) -> void:
 		player.feat.emit("Succès : %s (+%d)" % [d.name, int(d.pts)], Color("ffe08a"))
 		if str(d.title) != "":
 			player.notify.emit("Nouveau titre : « %s » (F1 : succès)." % d.title)
-	Sound.ui("levelup")
+	Sound.ui("achievement")
 	unlocked.emit(d.id)
 
 

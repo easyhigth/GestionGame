@@ -259,6 +259,7 @@ Une fois le Pacte conclu avec Orvane (acte I de l'histoire), les liens font **é
 - **Musiques** (en boucle, avec fondus) : écran titre, jour, nuit (et donjons), combat (boss tout proche ou raid en cours).
 - **Options** : volume général, musique et bruitages séparés.
 - Tous les sons sont fabriqués par programme (`tools/audio_generator.py`, synthèse en Python pur) dans `assets/audio/sfx/` et `assets/audio/music/`. Pour mettre un vrai son, remplace le fichier en gardant son nom (un `.ogg` du même nom est pris en priorité). Le code est dans `scripts/audio/sound.gd` (autoload `Sound` : `Sound.play("hit", position)`).
+- Bruitages des systèmes récents : leviers, piques des pièges, mur secret qui coulisse, potions, sertissage des gemmes, gravure des runes, succès, cloches des événements, tambours de guerre (sièges, invasions, déclarations de guerre), fanfares (tournoi, annexion, victoire de siège), sceau des traités.
 
 ## Jour et nuit
 - Un jour dure 10 minutes (6 h → 20 h) et une nuit 4 minutes (20 h → 6 h). L'heure et le jour s'affichent sous la mini-carte ; le ciel, le soleil et la lune changent avec l'heure.
@@ -267,7 +268,7 @@ Une fois le Pacte conclu avec Orvane (acte I de l'histoire), les liens font **é
 - L'heure et le jour sont sauvegardés. Réglages dans `scripts/world/day_cycle.gd`.
 
 ## Guide des premiers pas
-Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, casser 2 rochers, fabriquer un outil, fabriquer des planches, construire un abri (pièce fermée avec une porte et un lit), poser une torche, survivre à la première nuit. Puis viennent les chapitres « L'âge du fer », « Le village », « Les champs » (houe, semer, récolter, nommer un fermier) et « Le commerce » (vendre, acheter, construire un marché). Chaque objectif atteint est annoncé ; l'avancement est sauvegardé et le panneau disparaît à la fin (`scenes/ui/guide_panel.gd`).
+Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, casser 2 rochers, fabriquer un outil, fabriquer des planches, construire un abri (pièce fermée avec une porte et un lit), poser une torche, survivre à la première nuit. Puis viennent les chapitres « L'âge du fer », « Le village », « Les champs » (houe, semer, récolter, nommer un fermier) et « Le commerce » (vendre, acheter, construire un marché), « L'élevage », « L'eau », « L'aventure » (vaincre un boss de donjon, renforcer un objet à la forge, boire une potion, ouvrir les succès) et « Les voisins » (diplomatie, présent, traité, métier avancé, événement du monde). Des **astuces** s'affichent aussi la première fois qu'une situation se présente (première gemme, rune ou potion, donjon piégé, énigme des leviers, guerre, épidémie, premier succès). Chaque objectif atteint est annoncé ; l'avancement est sauvegardé et le panneau disparaît à la fin (`scenes/ui/guide_panel.gd`).
 
 ## Équipement et artisanat
 - Les personnages sont **nus** au départ (modèles `models/base/`) ; l'équipement s'affiche par-dessus et suit les mouvements du corps.
@@ -281,6 +282,7 @@ Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, ca
 - **Renforcer** de +1 à +10 : +10 % des caractéristiques et +1 point par niveau. Rareté : rare à +4, épique à +7, légendaire à +10. L'objet garde son apparence.
 - Coût : +1 à +3 lingots de fer et or ; +4 à +6 lingots d'or, mithril brut et or ; +7 à +9 lingots de mithril, larme d'esprit et or ; +10 un orichalque, 3 lingots de mithril et 1 000 pièces d'or.
 - **Gemmes** : 1 emplacement, 2 à +4, 3 à +8. Rubis (brûlure, attaque), Saphir (givre, magie), Émeraude (vol de vie, régénération), Topaze (critiques), Améthyste (magie, recharges), Diamant (vie, défense). On les trouve en minant l'or et le fer, sur les boss, dans les grottes, les îles et les donjons.
+- Les bonus des gemmes et des runes de tout l'équipement porté sont plafonnés (par exemple 30 % de critiques, 12 % de vol de vie, +40 % d'attaque).
 - Un objet renforcé se vend plus cher au marchand (+25 % par niveau, +40 or par gemme) et se sauvegarde avec ses gemmes.
 
 ## Combat (temps réel, façon Zelda)
@@ -364,7 +366,7 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 ### Fin de jeu : la Brume
 - Quand l'histoire est finie (ou que tous les donjons sont vaincus), **la Brume s'éveille** : les donjons déjà vaincus affichent « Brume : palier N » à leur entrée.
 - 10 paliers par donjon, à franchir l'un après l'autre : monstres « brumeux » (+4 niveaux par palier), boss « Écho de Brume », lumière violette. Dès le palier 4, le boss a les 4 pouvoirs.
-- Aux paliers 3, 6, 9 et 10 : un **Seigneur de Brume** légendaire (plus grand, plus fort). Son âme donne +3 attaque et +2 défense, une fois par région et par palier.
+- Aux paliers 3, 6, 9 et 10 : un **Seigneur de Brume** légendaire (plus grand, plus fort). Son âme donne +3 attaque et +2 défense, une fois par palier de Seigneur (4 âmes au plus).
 - Trésors : fragments de Brume, gemmes, larmes d'esprit, orichalque et, sur les Seigneurs, parfois une pièce d'équipement légendaire (Lame de l'Éveil, Lance draconique...).
 - Le journal (O) indique le palier le plus haut et le nombre de Seigneurs vaincus. Les paliers sont sauvegardés.
 
@@ -415,6 +417,12 @@ Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur 
 - **Options** (écran titre ou pause, enregistrées dans `user://options.cfg`) : difficulté, distance de la caméra, volume, plein écran, rappel du menu des commandes à l'écran, sauvegarde automatique.
 - **Difficulté** : Facile (monstres −25 % de vie et −30 % de dégâts, raids 40 % plus espacés), Normal, Difficile (monstres +35 % de vie et de dégâts, raids 25 % plus fréquents). Les valeurs sont dans `scripts/save/save_game.gd` (ENEMY_HP, ENEMY_DMG, RAID_DELAY).
 - **Équilibrage** : à niveau égal avec l'équipement de sa tranche de niveau, un monstre normal tombe en 3 à 7 coups et le héros encaisse 12 à 25 coups ; un boss demande 35 à 75 coups et le héros tombe en 7 à 9 de ses coups (ils sont tous annoncés : esquive-les !).
+
+## Tests automatiques
+- Le dossier `tests/` contient 34 tests de jeu (histoire, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
+- Tout lancer : `GODOT=/chemin/vers/godot tests/run_tests.sh` (ou seulement quelques-uns : `tests/run_tests.sh save story`). Il faut l'éditeur Godot 4.7 ; sans écran, `xvfb-run` est utilisé automatiquement. Importer le projet une première fois : `godot --headless --editor --quit --path .`.
+- Le monde des tests est toujours le même (graine 4242, ou `TEST_SEED=...`). Les captures d'écran vont dans `tests/captures/`, les journaux dans `tests/logs/` (ignorés par git).
+- Un test réussi affiche `RÉSULTAT : tout est bon` sans erreur de script ; le lanceur fait le résumé et renvoie un code d'erreur si un test échoue.
 
 ## Feuille de route
 Le jeu a deux piliers : un **RPG d'action en monde ouvert** vu de dessus (héros, exploration libre, donjons, boss, combat en temps réel à la Zelda) et la **construction d'un royaume** (des huttes jusqu'à une capitale d'empire, population de n'importe quelles races, habitants dirigés un par un). Inspiration : l'univers de « Moi, quand je me réincarne en Slime », avec des noms originaux.

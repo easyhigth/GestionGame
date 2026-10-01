@@ -31,6 +31,7 @@ func open() -> void:
 	Sound.ui("ui_open")
 	show()
 	player.ui_open = true
+	player.set_meta("seen_diplomacy", true)
 	get_tree().paused = true
 	_refresh()
 

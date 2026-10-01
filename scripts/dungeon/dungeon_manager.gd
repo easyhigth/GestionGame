@@ -37,7 +37,7 @@ const BOSS_SCENE := preload("res://scenes/enemies/boss.tscn")
 const BRUME_MAX := 10
 const BRUME_LORD_TIERS := [3, 6, 9, 10]
 const BRUME_COLOR := Color("b48cff")
-## Âme d'un Seigneur de Brume (une par région et par palier).
+## Âme d'un Seigneur de Brume (une par palier de Seigneur : 4 au plus, quelle que soit la région).
 const BRUME_LORD_SOUL := {"attack": 3.0, "defense": 2.0}
 ## Siège d'une capitale ennemie (voir Diplomacy) : une place forte générée sous terre, comme un donjon.
 ## Trois vagues de soldats sortent du donjon, puis le champion de la nation ; sa défaite annexe la nation.
@@ -672,7 +672,7 @@ func _on_boss_died(_pos: Vector3) -> void:
 		text = "Palier %d de la Brume dissipé" % brume_tier
 		if r and player:
 			if is_lord_tier(brume_tier):
-				var id := "brume_%s_%d" % [r.id, brume_tier]
+				var id := "brume_seigneur_%d" % brume_tier
 				if not player.souls.has(id):
 					player.absorb_soul(id, BRUME_LORD_SOUL)
 					text = "Âme légendaire du Seigneur de Brume : +3 attaque, +2 défense"
@@ -893,6 +893,7 @@ func _build_siege(id: String) -> void:
 	_add_portal(_siege_spawn + Vector2i(0, 2), "Retraite\nE : lever le siège")
 	# lumière de plein jour
 	_set_lighting(true, null)
+	Sound.ui("war_drums")
 	var scene_root: Node = world.get_parent() if world.get_parent() else get_tree().current_scene
 	var env_node := scene_root.get_node_or_null("Ambiance") as WorldEnvironment
 	if env_node and env_node.environment:
@@ -998,6 +999,7 @@ func _on_champion_died(_pos: Vector3) -> void:
 	_add_portal(_siege_throne + Vector2i(0, -2) + Vector2i(4, 0), "Retour au royaume\nE : remonter")
 	if player:
 		player.gain_xp(400 + 30 * _siege_level())
+	Sound.ui("fanfare")
 	siege_ended.emit(id, true)
 
 
@@ -1158,7 +1160,7 @@ func _pull_lever(it: Dictionary) -> void:
 		return
 	var pivot: Node3D = it.pivot
 	create_tween().tween_property(pivot, "rotation:x", 0.6, 0.25)
-	Sound.play("hit_light", it.pos)
+	Sound.play("lever", it.pos)
 	_lever_done.append(it.symbol)
 	var i := _lever_done.size() - 1
 	if _lever_done[i] != lever_order[i]:
@@ -1188,7 +1190,7 @@ func open_vault() -> void:
 	_vault_seal.clear()
 	if player:
 		player.feat.emit("Salle secrète ouverte !", Color("c8a8ff"))
-	Sound.ui("levelup")
+	Sound.play("stone_grind", player.global_position if player else Vector3.INF)
 
 
 func _open_vault_chest(it: Dictionary) -> void:
@@ -1283,7 +1285,7 @@ func _traps_process(delta: float) -> void:
 		(tr.plate as StandardMaterial3D).albedo_color = Color(0.75, 0.2, 0.15) if warn else Color(0.3, 0.28, 0.27)
 		(tr.spikes as Node3D).position.y = 0.0 if up else -0.55
 		if up and not tr.up:
-			Sound.play("hit_light", tr.pos, -6.0)
+			Sound.play("spikes", tr.pos, -4.0)
 			tr.hit = []
 		tr.up = up
 		if not up:

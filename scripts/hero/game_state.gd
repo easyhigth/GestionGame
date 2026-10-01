@@ -3,3 +3,5 @@ extends Node
 
 ## Le héros créé dans l'écran de création (null = héros par défaut).
 var hero: HeroProfile
+## Graine du prochain monde (-1 : au hasard). Sert aux tests pour toujours générer le même monde.
+var world_seed := -1
