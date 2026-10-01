@@ -10,6 +10,10 @@ extends Node3D
 signal changed
 
 const CHUNK := 16
+## Distance (m) jusqu'à laquelle les blocs sont dessinés.
+const DRAW_DISTANCE := 150.0
+## Morceaux redessinés au plus par image (pas d'à-coups quand une ville apparaît).
+const REBUILDS_PER_FRAME := 6
 const BODY_HEIGHT := 1.6
 const SHADER_OPAQUE := """
 shader_type spatial;
@@ -286,10 +290,21 @@ func _mark(col: Vector2i) -> void:
 
 func _process(_delta: float) -> void:
 	_update_see_through()
-	if not _dirty.is_empty():
-		for c in _dirty.keys():
-			_rebuild_chunk(c)
-		_dirty.clear()
+	if _dirty.is_empty():
+		return
+	# les constructions lointaines (villes, ruines...) ne sont dessinées qu'en approchant :
+	# on refait d'abord les morceaux proches, quelques-uns par image
+	var hero := get_tree().get_first_node_in_group("player") as Node3D
+	var center := Vector2(hero.global_position.x, hero.global_position.z) / CHUNK if hero else Vector2.ZERO
+	var near := []
+	for c in _dirty.keys():
+		var d := (Vector2(c) + Vector2(0.5, 0.5)).distance_to(center) if hero else 0.0
+		if d * CHUNK <= DRAW_DISTANCE:
+			near.append([d, c])
+	near.sort_custom(func(a, b): return a[0] < b[0])
+	for i in mini(near.size(), REBUILDS_PER_FRAME):
+		_rebuild_chunk(near[i][1])
+		_dirty.erase(near[i][1])
 
 
 ## Cache les blocs au-dessus de `height` à moins de `radius` mètres de `center` (0 = pas de coupe).
@@ -359,6 +374,7 @@ func _rebuild_chunk(c: Vector2i) -> void:
 		var mi := MeshInstance3D.new()
 		mi.mesh = st.commit()
 		mi.material_override = _material(tools[tex][1])
+		mi.visibility_range_end = DRAW_DISTANCE + 20.0
 		if (tools[tex][1] as ItemData).block_transparent:
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(mi)
