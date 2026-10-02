@@ -57,6 +57,30 @@ func _rel_mult(buying: bool) -> float:
 	return 1.0 - k if buying else 1.0 + k
 
 
+func _politics() -> WorldPolitics:
+	return _trade.get_tree().get_first_node_in_group("world_politics") as WorldPolitics if _trade and _trade.is_inside_tree() else null
+
+
+## Pénuries et abondances du monde (guerres, caravanes, foires ; voir WorldPolitics).
+func _market_mult(buying: bool) -> float:
+	var pol := _politics()
+	return pol.price_mult(nation, trade_name, buying) if pol else 1.0
+
+
+## Ce qui fait bouger les prix de ce marchand en ce moment (« » si rien).
+func market_note() -> String:
+	var pol := _politics()
+	return pol.market_note(nation, trade_name) if pol else ""
+
+
+## Les prix du stock suivent le marché du jour.
+func reprice() -> void:
+	for e in stock:
+		var it := Items.get_item(e.id) as ItemData
+		if it:
+			e.price = buy_price(it)
+
+
 ## Commerce possible ? (« » si oui, sinon la raison.)
 func refusal() -> String:
 	var dip := _dip()
@@ -77,7 +101,7 @@ func buy_price(it: ItemData) -> int:
 	var v := _trade.value_of(it)
 	if v <= 0.0:
 		return 0
-	return maxi(sell_price(it, 0) + 1, ceili(v * Trade.BUY_MULT * 0.9 * _rel_mult(true)))
+	return maxi(sell_price(it, 0) + 1, ceili(v * Trade.BUY_MULT * 0.9 * _rel_mult(true) * _market_mult(true)))
 
 
 func sell_price(it: ItemData, already := -1) -> int:
@@ -86,7 +110,7 @@ func sell_price(it: ItemData, already := -1) -> int:
 		return 0
 	var n: int = int(sold_count.get(it.id, 0)) if already < 0 else already
 	var sat := maxf(Trade.SATURATION_MIN, 1.0 - Trade.SATURATION_STEP * n)
-	var mult := Trade.SELL_MULT * _rel_mult(false)
+	var mult := Trade.SELL_MULT * _rel_mult(false) * _market_mult(false)
 	if v * mult < 0.5:
 		return 0
 	return maxi(1, roundi(v * mult * sat))

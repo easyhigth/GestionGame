@@ -2532,7 +2532,8 @@ func _add_hamlet_content(holder: Node3D, st: Dictionary) -> void:
 	var cl := get_tree().get_first_node_in_group("city_life")
 	var plate := Label3D.new()
 	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	plate.text = "Hameau de %s" % st.name
+	var ravaged: bool = st.get("ravaged", false)
+	plate.text = "Hameau de %s%s" % [st.name, "\n(ravagé par les morts)" if ravaged else ("\n" + str(Diplomacy.NATIONS.get(st.nation, {}).get("name", "")) if st.has("born") else "")]
 	plate.font_size = 44
 	plate.pixel_size = 0.008
 	plate.outline_size = 10
@@ -2546,8 +2547,13 @@ func _add_hamlet_content(holder: Node3D, st: Dictionary) -> void:
 		t.home = cell_center(c + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-3, 3)))
 		t.display_name = CityLife.random_name(st.nation, rng) if cl else "Villageois"
 		t.lines = ["Bienvenue à %s, voyageur." % st.name, "La route est longue jusqu'à la capitale.", "Méfie-toi des bandits sur les routes, la nuit."]
+		if ravaged:
+			t.lines = ["Les morts sont venus de la nuit... ils ont tout pris.", "On rebâtira. Il faut bien.", "Le château abandonné... on aurait dû s'en méfier."]
+		elif st.has("born") and st.born != st.nation:
+			t.lines = ["Nous avons changé de bannière : %s tient le hameau, maintenant." % Diplomacy.NATIONS.get(st.nation, {}).get("name", ""),
+				"Les soldats sont passés par ici. On fait profil bas.", "Bienvenue à %s, voyageur." % st.name]
 		t.wander = 7.0
-		match k:
+		match k if not ravaged else -1:
 			0:
 				t.role = "merchant"
 				t.trade_name = "Colporteur"

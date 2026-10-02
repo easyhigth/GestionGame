@@ -83,6 +83,35 @@ func _map_origin() -> Vector2:
 	return size / 2.0 + Vector2(0, 10) - center * _scale()
 
 
+## Les armées en marche (et leur chemin restant) et l'événement de saison.
+func _draw_politics() -> void:
+	var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
+	if pol == null:
+		return
+	for ar in pol.armies:
+		var col := pol._color(ar.nation)
+		var at: Vector2 = pol._at(ar.path, float(ar.dist))[0]
+		var q := cell_to_screen(at)
+		# le chemin qu'il lui reste, en pointillés
+		var idx: int = pol._at(ar.path, float(ar.dist))[1]
+		var prev := q
+		for i in range(idx, ar.path.size(), 3):
+			var n := cell_to_screen(Vector2(ar.path[i]))
+			draw_dashed_line(prev, n, Color(col, 0.55), 1.5, 4.0)
+			prev = n
+		# l'étendard
+		draw_line(q + Vector2(0, 6), q + Vector2(0, -10), Color("2a1e14"), 2.0)
+		draw_colored_polygon(PackedVector2Array([q + Vector2(0, -10), q + Vector2(10, -7), q + Vector2(0, -4)]), col)
+		draw_circle(q + Vector2(0, 6), 3.0, col.darkened(0.3))
+		if zoom >= 1.5:
+			_text_center("%s → %s" % [pol._army_name(ar), pol._goal_name(ar)], q + Vector2(0, -16), 10, col.lightened(0.4))
+	if not pol.event.is_empty() and pol.event.kind in ["foire", "moissons", "tournoi"]:
+		var c := pol.city_of(pol.event.nation)
+		if not c.is_empty() and world.is_revealed(c.center):
+			var q := cell_to_screen(Vector2(c.center))
+			_text_center("★ " + WorldPolitics.EVENT_NAMES[pol.event.kind], q + Vector2(0, 32), 12, Color("ffd24a"))
+
+
 func cell_to_screen(c: Vector2) -> Vector2:
 	return _map_origin() + c * _scale()
 
@@ -314,9 +343,15 @@ func _draw_places() -> void:
 	for st in world.structure_sites:
 		if st.kind == "hamlet" and world.is_revealed(st.cell):
 			var q := cell_to_screen(Vector2(st.cell))
-			draw_colored_polygon(PackedVector2Array([q + Vector2(-4, 4), q + Vector2(-4, -1), q + Vector2(0, -5), q + Vector2(4, -1), q + Vector2(4, 4)]), Color("e8c890"))
+			var hcol: Color = Diplomacy.NATIONS.get(st.nation, {}).get("color", Color("e8c890"))
+			if st.get("ravaged", false):
+				hcol = WorldPolitics.UNDEAD.color.darkened(0.3)
+			draw_colored_polygon(PackedVector2Array([q + Vector2(-4, 4), q + Vector2(-4, -1), q + Vector2(0, -5), q + Vector2(4, -1), q + Vector2(4, 4)]), hcol.lightened(0.25))
+			if st.has("born") and st.born != st.nation:
+				draw_arc(q, 7.0, 0, TAU, 14, hcol, 2.0)
 			if zoom >= 2.0:
-				_text_center(st.name, q + Vector2(0, -12), 10, Color("f2dca0"))
+				_text_center(st.name + (" (ravagé)" if st.get("ravaged", false) else ""), q + Vector2(0, -12), 10, Color("f2dca0"))
+	_draw_politics()
 	for city in world.cities:
 		var c: Vector2i = city.center
 		if not world.is_revealed(c):

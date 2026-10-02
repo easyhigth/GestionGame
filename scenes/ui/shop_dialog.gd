@@ -74,11 +74,14 @@ func _refresh(message: String, focus := "") -> void:
 		return
 	var sub: Label
 	if city:
+		city.reprice()
 		_box.add_child(MenuKit.title("%s — %s" % [city.trade_name, city.seller_name], 20))
 		var nat: Dictionary = Diplomacy.NATIONS.get(city.nation, {})
 		var no := city.refusal()
-		sub = MenuKit.label("Marchand de %s (%s)%s" % [city.city_name, nat.get("name", ""),
-			"  ·  " + no if no != "" else "  ·  prix selon tes relations avec sa nation"], 11, MenuKit.C_BAD if no != "" else MenuKit.C_DIM)
+		var market := city.market_note()
+		sub = MenuKit.label("Marchand de %s (%s)%s%s" % [city.city_name, nat.get("name", ""),
+			"  ·  " + no if no != "" else "  ·  prix selon tes relations avec sa nation", ("  ·  " + market) if market != "" else ""],
+			11, MenuKit.C_BAD if no != "" else MenuKit.C_DIM)
 	else:
 		_box.add_child(MenuKit.title("Marchand ambulant — %s" % target.get("villager_name"), 20))
 		sub = MenuKit.label("Venu de %s  ·  spécialité : %s  ·  repart le jour %d au matin%s" % [

@@ -26,11 +26,14 @@ const COMMANDS := {
 	"obelisques": ["/obelisques", "active tous les obélisques (voyage rapide partout)"],
 	"tuer": ["/tuer", "terrasse les monstres à moins de 30 m"],
 	"graine": ["/graine", "la graine du monde"],
+	"monde": ["/monde", "guerres entre nations, armées en marche, prix des capitales et nouvelles"],
+	"guerre": ["/guerre <nation> <nation>", "déclenche une guerre entre deux nations (ex. /guerre karg givre)"],
+	"evenement": ["/evenement <foire|tournoi|moissons|morts>", "lance l'événement de saison dans une capitale"],
 	"effacer": ["/effacer", "vide le terminal"],
 }
 const ALIASES := {"help": "aide", "map": "carte", "tp": "tp", "give": "donner", "heal": "soin", "god": "dieu",
 	"speed": "vitesse", "time": "heure", "weather": "meteo", "météo": "meteo", "kill": "tuer", "seed": "graine",
-	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp"}
+	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp", "world": "monde", "war": "guerre", "événement": "evenement", "event": "evenement"}
 const MAX_LINES := 14
 ## Temps de calcul accordé par image au dévoilement de la carte (le jeu reste fluide pendant ce temps).
 const REVEAL_BUDGET_USEC := 18000
@@ -228,6 +231,29 @@ func run(text: String) -> bool:
 			return _cmd_map()
 		"lieux":
 			return _cmd_places()
+		"monde":
+			return _cmd_world()
+		"guerre":
+			var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
+			if pol == null or args.size() < 2:
+				_err("Usage : /guerre <nation> <nation>  (givre, sylvae, sables, karg, cendres)")
+				return false
+			if pol.start_war(_nation_id(str(args[0])), _nation_id(str(args[1]))):
+				_ok("La guerre est déclarée.")
+				return true
+			_err("Impossible : nations inconnues, ou déjà en guerre.")
+			return false
+		"evenement":
+			var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
+			var kind := _plain(str(args[0])) if not args.is_empty() else ""
+			if pol == null or not kind in WorldPolitics.SEASON_EVENTS:
+				_err("Usage : /evenement <foire|tournoi|moissons|morts>")
+				return false
+			if pol.start_event(kind, _nation_id(str(args[1])) if args.size() > 1 else ""):
+				_ok("Événement lancé : %s." % WorldPolitics.EVENT_NAMES[kind])
+				return true
+			_err("Impossible pour l'instant.")
+			return false
 		"tp":
 			return _cmd_tp(args)
 		"pos":
@@ -401,6 +427,42 @@ func revealing() -> bool:
 
 func _sites(kind: String) -> Array:
 	return world.structure_sites.filter(func(s): return s.kind == kind)
+
+
+## Une nation par son identifiant, son nom ou le nom de sa capitale.
+func _nation_id(q: String) -> String:
+	var p := _plain(q)
+	for id in Diplomacy.NATIONS:
+		if _plain(id) == p or _plain(Diplomacy.NATIONS[id].name).contains(p):
+			return id
+	for c in world.cities:
+		if _plain(c.name).begins_with(p):
+			return c.nation
+	return p
+
+
+func _cmd_world() -> bool:
+	var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
+	if pol == null:
+		_err("Le monde n'est pas encore prêt.")
+		return false
+	var wars: Array = pol.wars_text()
+	_say("[color=#ffd24a]Guerres :[/color] " + (" · ".join(wars) if not wars.is_empty() else "aucune"))
+	for ar in pol.armies:
+		var at: Vector3 = pol.army_pos(ar)
+		_say("%s → %s (x %d, z %d, %d %%)" % [pol._army_name(ar), pol._goal_name(ar), floori(at.x), floori(at.z), roundi(100.0 * float(ar.dist) / maxf(1.0, float(ar.len)))])
+	for c in world.cities:
+		var notes := []
+		for t in ["Forgeron", "Épicier", "Joaillier", "Maçon"]:
+			var m := pol.price_mult(c.nation, t, true)
+			if absf(m - 1.0) > 0.05:
+				notes.append("%s %+d %%" % [WorldPolitics.CAT_NAMES[pol.category(t)], roundi((m - 1.0) * 100.0)])
+		_say("%s : %s" % [c.name, ", ".join(notes) if not notes.is_empty() else "prix normaux"])
+	if not pol.event.is_empty():
+		_say("[color=#ffd24a]Événement :[/color] %s" % WorldPolitics.EVENT_NAMES[pol.event.kind])
+	for n in pol.news.slice(-4):
+		_say("Jour %d — %s" % [int(n[0]), n[1]])
+	return true
 
 
 func _cmd_places() -> bool:
