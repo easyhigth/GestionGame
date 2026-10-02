@@ -28,6 +28,18 @@ const WILD := {
 const TAME_DISTANCE := 4.5
 ## Petits : au plus ce nombre de bêtes par espèce ; il faut assez de nourriture en réserve.
 const MAX_PER_SPECIES := 6
+
+
+## Bêtes par espèce : 6, +2 par mangeoire ou auge en plus de la première (12 au plus).
+func max_per_species() -> int:
+	var grid := get_tree().get_first_node_in_group("build_grid")
+	var barns := 0
+	if grid:
+		for k in grid.furniture:
+			var it: ItemData = grid.furniture[k].item
+			if it and it.id in ["mangeoire", "auge"]:
+				barns += 1
+	return mini(12, MAX_PER_SPECIES + 2 * maxi(0, barns - 1))
 const BREED_FOOD := 40.0
 ## Produits laissés au sol près d'une bête au plus.
 const MAX_ON_GROUND := 3
@@ -216,7 +228,7 @@ func _on_day(_d: int) -> void:
 		return
 	for sp in FarmAnimal.SPECIES:
 		var adults := domestic().filter(func(a): return a.species == sp and not a.is_baby())
-		if adults.size() < 2 or count(sp) >= MAX_PER_SPECIES:
+		if adults.size() < 2 or count(sp) >= max_per_species():
 			continue
 		var mother: FarmAnimal = adults[randi() % adults.size()]
 		var baby := spawn(sp, mother.global_position + Vector3(0.6, 0, 0.4), true, mother.model_index)

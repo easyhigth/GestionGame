@@ -299,7 +299,28 @@ func _on_hurt(_amount: int, source: Node) -> void:
 		_threat = source
 
 
+## Loin du héros (plus de 60 m) et sans danger, l'habitant ne se calcule qu'un pas de physique sur 3.
+var _lod_far := false
+var _lod_acc := 0.0
+var _lod_check := randf() * 0.5
+var _lod_phase := randi() % 3
+
+
 func _physics_process(delta: float) -> void:
+	_lod_check -= delta
+	if _lod_check <= 0.0:
+		_lod_check = 0.5
+		var pl := get_tree().get_first_node_in_group("player") as Node3D
+		_lod_far = pl != null and not companion and _threat == null and is_alive() \
+				and pl.global_position.distance_squared_to(global_position) > 60.0 * 60.0
+	if _lod_far:
+		_lod_acc += delta
+		if Engine.get_physics_frames() % 3 != _lod_phase:
+			return
+		delta = _lod_acc
+		_lod_acc = 0.0
+	elif _lod_acc > 0.0:
+		_lod_acc = 0.0
 	_combat_step(delta)
 	if not is_alive():
 		_ko_left -= delta
@@ -1123,3 +1144,10 @@ func total_stats() -> Dictionary:
 
 func display_title() -> String:
 	return "%s (%s)" % [villager_name, race_title()]
+
+
+## Compagnons d'expédition possibles : 2, 3 dès la Ville, 4 en Capitale d'empire (rang du royaume).
+static func max_companions(tree: SceneTree) -> int:
+	var k := tree.get_first_node_in_group("kingdom")
+	var r: int = k.rank if k else 0
+	return 2 + (1 if r >= 4 else 0) + (1 if r >= 6 else 0)

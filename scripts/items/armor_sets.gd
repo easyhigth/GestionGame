@@ -44,6 +44,7 @@ static func register(db: Node) -> void:
 			it.slot = model.slot
 			it.model_ref = pc[3]
 			it.tint = Color(m.main)
+			it.set_meta("ornament", mid)
 			it.defense = maxi(1, roundi(float(pc[4]) * float(DEF_MULT[mid])))
 			it.attack = int(pc[5]) * (1 + int(DEF_MULT[mid]))
 			it.magic = int(MAGIC.get(mid, 0))

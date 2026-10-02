@@ -174,6 +174,16 @@ func _process(_d) -> bool:
 		get_first_node_in_group("day_cycle").hour = 10.0
 		var c0: Vector2i = get_meta("c0")
 		var h0: int = roundi(w.terrain_height(c0))
+		# un enclos de barrières de bouleau et un muret de granite qui se raccordent
+		var fence = items.get_item("barriere_bouleau"); var wall = items.get_item("muret_granite")
+		check("murets et barrières (%d + %d)" % [12, 9], fence != null and wall != null and str(fence.get_meta("shape")) == "fence")
+		for i in 5:
+			for j in 5:
+				if i == 0 or j == 0 or i == 4 or j == 4:
+					w.build.place_block(Vector3i(c0.x + 6 + i, roundi(w.terrain_height(Vector2i(c0.x + 6 + i, c0.y - 9 + j))), c0.y - 9 + j), fence)
+		for i in 6:
+			w.build.place_block(Vector3i(c0.x + i, roundi(w.terrain_height(Vector2i(c0.x + i, c0.y - 10))), c0.y - 10), wall)
+		check("le muret bloque le passage comme un bloc", w.build.body_blocked(Vector2i(c0.x + 2, c0.y - 10), float(roundi(w.terrain_height(Vector2i(c0.x + 2, c0.y - 10))))))
 		p.global_position = Vector3(c0.x + 6.5, h0 + 0.1, c0.y - 4.5)
 		p.cam_yaw = deg_to_rad(90.0)
 		p.cam_pitch = deg_to_rad(28.0)
@@ -201,6 +211,20 @@ func _process(_d) -> bool:
 	if later("ui2", 700):
 		shot("co_04_armures.png")
 		inv_ui.close()
+		# galerie des panoplies : casque, heaume, plastron et bouclier de chaque matériau
+		var layer := CanvasLayer.new(); layer.layer = 120; root.add_child(layer); set_meta("layer", layer)
+		var bg := ColorRect.new(); bg.color = Color(0.12, 0.1, 0.09); bg.size = Vector2(1280, 720); layer.add_child(bg)
+		var grid := GridContainer.new(); grid.columns = 10; layer.add_child(grid); grid.position = Vector2(8, 20); grid.add_theme_constant_override("h_separation", 6); grid.add_theme_constant_override("v_separation", 22); grid.scale = Vector2(0.76, 0.76)
+		for piece in ["casque", "heaume", "plastron", "bouclier"]:
+			for m in ["cuivre", "bronze", "os", "acier", "argent", "or", "obsidienne", "mithril", "orichalque", "draconique"]:
+				var tr := TextureRect.new(); tr.custom_minimum_size = Vector2(118, 150); tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				tr.texture = items.get_icon(items.get_item("pan_%s_%s" % [piece, m]))
+				grid.add_child(tr)
+		start("pano")
+	if later("pano", 900):
+		shot("co_07_panoplies.png")
+		get_meta("layer").queue_free()
 		var sg = root.get_node("SaveGame")
 		check("sauvegarde", sg.save_game("3"))
 		sg.load_game("3")

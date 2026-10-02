@@ -413,7 +413,7 @@ Règles :
 - Les blocs ne sont dessinés qu'autour du héros (environ 150 m), quelques morceaux par image : les grandes constructions apparaissent sans à-coup.
 
 ## Catalogue de construction façon Minecraft (283 blocs) et panoplies
-- **316 blocs de construction** (dont 46 dalles et 33 escaliers posables dans 4 sens), textures dessinées par le jeu, dans l'onglet **Construction** de l'artisanat, rangés par famille :
+- **337 blocs de construction** (dont 46 dalles, 33 escaliers posables dans 4 sens, 12 murets et 9 barrières), textures dessinées par le jeu, dans l'onglet **Construction** de l'artisanat, rangés par famille :
   - **Pierres** : 12 pierres (pierre, granite, diorite, andésite, basalte, calcaire, grès, grès rouge, schiste, obsidienne, quartz, prismarine) en pavés, polie, briques, petites briques, sculptée et briques fissurées, plus les pavés moussus (table du tailleur de pierre) ;
   - **Bois** : 9 essences (chêne, bouleau, sapin, acajou, ébène, cerisier, acacia, saule, palmier) en planches, rondins, bois écorcé et parquet. Chaque région a ses arbres : bouleau des prairies et toundras, sapin des forêts et montagnes, acajou et palmier de la jungle, cerisier du bois enchanté, acacia du désert, saule et ébène des marais...
   - **16 couleurs** de laine, de béton, de terre cuite, de terre cuite émaillée et de verre teinté, grâce à **16 teintures** (os : blanc, charbon : noir, baies : rouge, blé : jaune, fibres : vert, lazurite : bleu, et les mélanges : orange, rose, cyan, violet, magenta...) ;
@@ -528,7 +528,7 @@ Pour les héros de haut niveau (jusqu'au niveau 1000), le **Portail des Failles*
 - **Voyageurs** : des campements de voyageurs sont dispersés dans le monde (réglage **Traveler Density** des régions). Leurs races dépendent de la région (**Recruit Races** : nains et ogres en montagne, fées et esprits au bois enchanté, démons et onis dans les cendres...). Chacun a un niveau, un métier où il excelle et un second talent.
 - **E** près d'un voyageur : il se présente et dit ce qu'il demande pour rejoindre ton village (des matériaux selon son métier, et de l'or pour les plus expérimentés). Il faut aussi de la place : la population maximale vaut 8 + les lits de tes maisons et dortoirs. Une fois recruté, il part pour ton village où tu peux lui donner un poste.
 - **Prisonniers** : chaque donjon retient un prisonnier (dans une petite cage) qui te rejoint sans rien demander.
-- **Compagnons d'expédition** : dans la fiche d'un habitant (E près de lui), coche « Compagnon d'expédition » (2 au plus). Il te suit partout (voyage par obélisque, donjons, réveil au village), défend le héros et progresse avec toi (son niveau suit le tien). Donne-lui de bonnes armes et armures ! Points verts sur la mini-carte.
+- **Compagnons d'expédition** : dans la fiche d'un habitant (E près de lui), coche « Compagnon d'expédition » (2 au plus, 3 quand le royaume est une Ville, 4 en Capitale d'empire). Il te suit partout (voyage par obélisque, donjons, réveil au village), défend le héros et progresse avec toi (son niveau suit le tien). Donne-lui de bonnes armes et armures ! Points verts sur la mini-carte.
 - **Raids** : de temps en temps (premier raid après 8 minutes, puis toutes les 10 à 14 minutes, réglable dans le nœud **Menaces**), une bande de pillards attaque le village. Le raid est annoncé 45 secondes à l'avance avec sa direction. La bande dépend de ton niveau (gobelins, horde d'orcs, clan des ogres, légion des cendres) et grossit avec le rang de ton royaume.
 - Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
 - Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
@@ -671,11 +671,21 @@ Audit fait sur tout le jeu (profilage des scripts, du moteur, des nœuds et des 
 - **Escaliers** : 33 escaliers (pierres polies et en briques, tous les bois), posés dans le sens du regard, qu'on monte sans sauter (deux demi-marches). 316 blocs de construction en tout.
 - **Failles** : elles étaient toutes pareilles. 5 thèmes d'arène (cristal, lave, glace, sylvestre, abysses), 3 dispositions (couronne de piliers, croix de murets, quatre gros piliers), une taille qui varie, et des **modificateurs** à la Diablo dès le rang 3 (Rapides, Robustes, Enragés, Explosifs, Nombreux ; 2 dès le rang 10, 3 dès le rang 25), chacun ajoutant un objet au trésor du gardien. Le panneau du portail montre le thème et les modificateurs du rang choisi.
 
+**Deuxième passe**
+- **Physique** : mesure fiable (médiane sur 300 pas). Les monstres loin du héros (plus de 45 m, au calme) ne se calculent plus qu'un pas de physique sur 4, les habitants à plus de 60 m un sur 3 (le temps est cumulé : rien n'est ralenti). Physique au village : ~4,5-5,5 ms → 3,4 ms par pas ; les monstres ne coûtent presque plus rien.
+- **Plafonds qui grandissent avec la progression** :
+  - familiers qui te suivent : 3, 4 au niveau 100, 5 au niveau 300 ;
+  - compagnons d'expédition : 2, 3 quand le royaume devient une Ville, 4 en Capitale d'empire ;
+  - quêtes en cours : 4, +1 par rang du royaume à partir du Village (7 au plus) ;
+  - bêtes par espèce : 6, +2 par mangeoire ou auge en plus de la première (12 au plus).
+- **Murets et barrières** : 12 murets (un par pierre) et 9 barrières (une par bois) qui se raccordent tout seuls aux murets, barrières et murs voisins ; ils bloquent le passage comme un bloc. 337 blocs de construction en tout.
+- **Panoplies** : chaque matériau a ses ornements en blocs, placés d'après la pièce (donc à la taille de chaque race) : rivets (cuivre, acier), cimier et gemme rouge (bronze, or), pointes d'os, cristaux d'obsidienne lumineux, gemmes d'argent, runes de mithril, flammes d'orichalque, cornes et écailles draconiques. Les boucliers prennent entièrement la couleur du matériau (l'emblème doré reste).
+
 **Limites qui restent (choix ou coût)**
-- La **physique** du moteur (déplacements des personnages contre le décor) coûte 3 à 5 ms par image au village : c'est maintenant le plus gros poste, devant tous les scripts réunis. Les monstres loin du héros ne calculent déjà presque rien.
-- Les **armures** des panoplies réutilisent les modèles en fer et en cuir, teints de la couleur du matériau (pas de modèle propre à chaque matériau).
-- Plafonds de jeu volontaires : 3 familiers, 2 compagnons d'expédition, 4 quêtes en cours, 6 bêtes par espèce, raffinage +15, enchantements rang V, 5 emplacements d'enchantement.
-- Les escaliers et dalles sont les seules formes de blocs (pas de murets, barrières ou blocs en pente).
+- Le moteur garde un coût de base (~1,4 ms de physique) et les habitants proches du héros se calculent à chaque pas.
+- Les armures restent bâties sur les formes en fer et en cuir (ornements et couleurs propres, mais pas de silhouette propre à chaque matériau).
+- Formes de blocs : plein, dalle, escalier, muret, barrière (pas de blocs en pente ni de portes de barrière).
+- Plafonds volontaires : raffinage +15, enchantements rang V, 5 emplacements d'enchantement, 8 familiers en tout (10 avec la ménagerie).
 
 ## Tests automatiques
 - Le dossier `tests/` contient 53 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).

@@ -11,6 +11,13 @@ signal quest_completed(q: Dictionary)
 
 const MAX_OFFERS := 3
 const MAX_ACTIVE := 4
+
+
+## Quêtes en cours possibles : 4, +1 par rang du royaume à partir du Village (7 au plus).
+static func max_active(tree: SceneTree) -> int:
+	var k := tree.get_first_node_in_group("kingdom")
+	var r: int = k.rank if k else 0
+	return mini(7, MAX_ACTIVE + maxi(0, r - 1))
 const OFFER_EVERY := 75.0
 ## Quêtes réussies pour devenir ami.
 const FRIEND_AT := 3
@@ -223,7 +230,7 @@ static func _direction(from: Vector3, to: Vector3) -> String:
 # ---------------------------------------------------------------- accepter, suivre, rendre
 
 func accept(q: Dictionary) -> bool:
-	if q.state != "offer" or active().size() >= MAX_ACTIVE:
+	if q.state != "offer" or active().size() >= max_active(get_tree()):
 		return false
 	q.state = "active"
 	if q.type == "chasser":

@@ -244,9 +244,16 @@ static func parts_for(scene: PackedScene, model: String) -> Array:
 	if _tint_cache.has(key):
 		return _tint_cache[key]
 	var tint := Color(model.get_slice("*", 1))
+	var mat := model.get_slice("*", 2) if model.get_slice_count("*") > 2 else ""
 	var out := []
 	for part in library_parts(scene).get(model.get_slice("*", 0), []):
-		out.append([part[0], tinted_mesh(part[1], tint)])
+		# un bouclier se teint en entier (sauf son emblème doré)
+		out.append([part[0], tinted_mesh(part[1], tint, model.begins_with("shield"))])
+		# les ornements du matériau (panoplies), placés d'après la pièce
+		if mat != "":
+			var orn := ArmorOrnaments.mesh(mat, String(part[0]), (part[1] as Mesh).get_aabb())
+			if orn:
+				out.append([part[0], orn])
 	_tint_cache[key] = out
 	return out
 
@@ -256,17 +263,18 @@ static var _tint_cache := {}
 
 ## Copie d'un maillage dont les couleurs ternes (métal, cuir) prennent la teinte ; les couleurs vives
 ## (dorures, tissus, gemmes) restent.
-static func tinted_mesh(m: Mesh, tint: Color) -> Mesh:
+static func tinted_mesh(m: Mesh, tint: Color, strong := false) -> Mesh:
 	var copy := m.duplicate() as Mesh
 	for i in copy.get_surface_count():
 		var mat := copy.surface_get_material(i) as BaseMaterial3D
 		if mat == null:
 			continue
 		var c := mat.albedo_color
-		if c.s > 0.55 or mat.emission_enabled:
+		var gold := c.h > 0.07 and c.h < 0.19 and c.s > 0.35
+		if mat.emission_enabled or (gold if strong else c.s > 0.55):
 			continue
 		var nm := mat.duplicate() as BaseMaterial3D
-		var l := clampf(c.get_luminance() * 1.35, 0.25, 1.15)
+		var l := clampf(c.get_luminance() * 1.35, 0.25, 1.15) if not strong else clampf(c.get_luminance() * 1.8, 0.6, 1.15)
 		nm.albedo_color = Color(minf(1.0, tint.r * l), minf(1.0, tint.g * l), minf(1.0, tint.b * l), c.a)
 		copy.surface_set_material(i, nm)
 	return copy

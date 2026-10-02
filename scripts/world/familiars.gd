@@ -9,6 +9,13 @@ extends Node3D
 ## Familiers qui suivent le héros, et en tout (les autres vivent au village et le défendent).
 const MAX := 3
 const MAX_TOTAL := 8
+
+
+## Familiers qui suivent le héros : 3, 4 au niveau 100, 5 au niveau 300.
+static func max_team(tree: SceneTree) -> int:
+	var p := tree.get_first_node_in_group("player")
+	var lv: int = p.level if p and "level" in p else 1
+	return MAX + (1 if lv >= 100 else 0) + (1 if lv >= 300 else 0)
 ## Ordres (touche P) : suivre, attendre ici, attaquer la cible du héros.
 const ORDERS := ["suivre", "attendre", "attaquer"]
 const ORDER_TEXT := {"suivre": "Suivez-moi !", "attendre": "Attendez ici !", "attaquer": "Attaquez ma cible !"}
@@ -113,7 +120,7 @@ func try_interact(p: Player) -> bool:
 func tame(e: Enemy) -> Dictionary:
 	var used := list.map(func(x): return x.name)
 	var free := NAMES.filter(func(n): return not used.has(n))
-	var place := "equipe" if team().size() < MAX else "village"
+	var place := "equipe" if team().size() < max_team(get_tree()) else "village"
 	var entry := {"data": e.data.resource_path, "level": e.level, "name": free.pick_random() if not free.is_empty() else "Familier",
 		"evo": 0, "kills": 0, "down": 0.0, "node": null, "place": place}
 	list.append(entry)
@@ -131,7 +138,7 @@ func tame(e: Enemy) -> Dictionary:
 		if place == "equipe":
 			player.notify.emit("%s te suivra partout et combattra avec toi. Chaque victoire le fait progresser : il évoluera." % entry.name)
 		else:
-			player.notify.emit("Tu as déjà %d familiers avec toi : %s part vivre au village et le défendra." % [MAX, entry.name])
+			player.notify.emit("Tu as déjà %d familiers avec toi : %s part vivre au village et le défendra." % [max_team(get_tree()), entry.name])
 	return entry
 
 
@@ -203,9 +210,9 @@ func cycle_order() -> String:
 
 ## Envoie un familier au village, ou le rappelle auprès du héros. Vrai si c'est fait.
 func set_place(entry: Dictionary, place: String) -> bool:
-	if place == "equipe" and team().size() >= MAX:
+	if place == "equipe" and team().size() >= max_team(get_tree()):
 		if player:
-			player.notify.emit("Déjà %d familiers avec toi." % MAX)
+			player.notify.emit("Déjà %d familiers avec toi." % max_team(get_tree()))
 		return false
 	entry.place = place
 	_respawn_all()
