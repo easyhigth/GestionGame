@@ -313,7 +313,7 @@ func _tournament_step() -> void:
 	d.display_name = c[1]
 	d.loot = []
 	e.data = d
-	e.level = player.level + int(current.round)
+	e.level = player.power_level() + int(current.round)
 	e.power = 1.2 + 0.06 * e.level
 	e.set_meta("tournoi", true)
 	w.add_child(e)

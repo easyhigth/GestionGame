@@ -504,9 +504,9 @@ func apply_pending(world: WorldGenerator) -> void:
 			if not TalentTree.node(id).is_empty():
 				p.talents[id] = true
 		p.hunger = float(pd.get("hunger", Player.HUNGER_MAX))
-		var slots: Array = pd.get("ability_slots", ["", "", "", ""])
-		p.ability_slots = ["", "", "", ""]
-		for i in mini(4, slots.size()):
+		var slots: Array = pd.get("ability_slots", [])
+		p.ability_slots = ["", "", "", "", "", "", "", "", "", ""]
+		for i in mini(10, slots.size()):
 			p.ability_slots[i] = str(slots[i])
 		p.hero_evo = int(pd.get("hero_evo", 0))
 		p._apply_evo_look()

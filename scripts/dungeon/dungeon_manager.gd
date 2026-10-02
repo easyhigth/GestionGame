@@ -924,7 +924,7 @@ func _siege_process(delta: float) -> void:
 
 
 func _siege_level() -> int:
-	return maxi(3, player.level if player else 5)
+	return maxi(3, player.power_level() if player else 5)
 
 
 func _spawn_siege_wave() -> void:

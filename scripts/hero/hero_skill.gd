@@ -207,11 +207,13 @@ func activate() -> bool:
 		var pick: Array = pool.pick_random()
 		kind = pick[0]
 		prm = pick[1]
+	if data.category == "mystique":
+		_mythic_intro(prm)
 	call("_a_" + kind, prm)
 	Sound.play("cast", owner.global_position + Vector3(0, 1, 0), -2.0)
 	cooldown_left = data.cooldown * SkillData.CD_SCALE[tier] * (1.0 - clampf(p("cdr_pct"), 0.0, 0.6))
 	owner.visual.flash(Color(data.color, 0.4), 0.15)
-	owner.feat.emit(current_name() + " !", data.color.lightened(0.25))
+	owner.feat.emit(("✦ " + current_name() + " ✦") if data.category == "mystique" else current_name() + " !", data.color.lightened(0.25))
 	activated.emit()
 	return true
 
@@ -279,6 +281,9 @@ func _a_nova(prm: Dictionary) -> void:
 		_hit(e, _dmg(prm), 7.0, prm)
 	if prm.has("heal"):
 		owner.health.heal(roundi(owner.health.max_health * float(prm["heal"])))
+	# Fimbulvetr : un blizzard reste sur place
+	if prm.has("field"):
+		_a_slow_field({"radius": r * 0.6, "dps": 1.0, "factor": 0.3, "dur": 8})
 
 
 func _a_volley(prm: Dictionary) -> void:
@@ -380,6 +385,12 @@ func _a_barrier(prm: Dictionary) -> void:
 
 func _a_stun(prm: Dictionary) -> void:
 	var r := _radius(prm, "radius", 4.0)
+	# Fureur de Gaïa : des pics de roche jaillissent partout
+	if str(prm.get("fx", "")) == "rocks":
+		for i in 26:
+			var a := randf() * TAU
+			var pos := owner.global_position + Vector3(cos(a), 0, sin(a)) * randf_range(2.0, r)
+			SkillFX.falling(owner, pos, Color("9a7a5a"), "spike", 1.3, func(): pass, 0.2 + i * 0.03)
 	SkillFX.ring(owner, owner.global_position, r, data.color, 0.5)
 	_burst(owner.global_position, 24, r * 1.5)
 	for e in _enemies(owner.global_position, r):
@@ -456,12 +467,17 @@ func _a_meteor(prm: Dictionary) -> void:
 	var targets := []
 	if owner.lock_target and is_instance_valid(owner.lock_target):
 		targets.append(owner.lock_target.global_position)
-	var near := _enemies(owner.global_position, 12.0)
+	var area := float(prm.get("area", 12.0))
+	var near := _enemies(owner.global_position, area)
 	near.sort_custom(func(a, b): return a.global_position.distance_to(owner.global_position) < b.global_position.distance_to(owner.global_position))
 	for e in near:
 		targets.append(e.global_position)
 	while targets.size() < n:
-		targets.append(owner.global_position + _forward() * (3.0 + targets.size() * 1.5) + Vector3(randf_range(-1, 1), 0, randf_range(-1, 1)))
+		if prm.has("area"):
+			var a := randf() * TAU
+			targets.append(owner.global_position + Vector3(cos(a), 0, sin(a)) * randf_range(2.0, area))
+		else:
+			targets.append(owner.global_position + _forward() * (3.0 + targets.size() * 1.5) + Vector3(randf_range(-1, 1), 0, randf_range(-1, 1)))
 	var dmg := _dmg(prm)
 	for i in n:
 		var pos: Vector3 = targets[i]
@@ -602,3 +618,153 @@ func _a_blink(prm: Dictionary) -> void:
 		SkillFX.ring(owner, pos, 2.5, data.color, 0.35)
 		for e in _enemies(pos, 2.5):
 			_hit(e, _dmg(prm), 5.0)
+
+
+# ---------------------------------------------------------------- mystiques
+
+## Mise en scène des compétences mystiques : le temps ralentit, une colonne de lumière monte du héros,
+## l'écran s'illumine, des ondes de choc se succèdent et la terre tremble.
+func _mythic_intro(prm: Dictionary) -> void:
+	var c := owner.global_position
+	var r := float(prm.get("radius", prm.get("area", 12.0)))
+	_tfx().slow_motion(0.35, 1.1)
+	SkillFX.pillar(owner, c, data.color.lightened(0.3), 40.0, 1.6, 1.4)
+	SkillFX.screen_flash(owner, data.color.lightened(0.5), 0.7, 0.5)
+	SkillFX.shockwave(owner, c, r, data.color, 4, 0.9)
+	VoxelBurst.spawn(owner, c + Vector3(0, 0.4, 0), data.color, 120, 9.0, 0.16, 1.6, "up", -1.0)
+	VoxelBurst.spawn(owner, c + Vector3(0, 0.2, 0), data.color.lightened(0.4), 80, r * 0.8, 0.14, 1.0, "ring", 0.0)
+	owner.shake(2.2)
+	Sound.ui("war_drums")
+
+
+## Frappes venues du ciel sur les ennemis autour du héros (épées géantes, éclairs, colonnes de feu ou de
+## lumière, pics de glace, lames d'ombre). `count` frappes ; s'il y a moins d'ennemis, le reste tombe autour.
+func _a_storm(prm: Dictionary) -> void:
+	var r := _radius(prm, "radius", 8.0)
+	var n := int(prm.get("count", 6))
+	var fx := str(prm.get("fx", "bolt"))
+	var c := owner.global_position
+	var foes := _enemies(c, r)
+	foes.sort_custom(func(a, b): return a.global_position.distance_to(c) < b.global_position.distance_to(c))
+	var points := []
+	for e in foes:
+		if points.size() >= n:
+			break
+		points.append(e.global_position)
+	while points.size() < n:
+		var a := randf() * TAU
+		points.append(c + Vector3(cos(a), 0, sin(a)) * randf_range(2.0, r))
+	var dmg := _dmg(prm)
+	var hit_r := 2.4 if data.category != "mystique" else 3.4
+	var step := 0.05 if n > 12 else 0.09
+	for i in points.size():
+		var pos: Vector3 = points[i]
+		var world := owner.get_tree().get_first_node_in_group("world") as WorldGenerator
+		if world and pos.y > WorldGenerator.UNDERGROUND:
+			pos.y = world.support_height(pos, world.terrain_height(world.cell_at(pos)) + 0.4)
+		var impact := func():
+			if not is_instance_valid(owner):
+				return
+			VoxelBurst.spawn(owner, pos + Vector3(0, 0.4, 0), data.color, 22, 5.0, 0.12, 0.6, "sphere", 10.0, false)
+			SkillFX.ring(owner, pos, hit_r, data.color.lightened(0.2), 0.35)
+			for e in _enemies(pos, hit_r):
+				_hit(e, dmg, float(prm.get("kb", 6.0)), prm)
+				if prm.has("fear") and e.is_alive() and e.has_method("frighten"):
+					e.frighten(float(prm.fear))
+			owner.shake(0.6)
+		var delay := 0.25 + i * step
+		owner.get_tree().create_timer(delay, false).timeout.connect(_strike.bind(pos, fx, impact))
+	if prm.has("heal"):
+		owner.health.heal(roundi(owner.health.max_health * float(prm.heal)))
+	_tfx().hit_stop(0.05)
+
+
+## Une frappe venue du ciel (voir _a_storm).
+func _strike(pos: Vector3, fx: String, impact: Callable) -> void:
+	if not is_instance_valid(owner):
+		return
+	var big := data.category == "mystique"
+	if fx == "blade":
+		SkillFX.falling(owner, pos, data.color.lightened(0.3), "blade", 1.4 if big else 1.0, impact, 0.35)
+	elif fx == "ice":
+		SkillFX.falling(owner, pos, Color("bfeaff"), "spike", 1.2, impact, 0.35)
+	else:
+		var col: Color = {"fire": Color("ff7a2a"), "holy": Color("fff4c0"), "shadow": Color("2a1a3a"), "bolt": Color("fff27a")}.get(fx, data.color)
+		SkillFX.pillar(owner, pos, col, 22.0 if big else 14.0, 0.9 if big else 0.6, 0.5)
+		impact.call()
+
+
+## Cataclysme : la compétence ultime. Après une seconde de silence, tout explose autour du héros : dégâts
+## colossaux, ennemis projetés, et le sol se creuse en un cratère géant (arbres, rochers et constructions du
+## monde volent en éclats ; les constructions du joueur sont épargnées).
+func _a_crater(prm: Dictionary) -> void:
+	var r := float(prm.get("radius", 24.0))
+	var c := owner.global_position
+	var dmg := _dmg(prm)
+	_tfx().slow_motion(0.25, 1.6)
+	SkillFX.pillar(owner, c, Color.WHITE, 80.0, 3.0, 2.0)
+	SkillFX.screen_flash(owner, Color(1, 0.95, 0.8), 0.4, 0.35)
+	owner.shake(1.5)
+	owner._invulnerable_left = 3.0
+	owner.get_tree().create_timer(0.9, false).timeout.connect(func():
+		if not is_instance_valid(owner):
+			return
+		SkillFX.screen_flash(owner, Color(1, 0.85, 0.6), 1.4, 0.9)
+		SkillFX.shockwave(owner, c, r * 1.3, Color("ffb050"), 6, 1.4)
+		SkillFX.shockwave(owner, c, r, Color.WHITE, 3, 0.9)
+		for k in 6:
+			VoxelBurst.spawn(owner, c + Vector3(randf_range(-r, r) * 0.6, 0.5, randf_range(-r, r) * 0.6), [Color("8a6a4a"), Color("6a6a6a"), Color("ff9a3a")][k % 3], 90, r * 0.9, 0.22, 2.2, "sphere", 14.0, false)
+		owner.shake(3.0)
+		_tfx().hit_stop(0.12)
+		Sound.ui("war_drums")
+		for e in _enemies(c, r):
+			_hit(e, dmg, 22.0, prm)
+		carve_crater(c, r, float(prm.get("depth", 8.0))))
+
+
+## Creuse un cratère en cuvette (plus profond au centre) et pulvérise ce qui s'y trouve.
+func carve_crater(c: Vector3, r: float, depth: float) -> void:
+	var world := owner.get_tree().get_first_node_in_group("world") as WorldGenerator
+	if world == null or c.y < WorldGenerator.UNDERGROUND:
+		return
+	var center := world.cell_at(c)
+	var cells := []
+	var ri := ceili(r)
+	var rim := ceili(r * 1.3)
+	var floor_min := world.water_surface + 0.5
+	for dz in range(-rim, rim + 1):
+		for dx in range(-rim, rim + 1):
+			var d := Vector2(dx, dz).length()
+			if d > r * 1.3:
+				continue
+			var cell := center + Vector2i(dx, dz)
+			var t := world.terrain_type(cell)
+			if t == WorldGenerator.WATER or t == WorldGenerator.DEEP:
+				continue
+			var h := world.terrain_height(cell)
+			var nh := h
+			if d <= r:
+				# la cuvette : plus profonde au centre, sans jamais descendre sous la mer (elle s'inonderait)
+				var k := 1.0 - (d / r) * (d / r)
+				nh = maxf(h - depth * k, minf(h, floor_min))
+				# le rebord se relève vers le bord
+				nh += depth * 0.55 * pow(d / r, 6.0)
+			else:
+				# la terre rejetée forme un bourrelet tout autour
+				nh = h + depth * 0.55 * (1.0 - (d - r) / (r * 0.3))
+			world.set_terrain_height(cell, nh)
+			# le fond est de la roche brûlée
+			if d < r * 0.85:
+				world.set_terrain_type(cell, WorldGenerator.STONE)
+			cells.append(cell)
+	# les blocs du monde (ruines, maisons des hameaux...) volent en éclats, pas ceux du joueur
+	if world.build:
+		var gone := []
+		for key in world.build.blocks:
+			var kv: Vector3i = key
+			if Vector2(kv.x - c.x, kv.z - c.z).length() <= r * 1.3 and not world.build.is_player_block(kv):
+				gone.append(kv)
+		for kv in gone:
+			world.build.remove_block(kv)
+	world.refresh_cells(cells)
+	owner.global_position.y = world.ground_height_at(owner.global_position + Vector3(0, 30, 0))

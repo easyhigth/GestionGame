@@ -17,8 +17,8 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux) ; dans l'eau : plonger (Espace : remonter)
 - H (LB + croix haut à la manette) : manger ; cliquer sur une nourriture dans le sac la mange aussi
 - C / X (LB + croix gauche/droite à la manette) : choisir un bloc, un meuble, des graines ou la houe du sac ; V (L3) : le poser, semer ou labourer devant soi
-- Q (RB) : compétence unique ; 1 à 4 : attaques et sorts de l'arbre de talents (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
-- T (ou croix gauche à la manette) : arbre de talents
+- Q (RB) : compétence unique ; 1 à 9 et 0 : la barre de compétences (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
+- T (ou croix gauche à la manette) : arbre de compétences
 - I (ou Tab) : inventaire, équipement et artisanat
 - E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures (s'il a une quête « ! » ou « ? », c'est d'abord la quête qui s'ouvre)
 - E près d'un voyageur : lui parler pour le recruter ; E près du marchand ambulant : acheter et vendre
@@ -65,15 +65,59 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Actif** (Q / RB), avec recharge (compteur en bas de l'écran) : explosion, salve de projectiles, ruée, météores, tourbillon, souffle, drain de vie, zones de poison ou de gel, aura, barrière, soin (aussi des habitants), terreur, exécution, téléportation...
 - Les compétences sont décrites dans `tools/skills_database.py` (qui génère `data/skills/*.tres`) : pour en ajouter une, écris une ligne `S(...)` et relance le script. Leur fonctionnement est dans `scripts/hero/hero_skill.gd`.
 
-## Arbre de talents
-- Touche **T** : trois branches de 9 talents, sur 5 rangs (niveaux 1, 3, 6, 10, 14), plus l'onglet **✦ Pacte** (compétences uniques données par l'histoire, voir plus bas).
-  - **Lame** (corps à corps) : Tourbillon, Charge du taureau, Frappe sismique, Onde tranchante, ultime Tempête de lames ; passifs d'attaque, de vitesse, de critiques, d'exécution.
-  - **Arcanes** (sorts) : Boule de feu, Éclair en chaîne, Nova de givre, Bouclier arcanique, Lumière guérisseuse, ultime Pluie de météores ; passifs de magie et de recharge.
-  - **Ombre** (agilité et survie) : Double saut, Pas de l'ombre (téléportation), Lames empoisonnées, Terreur, ultime Frénésie ; passifs de roulade, de vie, de régénération, de vol de vie.
-- **Points** : 1 par niveau gagné et 1 par âme de boss absorbée (les ultimes coûtent 2). Un talent s'apprend quand on a le niveau de son rang et un talent relié juste au-dessus. Le premier talent de la branche de ta classe est offert.
-- Ronds = passifs (bonus permanents), carrés = actifs (nouvelles attaques et nouveaux sorts). Un actif appris se range dans un des **4 emplacements** (touches 1-4), visibles à droite de la compétence en bas de l'écran avec leur recharge.
-- « Oublier les talents » rend tous les points. Les talents et les emplacements sont sauvegardés.
-- Les talents sont décrits dans `scripts/hero/talent_tree.gd` (liste `NODES` : ajoute une ligne pour créer un talent ; les actifs réutilisent les effets des compétences de `scripts/hero/hero_skill.gd`).
+## Arbre de compétences et niveaux (jusqu'au niveau 1000)
+- **Niveaux 1 à 1000.** Jusqu'au niveau 100, l'expérience demandée reste celle d'avant (40 au niveau 1, +35 par niveau). Ensuite, il faut 10 de plus à chaque niveau (12 505 au niveau 1000), et chaque ennemi rapporte de plus en plus d'expérience (jusqu'à 4 fois plus au niveau 1000).
+- **Niveau de puissance** : les statistiques de base du héros (et des ennemis qui s'adaptent à lui : sièges, armées, tournois, bandits, raids...) suivent le niveau jusqu'à 100, puis montent 4 fois moins vite (325 au niveau 1000). Au-delà, c'est l'arbre qui fait la différence.
+- **Points** : 2 par niveau jusqu'au niveau 50, puis 1, et 1 par âme de boss, soit environ 1 050 points au niveau 1000. Le talent de départ de ta classe est offert.
+- **L'arbre (touche T)** : une grande étoile de **377 nœuds** à huit branches qui partent du centre dans toutes les directions. Les branches voisines sont reliées par des **ponts**.
+
+  | Branche | Contenu |
+  |---|---|
+  | Lame | épées, charges |
+  | Feu | brasiers, météores |
+  | Foudre | éclairs, orages |
+  | Givre | prisons de glace |
+  | Lumière | soins, jugements |
+  | Terre | séismes, ronces |
+  | Sang | drains, rage |
+  | Ombre | poisons, assassinats |
+
+  Tout l'arbre est ouvert dès le début. Un nœud s'apprend avec ses points, son niveau (de 1 au centre jusqu'à 990 au bout), et un nœud voisin plus près du centre déjà appris.
+- **Types de nœuds** :
+  - petits ronds : **runes** (petits bonus de la branche) ;
+  - grands ronds : **talents** (gros bonus) ;
+  - carrés : **compétences actives**.
+- **89 compétences actives**, de 5 raretés :
+
+  | Rareté | Nombre | Coût | Dégâts | Zone | Recharge |
+  |---|---|---|---|---|---|
+  | Commune | 16 | 1 point | ×1,4 à 2 | — | — |
+  | Rare | 24 | 2 points | — | — | — |
+  | Épique | 16 | 3 points | — | — | — |
+  | Légendaire | 24 | 5 points | ×4 à 6 | jusqu'à 16 m | — |
+  | **Mystique** | 9 | 12 points | ×10 à 12 | 18 à 20 m | une minute |
+
+  Les **mystiques** se trouvent au bout de chaque branche, à partir du niveau 700. À leur lancement :
+  - le temps ralentit et une colonne de lumière monte du héros ;
+  - l'écran s'illumine et des ondes de choc se succèdent ;
+  - puis s'abattent par exemple des épées géantes (Mille Soleils d'Acier), dix-huit météores (Apocalypse), quarante éclairs (Colère du Ciel), l'hiver de la fin du monde (Fimbulvetr), une aube qui soigne tout (Aube Éternelle), des pics de roche (Fureur de Gaïa), la lune pourpre qui draine la vie (Nuit Pourpre) ou des lames d'ombre (Nuit sans fin).
+- **Cataclysme** (tout au bout de la branche Terre, **niveau 990**, 30 points) : une seconde de silence, puis tout explose à 26 mètres à la ronde.
+  - Les dégâts sont colossaux et les ennemis sont projetés.
+  - Le sol se creuse en un **cratère géant** au fond de roche brûlée, entouré d'un grand bourrelet de terre.
+  - Arbres, rochers et constructions du monde volent en éclats. Les constructions du joueur sont épargnées.
+- **Barre de compétences**, façon MMORPG, en bas de l'écran : **10 emplacements**, touches 1 à 9 et 0 (configurables dans les options). Chaque case montre la rareté et la recharge de sa compétence.
+  - Pour placer une compétence apprise, choisis son emplacement dans la fenêtre de l'arbre, ou appuie sur la touche voulue pendant qu'elle est sélectionnée.
+  - À la manette : croix droite pour choisir, R3 pour lancer.
+- **Dans la fenêtre de l'arbre** :
+  - glisser (ou stick droit) pour se déplacer, molette (ou gâchettes) pour zoomer, flèches (ou croix) pour passer d'un nœud à l'autre ;
+  - « Centrer », « Tout oublier » (rend tous les points) ;
+  - l'onglet **✦ Pacte** contient les compétences uniques de l'histoire.
+- **Terminal** : `/niveau 990` puis `/competences` pour tout apprendre jusqu'à ton niveau et essayer le Cataclysme.
+- **Anciennes sauvegardes** : les talents déjà appris restent appris, et les 4 anciens emplacements passent dans la nouvelle barre.
+- **Pour les modifs** :
+  - le contenu est dans `scripts/hero/talent_tree.gd` (`CONTENT` : chaque branche, compétence par compétence ; `SHAPE` : la forme d'une branche) ;
+  - les effets sont dans `scripts/hero/hero_skill.gd` (`storm` pour les frappes venues du ciel, `crater` pour le Cataclysme, `_mythic_intro` pour la mise en scène des mystiques).
+- Test : `tests/test_skills.gd`.
 
 ## Début de partie et récolte (façon Minecraft)
 - On commence avec peu de choses, de quoi se faire un premier abri : 24 planches, 12 blocs de chaume, 1 porte, 1 lit, 3 torches, 4 bois (plus l'équipement de sa classe, les objets de son métier, et une épée en bois, du bois, de la fibre et du cuir près du feu).

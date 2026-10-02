@@ -963,7 +963,7 @@ func _follow_step(delta: float) -> bool:
 	var hero := get_tree().get_first_node_in_group("player") as Player
 	if hero == null or not hero.is_alive():
 		return false
-	set_level(maxi(level, hero.level - 1))
+	set_level(maxi(level, hero.power_level() - 1))
 	var idx := 0
 	for v in get_tree().get_nodes_in_group("villagers"):
 		if v == self:

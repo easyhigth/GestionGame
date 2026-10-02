@@ -162,3 +162,85 @@ static func spiral(from: Node, pos: Vector3, radius: float, color: Color, time :
 	tw.tween_property(root, "rotation:y", TAU * 2.0, time)
 	tw.tween_property(root, "scale", Vector3(0.05, 1.5, 0.05), time).set_ease(Tween.EASE_IN)
 	tw.chain().tween_callback(root.queue_free)
+
+
+## Colonne de lumière verticale (jugements, éclairs, mystiques) : elle jaillit puis s'efface.
+static func pillar(from: Node, pos: Vector3, color: Color, height := 14.0, radius := 0.7, time := 0.6) -> void:
+	var mi := MeshInstance3D.new()
+	var c := CylinderMesh.new()
+	c.top_radius = radius
+	c.bottom_radius = radius
+	c.height = height
+	c.radial_segments = 8
+	c.rings = 1
+	mi.mesh = c
+	var mat := _mat(color, 0.75)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 2.5
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_holder(from).add_child(mi)
+	mi.global_position = pos + Vector3(0, height * 0.5, 0)
+	mi.scale = Vector3(0.1, 1, 0.1)
+	var tw := mi.create_tween()
+	tw.tween_property(mi, "scale", Vector3(1, 1, 1), time * 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mi, "scale", Vector3(0.05, 1.2, 0.05), time * 0.75).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(mat, "albedo_color:a", 0.0, time * 0.75)
+	tw.tween_callback(mi.queue_free)
+
+
+## Plusieurs ondes de choc concentriques, l'une après l'autre.
+static func shockwave(from: Node, pos: Vector3, radius: float, color: Color, waves := 3, time := 0.7) -> void:
+	for i in waves:
+		var k := float(i + 1) / waves
+		from.get_tree().create_timer(i * 0.14, false).timeout.connect(func():
+			if is_instance_valid(from):
+				ring(from, pos, radius * k, color.lightened(0.15 * i), time))
+
+
+## Un objet qui tombe du ciel (épée géante, pic de glace, rocher) puis appelle `on_impact`.
+## shape : « blade » (lame), « spike » (pic), « rock » (bloc).
+static func falling(from: Node, pos: Vector3, color: Color, shape: String, size: float, on_impact: Callable, delay := 0.45) -> void:
+	var mi := MeshInstance3D.new()
+	var b := BoxMesh.new()
+	match shape:
+		"blade":
+			b.size = Vector3(0.35, 3.2, 0.9) * size
+		"spike":
+			b.size = Vector3(0.5, 2.6, 0.5) * size
+		_:
+			b.size = Vector3.ONE * 1.2 * size
+	mi.mesh = b
+	var mat := _mat(color, 1.0)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 1.8
+	mi.material_override = mat
+	_holder(from).add_child(mi)
+	mi.global_position = pos + Vector3(0, 18.0, 0)
+	mi.rotation = Vector3(0, randf() * TAU, 0.15)
+	disc(from, pos, size * 1.3, color, delay + 0.1)
+	var tw := mi.create_tween()
+	tw.tween_property(mi, "global_position", pos + Vector3(0, b.size.y * 0.35, 0), delay).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tw.tween_callback(func():
+		if on_impact.is_valid():
+			on_impact.call())
+	tw.tween_interval(0.5)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.4)
+	tw.tween_callback(mi.queue_free)
+
+
+## Éclair d'écran (mystiques) : tout l'écran s'illumine un instant.
+static func screen_flash(from: Node, color: Color, time := 0.5, alpha := 0.55) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 40
+	_holder(from).add_child(layer)
+	var r := ColorRect.new()
+	r.color = Color(color, alpha)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(r)
+	r.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var tw := r.create_tween()
+	tw.tween_property(r, "color:a", 0.0, time).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(layer.queue_free)
