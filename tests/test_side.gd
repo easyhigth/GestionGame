@@ -77,6 +77,12 @@ func fulfil(q: Dictionary) -> void:
 		"tame", "evolve":
 			for i in int(q.n):
 				sq.on_event(q.type)
+		"explore":
+			for i in int(q.n):
+				if q.what == "cave":
+					get_first_node_in_group("mountain_caves").chest_opened.emit("test")
+				else:
+					sq.on_chest(q.what)
 		"have":
 			if q.has("pop"):
 				var missing: int = int(q.pop) - vn.members().size()
@@ -107,7 +113,7 @@ func _process(_d) -> bool:
 		for e in get_nodes_in_group("enemy_units"): e.queue_free()
 		get_first_node_in_group("quests")._offer_timer = 9999.0
 		dc.hour = 11.0
-		check("40 quêtes secondaires", sq.QUESTS.size() == 40)
+		check("44 quêtes secondaires", sq.QUESTS.size() == 44)
 		var npcs := {}
 		for q in sq.QUESTS: npcs[q.npc] = true
 		check("%d personnages en ont" % npcs.size(), npcs.size() >= 20)
@@ -165,7 +171,7 @@ func _process(_d) -> bool:
 				if sq.state_of(q.id) != "done":
 					missing.append(q.id)
 			if not any or not missing.is_empty(): break
-		check("toutes finies (%d / 40) %s" % [sq.done_count(), str(missing)], sq.done_count() == 40 and missing.is_empty())
+		check("toutes finies (%d / 44) %s" % [sq.done_count(), str(missing)], sq.done_count() == 44 and missing.is_empty())
 		check("plus aucune marque", st.NPCS.keys().all(func(id): return sq.mark_for(id) == ""))
 		hud.journal.open()
 		start("c")
@@ -177,7 +183,7 @@ func _process(_d) -> bool:
 		start("d")
 	if later("d", 2500):
 		sq = get_first_node_in_group("side_quests")
-		check("rechargées : %d terminées" % sq.done_count(), sq.done_count() == 40)
+		check("rechargées : %d terminées" % sq.done_count(), sq.done_count() == 44)
 		print("RÉSULTAT : ", "tout est bon" if ok else "échec")
 		return true
 	return false

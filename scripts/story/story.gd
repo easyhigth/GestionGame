@@ -42,6 +42,7 @@ var _duel := ""
 var _zones := {}
 var _camps := {}
 var _props := {}
+var _places := {}
 var _tick := 0.0
 var _banner: Label
 var _banner_sub: Label
@@ -146,7 +147,10 @@ func npc_zone(id: String) -> Dictionary:
 		return _zones[id]
 	var z := {}
 	var info: Dictionary = NPCS.get(id, {})
-	if info.has("near"):
+	var place := place_of(id)
+	if not place.is_empty():
+		z = world.zone_at(place.pos)
+	elif info.has("near"):
 		z = npc_zone(str(info.near[0])) if NPCS.has(info.near[0]) else {}
 	elif info.has("camp"):
 		var c: Array = info.camp
@@ -195,6 +199,141 @@ func _far_zone(prefs: Array, exclude := []) -> Dictionary:
 	return zs[mini(zs.size() - 1, zs.size() * 2 / 3)]
 
 
+## Le lieu réel d'un personnage ou d'une étape (voir StoryData.PLACES) : {kind, label, pos} ou {} (pas de tel lieu
+## dans ce monde). Calculé une fois : le monde est le même à chaque chargement.
+func place_of(id: String) -> Dictionary:
+	if _places.has(id):
+		return _places[id]
+	var out := {}
+	var spec: Array = StoryData.PLACES.get(id, [])
+	if world and not spec.is_empty():
+		match str(spec[0]):
+			"city":
+				out = _city_place(str(spec[1]), str(spec[2]))
+			"cave_city":
+				var city := city_of(str(spec[1]))
+				if not city.is_empty():
+					var ctr: Vector2i = city.center
+					out = _cave_place(Vector3(ctr.x, 0, ctr.y), float(city.radius) + 6.0)
+					if not out.is_empty():
+						out.label = city.name
+			"castle":
+				out = _castle_place(bool(spec[1]))
+			"cave_near":
+				var o := place_of(str(spec[1]))
+				if not o.is_empty():
+					out = _cave_place(o.pos, 24.0)
+	_places[id] = out
+	return out
+
+
+## La capitale physique d'une nation ({} si ce monde n'en a pas).
+func city_of(nation: String) -> Dictionary:
+	if world:
+		for c in world.cities:
+			if c.nation == nation:
+				return c
+	return {}
+
+
+## Position au sol d'une case (au-dessus du relief et des blocs franchissables).
+func _ground(cell: Vector2i, floor_y := -INF) -> Vector3:
+	var p := Vector3(cell.x + 0.5, 0.0, cell.y + 0.5)
+	p.y = world.terrain_height(cell) if floor_y == -INF else floor_y
+	p.y = world.support_height(p, p.y + 0.3)
+	return p
+
+
+## Dans une capitale : la rue la plus proche du palais (« hall ») ou du premier étal (« stall »).
+func _city_place(nation: String, near: String) -> Dictionary:
+	var city := city_of(nation)
+	if city.is_empty():
+		return {}
+	var anchor: Vector2i = city.hall
+	if near == "stall" and not (city.stalls as Array).is_empty():
+		anchor = city.stalls[0][0]
+	var best := anchor
+	var bd := INF
+	for st in city.streets:
+		var d := Vector2(st).distance_to(Vector2(anchor))
+		if d >= 2.0 and d < bd:
+			bd = d
+			best = st
+	return {"kind": "city", "label": city.name, "pos": _ground((city.center as Vector2i) + best), "nation": nation}
+
+
+## L'entrée de grotte la plus proche d'un point (hors d'un cercle de rayon `min_d`), en cherchant chunk par chunk.
+func _cave_place(from: Vector3, min_d: float) -> Dictionary:
+	var mc := get_tree().get_first_node_in_group("mountain_caves")
+	if mc == null:
+		return {}
+	var ch := Vector2i(floori(from.x) / WorldGenerator.CHUNK, floori(from.z) / WorldGenerator.CHUNK)
+	var nchunks := ceili(world.world_size.x / float(WorldGenerator.CHUNK))
+	for r in range(0, 14):
+		var best := {}
+		var bd := INF
+		for dz in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				if absi(dx) != r and absi(dz) != r:
+					continue
+				var c := ch + Vector2i(dx, dz)
+				if c.x < 0 or c.y < 0 or c.x >= nchunks or c.y >= nchunks:
+					continue
+				var e: Dictionary = mc.entrance_of(c)
+				if e.is_empty():
+					continue
+				var d: float = Vector2(e.pos.x - from.x, e.pos.z - from.z).length()
+				if d >= min_d and d < bd:
+					bd = d
+					best = e
+		if not best.is_empty():
+			# devant l'entrée, un peu à l'écart pour ne pas la boucher
+			var dir: Vector2i = best.dir
+			var cell: Vector2i = best.cell - dir * 3
+			var z := world.zone_at(world.cell_center(cell))
+			return {"kind": "cave", "label": str(z.get("name", "ces terres")), "pos": _ground(cell), "cave": best.id, "out": Vector2(-dir)}
+	return {}
+
+
+## Un château (habité ou abandonné), aux deux tiers du chemin vers le plus lointain.
+func _castle_place(abandoned: bool) -> Dictionary:
+	# pas un château collé aux murs d'une capitale
+	var list := world.structure_sites.filter(func(st): return st.kind == "castle" and bool(st.abandoned) == abandoned \
+		and world.cities.all(func(c): return Vector2((st.cell as Vector2i) + Vector2i(10, 10)).distance_to(Vector2(c.center)) > float(c.radius) + 40.0))
+	if list.is_empty():
+		return {}
+	var sp := Vector2(world.spawn_cell)
+	list.sort_custom(func(a, b): return Vector2(a.cell).distance_to(sp) < Vector2(b.cell).distance_to(sp))
+	var st: Dictionary = list[mini(list.size() - 1, list.size() * 2 / 3)]
+	var mid: Vector2i = (st.cell as Vector2i) + Vector2i(10, 10)
+	var floor_y := float(st.get("base", roundi(world.terrain_height(mid))))
+	# dans la cour, à côté du seigneur (habité) ou devant le donjon des morts (abandonné)
+	var off := Vector2i(3, 5) if not abandoned else Vector2i(0, 3)
+	return {"kind": "castle", "label": str(world.zones[int(st.zone)].name), "pos": _ground(mid + off, floor_y), "site": st.id}
+
+
+## Le conseil de l'étape, avec le nom du vrai lieu quand il existe.
+func hint(s: Array) -> String:
+	var ph: Array = StoryData.PLACE_HINTS.get(str(s[0]), [])
+	if not ph.is_empty():
+		var p := place_of(str(ph[0]))
+		if not p.is_empty():
+			return str(ph[1]) % p.label
+	return str(s[3])
+
+
+## Le héros est-il dans les murs de la capitale de cette nation ? (Vrai si ce monde n'en a pas.)
+func in_city(nation: String) -> bool:
+	var city := city_of(nation)
+	if city.is_empty():
+		return true
+	if player == null:
+		return false
+	var ctr: Vector2i = city.center
+	return Vector2(player.global_position.x - ctr.x, player.global_position.z - ctr.y).length() < float(city.radius) \
+		and player.global_position.y > WorldGenerator.UNDERGROUND
+
+
 ## Le centre du camp d'un personnage (« sanctuaire » : le Sanctuaire de l'Éveil).
 func camp_center(id: String) -> Vector3:
 	if id == "sanctuaire":
@@ -207,6 +346,8 @@ func camp_center(id: String) -> Vector3:
 	var info: Dictionary = NPCS.get(id, {})
 	if id == "orvane":
 		c = _free_spot(world.cell_center(world.spawn_cell) + Vector3(14, 0, -10), 3.0)
+	elif not place_of(id).is_empty():
+		c = place_of(id).pos
 	elif info.has("near"):
 		var base := camp_center(str(info.near[0]))
 		c = base + (info.near[1] as Vector3)
@@ -242,6 +383,8 @@ func _npc_pos(id: String, where: String) -> Vector3:
 	if id == "orvane":
 		return camp_center(id) + Vector3(1.4, 0, 0)
 	if NPCS.get(id, {}).has("near"):
+		return camp_center(id)
+	if not place_of(id).is_empty():
 		return camp_center(id)
 	return _free_spot(camp_center(id), 3.0)
 
@@ -382,7 +525,8 @@ func _make_npc(id: String, where: String) -> Node3D:
 		var it := Items.get_item(it_id)
 		if it:
 			v.equipment.equip(it)
-	if where == "camp" and not (id in ["orvane", "cael"]) and not info.has("near") and world.campfire_scene:
+	var indoors: bool = str(place_of(id).get("kind", "")) in ["city", "castle"]
+	if where == "camp" and not (id in ["orvane", "cael"]) and not info.has("near") and not indoors and world.campfire_scene:
 		var fire := world.campfire_scene.instantiate() as Node3D
 		world.get_node("Village").add_child(fire)
 		fire.global_position = pos + Vector3(1.6, 0, 1.2)
@@ -639,6 +783,8 @@ func nation_name() -> String:
 func _advance() -> void:
 	var before_act: int = current()[1] if not is_done() else 0
 	var reward: Dictionary = _opts(current()).get("reward", {})
+	if current()[4] == "visit":
+		_visited(current())
 	step_done.emit(step)
 	step += 1
 	if player:
@@ -663,6 +809,21 @@ func _advance() -> void:
 	_spawn_npcs()
 	_check()
 	changed.emit()
+
+
+## Arrivée dans une capitale de l'histoire : ce qui s'y passe, et ce que la nation en pense.
+func _visited(s: Array) -> void:
+	var o := _opts(s)
+	var city := city_of(str(s[5]))
+	if city.is_empty():
+		return
+	var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
+	if dip and o.has("rel") and dip.states.has(str(s[5])):
+		dip._add_rel(str(s[5]), float(o.rel))
+	if o.has("msg"):
+		banner(str(city.name), str(o.msg))
+		if player:
+			player.notify.emit(str(o.msg))
 
 
 ## Préparation d'une nouvelle étape.
@@ -708,6 +869,8 @@ func _check() -> void:
 			ok = pack_left == 0
 		"have_any":
 			ok = player != null and _has_any(s[5])
+		"visit":
+			ok = in_city(str(s[5]))
 	if ok:
 		_advance()
 
@@ -912,6 +1075,29 @@ func _on_duel_won(pos: Vector3, key: String) -> void:
 
 ## Le sanctuaire : sur la terre ferme, dans une zone lointaine, là où le cercle d'obélisques tient hors de l'eau.
 func _sanctuary_pos() -> Vector3:
+	# aux portes de Minas Cendrys, quand le monde a cette capitale
+	var minas := city_of("cendres")
+	if not minas.is_empty():
+		var ctr := Vector3((minas.center as Vector2i).x, 0, (minas.center as Vector2i).y)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = int(minas.seed)
+		var mbest := Vector3.INF
+		var mscore := -1
+		for i in 60:
+			var a := rng.randf() * TAU
+			var c := ctr + Vector3(cos(a), 0, sin(a)) * (float(minas.radius) + rng.randf_range(28.0, 60.0))
+			var cell := world.cell_at(c)
+			if cell.x < 16 or cell.y < 16 or cell.x >= world.world_size.x - 16 or cell.y >= world.world_size.y - 16:
+				continue
+			var score := _land_score(c)
+			if score > mscore:
+				mscore = score
+				mbest = c
+			if score >= 48:
+				break
+		if mscore >= 44:
+			mbest.y = world.ground_height_at(mbest + Vector3(0, 30, 0))
+			return mbest
 	var zs := world.zones.filter(func(z): return z.type and (z.type as RegionData).id != "volcan" and float(z.dist) > 0.0)
 	zs.sort_custom(func(a, b): return float(a.dist) > float(b.dist))
 	var best := Vector3.INF
@@ -921,14 +1107,7 @@ func _sanctuary_pos() -> Vector3:
 		for i in 40:
 			var a := randf() * TAU
 			var c := site + Vector3(cos(a), 0, sin(a)) * randf_range(0.0, 30.0)
-			var score := 0
-			for j in 12:
-				var b := TAU * j / 12.0
-				for r in [0.0, 5.0, 9.0, 11.0]:
-					var p: Vector3 = c + Vector3(cos(b), 0, sin(b)) * r
-					var t := world.terrain_type(world.cell_at(p))
-					if t != WorldGenerator.WATER and t != WorldGenerator.DEEP:
-						score += 1
+			var score := _land_score(c)
 			if score > best_score:
 				best_score = score
 				best = c
@@ -936,6 +1115,19 @@ func _sanctuary_pos() -> Vector3:
 			break
 	best.y = world.ground_height_at(best + Vector3(0, 30, 0))
 	return best
+
+
+## Combien des 48 points du cercle d'obélisques sont sur la terre ferme.
+func _land_score(c: Vector3) -> int:
+	var score := 0
+	for j in 12:
+		var b := TAU * j / 12.0
+		for r in [0.0, 5.0, 9.0, 11.0]:
+			var p: Vector3 = c + Vector3(cos(b), 0, sin(b)) * r
+			var t := world.terrain_type(world.cell_at(p))
+			if t != WorldGenerator.WATER and t != WorldGenerator.DEEP:
+				score += 1
+	return score
 
 
 func _make_sanctuary() -> void:
@@ -1001,6 +1193,10 @@ func target_pos() -> Vector3:
 			return world.cell_center(z.gate) if not z.is_empty() and (z.gate as Vector2i).x >= 0 else Vector3.INF
 		"pack":
 			return camp_center(str(s[5]))
+		"visit":
+			var city := city_of(str(s[5]))
+			if not city.is_empty():
+				return world.cell_center(city.center)
 		"raid":
 			var rm := get_tree().get_first_node_in_group("raids")
 			if rm and not rm.raid.is_empty():
@@ -1093,15 +1289,36 @@ const VERSION := 3
 
 
 func export_state() -> Dictionary:
-	return {"v": VERSION, "step": step, "choices": choices.duplicate(), "shards": shards.keys(), "pack_left": pack_left,
+	return {"v": VERSION, "step": step, "step_id": current_id(), "choices": choices.duplicate(), "shards": shards.keys(), "pack_left": pack_left,
 		"gone": npc_state.keys().filter(func(id): return npc_state[id] == "gone"),
 		"sanctuary": [sanctuary.x, sanctuary.y, sanctuary.z] if sanctuary != Vector3.INF else []}
+
+
+## L'étape d'une sauvegarde : par son identifiant, sinon (sauvegardes d'avant les étapes « v2 ») par son rang
+## parmi les étapes d'origine.
+func _step_index(d: Dictionary) -> int:
+	if d.has("step_id"):
+		var sid := str(d.step_id)
+		if sid == "":
+			return STEPS.size()
+		for i in STEPS.size():
+			if STEPS[i][0] == sid:
+				return i
+	var n := int(d.get("step", 0))
+	var legacy := 0
+	for i in STEPS.size():
+		if _opts(STEPS[i]).get("v2", false):
+			continue
+		if legacy == n:
+			return i
+		legacy += 1
+	return STEPS.size()
 
 
 func import_state(d: Dictionary) -> void:
 	var old := int(d.get("v", 1)) < VERSION
 	# une sauvegarde d'une ancienne version de l'histoire : on recommence la nouvelle depuis le début
-	step = 0 if old else int(d.get("step", 0))
+	step = 0 if old else _step_index(d)
 	choices = {} if old else (d.get("choices", {}) as Dictionary).duplicate()
 	pack_left = -1 if old else int(d.get("pack_left", -1))
 	shards = {}

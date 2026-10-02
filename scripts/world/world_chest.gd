@@ -63,6 +63,9 @@ func open(p: Player) -> void:
 	Sound.play("coins", global_position)
 	if p:
 		p.notify.emit("Coffre ouvert : %d trésors." % out.size())
+	var sq := get_tree().get_first_node_in_group("side_quests")
+	if sq:
+		sq.on_chest(kind)
 	_refresh()
 
 
