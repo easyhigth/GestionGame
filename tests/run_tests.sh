@@ -8,6 +8,8 @@
 cd "$(dirname "$0")/.." || exit 1
 GODOT=${GODOT:-godot}
 export TEST_SHOTS=${TEST_SHOTS:-$PWD/tests/captures}
+# le monde se calcule d'un bloc au chargement (les tests attendent un nombre fixe d'images) ; test_boot vérifie l'écran de chargement
+export SYNC_LOADING=${SYNC_LOADING:-1}
 mkdir -p "$TEST_SHOTS" tests/logs
 if [ $# -gt 0 ]; then list=("$@"); else list=($(ls tests/test_*.gd | sed 's#tests/test_##; s#\.gd$##')); fi
 run=()
