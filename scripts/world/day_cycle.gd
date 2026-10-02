@@ -211,6 +211,9 @@ func max_monsters() -> int:
 	var w := _weather()
 	if w and w.is_storm() and not is_night():
 		return 3
+	# seul et à mains nues : la première nuit est plus douce
+	if GameState.bare_start and day <= 1:
+		return 2
 	return mini(3 + day, 8) + (2 if w and w.is_storm() else 0)
 
 
@@ -234,7 +237,8 @@ func _spawn_spot() -> Vector3:
 
 ## Vrai près d'une lumière : torche ou lanterne posée, feu de camp, établi du village.
 func near_light(pos: Vector3) -> bool:
-	if pos.distance_to(world.cell_center(world.spawn_cell)) < LIGHT_SAFE + 2.0:
+	# le feu du campement de départ (départ à mains nues : il n'y en a pas, ce sont tes torches et ton feu)
+	if not GameState.bare_start and pos.distance_to(world.cell_center(world.spawn_cell)) < LIGHT_SAFE + 2.0:
 		return true
 	for k in world.build.furniture:
 		var f: Dictionary = world.build.furniture[k]

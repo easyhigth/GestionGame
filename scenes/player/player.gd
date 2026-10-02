@@ -169,6 +169,7 @@ func _ready() -> void:
 	camera.top_level = true
 	# l'équipement changé remet l'arme en main
 	equipment.changed.connect(func():
+		_update_viewmodel()
 		tool_in_hand = ""
 		_apply_talents())
 	hand = HandBuild.new()
@@ -660,6 +661,7 @@ func set_camera_mode(m: int, announce := true) -> void:
 		cam_pitch = deg_to_rad(45.0)
 	if visual:
 		visual.visible = cam_mode != CamMode.FIRST
+	_update_viewmodel()
 	Villager.label_scale = [0.45, 1.0, 0.32][cam_mode]
 	if is_inside_tree():
 		snap_camera()
@@ -678,6 +680,76 @@ func clamp_pitch(v: float) -> float:
 	return clampf(v, deg_to_rad(18.0), deg_to_rad(80.0))
 
 
+## 1re personne : le bras et l'arme du héros, accrochés à la caméra (balancement en marchant, coup qui part).
+var _viewmodel: Node3D
+var _vm_arm: MeshInstance3D
+var _vm_weapon: Node3D
+var _vm_t := 0.0
+var _vm_swing := 0.0
+const VM_BASE := Vector3(0.3, -0.24, -0.58)
+
+
+func _update_viewmodel() -> void:
+	if camera == null:
+		return
+	if _viewmodel == null:
+		_viewmodel = Node3D.new()
+		_viewmodel.name = "Viewmodel"
+		camera.add_child(_viewmodel)
+		_vm_arm = MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(0.14, 0.14, 0.5)
+		_vm_arm.mesh = box
+		_vm_arm.position = Vector3(0, -0.02, 0.18)
+		_vm_arm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_viewmodel.add_child(_vm_arm)
+		_vm_weapon = Node3D.new()
+		# l'arme pointe vers l'avant et un peu vers le haut, comme tenue en main
+		_vm_weapon.rotation_degrees = Vector3(-62, 8, 0)
+		_vm_weapon.position = Vector3(0, 0.02, -0.08)
+		_viewmodel.add_child(_vm_weapon)
+	_viewmodel.visible = cam_mode == CamMode.FIRST
+	_viewmodel.position = VM_BASE
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = profile.skin_color if profile else Color("d8a070")
+	# bras couvert si une armure est portée sur le torse
+	var chest := equipment.get_item(ItemData.Slot.CHEST)
+	if chest:
+		mat.albedo_color = chest.tint if chest.tint.a > 0.0 else Color("8a8a90")
+	_vm_arm.material_override = mat
+	for c in _vm_weapon.get_children():
+		c.queue_free()
+	var w := weapon()
+	if w == null:
+		return
+	var meshes := []
+	if Arsenal.is_arsenal(w.model_id()):
+		meshes.append(Arsenal.mesh_for(w.model_id()))
+	elif race and race.equipment:
+		for part in VoxelCharacter.parts_for(race.equipment, w.model_id()):
+			meshes.append(part[1])
+	for m in meshes:
+		var mi := MeshInstance3D.new()
+		mi.mesh = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# les modèles sont à l'échelle du personnage : on les ramène à environ 0,7 m
+		var h: float = maxf(0.1, (m as Mesh).get_aabb().size.length())
+		mi.scale = Vector3.ONE * (0.75 / h)
+		_vm_weapon.add_child(mi)
+
+
+func _animate_viewmodel(delta: float) -> void:
+	if _viewmodel == null or not _viewmodel.visible:
+		return
+	var moving := Vector2(velocity.x, velocity.z).length() > 0.5 and not airborne
+	_vm_t += delta * (9.0 if moving else 2.0)
+	var bob := Vector3(cos(_vm_t * 0.5) * 0.012, absf(sin(_vm_t)) * (0.02 if moving else 0.006), 0)
+	_vm_swing = maxf(0.0, _vm_swing - delta * 4.0)
+	var s := sin(_vm_swing * PI)
+	_viewmodel.position = VM_BASE + bob + Vector3(-0.12 * s, 0.05 * s, -0.12 * s)
+	_viewmodel.rotation_degrees = Vector3(-35.0 * s, 25.0 * s, 0)
+
+
 ## Devant la caméra, à plat.
 func camera_forward() -> Vector3:
 	return Vector3(-sin(cam_yaw), 0.0, -cos(cam_yaw))
@@ -685,8 +757,28 @@ func camera_forward() -> Vector3:
 
 ## En 3e et 1re personne, on frappe et on lance ses sorts là où regarde la caméra.
 func _aim_with_camera() -> void:
-	if cam_mode != CamMode.TOP and not (lock_target and is_instance_valid(lock_target)):
-		facing = camera_forward()
+	if cam_mode == CamMode.TOP or (lock_target and is_instance_valid(lock_target)):
+		return
+	facing = camera_forward()
+	# aide à la visée : l'ennemi le plus proche du viseur (moins de 10°), à portée de tir
+	var look := -camera.global_transform.basis.z
+	var best: Node3D = null
+	var best_a := deg_to_rad(10.0)
+	for e in get_tree().get_nodes_in_group("enemy_units"):
+		if not (e is Combatant) or not e.is_alive():
+			continue
+		var to: Vector3 = (e as Node3D).global_position + Vector3(0, 0.9, 0) - camera.global_position
+		if to.length() > 26.0 or (e as Node3D).global_position.distance_to(global_position) > 22.0:
+			continue
+		var a := look.angle_to(to)
+		if a < best_a:
+			best_a = a
+			best = e
+	if best:
+		var flat := best.global_position - global_position
+		flat.y = 0.0
+		if flat.length() > 0.2:
+			facing = flat.normalized()
 
 
 ## Souris capturée (elle tourne la caméra) en 3e et 1re personne, sauf quand un menu est ouvert,
@@ -878,6 +970,7 @@ func _handle_combat_input(input: Vector3, delta: float) -> void:
 func _attack_pressed() -> void:
 	_held = 0.0
 	_aim_with_camera()
+	_vm_swing = 1.0
 	if blocking:
 		set_blocking(false)
 	# riposte après une esquive parfaite
@@ -1825,6 +1918,7 @@ func _update_camera(delta: float) -> void:
 		_update_camera_third(delta)
 		return
 	if cam_mode == CamMode.FIRST:
+		_animate_viewmodel(delta)
 		var eye := global_position + Vector3(0, 1.5 * visual.scale.y, 0)
 		camera.global_position = eye
 		var look := -Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch))
@@ -1848,16 +1942,56 @@ func _update_camera_third(delta: float) -> void:
 	if lock_target and is_instance_valid(lock_target):
 		focus = focus.lerp(lock_target.global_position + Vector3(0, 1.0, 0), 0.3)
 	var dir := Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch))
+	var want := 4.6 * camera_zoom
 	# au-dessus de l'épaule droite : le viseur au centre ne cache pas le héros
-	focus += Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw)) * 0.7
-	var target := focus + dir * 4.6 * camera_zoom
-	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
-	if w and global_position.y > WorldGenerator.UNDERGROUND:
-		target.y = maxf(target.y, w.terrain_height(w.cell_at(target)) + 0.6)
-	camera.global_position = camera.global_position.lerp(target, clampf(14.0 * delta, 0.0, 1.0))
+	var shoulder := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw)) * 0.7
+	var dist := _camera_free_distance(focus + shoulder, dir, want)
+	# caméra coincée contre un mur : on revient derrière la tête, et le héros s'efface s'il la touche presque
+	shoulder *= clampf((dist - 0.8) / (want - 0.8), 0.0, 1.0)
+	focus += shoulder
+	visual.visible = dist > 1.1
+	var target := focus + dir * dist
+	# un mur entre le héros et la caméra : elle s'en rapproche tout de suite (sinon, elle glisse)
+	if dist < want - 0.05 and camera.global_position.distance_to(focus) > dist:
+		camera.global_position = target
+	else:
+		camera.global_position = camera.global_position.lerp(target, clampf(14.0 * delta, 0.0, 1.0))
 	if camera.global_position.distance_to(focus) > 0.05:
 		camera.look_at(focus)
 	_apply_shake(delta)
+
+
+## Jusqu'où la caméra peut reculer depuis `focus` dans la direction `dir` sans entrer dans le sol,
+## un bloc construit ou un décor solide (murs des donjons, rochers...).
+func _camera_free_distance(focus: Vector3, dir: Vector3, want: float) -> float:
+	var best := want
+	# décors et murs avec collision
+	var space := get_world_3d().direct_space_state
+	if space:
+		var q := PhysicsRayQueryParameters3D.create(focus, focus + dir * (want + 0.3))
+		q.exclude = [get_rid()]
+		q.collide_with_areas = false
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty():
+			best = minf(best, focus.distance_to(hit.position) - 0.3)
+	# relief et blocs posés (pas de collision physique : on les lit dans la grille)
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if w and global_position.y > WorldGenerator.UNDERGROUND:
+		var t := 0.4
+		while t <= best:
+			var p := focus + dir * t
+			var cell := w.cell_at(p)
+			var solid := p.y < w.terrain_height(cell) + 0.25
+			if not solid and w.build:
+				for b in w.build.column(cell):
+					if p.y > float(b[1]) - 0.15 and p.y < float(b[2]) + 0.15:
+						solid = true
+						break
+			if solid:
+				best = maxf(0.6, t - 0.3)
+				break
+			t += 0.2
+	return clampf(best, 0.6, want)
 
 
 func _apply_shake(delta: float) -> void:

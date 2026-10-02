@@ -79,6 +79,17 @@ func sync_slots() -> void:
 		slots[free] = it.id
 
 
+## Range un objet dans une case choisie (depuis le sac) ; s'il était déjà dans une autre case, les deux s'échangent.
+func assign_slot(i: int, id: String) -> void:
+	if i < 0 or i >= SLOTS:
+		return
+	var old := slots.find(id)
+	if old >= 0:
+		slots[old] = slots[i]
+	slots[i] = id
+	selection_changed.emit()
+
+
 ## Ctrl + chiffre : prend en main l'objet de la case (la même touche une 2e fois : mains nues).
 func select_slot(i: int) -> void:
 	sync_slots()

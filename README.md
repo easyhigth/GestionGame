@@ -140,6 +140,12 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Plans prêts (construction, touche 8, catégorie par défaut)** : un clic sur le sol trace **une pièce complète** (murs, sol, porte, toit à deux pans et les meubles qu'il faut) pour chacun des 21 types de pièces : maison, dortoir, entrepôt, taverne, forge, marché, temple... L'aperçu dit combien de blocs il faut et quels meubles sont encore à fabriquer. Les habitants libres bâtissent avec les matériaux choisis dans Murs, Sols et Toits.
 - **Panneau du royaume (U)** : un cadre **« À faire maintenant »** en haut donne les 3 actions les plus utiles (habitants sans lit, réserve vide, habitants sans poste, champs, élevage, marché, taverne, temple, prochain rang), avec un bouton **Construire ▸** qui ouvre directement le bon plan prêt.
 
+### Finitions de la caméra et du départ en solo
+- **3e personne** : la caméra ne traverse plus le relief, les blocs posés ni les murs des donjons ; coincée contre un mur, elle revient derrière la tête du héros (qui s'efface s'il la touche presque). **Aide à la visée** : un coup, une flèche ou un sort part vers l'ennemi le plus proche du viseur (moins de 10°).
+- **1re personne** : le bras du héros (couleur de sa peau, ou de son armure) et son arme sont visibles, se balancent quand il marche et partent quand il frappe.
+- **Barre de construction** : dans le sac, la fiche d'un bloc, d'un meuble ou de graines propose « Barre de construction : 1 … 0 » pour le ranger dans la case voulue (les deux objets s'échangent si la case est prise). À la manette : LB + croix gauche/droite parcourt la barre.
+- **Seul au début** : pas de raid tant que tu n'as aucun habitant ; la première nuit ne fait sortir que 2 monstres ; il n'y a plus de zone sûre invisible au point d'arrivée : ce sont tes torches et ton feu de camp qui protègent.
+
 ## Poser et casser à la main
 - Sans passer par le mode construction : **C** (ou X pour revenir en arrière) choisit un bloc ou un meuble du sac, **V** le pose devant soi. Une barre d'objets s'affiche au-dessus de la compétence ; après le dernier objet, on revient aux mains nues (plus rien ne s'affiche).
 - Une case fantôme montre où l'objet ira : verte si c'est possible, rouge sinon. Un bloc se pose au niveau des pieds, puis au-dessus s'il y en a déjà un (jusqu'à 3 de haut) ; devant un trou ou de l'eau, il se pose un cran plus bas pour faire un pont. Il lui faut un appui : le sol, un bloc dessous ou à côté.
