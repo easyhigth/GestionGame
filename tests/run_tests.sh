@@ -25,6 +25,8 @@ for t in "${list[@]}"; do
 		ok=$((ok + 1)); printf "  OK     %-14s\n" "$t"
 	else
 		ko=$((ko + 1)); bad+=("$t"); printf "  ÉCHEC  %-14s %s (erreurs : %d, échecs : %d) -> %s\n" "$t" "${res:-pas de résultat}" "$err" "$fails" "$log"
+		# ce qui a échoué, pour le lire directement dans le journal de la CI
+		grep -h -m 4 -E "  ÉCHEC  |SCRIPT ERROR" "$log" | sed 's/^/           /'
 	fi
 done
 echo "----"

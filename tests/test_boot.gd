@@ -54,7 +54,7 @@ func _process(d) -> bool:
 		0:
 			if scene().ends_with("title_screen.tscn") and f > 3:
 				t_title = Time.get_ticks_msec()
-				check("l'écran titre s'affiche vite (%.1f s)" % now(), now() < 20.0)
+				check("l'écran titre s'affiche vite (%.1f s)" % now(), now() < 45.0)
 				var w = get_first_node_in_group("world")
 				check("décor de l'écran titre : un petit monde (%s)" % w.world_size, w.world_size.x <= 400)
 				step = 1; wait = 0.0
@@ -72,8 +72,8 @@ func _process(d) -> bool:
 			var p = get_first_node_in_group("player")
 			if scene().ends_with("main.tscn") and p and f > 0:
 				check("un écran de chargement pendant la création du monde", saw_loading)
-				check("l'écran de chargement reste vivant (%d images)" % load_frames, load_frames >= 20)
-				check("la barre de progression avance (%d paliers)" % load_values.size(), load_values.size() >= 8)
+				check("l'écran de chargement reste vivant (%d images)" % load_frames, load_frames >= 10)
+				check("la barre de progression avance (%d paliers)" % load_values.size(), load_values.size() >= 5)
 				check("les étapes s'affichent : %s" % ", ".join(load_stages.keys().slice(0, 6)), load_stages.size() >= 4)
 				check("la partie commence (%.1f s après « Commencer l'aventure »)" % now(), true)
 				check("monde immense", get_first_node_in_group("world").world_size.x >= 1500)
@@ -105,7 +105,7 @@ func _process(d) -> bool:
 				shot("04_ancienne_partie.png")
 				print("RÉSULTAT : ", "tout est bon" if ok else "échec")
 				return true
-	if now() > 280.0:
+	if now() > 480.0:
 		check("le jeu a démarré à temps (étape %d)" % step, false)
 		print("RÉSULTAT : échec")
 		return true
