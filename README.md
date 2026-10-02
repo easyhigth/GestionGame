@@ -107,7 +107,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Le guide a une nouvelle étape : « Mange un repas cuit » (avant la première nuit).
 
 ## Histoire principale : L'Éveil du Royaume
-Une longue histoire originale en **16 actes (84 étapes, 5 ou 6 par acte)** et **23 personnages**, dans l'esprit des récits de réincarnation où l'on bâtit une nation de monstres. Tu es mort dans un autre monde (une ville de verre, un soir de pluie, des phares...) et tu renais ici. Seul **Orvane**, un ancien esprit enchaîné dans un cristal près du village, t'entend : vous faites un **Pacte**. De pacte en pacte, ton petit village devient une nation où tous les peuples vivent ensemble.
+Une longue histoire originale en **16 actes (88 étapes, 5 à 7 par acte)** et **23 personnages**, dans l'esprit des récits de réincarnation où l'on bâtit une nation de monstres. Tu es mort dans un autre monde (une ville de verre, un soir de pluie, des phares...) et tu renais ici. Seul **Orvane**, un ancien esprit enchaîné dans un cristal près du village, t'entend : vous faites un **Pacte**. De pacte en pacte, ton petit village devient une nation où tous les peuples vivent ensemble.
 - **I — Une autre vie** : Orvane, et **Glou** le petit slime affamé ; 2 obélisques ; premières compétences uniques.
 - **II — Les gobelins et le loup** : **Grik** l'ancien, **Pip** le jeune chasseur ; une meute à chasser... et son chef, **Ulric** le seigneur loup, qui chassait par faim. Pacte des gobelins (ils viennent au village, ou restent alliés dans leurs bois), 2 maisons.
 - **III — L'érudite et la fée** : **Maëlle** l'érudite elfe, 5 obélisques, **Liora** la fée gourmande de pain, qui révèle que le Cœur a été brisé *de l'intérieur*.
@@ -131,7 +131,7 @@ Une longue histoire originale en **16 actes (84 étapes, 5 ou 6 par acte)** et *
 - Tout est sauvegardé (étape, choix, éclats, meute, personnages). Les données sont dans `scripts/story/story_data.gd` (`STEPS`, `NPCS`, `RAIDS`, `DUELS`), les dialogues dans `scripts/story/story_dialogs.gd`, le déroulement dans `scripts/story/story.gd`. Une sauvegarde de l'ancienne histoire recommence la nouvelle au premier acte (les éclats sont gardés).
 
 ## Quêtes secondaires des personnages
-- **40 quêtes** : deux pour chacun des 20 personnages de l'histoire encore présents (Orvane, Glou, Grik, Pip, Ulric, Maëlle, Liora, Kaede, Kaïa, Borin, Brunhild, Lysandre, Zzar, Gorvak, Sylve, Aldéric, Edmond, Séléné, Vharok, Aurèle).
+- **44 quêtes** : deux pour chacun des 20 personnages de l'histoire encore présents (Orvane, Glou, Grik, Pip, Ulric, Maëlle, Liora, Kaede, Kaïa, Borin, Brunhild, Lysandre, Zzar, Gorvak, Sylve, Aldéric, Edmond, Séléné, Vharok, Aurèle).
 - La **première** s'ouvre après leur arc dans l'histoire, la **seconde** après la fin de l'histoire (fin de partie : récompenses plus rares, orichalque, cristaux d'aube, armes uniques).
 - Un **« ! »** au-dessus d'un personnage : il a une quête à proposer (E pour lui parler, « J'accepte » ou « Plus tard ») ; un **« ? »** : l'objectif est rempli, va lui faire ton rapport.
 - Objectifs variés : apporter des objets (ragoûts, gâteaux, lingots de mithril, marbre...), chasser des monstres (loups de Brume, fées sauvages, templiers morts-vivants, démons...), vaincre des grandes bêtes, construire des pièces, éveiller tous les obélisques, apprivoiser des familiers, faire évoluer des habitants, forger une arme légendaire, atteindre un niveau.
@@ -403,6 +403,18 @@ Dans les rues :
 - À l'approche, la ville s'anime : une quarantaine de citadins des peuples de la nation flânent dans les rues, des gardes tiennent chaque porte et le souverain attend devant son palais (Jarl, Dame, Sultan, Chef de guerre, Prince). Ils disparaissent quand on s'éloigne, ce qui garde le jeu fluide. Un bandeau annonce la ville, sa population et ses marchands.
 - **E** près d'un habitant : il parle (chaque ville a ses répliques).
 - **Marchands** : 4 à 13 étals par ville, chacun avec son métier (forgeron, épicier, herboriste, joaillier, maçon, charpentier, tisserand). **E** ouvre sa boutique : on achète son stock et on lui vend tout ce qui a de la valeur. Les prix varient de 20 % selon les relations avec sa nation, et un marchand refuse de commercer en temps de guerre. Le stock acheté ne revient pas tant que la partie tourne.
+
+## L'histoire dans le vrai monde
+L'histoire passe maintenant par les capitales, les châteaux, les grottes et les épaves du monde immense (sur un ancien petit monde sans ces lieux, les personnages campent comme avant) :
+- **Borin** et la reine **Brunhild** campent à l'entrée d'une grotte au pied des monts de **Hrodgard** ; les araignées en sortent.
+- **Liora** vit à **Lothëlia**, près du palais ; **Lysandre** tient boutique au grand bazar de **Qasr-Ammar**.
+- Le roi **Edmond** tient sa cour dans un **château habité** lointain ; le repaire de **Morvain** est un **château abandonné** gardé par ses templiers morts-vivants (Maëlle y est enchaînée) ; **Séléné** attend dans une **grotte** toute proche.
+- Le **Sanctuaire de l'Éveil** s'ouvre aux portes de **Minas Cendrys**.
+- Quatre nouvelles étapes de **visite** : présenter le marteau de Borin au **Jarl de Hrodgard** (+15 de relations, or et fer), demander asile pour la Horde à **Gor-Karath** (refus : −10), consulter les **archives de Lothëlia** (la vérité sur l'Inquisition, +10), puis approcher des sept cercles de **Minas Cendrys**. Il suffit d'entrer dans les murs de la ville ; le suivi indique la distance et la direction.
+- Le journal nomme les vrais lieux (« Borin campe à l'entrée d'une grotte, au pied des monts de Hrodgard »), et les perles se trouvent aussi dans les cales des épaves.
+- **Quêtes secondaires d'exploration** : Borin (2 coffres au fond des grottes), Lysandre (les coffres de 3 épaves), Aldéric (les trésors de 2 châteaux abandonnés), Séléné (3 coffres de grottes).
+- Les sauvegardes retiennent l'étape par son nom : une partie en cours reprend à la même étape, et les nouvelles étapes déjà dépassées sont sautées.
+- Test : `tests/test_story_places.gd`.
 
 ## Donjons et boss
 - Chaque zone (sauf celle du village) a une entrée de donjon. **E** devant l'entrée : on descend dans un donjon généré sous la surface, toujours le même pour une partie donnée : une dizaine de salles reliées par des couloirs, bâties avec les blocs de la région (réglables dans `data/regions/*.tres` > groupe **Donjon** : sol, murs, piliers, couleur des torches et de l'ambiance).

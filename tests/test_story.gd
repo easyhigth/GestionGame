@@ -186,6 +186,12 @@ func do_step() -> int:
 			p.inventory.add(items.get_item("epee_mithril"), 1)
 			st._check()
 			return 60
+		"visit":
+			var c: Dictionary = st.city_of(str(s[5]))
+			if not c.is_empty():
+				w.teleport(Vector3(c.center.x + 0.5, 0, c.center.y + c.radius * 0.5))
+			st._check()
+			return 300
 	return 200
 
 func add_room(t: String) -> void:

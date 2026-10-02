@@ -13,7 +13,9 @@ extends RefCounted
 ## Types : « talk » (parler ; options item/n : objets à apporter), « obelisks » (nombre), « boss_of » (boss du
 ## donjon près du camp d'un personnage), « pack » (meute près du camp d'un personnage ; types, n), « shards »
 ## (éclats, -1 = tous), « room » (type[:nombre]), « pop » (habitants), « raid » (attaque de l'histoire),
-## « duel » (boss de l'histoire), « have_any » (posséder un de ces objets).
+## « duel » (boss de l'histoire), « have_any » (posséder un de ces objets), « visit » (entrer dans une capitale : nation).
+## Option « v2 » : étape ajoutée après coup (les anciennes sauvegardes la sautent), « msg » : ce qui se passe à la visite,
+## « rel » : relations gagnées (ou perdues) avec la nation visitée.
 ## Option « reward » : {skill, items} donnés quand l'étape est finie.
 const STEPS := [
 	# ---------------------------------------------------------------- I
@@ -47,10 +49,12 @@ const STEPS := [
 	["araignees", 5, "Libère la mine des araignées", "Les araignées géantes grouillent autour du camp de Borin.", "pack", "borin", {"types": ["araignee", "araignee", "araignee"], "n": 6}],
 	["brunhild", 5, "Présente-toi à la reine Brunhild", "La reine des nains est au camp de Borin.", "talk", "brunhild"],
 	["borin_fer", 5, "Apporte 10 lingots de fer à Borin", "Fonds du minerai de fer au four. Les nains ne parlent qu'à ceux qui savent travailler.", "talk", "borin", {"item": "iron_ingot", "n": 10, "reward": {"skill": "pac_acier", "items": [["marteau_borin", 1], ["mithril_brut", 4]]}}],
+	["hrodgard", 5, "Présente le marteau de Borin au Jarl de Hrodgard", "Hrodgard, la capitale du Nord, est au bout de la route pavée (carte M, /lieux). Entre dans ses murs.", "visit", "givre",
+		{"v2": true, "rel": 15, "msg": "Le Jarl Hrothgar soupèse le marteau de Borin : « Les nains t'ont fait confiance. Le Nord aussi. » Hrodgard te regarde d'un meilleur œil.", "reward": {"items": [["piece_or", 60], ["iron_ingot", 5]]}}],
 	["forge", 5, "Construis une forge", "Pièce fermée avec un foyer de forge, une enclume et un établi.", "room", "forge"],
 	# ---------------------------------------------------------------- VI
 	["lysandre", 6, "Trouve Lysandre la marchande", "Elle voyage dans une contrée lointaine (étoile sur la carte).", "talk", "lysandre"],
-	["perles", 6, "Rapporte 5 perles à Lysandre", "Les perles se trouvent au fond des eaux profondes : pêche, ou coffres des grottes sous-marines.", "talk", "lysandre", {"item": "perle", "n": 5, "reward": {"items": [["cape_routes", 1]]}}],
+	["perles", 6, "Rapporte 5 perles à Lysandre", "Les perles se trouvent au fond des eaux profondes : pêche, coffres des grottes sous-marines ou cales des épaves échouées (/tp épave).", "talk", "lysandre", {"item": "perle", "n": 5, "reward": {"items": [["cape_routes", 1]]}}],
 	["zzar", 6, "Rencontre la reine de la Ruche", "Lysandre t'envoie ouvrir une route avec le peuple insecte (étoile sur la carte).", "talk", "zzar"],
 	["scorpions", 6, "Chasse les scorpions qui assiègent la Ruche", "Autour du camp de Zzar.", "pack", "zzar", {"types": ["scorpion", "scorpion", "scorpion"], "n": 6}],
 	["zzar_2", 6, "Retourne voir la reine Zzar", "À la Ruche.", "talk", "zzar", {"reward": {"skill": "pac_carapace", "items": [["ecaille_dragon", 2]]}}],
@@ -63,6 +67,8 @@ const STEPS := [
 	["maelle_cristal", 7, "Montre le cristal noir à Maëlle", "Gorvak portait un étrange cristal. Maëlle est au village.", "talk", "maelle"],
 	# ---------------------------------------------------------------- VIII
 	["gorvak_ble", 8, "Apporte 15 bottes de blé à Gorvak", "Cultive du blé dans les champs (houe et graines) : son peuple meurt de faim.", "talk", "gorvak", {"item": "ble", "n": 15}],
+	["gor_karath", 8, "Demande asile pour la Horde à Gor-Karath", "Gorvak espère que les orcs de Gor-Karath accueilleront son peuple. Va plaider sa cause dans leur capitale.", "visit", "karg",
+		{"v2": true, "rel": -10, "msg": "Le Chef de guerre ricane : « Les faibles n'entrent pas à Gor-Karath. » Les portes se referment : la Horde n'a plus que ton village."}],
 	["peuple", 8, "Rassemble 10 habitants", "Recrute des voyageurs (E près d'eux) et offre-leur un toit.", "pop", 10],
 	["pip_eveil", 8, "Quelque chose arrive à Pip", "Grik t'appelle : le petit Pip est tout lumineux !", "talk", "pip", {"reward": {"skill": "pac_evolution"}}],
 	["grik_festin", 8, "Apporte 10 pains pour le festin des peuples", "Grik veut sceller l'amitié des peuples autour d'un grand repas.", "talk", "grik", {"item": "pain", "n": 10}],
@@ -77,6 +83,8 @@ const STEPS := [
 	["morvain", 10, "Reçois le Grand Inquisiteur", "Un prêtre d'Hauterive est arrivé au village.", "talk", "morvain"],
 	["orvane_doute", 10, "Parle de Morvain à Orvane", "Le cristal près du village.", "talk", "orvane"],
 	["eclats_4", 10, "Rassemble 4 éclats du Cœur d'Aube", "Chaque grande bête (boss de donjon) d'une région différente garde un éclat.", "shards", 4],
+	["lothelia", 10, "Consulte les archives de Lothëlia", "Maëlle se méfie de Morvain. Les Sylves gardent les chroniques du Cœur d'Aube : entre à Lothëlia.", "visit", "sylvae",
+		{"v2": true, "rel": 10, "msg": "Dans les archives des Sylves : « Il y a mille ans, l'Inquisition d'Hauterive brisa le Cœur d'Aube. » Morvain t'a menti.", "reward": {"items": [["larme_esprit", 1]]}}],
 	["lysandre_secret", 10, "Lysandre veut te parler en secret", "Elle t'attend au village, l'air coupable.", "talk", "lysandre"],
 	["maelle_3", 10, "Montre les éclats à Maëlle", "Elle est au village.", "talk", "maelle"],
 	# ---------------------------------------------------------------- XI
@@ -112,6 +120,8 @@ const STEPS := [
 		["epee_mithril", "casque_mithril", "armure_mithril", "gantelets_mithril", "jambieres_mithril", "lance_draconique", "armure_draconique", "baton_larmes", "cape_brume", "lame_eveil"]],
 	["selene_3", 15, "La veille de la bataille", "Séléné est venue au village.", "talk", "selene"],
 	# ---------------------------------------------------------------- XVI
+	["minas", 16, "Approche des sept cercles de Minas Cendrys", "Séléné dit que les Veilleurs sortent de la Citadelle des Cendres. Va jusqu'à Minas Cendrys.", "visit", "cendres",
+		{"v2": true, "msg": "Une brume violette s'échappe de la tour blanche : le Sanctuaire de l'Éveil s'est ouvert aux portes de Minas Cendrys."}],
 	["veilleurs", 16, "Brise le cercle des Veilleurs", "Des démons gardent le Sanctuaire de l'Éveil (étoile sur la carte).", "pack", "sanctuaire", {"types": ["demon", "demon", "esprit_follet"], "n": 6}],
 	["sanctuaire", 16, "Affronte le Seigneur de la Brume", "Au cœur du Sanctuaire de l'Éveil.", "duel", "brume"],
 	["cael", 16, "Écoute l'âme de Caël", "Une silhouette pâle flotte au milieu du Sanctuaire.", "talk", "cael", {"reward": {"skill": "pac_eveil", "evolve": true}}],
@@ -190,6 +200,34 @@ const NPCS := {
 		"camp": [["prairie", "bois_enchante", "foret"], false, ["grik", "liora", "gorvak"]]},
 	"cael": {"name": "Caël", "title": "le premier Éveillé", "race": "res://data/races/mort_vivant.tres", "level": 25,
 		"kit": ["staff", "mage_robe", "cape_blue"], "color": Color("b8c8ff"), "talents": {"mage": 1.0}, "near": ["sanctuaire", Vector3(0, 0, 0)]},
+}
+
+## Lieux réels où vivent certains personnages : [« city », nation, « hall » | « stall »] (dans une capitale),
+## [« cave_city », nation] (une entrée de grotte au pied de la capitale), [« castle », abandonné ?] (un château lointain),
+## [« cave_near », lieu] (une grotte près d'un autre lieu). Sans ce lieu (petit monde), le personnage campe comme avant.
+const PLACES := {
+	"borin": ["cave_city", "givre"], "liora": ["city", "sylvae", "hall"], "lysandre": ["city", "sables", "stall"],
+	"edmond": ["castle", false], "morvain": ["castle", true], "selene": ["cave_near", "morvain"], "cendres": ["city", "cendres", "hall"],
+}
+## Conseils du journal quand le lieu existe : étape -> [lieu, texte (%s : nom du lieu)].
+const PLACE_HINTS := {
+	"borin": ["borin", "Borin campe à l'entrée d'une grotte, au pied des monts de %s (étoile sur la carte)."],
+	"araignees": ["borin", "Les araignées géantes sortent de la grotte des monts de %s et grouillent autour du camp de Borin."],
+	"brunhild": ["borin", "La reine des nains est au camp de Borin, devant la grotte des monts de %s."],
+	"borin_fer": ["borin", "Fonds du minerai de fer au four (la grotte en regorge). Borin t'attend au pied des monts de %s."],
+	"liora": ["liora", "Maëlle dit qu'une fée se souvient du temps où les pierres brillaient. Elle vit à %s, la cité des Sylves (étoile sur la carte)."],
+	"liora_pain": ["liora", "Les fées adorent le pain (farine, pétrin, four à pain). Liora t'attend à %s, près du palais."],
+	"lysandre": ["lysandre", "Elle tient boutique au grand bazar de %s, dans le désert (étoile sur la carte)."],
+	"perles": ["lysandre", "Les perles dorment au fond des eaux et dans les cales des épaves échouées sur les plages (/tp épave). Lysandre est au bazar de %s."],
+	"edmond": ["edmond", "Le roi Edmond tient sa cour au château de %s, loin d'ici (étoile sur la carte)."],
+	"traite": ["edmond", "L'or se fond au four (or brut des filons dorés). Le roi t'attend au château de %s."],
+	"templiers": ["morvain", "Ses templiers morts-vivants gardent son repaire : le château abandonné de %s (étoile sur la carte)."],
+	"duel_morvain": ["morvain", "Il t'attend dans la cour du château abandonné de %s."],
+	"maelle_sauvee": ["morvain", "Elle est enchaînée dans le château abandonné de %s."],
+	"selene": ["selene", "Sur la route de Morvain, une reine vampire t'attend dans une grotte de %s (étoile sur la carte)."],
+	"selene_2": ["selene", "La reine de la Nuit est retournée à sa grotte, en %s."],
+	"veilleurs": ["cendres", "Des démons gardent le Sanctuaire de l'Éveil, aux portes de %s (étoile sur la carte)."],
+	"sanctuaire": ["cendres", "Au cœur du Sanctuaire de l'Éveil, aux portes de %s."],
 }
 
 ## Attaques de l'histoire : nom, monstres, chef, pillards en plus.

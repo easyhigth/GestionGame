@@ -26,6 +26,9 @@ func _connect() -> void:
 	var dm := get_tree().get_first_node_in_group("dungeons")
 	if dm and not dm.boss_defeated.is_connected(_on_boss):
 		dm.boss_defeated.connect(_on_boss)
+	var mc := get_tree().get_first_node_in_group("mountain_caves")
+	if mc and not mc.chest_opened.is_connected(_on_cave_chest):
+		mc.chest_opened.connect(_on_cave_chest)
 
 
 func _story() -> Story:
@@ -59,9 +62,9 @@ func current_for(npc_id: String) -> Dictionary:
 		if st == null:
 			return {}
 		if after == "fin" and not st.is_done():
-			return {}
+			continue
 		if after != "fin" and not st.passed(after):
-			return {}
+			continue
 		return q
 	return {}
 
@@ -152,7 +155,7 @@ func is_complete(q: Dictionary) -> bool:
 			if q.has("item2"):
 				ok = ok and player.inventory.count(Items.get_item(q.item2)) >= int(q.n2)
 			return ok
-		"kill", "boss", "tame", "evolve":
+		"kill", "boss", "tame", "evolve", "explore":
 			return int(states[q.id].progress) >= int(q.n)
 		"have":
 			if q.has("pop"):
@@ -187,6 +190,9 @@ func progress_text(q: Dictionary) -> String:
 			return t
 		"kill", "boss", "tame", "evolve":
 			return "%d / %d" % [mini(int(states.get(q.id, {}).get("progress", 0)), int(q.n)), int(q.n)]
+		"explore":
+			return "%d / %d %s" % [mini(int(states.get(q.id, {}).get("progress", 0)), int(q.n)), int(q.n),
+				{"cave": "coffres de grotte", "castle": "trésors de châteaux abandonnés", "wreck": "coffres d'épaves"}.get(q.what, "coffres")]
 		"have":
 			if q.has("pop"):
 				var vn := get_tree().get_first_node_in_group("village_needs")
@@ -211,6 +217,8 @@ func _bump(type: String, enemy_id := "") -> void:
 			continue
 		if type == "kill" and not (q.enemies as Array).has(enemy_id):
 			continue
+		if type == "explore" and q.what != enemy_id:
+			continue
 		states[q.id].progress = int(states[q.id].progress) + 1
 		if int(states[q.id].progress) == int(q.n) and player:
 			player.notify.emit("Quête « %s » accomplie : retourne voir %s." % [q.title, Story.NPCS[q.npc].name])
@@ -225,6 +233,16 @@ func on_enemy_died(e: Enemy) -> void:
 
 func _on_boss(_z: Dictionary, _t: String) -> void:
 	_bump("boss")
+
+
+func _on_cave_chest(_id: String) -> void:
+	_bump("explore", "cave")
+
+
+## Un coffre du monde ouvert (WorldChest) : château abandonné (« castle ») ou épave (« wreck »).
+func on_chest(kind: String) -> void:
+	if kind in ["castle", "wreck"]:
+		_bump("explore", kind)
 
 
 ## Un familier apprivoisé, un habitant nommé.
