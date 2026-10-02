@@ -6,7 +6,7 @@ extends PanelContainer
 const SHOWN := [["move_up", "Avancer"], ["jump", "Sauter"], ["dash", "Roulade"], ["attack", "Frapper"], ["block", "Garde"],
 	["skill", "Compétence"], ["interact", "Parler / utiliser"], ["eat", "Manger"], ["potion", "Potion"],
 	["inventory", "Inventaire"], ["world_map", "Carte"], ["build_mode", "Construire"], ["kingdom", "Royaume"],
-	["journal", "Journal"], ["diplomacy", "Diplomatie"], ["familiar_order", "Familiers"], ["achievements", "Succès"], ["crafts", "Métiers"]]
+	["journal", "Journal"], ["diplomacy", "Diplomatie"], ["familiar_order", "Familiers"], ["achievements", "Succès"], ["crafts", "Métiers"], ["camera_view", "Vue"]]
 
 var _grid: GridContainer
 

@@ -135,7 +135,7 @@ func _process(_d) -> bool:
 		check("avec un marché : moins cher (%d -> %d), mieux payé (%d -> %d)" % [b_no, tr.buy_price(items.get_item("sword_iron")), s_no, tr.sell_price(items.get_item("sword_iron"))],
 			tr.buy_price(items.get_item("sword_iron")) < b_no and tr.sell_price(items.get_item("sword_iron")) > s_no)
 		print("== guide")
-		gd.step = 20; gd.progress = 0; gd._refresh()
+		gd.step = 26; gd.progress = 0; gd._refresh()
 		tr.sell(p, items.get_item("wood"), 0)
 		p.inventory.add(items.get_item("wood"), 10)
 		tr.sell(p, items.get_item("wood"), 10)

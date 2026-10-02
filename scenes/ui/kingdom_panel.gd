@@ -83,8 +83,64 @@ func _refresh() -> void:
 		player.notify.emit("Réserve du village : +%d points de nourriture." % roundi(got))
 		_refresh())
 	_box.add_child(_deposit)
-	# champs
 	var fm := get_tree().get_first_node_in_group("farming") as Farming
+	var ls := get_tree().get_first_node_in_group("livestock") as Livestock
+	var tr := get_tree().get_first_node_in_group("trade") as Trade
+	# à faire maintenant : les conseils les plus utiles, avec un bouton quand on peut agir tout de suite
+	var tips := []   # [texte, plan à ouvrir ("" = aucun)]
+	var have := {}
+	if k:
+		for r in k.rooms:
+			if r.type:
+				have[(r.type as RoomTypeData).id] = true
+	if beds < members.size():
+		tips.append(["%d habitant(s) dorment par terre : construis une maison (1 lit, 1 coffre) ou un dortoir (4 lits, 1 coffre)." % (members.size() - beds), "maison"])
+	if n.meals() < members.size():
+		tips.append(["La réserve est presque vide : dépose de la nourriture (bouton ci-dessus), ou fais travailler des fermiers ou une boulangerie.", ""])
+	var idle := members.filter(func(v): return v.work_room == null).size()
+	if idle > 0 and k and not k.rooms.is_empty():
+		tips.append(["%d habitant(s) sans poste : parle-leur (E) → Poste de travail. Sans poste, ils construisent tes plans." % idle, ""])
+	if fm and not fm.has_fields():
+		tips.append(["Laboure au moins %d cases avec une houe pour ouvrir le poste « Champs » : des fermiers rempliront la réserve." % Farming.MIN_PLOTS, ""])
+	elif fm and fm.farmers().is_empty():
+		tips.append(["Nomme un fermier (E près d'un habitant → Poste de travail → Champs).", ""])
+	elif fm and fm.seeds_count() == 0 and fm.summary().planted < fm.plots.size():
+		tips.append(["Des cases de champ sont vides : confie des graines aux fermiers.", ""])
+	if ls and ls.domestic().is_empty() and members.size() >= 3:
+		tips.append(["Élevage : pose une mangeoire, puis attire des poules (graines en main) ou des moutons et vaches (blé).", ""])
+	if tr and not have.has("marche") and members.size() >= 4:
+		tips.append(["Un marché ferait venir le marchand tous les 2 jours, avec de meilleurs prix.", "marche"])
+	if not have.has("taverne") and members.size() >= 3:
+		tips.append(["Une taverne rendrait les habitants plus heureux (+10).", "taverne"])
+	elif not have.has("temple") and members.size() >= 3:
+		tips.append(["Un temple rendrait les habitants plus heureux (+10).", "temple"])
+	if k:
+		tips.append(["Prochain rang : " + k.next_goal(), ""])
+	if avg < 25.0 and not members.is_empty():
+		tips.push_front(["Attention : des habitants malheureux vont partir ! Regarde leur humeur plus bas.", ""])
+	var todo := PanelContainer.new()
+	todo.add_theme_stylebox_override("panel", MenuKit.style(Color(0.16, 0.12, 0.06, 0.85), MenuKit.C_GOLD, 1, 4, 8))
+	_box.add_child(todo)
+	var tv := VBoxContainer.new()
+	tv.add_theme_constant_override("separation", 3)
+	todo.add_child(tv)
+	tv.add_child(MenuKit.label("À faire maintenant", 13, MenuKit.C_GOLD))
+	for t in tips.slice(0, 3):
+		var tr_row := HBoxContainer.new()
+		tr_row.add_theme_constant_override("separation", 8)
+		var l := MenuKit.label("• " + t[0], 11, MenuKit.C_TEXT)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(500, 0)
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tr_row.add_child(l)
+		if t[1] != "":
+			var plan_id: String = t[1]
+			var b := MenuKit.button("Construire ▸", 130, 11)
+			b.tooltip_text = "Ouvre le mode construction sur ce plan prêt : un clic sur le sol pour le poser."
+			b.pressed.connect(func(): _build(plan_id))
+			tr_row.add_child(b)
+		tv.add_child(tr_row)
+	# champs
 	if fm and not fm.plots.is_empty():
 		var sm := fm.summary()
 		var crops_txt := []
@@ -123,7 +179,6 @@ func _refresh() -> void:
 			st_txt += "  ·  rien ne pousse dans les champs"
 		_box.add_child(MenuKit.label(st_txt, 11, Color("c8e0ff") if sea.is_winter() else MenuKit.C_TEXT))
 	# élevage
-	var ls := get_tree().get_first_node_in_group("livestock") as Livestock
 	if ls and ls.summary_text() != "":
 		var ll := MenuKit.label(ls.summary_text(), 11, MenuKit.C_TEXT)
 		ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -155,7 +210,6 @@ func _refresh() -> void:
 			row.add_child(br)
 			_box.add_child(row)
 	# commerce
-	var tr := get_tree().get_first_node_in_group("trade") as Trade
 	if tr:
 		var tl := MenuKit.label(tr.status_text(), 11, MenuKit.C_GOLD if tr.is_here() else MenuKit.C_DIM)
 		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -220,41 +274,6 @@ func _refresh() -> void:
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			l.custom_minimum_size = Vector2(660, 0)
 			_box.add_child(l)
-	# conseils
-	var tips := []
-	if beds < members.size():
-		tips.append("Construis une maison (pièce fermée, porte, un lit et un coffre : 2 lits) ou un dortoir (4 lits et un coffre : 6 lits).")
-	if n.meals() < members.size():
-		tips.append("Remplis la réserve : dépose de la nourriture, ou fais travailler des fermiers, une boulangerie ou une grange.")
-	var have := {}
-	if k:
-		for r in k.rooms:
-			if r.type:
-				have[(r.type as RoomTypeData).id] = true
-	if fm and not fm.has_fields():
-		tips.append("Laboure au moins %d cases avec une houe pour ouvrir le poste « Champs » : des fermiers sèmeront et récolteront pour la réserve." % Farming.MIN_PLOTS)
-	elif fm and fm.farmers().is_empty():
-		tips.append("Nomme un fermier (E près d'un habitant → Poste de travail → Champs) : il récoltera pour la réserve.")
-	elif fm and fm.seeds_count() == 0 and fm.summary().planted < fm.plots.size():
-		tips.append("Des cases de champ sont vides : confie des graines aux fermiers.")
-	if ls and ls.domestic().is_empty():
-		tips.append("Élevage : pose une mangeoire, puis attire des poules (graines de blé en main) ou des moutons et vaches (blé) jusqu'à elle.")
-	if tr and not have.has("marche") and members.size() >= 4:
-		tips.append("Un marché (pièce fermée, 2 étals et un comptoir) ferait venir le marchand tous les 2 jours, avec de meilleurs prix.")
-	if not have.has("taverne"):
-		tips.append("Une taverne rendrait les habitants plus heureux (+10).")
-	elif not have.has("temple"):
-		tips.append("Un temple rendrait les habitants plus heureux (+10).")
-	if avg >= 65.0:
-		tips.append("Ton village est heureux : des voyageurs viendront s'y installer.")
-	elif avg < 25.0 and not members.is_empty():
-		tips.append("Attention : des habitants malheureux finiront par partir.")
-	# les 3 conseils les plus utiles (le panneau doit tenir à l'écran)
-	for t in tips.slice(0, 3):
-		var l := MenuKit.label("• " + t, 11, MenuKit.C_DIM)
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.custom_minimum_size = Vector2(600, 0)
-		_box.add_child(l)
 	# épidémie : soigner les malades
 	var wev := get_tree().get_first_node_in_group("world_events") as WorldEvents
 	if wev and not wev.sick().is_empty():
@@ -289,6 +308,17 @@ func _refresh() -> void:
 	row.add_child(close_b)
 	_box.add_child(row)
 	close_b.grab_focus.call_deferred()
+
+
+## Ferme le panneau et ouvre le mode construction sur le plan prêt de cette pièce.
+func _build(type_id: String) -> void:
+	close()
+	var bm := player.get_node_or_null("BuildMode")
+	if bm == null:
+		var found := player.find_children("*", "BuildMode", true, false)
+		bm = found[0] if not found.is_empty() else null
+	if bm:
+		bm.open_plan(type_id)
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -250,7 +250,7 @@ func _process(_d) -> bool:
 	if later("j", 1600):
 		check("remonté au-dessus de l'entrée", not cv.active and p.global_position.y > -10.0 and p.global_position.distance_to(entrance.pos) < 6.0)
 		print("== guide")
-		gd.step = 26; gd.progress = 0; gd._refresh()
+		gd.step = 32; gd.progress = 0; gd._refresh()
 		gd._check_state()
 		for i in 3: fi.caught.emit("gardon")
 		cv.chest_opened.emit("x")

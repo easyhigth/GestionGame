@@ -29,6 +29,8 @@ var options := {
 	"difficulty": 1,
 	"fullscreen": false,
 	"camera_distance": 1.0,
+	## point de vue : 0 = 3e personne, 1 = vue de dessus, 2 = 1re personne (F5 pour changer)
+	"camera_mode": 0,
 	"show_help": true,
 	"autosave": true,
 	"volume": 0.8,
@@ -136,6 +138,8 @@ func apply_options() -> void:
 	var p := _player()
 	if p:
 		p.camera_zoom = float(options.camera_distance)
+		if OS.get_environment("GG_CAMERA") == "" and int(p.cam_mode) != int(options.get("camera_mode", 0)):
+			p.set_camera_mode(int(options.get("camera_mode", 0)), false)
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud and hud.has_method("set_help_visible"):
 		hud.set_help_visible(options.show_help)

@@ -49,6 +49,12 @@ func _build() -> void:
 	gfx.select(int(o.get("graphics", 2)))
 	gfx.item_selected.connect(func(i): o.graphics = i; _save())
 	_row("Qualité graphique", gfx)
+	var view := OptionButton.new()
+	for n in ["3e personne", "Vue de dessus", "1re personne"]:
+		view.add_item(n)
+	view.select(int(o.get("camera_mode", 0)))
+	view.item_selected.connect(func(i): o.camera_mode = i; _save())
+	_row("Point de vue (F5 en jeu)", view)
 	var cam := HSlider.new()
 	cam.min_value = 0.6
 	cam.max_value = 1.6

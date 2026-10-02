@@ -3465,11 +3465,14 @@ func _build_village() -> void:
 	_spawn(campfire_scene, Vector2(0, 0))
 	# pas de cabanes toutes faites : le campement n'a que des meubles posés comme ceux du joueur
 	# (ils se cassent et se ramassent pareil) ; les maisons, c'est au joueur de les bâtir
+	# départ à mains nues (GameState.bare_start) : rien que le feu, tout est à fabriquer
+	var bare: bool = GameState.bare_start and SaveGame.pending.is_empty()
 	for f in [["etabli", Vector2(-8.5, 3.5)], ["ratelier", Vector2(9.0, 2.5)], ["tonneau", Vector2(-3.8, -5.8)],
 			["tonneau", Vector2(-3.0, -6.6)], ["coffre", Vector2(3.6, -6.4)]]:
-		_place_camp_furniture(f[0], f[1])
+		if not bare:
+			_place_camp_furniture(f[0], f[1])
 	# objets posés autour du feu
-	for i in starting_loot.size():
+	for i in (0 if bare else starting_loot.size()):
 		var a := PI * 0.15 + PI * 0.7 * float(i) / maxf(1.0, starting_loot.size() - 1.0)
 		var off := Vector2.from_angle(a) * (2.6 + (i % 2) * 1.0)
 		var origin := cell_center(spawn_cell)
@@ -3485,7 +3488,7 @@ func _build_village() -> void:
 		var angle := TAU * float(i) / float(villager_count) + _rng.randf() * 0.4
 		var off := Vector2.from_angle(angle) * _rng.randf_range(2.5, 5.5)
 		var v := _spawn(villager_scene, off, {"race": race})
-		if v and _rng.randf() < villager_gear_chance:
+		if v and not bare and _rng.randf() < villager_gear_chance:
 			_give_kit(v, kits[i % kits.size()])
 
 

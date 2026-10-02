@@ -98,12 +98,12 @@ func _process(_d) -> bool:
 		var hits := mine(iron, 20)
 		collect()
 		check("pioche en bois : filon miné en %d coups, +%d minerai de fer" % [hits, count("iron_ore") - ore], hits == 4 and count("iron_ore") - ore >= 2)
-		check("guide : filon 1/2", gd.step == 8 and gd.progress == 1)
+		check("guide : filon 1/2", gd.step == 14 and gd.progress == 1)
 		# second filon
 		var iron2 := find_vein(7)
 		stand_before(iron2)
 		mine(iron2, 20)
-		check("guide : 2 filons -> four", gd.step == 9)
+		check("guide : 2 filons -> four", gd.step == 15)
 		print("== or")
 		p.inventory.add(items.get_item("pioche_pierre"), 1)
 		stand_before(gold)
@@ -136,12 +136,12 @@ func _process(_d) -> bool:
 		set_meta("t2_done", true)
 		print("   guide: étape ", gd.step, " (", gd.current_id(), ") timer ", gd._check_timer, " hide ", gd._hide_timer, " meubles ", get_first_node_in_group("build_grid").furniture.values().map(func(x): return x.item.id))
 		gd._check_state()
-		check("guide : four posé -> lingots", gd.step == 10)
+		check("guide : four posé -> lingots", gd.step == 16)
 		var n := 0
 		for i in 6:
 			n += 1 if craft("iron_ingot") else 0
 		check("6 lingots fondus au four (%d)" % n, n == 6 and count("iron_ingot") >= 6)
-		check("guide : 2 lingots -> enclume", gd.step == 11)
+		check("guide : 2 lingots -> enclume", gd.step == 17)
 		check("enclume fabriquée", craft("enclume"))
 		for i in 12:
 			if hb.selected == "enclume": break
@@ -154,13 +154,13 @@ func _process(_d) -> bool:
 	if has_meta("t3") and not has_meta("t3_done") and Time.get_ticks_msec() - int(get_meta("t3")) > 1300:
 		set_meta("t3_done", true)
 		gd._check_state()
-		check("guide : enclume -> pioche en fer", gd.step == 12)
+		check("guide : enclume -> pioche en fer", gd.step == 18)
 		p.inventory.add(items.get_item("iron_ingot"), 3)
 		p.inventory.add(items.get_item("leather"), 1)
 		check("épée en fer forgée à l'enclume", craft("sword_iron"))
 		p.inventory.add(items.get_item("iron_ingot"), 3)
 		check("pioche en fer forgée", craft("pioche_fer"))
-		check("guide : chapitre 3 « Le village » commence", gd.step == 13)
+		check("guide : chapitre 3 « Le village » commence", gd.step == 19)
 		p.cam_yaw = deg_to_rad(160.0); p.cam_pitch = deg_to_rad(34.0); p.camera_zoom = 0.9
 		p.snap_camera()
 		set_meta("t4", Time.get_ticks_msec())

@@ -250,7 +250,7 @@ func _process(_d) -> bool:
 		check("il sème les cases vides (%d / %d)" % [sm.planted, sm.plots], sm.planted == sm.plots)
 		shot("02_fermier.png")
 		print("== guide")
-		gd.step = 16; gd.progress = 0; gd._refresh()
+		gd.step = 22; gd.progress = 0; gd._refresh()
 		gd._check_state()
 		check("guide chapitre 4 : houe -> semer", gd.current_id() == "semer")
 		for i in 6: p.planted.emit("ble")

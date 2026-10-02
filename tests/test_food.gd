@@ -113,15 +113,15 @@ func _process(_d) -> bool:
 		var eaten = p.eat()
 		print("   mangé : ", eaten.id if eaten else "rien", " -> faim %.0f, vie %d" % [p.hunger, p.health.current])
 		check("H : choisit un plat qui ne gaspille pas (ragoût pour 70 de faim)", eaten and eaten.id == "ragout" and p.hunger > 80.0 and p.health.current == 60)
-		check("guide : repas cuit -> étape suivante", gd.step == 7)
+		check("guide : repas cuit -> étape suivante", gd.step == 13)
 		p.hunger = 99.5
 		check("rassasié : refuse de manger", p.eat() == null)
 		check("rassasié : régénération bonus", p.hunger_regen_bonus() > 0.0)
 		# conversion d'un ancien guide (v1, étape « nuit » = 6)
 		gd.import_state({"step": 6, "progress": 0})
-		check("ancienne sauvegarde du guide convertie (6 -> 7)", gd.step == 7)
+		check("ancienne sauvegarde du guide convertie (6 -> 13)", gd.step == 13)
 		gd.import_state({"step": 3, "progress": 0})
-		check("ancienne sauvegarde, étape avant : inchangée", gd.step == 3)
+		check("ancienne sauvegarde, étape avant : décalée des bases (3 -> 9)", gd.step == 9)
 		var sg = root.get_node("SaveGame")
 		p.hunger = 42.0
 		sg.save_game("3")

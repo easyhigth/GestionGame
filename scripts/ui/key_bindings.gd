@@ -16,6 +16,7 @@ const REBINDABLE := [
 	["inventory", "Inventaire"], ["world_map", "Carte"], ["build_mode", "Construction"], ["kingdom", "Royaume"],
 	["talents", "Talents"], ["journal", "Journal"], ["familiar_order", "Ordre aux familiers"],
 	["diplomacy", "Diplomatie"], ["achievements", "Succès et bestiaire"], ["keys_help", "Aide-mémoire des touches"],
+	["camera_view", "Changer de vue (caméra)"],
 ]
 
 
