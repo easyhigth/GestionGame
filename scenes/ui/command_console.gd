@@ -20,7 +20,8 @@ const COMMANDS := {
 	"invoquer": ["/invoquer <monstre> [nombre]", "fait apparaître des monstres devant toi (ex. /invoquer loup 3)"],
 	"dieu": ["/dieu", "invincible (encore une fois pour arrêter)"],
 	"vitesse": ["/vitesse <x>", "vitesse de marche multipliée (1 = normale, jusqu'à 10)"],
-	"niveau": ["/niveau <n>", "monte jusqu'au niveau n"],
+	"niveau": ["/niveau <n>", "monte jusqu'au niveau n (jusqu'à 1000)"],
+	"competences": ["/competences", "apprend tout l'arbre de compétences jusqu'à ton niveau, sans dépenser de points"],
 	"heure": ["/heure <0-24>", "change l'heure"],
 	"meteo": ["/meteo <clair|nuageux|pluie|orage|brouillard>", "change le temps"],
 	"obelisques": ["/obelisques", "active tous les obélisques (voyage rapide partout)"],
@@ -33,7 +34,7 @@ const COMMANDS := {
 }
 const ALIASES := {"help": "aide", "map": "carte", "tp": "tp", "give": "donner", "heal": "soin", "god": "dieu",
 	"speed": "vitesse", "time": "heure", "weather": "meteo", "météo": "meteo", "kill": "tuer", "seed": "graine",
-	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp", "world": "monde", "war": "guerre", "événement": "evenement", "event": "evenement"}
+	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp", "world": "monde", "war": "guerre", "événement": "evenement", "event": "evenement", "compétences": "competences", "skills": "competences"}
 const MAX_LINES := 14
 ## Temps de calcul accordé par image au dévoilement de la carte (le jeu reste fluide pendant ce temps).
 const REVEAL_BUDGET_USEC := 18000
@@ -233,6 +234,18 @@ func run(text: String) -> bool:
 			return _cmd_places()
 		"monde":
 			return _cmd_world()
+		"competences":
+			var n := 0
+			# du centre vers l'extérieur : chaque nœud trouve ses voisins déjà appris
+			var list := TalentTree.nodes().filter(func(x): return not x.get("story", false) and int(x.level) <= player.level)
+			list.sort_custom(func(a, b): return int(a.ring) < int(b.ring))
+			for x in list:
+				if not player.talents.has(x.id):
+					player.talents[x.id] = true
+					n += 1
+			player._apply_talents()
+			_ok("%d nœuds appris (tout l'arbre jusqu'au niveau %d)." % [n, player.level])
+			return true
 		"guerre":
 			var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
 			if pol == null or args.size() < 2:
@@ -309,11 +322,7 @@ func run(text: String) -> bool:
 			if args.is_empty() or not str(args[0]).is_valid_int():
 				_err("Usage : /niveau <n>")
 				return false
-			var target := clampi(int(args[0]), 1, 99)
-			var guard := 0
-			while player.level < target and guard < 200:
-				player.gain_xp(player.xp_to_next() - player.xp)
-				guard += 1
+			player.set_level_to(clampi(int(args[0]), 1, Player.MAX_LEVEL))
 			_ok("Niveau %d." % player.level)
 			return true
 		"heure":

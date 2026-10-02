@@ -118,7 +118,7 @@ func make_offer(forced_type := "") -> Dictionary:
 
 func _generate(type: String, v: Node) -> Dictionary:
 	var p := _player()
-	var lv: int = p.level if p else 1
+	var lv: int = p.power_level() if p else 1
 	var q := {"id": _next_id, "type": type, "giver": v, "giver_name": v.villager_name, "state": "offer",
 		"progress": 0, "count": 1, "need": "", "spot": Vector3.INF, "target": null, "base": 0}
 	match type:

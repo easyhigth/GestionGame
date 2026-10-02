@@ -72,6 +72,7 @@ var city_life: CityLife
 var console: CommandConsole
 var city_siege: CitySiege
 var road_life: RoadLife
+var _ability_frame: Control
 var politics: WorldPolitics
 var fishing: Fishing
 var caves: UnderwaterCaves
@@ -369,7 +370,7 @@ func _build_skill_slot() -> void:
 	_skill_box = PanelContainer.new()
 	_skill_box.add_theme_stylebox_override("panel", UiTheme.small_frame(6))
 	_skill_box.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_skill_box.position = Vector2(-130, -58)
+	_skill_box.position = Vector2(-386, -60)
 	_skill_box.custom_minimum_size = Vector2(260, 46)
 	add_child(_skill_box)
 	var row := HBoxContainer.new()
@@ -418,32 +419,40 @@ func _update_skill() -> void:
 	_skill_rank.text = "%s  ·  Q / RB" % SkillData.TIER_LABELS[s.tier]
 
 
-## Barre des 4 attaques / sorts débloqués dans l'arbre de talents (touches 1-4, R3 / croix droite).
+## Barre de compétences, façon MMORPG (touches 1 à 9 et 0, R3 / croix droite) : les compétences apprises dans
+## l'arbre, avec la couleur de leur rareté et leur recharge.
+const AB_CELL := 44.0
+
 func _build_ability_bar() -> void:
+	var frame := PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", UiTheme.small_frame(5))
+	frame.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	frame.position = Vector2(-116, -60)
+	add_child(frame)
 	_ability_bar = HBoxContainer.new()
-	_ability_bar.add_theme_constant_override("separation", 6)
-	_ability_bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_ability_bar.position = Vector2(140, -54)
-	add_child(_ability_bar)
+	_ability_bar.add_theme_constant_override("separation", 4)
+	frame.add_child(_ability_bar)
+	_ability_frame = frame
 	for i in TalentTree.SLOTS:
 		var cell := Panel.new()
-		cell.custom_minimum_size = Vector2(40, 40)
+		cell.custom_minimum_size = Vector2(AB_CELL, AB_CELL)
+		cell.clip_contents = true
 		_ability_bar.add_child(cell)
-		var glyph := _outlined("", 20)
+		var glyph := _outlined("", 22)
 		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		glyph.size = Vector2(40, 40)
+		glyph.size = Vector2(AB_CELL, AB_CELL)
 		cell.add_child(glyph)
 		var cd := ColorRect.new()
 		cd.color = Color(0, 0, 0, 0.7)
-		cd.size = Vector2(40, 0)
+		cd.size = Vector2(AB_CELL, 0)
 		cell.add_child(cd)
-		var key := _outlined("%d" % (i + 1), 10)
-		key.position = Vector2(3, 24)
+		var key := _outlined("%d" % ((i + 1) % 10), 10)
+		key.position = Vector2(3, AB_CELL - 16)
 		cell.add_child(key)
 		var timer := _outlined("", 14)
 		timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		timer.size = Vector2(40, 40)
+		timer.size = Vector2(AB_CELL, AB_CELL)
 		timer.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		cell.add_child(timer)
 		_ability_cells.append({"cell": cell, "glyph": glyph, "cd": cd, "timer": timer})
@@ -463,15 +472,19 @@ func _update_abilities() -> void:
 		var id: String = player.ability_slots[i]
 		var n := TalentTree.node(id) if id != "" else {}
 		var col: Color = TalentTree.branch(n.branch).color if not n.is_empty() else Color(0.4, 0.35, 0.3)
+		var rcol: Color = TalentTree.rarity(id).color if not n.is_empty() else Color(0.3, 0.26, 0.22)
 		var st := StyleBoxFlat.new()
-		st.bg_color = col.darkened(0.55) if not n.is_empty() else Color(0.08, 0.06, 0.05, 0.6)
-		st.border_color = Color("f0d890") if i == player.selected_slot else col.darkened(0.2)
-		st.set_border_width_all(3 if i == player.selected_slot else 2)
-		st.set_corner_radius_all(4)
+		st.bg_color = col.darkened(0.6) if not n.is_empty() else Color(0.08, 0.06, 0.05, 0.55)
+		st.border_color = Color("fff0b0") if i == player.selected_slot else rcol
+		st.set_border_width_all(3 if (i == player.selected_slot or n.get("rarity", "") in ["legendaire", "mystique"]) else 2)
+		st.set_corner_radius_all(5)
+		if n.get("rarity", "") == "mystique":
+			st.shadow_color = Color(rcol, 0.6)
+			st.shadow_size = 5
 		c.cell.add_theme_stylebox_override("panel", st)
 		c.glyph.text = n.get("glyph", "")
-		c.glyph.add_theme_color_override("font_color", col.lightened(0.4))
-		c.cell.tooltip_text = n.get("name", "")
+		c.glyph.add_theme_color_override("font_color", col.lightened(0.45))
+		c.cell.tooltip_text = "%s (%s)" % [n.name, TalentTree.rarity(id).name] if not n.is_empty() else "Emplacement libre : apprends une compétence (T)"
 
 
 func _build_maps() -> void:
@@ -736,7 +749,7 @@ func _process(delta: float) -> void:
 		if _hotbar:
 			_hotbar.visible = not b and player.hand.selected != ""
 		if _ability_bar:
-			_ability_bar.visible = not b and player.ability_slots.any(func(x): return x != "")
+			_ability_frame.visible = not b
 			_process_abilities()
 		_messages.offset_bottom = -210.0 if b else -10.0
 	_quest_refresh -= delta
@@ -794,8 +807,8 @@ func _process_abilities() -> void:
 		var c: Dictionary = _ability_cells[i]
 		var hs: HeroSkill = player.abilities.get(player.ability_slots[i])
 		var r := hs.cooldown_ratio() if hs else 0.0
-		c.cd.size.y = 40.0 * r
-		c.cd.position.y = 40.0 * (1.0 - r)
+		c.cd.size.y = AB_CELL * r
+		c.cd.position.y = AB_CELL * (1.0 - r)
 		c.timer.text = "%d" % ceili(hs.cooldown_left) if r > 0.0 else ""
 
 

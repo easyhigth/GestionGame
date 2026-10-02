@@ -81,7 +81,7 @@ func _process(delta: float) -> void:
 ## `story` : raid de l'histoire {key, name, types, leader, extra} (bande imposée, plus nombreuse).
 func announce(story := {}) -> void:
 	var p := _player()
-	var lv := p.level if p else 1
+	var lv := p.power_level() if p else 1
 	var tier: Array = TIERS[0]
 	for t in TIERS:
 		if lv >= int(t[0]):

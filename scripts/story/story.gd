@@ -940,10 +940,10 @@ func _pack_step() -> void:
 
 func _pack_level(at: String) -> int:
 	if at == "sanctuaire":
-		return maxi(player.level, 8)
+		return maxi(player.power_level(), 8)
 	var z := npc_zone(at)
 	var lv: Vector2i = z.get("level", Vector2i(1, 2)) if not z.is_empty() else Vector2i(1, 2)
-	return maxi(lv.x, mini(player.level - 1, lv.y))
+	return maxi(lv.x, mini(player.power_level() - 1, lv.y))
 
 
 func _on_pack_kill() -> void:
@@ -1002,12 +1002,12 @@ func _duel_level(key: String) -> int:
 	match key:
 		"ren":
 			var z := npc_zone("kaede")
-			return maxi(player.level, (z.get("level", Vector2i(3, 4)) as Vector2i).y) + 1
+			return maxi(player.power_level(), (z.get("level", Vector2i(3, 4)) as Vector2i).y) + 1
 		"morvain":
-			return player.level + 2
+			return player.power_level() + 2
 		"aurele":
-			return player.level + 3
-	return maxi(top + 3, player.level + 4)
+			return player.power_level() + 3
+	return maxi(top + 3, player.power_level() + 4)
 
 
 func _spawn_duel(key: String) -> void:

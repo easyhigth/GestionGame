@@ -474,7 +474,7 @@ func _spawn_units(ar: Dictionary) -> void:
 	_units[ar.id] = holder
 	var pos := army_pos(ar)
 	var n := clampi(int(ar.strength) / 2 + 2, 3, 7)
-	var lv := maxi(3, player.level if player else 3)
+	var lv := maxi(3, player.power_level() if player else 3)
 	var types: Array = UNDEAD.types if ar.kind == "undead" else Diplomacy.NATIONS[ar.nation].army.types
 	var leader: String = UNDEAD.leader if ar.kind == "undead" else Diplomacy.NATIONS[ar.nation].army.leader
 	var hostile := _hostile(ar)
@@ -572,7 +572,7 @@ func _steer(ar: Dictionary, holder: Node3D) -> void:
 func _defeated(ar: Dictionary) -> void:
 	_remove_army(ar)
 	if player:
-		player.gain_xp(150 + 15 * player.level)
+		player.gain_xp(150 + 15 * player.power_level())
 		player.inventory.add(Items.get_item("piece_or"), 120 if ar.kind == "undead" else 200)
 		player.feat.emit("Armée vaincue : %s" % _army_name(ar), Color("ffd24a"))
 	if ar.kind == "undead":
@@ -841,7 +841,7 @@ func _tournament_step() -> void:
 				var city := city_of(event.nation)
 				player.inventory.add(Items.get_item("piece_or"), 250)
 				player.inventory.add(Items.get_item(RareDrops.GEM_IDS.pick_random()), 1)
-				player.gain_xp(200 + 20 * player.level)
+				player.gain_xp(200 + 20 * player.power_level())
 				var dip := _dip()
 				if dip and dip.states.has(event.nation):
 					dip._add_rel(event.nation, 10.0)
@@ -863,7 +863,7 @@ func _tournament_step() -> void:
 	d.display_name = "Champion de %s" % city_of(event.nation).get("name", "")
 	d.loot = []
 	e.data = d
-	e.level = player.level + int(event.round)
+	e.level = player.power_level() + int(event.round)
 	e.power = 1.15 + 0.05 * e.level
 	e.set_meta("tournoi", true)
 	_arena.add_child(e)

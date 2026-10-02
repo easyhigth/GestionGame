@@ -153,7 +153,7 @@ func spawn(kind: String, near: Dictionary) -> Node3D:
 			for b in n + 1:
 				var e := scene.instantiate() as Enemy
 				e.data = load("res://data/enemies/%s.tres" % ("bandit_chef" if b == 0 else "bandit"))
-				e.level = maxi(2, player.level)
+				e.level = maxi(2, player.power_level())
 				e.power = 1.0 + 0.05 * e.level
 				e.set_meta("bandit", true)
 				holder.add_child(e)

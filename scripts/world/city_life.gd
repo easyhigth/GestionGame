@@ -346,7 +346,7 @@ func _add_soldier(holder: Node3D, city: Dictionary, cell: Vector2i, rng: RandomN
 	var army: Dictionary = Diplomacy.NATIONS[city.nation].army
 	var e := (load("res://scenes/enemies/enemy.tscn") as PackedScene).instantiate() as Enemy
 	e.data = load("res://data/enemies/%s.tres" % army.types[rng.randi() % army.types.size()])
-	e.level = maxi(5, player.level + 1)
+	e.level = maxi(5, player.power_level() + 1)
 	e.power = 1.0 + 0.06 * e.level
 	e.set_meta("city_guard", city.nation)
 	holder.add_child(e)

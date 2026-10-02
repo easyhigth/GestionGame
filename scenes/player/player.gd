@@ -85,7 +85,7 @@ var talents := {}
 ## Évolution du héros (0 à 3), donnée par l'histoire principale (voir Evolution).
 var hero_evo := 0
 var _evo_fx := 0.0
-var ability_slots: Array = ["", "", "", ""]
+var ability_slots: Array = ["", "", "", "", "", "", "", "", "", ""]
 var abilities := {}      # id -> HeroSkill (talents actifs)
 var selected_slot := 0
 var _double_used := false
@@ -225,7 +225,7 @@ func _update_max_health(refill := false) -> void:
 	var hp := (race.max_health if race else stats.max_health)
 	if profile:
 		if profile.hero_class:
-			hp += profile.hero_class.bonus_health + profile.hero_class.health_per_level * (level - 1)
+			hp += profile.hero_class.bonus_health + profile.hero_class.health_per_level * (power_level() - 1)
 		if profile.job:
 			hp += profile.job.bonus_health
 	if skill:
@@ -314,9 +314,9 @@ func _give_class_talent() -> void:
 		_apply_talents()
 
 
-## Points gagnés : 1 par niveau (le premier au niveau 2) + 1 par âme de boss.
+## Points gagnés : 2 par niveau jusqu'au niveau 50, puis 1 (voir TalentTree.points_until) + 1 par âme de boss.
 func talent_points_total() -> int:
-	return (level - 1) + souls.size()
+	return TalentTree.points_until(level) + souls.size()
 
 
 func talent_points_spent() -> int:
@@ -341,12 +341,12 @@ func talent_block_reason(id: String) -> String:
 		return "Déjà appris"
 	if n.get("story", false):
 		return "Se débloque en avançant dans l'histoire principale"
-	var need: int = TalentTree.ROW_LEVEL[n.row]
+	var need := TalentTree.level_of(id)
 	if level < need:
 		return "Niveau %d requis" % need
 	var req: Array = n.get("requires", [])
 	if not req.is_empty() and not req.any(func(r): return talents.has(r)):
-		return "Apprends d'abord un talent relié"
+		return "Apprends d'abord un nœud relié (plus près du centre)"
 	if talent_points() < TalentTree.cost(id):
 		return "Pas assez de points"
 	return ""
@@ -415,9 +415,13 @@ func unlock_talent(id: String) -> bool:
 		if free >= 0:
 			ability_slots[free] = id
 	_apply_talents()
-	Sound.ui("talent")
-	feat.emit("Talent : %s" % n.name, TalentTree.branch(n.branch).color.lightened(0.3))
-	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), TalentTree.branch(n.branch).color, 40, 3.5, 0.1, 1.0, "up", -1.5)
+	var rar := TalentTree.rarity(id)
+	var big: bool = n.get("rarity", "") in ["legendaire", "mystique"]
+	Sound.ui("levelup" if big else "talent")
+	feat.emit("%s : %s" % [rar.name if n.kind == "active" or big else "Talent", n.name], (rar.color as Color).lightened(0.2))
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), rar.color, 90 if big else 40, 5.0 if big else 3.5, 0.1, 1.4 if big else 1.0, "up", -1.5)
+	if big:
+		SkillFX.ring(self, global_position, 6.0, rar.color, 0.8)
 	return true
 
 
@@ -428,7 +432,7 @@ func reset_talents() -> void:
 	talents.clear()
 	for id in keep:
 		talents[id] = true
-	ability_slots = ["", "", "", ""]
+	ability_slots = ["", "", "", "", "", "", "", "", "", ""]
 	_give_class_talent()
 	_apply_talents()
 
@@ -514,7 +518,7 @@ func _on_skill_evolved(old_name: String, new_name: String, tier: int) -> void:
 func _class_bonus(field: String, per_level: String) -> float:
 	if profile == null or profile.hero_class == null:
 		return 0.0
-	return float(profile.hero_class.get(field)) + float(profile.hero_class.get(per_level)) * (level - 1)
+	return float(profile.hero_class.get(field)) + float(profile.hero_class.get(per_level)) * (power_level() - 1)
 
 
 func _job_bonus(field: String) -> float:
@@ -545,21 +549,48 @@ func loot_multiplier() -> float:
 
 # ---------------------------------------------------------------- niveaux
 
-## Expérience nécessaire pour passer au niveau suivant.
+## Niveau maximum du héros.
+const MAX_LEVEL := 1000
+
+
+## Expérience nécessaire pour passer au niveau suivant : la même courbe qu'avant jusqu'au niveau 100,
+## puis +10 par niveau (12 505 au niveau 1000).
 func xp_to_next() -> int:
-	return 40 + (level - 1) * 35
+	if level <= 100:
+		return 40 + (level - 1) * 35
+	return 3505 + (level - 100) * 10
+
+
+## Niveau de puissance : il suit le niveau jusqu'à 100, puis monte 4 fois moins vite (325 au niveau 1000).
+## Il fixe les statistiques de base du héros et le niveau des ennemis qui s'adaptent à lui :
+## au-delà de 100, c'est l'arbre de compétences qui fait la différence.
+func power_level() -> int:
+	return power_level_of(level)
+
+
+static func power_level_of(lv: int) -> int:
+	return lv if lv <= 100 else 100 + (lv - 100) / 4
+
+
+## Au-delà du niveau 100, chaque ennemi vaincu rapporte plus (x4 au niveau 1000).
+func xp_level_mult() -> float:
+	return 1.0 if level <= 100 else 1.0 + (level - 100) / 300.0
 
 
 ## Gagne de l'expérience (monstre vaincu...).
 func gain_xp(amount: int) -> void:
 	if amount <= 0 or not is_alive():
 		return
-	amount = roundi(amount * (1.0 + (skill.p("xp") if skill else 0.0) + _kingdom_bonus("xp")))
+	if level >= MAX_LEVEL:
+		return
+	amount = roundi(amount * (1.0 + (skill.p("xp") if skill else 0.0) + _kingdom_bonus("xp")) * xp_level_mult())
 	xp += amount
 	Combat.popup(self, global_position + Vector3(0, 2.3 * visual.scale.y, 0), "+%d XP" % amount, Color("9fe0ff"))
-	while xp >= xp_to_next():
+	while xp >= xp_to_next() and level < MAX_LEVEL:
 		xp -= xp_to_next()
 		level += 1
+		if level >= MAX_LEVEL:
+			xp = 0
 		_update_max_health(true)
 		if skill:
 			skill.set_level(level)
@@ -567,11 +598,25 @@ func gain_xp(amount: int) -> void:
 			abilities[id].set_level(level)
 		feat.emit("Niveau %d !" % level, Color("ffd24a"))
 		Sound.ui("levelup")
-		notify.emit("+1 point de talent (T : arbre de talents).")
+		notify.emit("+%d point%s de compétence (T : arbre de compétences)." % [TalentTree.points_for_level(level), "s" if TalentTree.points_for_level(level) > 1 else ""])
 		talents_changed.emit()
 		notify.emit("Niveau %d : vie, attaque et magie augmentent." % level)
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.2, 0), Color(1.0, 0.85, 0.3), 40, 3.5, 0.1, 1.2, "up", -1.5)
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.1, 0), Color(1.0, 0.95, 0.6), 30, 5.0, 0.08, 0.6, "ring", 0.0)
+	xp_changed.emit(xp, xp_to_next(), level)
+
+
+## Passe directement à un niveau (terminal de commandes), sans les effets de chaque niveau gagné.
+func set_level_to(n: int) -> void:
+	level = clampi(n, 1, MAX_LEVEL)
+	xp = 0
+	_update_max_health(true)
+	if skill:
+		skill.set_level(level)
+	for id in abilities:
+		abilities[id].set_level(level)
+	feat.emit("Niveau %d !" % level, Color("ffd24a"))
+	talents_changed.emit()
 	xp_changed.emit(xp, xp_to_next(), level)
 
 

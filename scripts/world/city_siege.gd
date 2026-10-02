@@ -120,7 +120,7 @@ func _process(delta: float) -> void:
 
 
 func _level() -> int:
-	return maxi(5, player.level)
+	return maxi(5, player.power_level())
 
 
 func _spawn_wave() -> void:
