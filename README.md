@@ -17,7 +17,9 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage ; frapper un arbre, un rocher, un buisson ou un décor du village le récolte
 - G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux) ; dans l'eau : plonger (Espace : remonter)
 - H (LB + croix haut à la manette) : manger ; cliquer sur une nourriture dans le sac la mange aussi
-- C / X (LB + croix gauche/droite à la manette) : choisir un bloc, un meuble, des graines ou la houe du sac ; V (L3) : le poser, semer ou labourer devant soi
+- **Double barre en bas de l'écran, toujours affichée** :
+  - rangée du haut, **Construire** (façon Minecraft) : 10 cases où se rangent toutes seules les blocs, meubles, graines et outils posables ramassés ou fabriqués. **Ctrl+1 … Ctrl+0** prend l'objet de la case en main (un clic sur la case aussi) ; la même touche, ou **Échap**, le range (mains nues). C / X passent à l'objet suivant / précédent (LB + croix gauche/droite à la manette) ; V (L3) : le poser, semer ou labourer devant soi ;
+  - rangée du bas, **Compétences** (façon MMORPG) : **1 … 9, 0** lancent les compétences de l'arbre, et la compétence unique (Q) est au bout de la rangée.
 - Q (RB) : compétence unique ; 1 à 9 et 0 : la barre de compétences (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
 - T (ou croix gauche à la manette) : arbre de compétences
 - I (ou Tab) : inventaire, équipement et artisanat
@@ -121,7 +123,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Test : `tests/test_skills.gd`.
 
 ## Début de partie et récolte (façon Minecraft)
-- **On commence à mains nues, comme dans Minecraft** : ni arme, ni armure, ni ressources, ni meubles au campement, ni champ semé. Il n'y a que le héros, le feu de camp et ses habitants (sans équipement). Tout se trouve et se débloque : du bois en frappant un arbre à mains nues, un établi (4 bois), des outils en bois puis en pierre, une arme en bois à l'établi... (`GameState.bare_start` ; les tests gardent l'ancien départ avec `GG_CLASSIC_START=1`.)
+- **On commence à mains nues, comme dans Minecraft** : ni arme, ni armure, ni ressources, ni meubles au campement, ni champ semé. **Le héros arrive seul au monde** : ni feu de camp, ni habitants. On fabrique son propre **feu de camp** (3 bois + 3 cailloux : il éclaire et sert à cuisiner), et les premiers habitants sont des voyageurs attirés dès qu'on a bâti un abri (on les recrute en leur parlant). Tout se trouve et se débloque : du bois en frappant un arbre à mains nues, un établi (4 bois), des outils en bois puis en pierre, une arme en bois à l'établi... (`GameState.bare_start` ; les tests gardent l'ancien départ avec `GG_CLASSIC_START=1`.)
 - Tout le reste se récolte. Chaque coup d'arme frappe aussi le décor devant le héros ; il se brise après quelques coups et lâche des ressources à ramasser en marchant dessus :
   - arbre (5 coups) : 3 à 5 bois, parfois de la fibre ; rocher (6 coups) : 2 à 4 cailloux, parfois du minerai de fer, du marbre ou de l'or ; buisson (2 coups) : fibre ; herbes et fleurs (1 coup) : fibre ;
   - décors du village : cabane (14 coups : planches, rondins, chaume), tonneau, caisse, établi, râtelier.

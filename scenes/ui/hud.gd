@@ -372,8 +372,8 @@ func _build_skill_slot() -> void:
 	_skill_box = PanelContainer.new()
 	_skill_box.add_theme_stylebox_override("panel", UiTheme.small_frame(6))
 	_skill_box.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_skill_box.position = Vector2(-386, -60)
-	_skill_box.custom_minimum_size = Vector2(260, 46)
+	_skill_box.position = Vector2(-630, -60)
+	_skill_box.custom_minimum_size = Vector2(248, 46)
 	add_child(_skill_box)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
@@ -426,14 +426,26 @@ func _update_skill() -> void:
 const AB_CELL := 44.0
 
 func _build_ability_bar() -> void:
+	_make_dock()
 	var frame := PanelContainer.new()
 	frame.add_theme_stylebox_override("panel", UiTheme.small_frame(5))
-	frame.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	frame.position = Vector2(-116, -60)
-	add_child(frame)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dock.add_child(frame)
+	var arow := HBoxContainer.new()
+	arow.add_theme_constant_override("separation", 6)
+	frame.add_child(arow)
+	arow.add_child(_row_tag("✦", "Compétences\n1 … 0", Color("c8a0ff")))
 	_ability_bar = HBoxContainer.new()
 	_ability_bar.add_theme_constant_override("separation", 4)
-	frame.add_child(_ability_bar)
+	arow.add_child(_ability_bar)
+	# la compétence unique (Q) au bout de la rangée des compétences
+	if _skill_box and _skill_box.get_parent() == self:
+		remove_child(_skill_box)
+		_skill_box.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_skill_box.position = Vector2.ZERO
+		_skill_box.custom_minimum_size = Vector2(200, AB_CELL)
+		_skill_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		arow.add_child(_skill_box)
 	_ability_frame = frame
 	for i in TalentTree.SLOTS:
 		var cell := Panel.new()
@@ -753,12 +765,11 @@ func _process(delta: float) -> void:
 		info.visible = bool(SaveGame.options.show_help) and not b and not player.ui_open
 		if _skill_box:
 			_skill_box.visible = not b
-		if _hotbar:
-			_hotbar.visible = not b and player.hand.selected != ""
+		if _dock:
+			_dock.visible = not b
 		if _ability_bar:
-			_ability_frame.visible = not b
 			_process_abilities()
-		_messages.offset_bottom = -210.0 if b else -10.0
+		_messages.offset_bottom = -210.0 if b else -140.0
 	_quest_refresh -= delta
 	if _quest_refresh <= 0.0:
 		_quest_refresh = 1.0
@@ -1056,62 +1067,121 @@ func _build_day_and_guide() -> void:
 	add_child(_quest_box)
 
 
-## Barre des objets à poser à la main (C / X pour choisir, V pour poser), au-dessus de la compétence.
+## Double barre du bas, toujours affichée : en haut la construction façon Minecraft (Ctrl+1 à Ctrl+0),
+## en bas les compétences façon MMORPG (1 à 0).
+var _dock: VBoxContainer
+
+
+func _make_dock() -> void:
+	if _dock:
+		return
+	_dock = VBoxContainer.new()
+	_dock.add_theme_constant_override("separation", 2)
+	_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dock.anchor_left = 0.5
+	_dock.anchor_right = 0.5
+	_dock.anchor_top = 1.0
+	_dock.anchor_bottom = 1.0
+	_dock.offset_bottom = -6
+	_dock.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_dock.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	add_child(_dock)
+
+
+## Étiquette au début d'une rangée de la double barre.
+func _row_tag(glyph: String, text: String, col: Color) -> Control:
+	var v := VBoxContainer.new()
+	v.custom_minimum_size = Vector2(70, 0)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 0)
+	var g := _outlined(glyph, 16)
+	g.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	g.add_theme_color_override("font_color", col)
+	v.add_child(g)
+	var l := _outlined(text, 9)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_color_override("font_color", col.lerp(Color.WHITE, 0.4))
+	v.add_child(l)
+	return v
+
+
+## Rangée du haut : les 10 cases de construction (blocs, meubles, graines, outils à poser).
 func _build_hotbar() -> void:
 	if player == null or player.hand == null:
 		return
+	_make_dock()
 	_hotbar = VBoxContainer.new()
-	_hotbar.alignment = BoxContainer.ALIGNMENT_END
 	_hotbar.add_theme_constant_override("separation", 2)
-	_hotbar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_hotbar.position = Vector2(-240, -112)
-	_hotbar.custom_minimum_size = Vector2(480, 50)
 	_hotbar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_hotbar)
-	_hotbar_name = _outlined("", 12)
+	_dock.add_child(_hotbar)
+	_dock.move_child(_hotbar, 0)
+	_hotbar_name = _outlined("", 11)
 	_hotbar_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hotbar.add_child(_hotbar_name)
+	var frame := PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", UiTheme.small_frame(5))
+	_hotbar.add_child(frame)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	frame.add_child(row)
+	row.add_child(_row_tag("⛏", "Construire\nCtrl+1 … 0", Color("f2c86a")))
 	_hotbar_row = HBoxContainer.new()
-	_hotbar_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_hotbar_row.add_theme_constant_override("separation", 3)
-	_hotbar.add_child(_hotbar_row)
+	_hotbar_row.add_theme_constant_override("separation", 4)
+	row.add_child(_hotbar_row)
+	for i in HandBuild.SLOTS:
+		var cell := Panel.new()
+		cell.custom_minimum_size = Vector2(AB_CELL, AB_CELL)
+		cell.mouse_filter = Control.MOUSE_FILTER_STOP
+		cell.gui_input.connect(func(e):
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				player.hand.select_slot(i))
+		var icon := TextureRect.new()
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.position = Vector2(5, 4)
+		icon.size = Vector2(AB_CELL - 10, AB_CELL - 10)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cell.add_child(icon)
+		var key := _outlined("%d" % ((i + 1) % 10), 10)
+		key.position = Vector2(3, AB_CELL - 16)
+		cell.add_child(key)
+		var n := _outlined("", 10)
+		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		n.position = Vector2(AB_CELL - 30, AB_CELL - 16)
+		n.size = Vector2(26, 14)
+		cell.add_child(n)
+		_hotbar_row.add_child(cell)
 	player.hand.selection_changed.connect(_update_hotbar)
-	player.inventory.changed.connect(_update_hotbar)
+	player.inventory.changed.connect(_update_hotbar.call_deferred)
 	_update_hotbar()
 
 
 func _update_hotbar() -> void:
 	if _hotbar == null:
 		return
-	var sel := player.hand.selected
-	_hotbar.visible = sel != ""
-	for c in _hotbar_row.get_children():
-		c.queue_free()
+	var hb: HandBuild = player.hand
+	hb.sync_slots()
+	var sel := hb.selected
+	var cells := _hotbar_row.get_children()
+	for i in cells.size():
+		var cell: Panel = cells[i]
+		var id: String = hb.slots[i]
+		var it := Items.get_item(id) as ItemData if id != "" else null
+		var on := id != "" and id == sel
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(0.2, 0.15, 0.06, 0.85) if on else Color(0.08, 0.06, 0.05, 0.55)
+		st.border_color = Color("fff0b0") if on else Color(0.45, 0.36, 0.24)
+		st.set_border_width_all(3 if on else 2)
+		st.set_corner_radius_all(5)
+		cell.add_theme_stylebox_override("panel", st)
+		(cell.get_child(0) as TextureRect).texture = Items.get_icon(it) if it else null
+		(cell.get_child(2) as Label).text = str(player.inventory.count(it)) if it else ""
+		cell.tooltip_text = ("%s · Ctrl+%d" % [it.display_name, (i + 1) % 10]) if it else "Case vide : les blocs, meubles et graines ramassés s'y rangent tout seuls"
 	if sel == "":
+		_hotbar_name.text = "Mains nues  ·  Ctrl+1…0 : prendre un bloc   ·   1…0 : compétences"
+		_hotbar_name.add_theme_color_override("font_color", Color(0.85, 0.8, 0.7, 0.75))
 		return
-	var list := player.hand.choices()
-	# on montre au plus 9 objets, centrés sur celui qui est choisi
-	var i0 := 0
-	for i in list.size():
-		if list[i].id == sel:
-			i0 = clampi(i - 4, 0, maxi(0, list.size() - 9))
-	for i in range(i0, mini(list.size(), i0 + 9)):
-		var it: ItemData = list[i]
-		var on := it.id == sel
-		var cell := Panel.new()
-		cell.custom_minimum_size = Vector2(36, 36)
-		cell.add_theme_stylebox_override("panel", UiTheme.box("slot_selected" if on else "slot", 8, Vector4.ZERO))
-		var icon := TextureRect.new()
-		icon.texture = Items.get_icon(it)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.position = Vector2(3, 3)
-		icon.size = Vector2(30, 30)
-		cell.add_child(icon)
-		var n := _outlined(str(player.inventory.count(it)), 9)
-		n.position = Vector2(20, 22)
-		cell.add_child(n)
-		_hotbar_row.add_child(cell)
+	_hotbar_name.add_theme_color_override("font_color", Color("fff2c8"))
 	var cur := Items.get_item(sel)
 	var verb := "poser"
 	if cur and cur.id == "houe":
@@ -1126,7 +1196,7 @@ func _update_hotbar() -> void:
 		verb = "pêcher (face à l'eau)"
 	elif cur and HandBuild.is_lure(cur):
 		verb = "rien (les bêtes te suivent)"
-	_hotbar_name.text = "%s  ·  V / L3 : %s   C / X : changer   (après le dernier : mains nues)" % [cur.display_name if cur else "", verb]
+	_hotbar_name.text = "%s  ·  %s : %s   ·   Échap ou même Ctrl+chiffre : ranger" % [cur.display_name if cur else "", KeyBindings.key_text("place_block"), verb]
 
 
 ## Suivi des quêtes en cours (en haut à droite) : titre et avancement.

@@ -1521,6 +1521,13 @@ func _start_dash(direction: Vector3) -> void:
 func _input(event: InputEvent) -> void:
 	if ui_open or building or not is_alive():
 		return
+	# Ctrl + chiffre : barre de construction (le chiffre seul reste aux compétences)
+	if event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).ctrl_pressed:
+		var kc := (event as InputEventKey).physical_keycode
+		if kc >= KEY_0 and kc <= KEY_9 and hand:
+			hand.select_slot(9 if kc == KEY_0 else kc - KEY_1)
+			get_viewport().set_input_as_handled()
+			return
 	# Échap avec un bloc en main : on le range (mains nues) avant d'ouvrir le menu
 	if event.is_action_pressed("pause") and hand and hand.selected != "":
 		hand.selected = ""
@@ -1901,8 +1908,8 @@ func nearby_stations() -> Array:
 			out.append("etabli")
 	# « feu » pour cuisiner : le feu de camp du village, ou un four / une forge posés
 	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
-	if out.has("four") or out.has("four_pain") or out.has("foyer_forge") \
-			or (world and global_position.distance_to(world.cell_center(world.spawn_cell)) < 4.5):
+	if out.has("four") or out.has("four_pain") or out.has("foyer_forge") or out.has("feu_de_camp") \
+			or (world and not GameState.bare_start and global_position.distance_to(world.cell_center(world.spawn_cell)) < 4.5):
 		out.append("feu")
 	return out
 
