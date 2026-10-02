@@ -121,6 +121,14 @@ func _process(_d) -> bool:
 		start("show")
 	if later("show", 1500):
 		shot("co_01_vitrine.png")
+		# un seul maillage opaque (+ un de verre) par morceau, quel que soit le nombre de textures
+		var meshes := 0
+		var chunks := 0
+		for ch in w.build.get_children():
+			if String(ch.name).begins_with("Blocs_"):
+				chunks += 1
+				meshes += ch.get_children().filter(func(x): return x is MeshInstance3D).size()
+		check("%d maillages pour %d morceaux (tableau de textures)" % [meshes, chunks], chunks > 0 and meshes <= chunks * 2)
 		var side: int = get_meta("side")
 		p.global_position = Vector3(s.x + side / 2.0, H + 1.05, s.y + side / 2.0)
 		p.camera_zoom = 0.7
@@ -129,6 +137,53 @@ func _process(_d) -> bool:
 		start("hero")
 	if later("hero", 900):
 		shot("co_02_heros_panoplie.png")
+		# blocs lumineux, la nuit
+		var c0: Vector2i = w.cell_at(p.global_position) + Vector2i(-14, 4)
+		var h0: int = roundi(w.terrain_height(c0))
+		for i in 5:
+			w.build.place_block(Vector3i(c0.x + i * 2, h0, c0.y), items.get_item("bloc_pierre_lumineuse" if i % 2 == 0 else "bloc_lanterne_marine"))
+			w.build.place_block(Vector3i(c0.x + i * 2 + 1, h0, c0.y), items.get_item("bloc_quartz_polie"))
+		# un escalier de granite qui monte vers le nord (le héros regarde vers -Z)
+		p.facing = Vector3(0, 0, -1)
+		var hb = p.hand
+		var stair = items.get_item("escalier_granite_polie")
+		check("escalier dans le catalogue (4 orientations)", stair != null and stair.get_meta("stair_variants").size() == 4)
+		var sx: int = c0.x + 2
+		for i in 4:
+			for j in i:
+				w.build.place_block(Vector3i(sx, h0 + j, c0.y - 3 - i), items.get_item("bloc_granite_polie"))
+			w.build.place_block(Vector3i(sx, h0 + i, c0.y - 3 - i), items.get_item(stair.get_meta("stair_variants")[0]))
+		var sc := Vector2i(sx, c0.y - 3)
+		var s1: float = w.build.support(sc, h0 + 0.55)
+		var s2: float = w.build.support(sc, h0 + 1.05)
+		check("deux marches par escalier (%.1f puis %.1f)" % [s1 - h0, s2 - h0], is_equal_approx(s1 - h0, 0.5) and is_equal_approx(s2 - h0, 1.0))
+		check("on peut se tenir debout sur la marche", not w.build.body_blocked(sc, h0 + 0.5))
+		get_first_node_in_group("day_cycle").hour = 23.0
+		p.global_position = Vector3(c0.x + 5, h0 + 0.1, c0.y + 4)
+		p.camera_zoom = 1.0
+		p.cam_pitch = deg_to_rad(40.0)
+		p.snap_camera()
+		set_meta("c0", c0)
+		start("night")
+	if later("night", 1500):
+		var lights := 0
+		for ch in w.build.get_children():
+			lights += ch.get_children().filter(func(x): return x is OmniLight3D).size()
+		check("les blocs lumineux éclairent (%d lumières)" % lights, lights >= 3)
+		shot("co_05_lumieres.png")
+		get_first_node_in_group("day_cycle").hour = 10.0
+		var c0: Vector2i = get_meta("c0")
+		var h0: int = roundi(w.terrain_height(c0))
+		p.global_position = Vector3(c0.x + 6.5, h0 + 0.1, c0.y - 4.5)
+		p.cam_yaw = deg_to_rad(90.0)
+		p.cam_pitch = deg_to_rad(28.0)
+		p.camera_zoom = 0.9
+		p.snap_camera()
+		start("stairs")
+	if later("stairs", 900):
+		shot("co_06_escalier.png")
+		p.cam_yaw = 0.0
+		p.cam_pitch = deg_to_rad(45.0)
 		p.camera_zoom = 1.0
 		for c in root.find_children("*", "Control", true, false):
 			if c.get_script() and c.get_script().resource_path.ends_with("inventory_ui.gd"):
@@ -136,6 +191,8 @@ func _process(_d) -> bool:
 		inv_ui._family = 3
 		inv_ui.open_tab(p, "Construction")
 		start("ui1")
+	if false:
+		pass
 	if later("ui1", 700):
 		shot("co_03_construction.png")
 		inv_ui._cat = "Armures"

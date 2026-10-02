@@ -197,6 +197,33 @@ func get_icon(item: ItemData) -> Texture2D:
 	vp.add_child(cam)
 	cam.look_at_from_position(cam.position, Vector3.ZERO)
 	add_child(vp)
-	var tex := vp.get_texture()
+	# l'icône est copiée dans une texture ordinaire après le rendu, puis la petite scène 3D est libérée
+	# (avant : une SubViewport gardée pour toujours par objet, des centaines avec l'arsenal et les blocs)
+	var img := Image.create(ICON_SIZE, ICON_SIZE, false, Image.FORMAT_RGBA8)
+	var tex := ImageTexture.create_from_image(img)
 	_icons[item.model_id()] = tex
+	_pending_icons.append([vp, tex])
+	if _pending_icons.size() == 1:
+		RenderingServer.frame_post_draw.connect(_collect_icons, CONNECT_ONE_SHOT)
 	return tex
+
+
+var _pending_icons: Array = []
+
+
+func _collect_icons() -> void:
+	var list := _pending_icons
+	_pending_icons = []
+	for pair in list:
+		var vp: SubViewport = pair[0]
+		var tex: ImageTexture = pair[1]
+		if is_instance_valid(vp):
+			var img := vp.get_texture().get_image()
+			if img and not img.is_empty():
+				if img.get_format() != Image.FORMAT_RGBA8:
+					img.convert(Image.FORMAT_RGBA8)
+				if img.get_size() == Vector2i(ICON_SIZE, ICON_SIZE):
+					tex.update(img)
+				else:
+					tex.set_image(img)
+			vp.queue_free()

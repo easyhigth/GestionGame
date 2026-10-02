@@ -238,7 +238,13 @@ func place() -> bool:
 	if _target.get("farm", false):
 		return _farm_use(it, Vector2i(k.x, k.z))
 	if it.is_block():
-		done = world.build.place_block(k, it)
+		# un escalier monte dans le sens du regard du héros
+		var placed := it
+		if it.has_meta("stair_variants"):
+			var f := player.facing
+			var dir := (0 if f.z < 0 else 2) if absf(f.z) >= absf(f.x) else (1 if f.x > 0 else 3)
+			placed = Items.get_item(it.get_meta("stair_variants")[dir])
+		done = world.build.place_block(k, placed)
 	else:
 		var rot := _rot_from_facing()
 		done = world.build.place_furniture(Vector2i(k.x, k.z), float(_target.base), it, rot)

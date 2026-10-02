@@ -14,9 +14,14 @@ static func build(id: String) -> MeshInstance3D:
 	return mi
 
 
+## Objets anciens sans modèle dans materials.glb (leur icône était vide) : couleur, forme.
+const EXTRA := {"piece_or": ["f0c840", "coins"], "lingot_or": ["e8c040", "ingot"], "or_brut": ["e0b840", "ore"],
+	"marbre_brut": ["ece8e0", "lump"], "barque": ["8a5a32", "boat"], "voilier": ["f2ecdc", "boat"], "sifflet_griffon": ["c8964a", "whistle"]}
+
+
 ## Vrai si l'objet a un modèle fabriqué ici.
 static func has_model(id: String) -> bool:
-	return Arsenal.RESOURCES.has(id) or not BlockCatalog.resource_spec(id).is_empty()
+	return Arsenal.RESOURCES.has(id) or EXTRA.has(id) or not BlockCatalog.resource_spec(id).is_empty()
 
 
 static func _make(id: String) -> ArrayMesh:
@@ -27,9 +32,29 @@ static func _make(id: String) -> ArrayMesh:
 	if not spec.is_empty():
 		c = spec[0]
 		shape = spec[1]
+	elif EXTRA.has(id):
+		c = Color(EXTRA[id][0])
+		shape = EXTRA[id][1]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(id)
 	match shape:
+		"coins":
+			for i in 5:
+				b.box(5, 0.9, 5, c if i % 2 == 0 else c.darkened(0.12), rng.randf_range(-0.6, 0.6), 0.45 + i * 0.95, rng.randf_range(-0.6, 0.6))
+			b.box(5, 0.9, 5, c, 4.5, 0.45, 1.5)
+			b.box(5, 0.9, 5, c.lightened(0.15), 2.5, 1.4, 3.5)
+		"boat":
+			var wood := Color("8a5a32")
+			b.box(12, 2.4, 5, wood, 0, 1.2, 0)
+			b.box(10, 0.6, 3.6, wood.lightened(0.2), 0, 2.2, 0)
+			b.box(2, 2.4, 3, wood.darkened(0.15), 6.6, 1.8, 0)
+			if c != wood:
+				b.box(0.6, 9, 0.6, wood.darkened(0.3), 0, 6.5, 0)
+				b.box(0.3, 6, 5, c, 0.5, 7, 0)
+		"whistle":
+			b.box(2, 2, 7, c, 0, 1, 0)
+			b.box(2.4, 2.4, 1.6, c.darkened(0.2), 0, 1, -3.6)
+			b.box(1, 1, 1, Color("2a2a2a"), 0, 2.1, 1)
 		"log":
 			var inner: Color = spec[2] if spec.size() > 2 else c.lightened(0.3)
 			for i in 2:

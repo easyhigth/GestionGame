@@ -261,7 +261,10 @@ func _cast(h: Dictionary) -> void:
 		bolt.shooter = self
 		var ang := (i - (count - 1) / 2.0) * 0.28
 		bolt.direction = Vector3(facing.x, 0, facing.z).normalized().rotated(Vector3.UP, ang)
-		bolt.damage = roundi(magic_power() * float(h.get("dmg", 1.0)) * _move_damage)
+		# les arcs tirent de vraies flèches, qui comptent sur l'attaque (les bâtons et sceptres : la magie)
+		bolt.arrow = w != null and w.model_id().begins_with("arm_arc_")
+		var power := attack_power() if bolt.arrow else magic_power()
+		bolt.damage = roundi(power * float(h.get("dmg", 1.0)) * _move_damage)
 		bolt.range_left = w.reach if w else 8.0
 		var holder: Node = get_tree().current_scene if get_tree().current_scene else get_tree().root
 		holder.add_child(bolt)

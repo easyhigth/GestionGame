@@ -1906,6 +1906,7 @@ func _build_content(ch: Vector2i) -> void:
 				continue
 			var p := spawn_pickup(got[0], cell_center(c), got[1], holder)
 			if p:
+				p.set_meta("world_loot", true)
 				p.tree_exiting.connect(_on_pickup_gone.bind(c, holder))
 
 

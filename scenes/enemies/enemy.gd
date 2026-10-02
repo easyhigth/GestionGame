@@ -11,6 +11,8 @@ signal died_at(pos: Vector3)
 ## Niveau (affiché) et multiplicateur de puissance, fixés par le camp selon la région.
 @export var level: int = 1
 @export var power: float = 1.0
+## Vitesse multipliée (failles « rapides »).
+var speed_mult := 1.0
 
 ## Position du camp.
 var home: Vector3
@@ -168,7 +170,7 @@ func _physics_process(delta: float) -> void:
 		_think = 0.3
 		_choose_target()
 		_pact_hint(player_dist)
-	var speed := (data.move_speed if data else 3.5) * speed_factor()
+	var speed := (data.move_speed if data else 3.5) * speed_factor() * speed_mult
 	velocity = Vector3.ZERO
 	if _fear_left > 0.0:
 		_fear_left -= delta
@@ -316,7 +318,7 @@ func _familiar_process(delta: float, player: Node3D) -> void:
 				_target = t
 			elif health.current < health.max_health:
 				health.heal(maxi(1, roundi(health.max_health * 0.03)))
-	var speed := (data.move_speed if data else 3.5) * speed_factor()
+	var speed := (data.move_speed if data else 3.5) * speed_factor() * speed_mult
 	velocity = Vector3.ZERO
 	if not can_act() or in_move():
 		pass

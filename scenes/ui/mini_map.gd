@@ -24,11 +24,41 @@ func _ready() -> void:
 	_font = get_theme_default_font()
 
 
-func _process(_delta: float) -> void:
+var _last_pos := Vector3.INF
+var _last_facing := Vector3.ZERO
+var _redraw_left := 0.0
+
+
+func _process(delta: float) -> void:
 	visible = world != null and world.map_texture != null and player != null and not player.ui_open \
 			and player.global_position.y > WorldGenerator.UNDERGROUND
-	if visible:
+	if not visible:
+		return
+	# on ne redessine que si le héros a bougé ou tourné, et au moins 5 fois par seconde (pillards, compagnons)
+	_redraw_left -= delta
+	var moved := player.global_position.distance_squared_to(_last_pos) > 0.04 or player.facing.distance_squared_to(_last_facing) > 0.002
+	if moved or _redraw_left <= 0.0:
+		_last_pos = player.global_position
+		_last_facing = player.facing
+		_redraw_left = 0.2
 		queue_redraw()
+
+
+var _near_zones: Array = []
+var _near_sites: Array = []
+var _near_cities: Array = []
+var _near_center := Vector2(INF, INF)
+
+
+## Les lieux proches du héros, recalculés seulement quand il s'est éloigné (au lieu de tout parcourir à chaque dessin).
+func _refresh_near(pc: Vector2) -> void:
+	if pc.distance_to(_near_center) < SPAN * 0.25 and Engine.get_process_frames() % 120 != 0:
+		return
+	_near_center = pc
+	var r := SPAN * 1.2
+	_near_zones = world.zones.filter(func(z): return Vector2(z.obelisk).distance_to(pc) < r or Vector2(z.gate).distance_to(pc) < r)
+	_near_sites = world.structure_sites.filter(func(st): return Vector2(st.cell).distance_to(pc) < r + 30.0)
+	_near_cities = world.cities.filter(func(c): return Vector2(c.center).distance_to(pc) < r + float(c.radius))
 
 
 func _draw() -> void:
@@ -44,8 +74,9 @@ func _draw() -> void:
 	if clipped.size.x > 0 and clipped.size.y > 0:
 		var dst := Rect2((clipped.position - src.position) * s, clipped.size * s)
 		draw_texture_rect_region(world.map_texture, dst, clipped)
+	_refresh_near(pc)
 	# lieux
-	for z in world.zones:
+	for z in _near_zones:
 		if (z.obelisk as Vector2i).x >= 0 and (z.obelisk_on or world.is_revealed(z.obelisk)):
 			var q := (Vector2(z.obelisk) + Vector2(0.5, 0.5) - src.position) * s
 			if rect.has_point(q):
@@ -56,7 +87,7 @@ func _draw() -> void:
 			if rect.has_point(g):
 				draw_rect(Rect2(g - Vector2(3, 3), Vector2(6, 6)), Color("5ac84a") if z.get("cleared", false) else Color("c84a3a"))
 	# capitales, châteaux, hameaux et épaves déjà vus
-	for st in world.structure_sites:
+	for st in _near_sites:
 		var k: String = st.kind
 		if k != "castle" and k != "hamlet" and k != "wreck":
 			continue
@@ -75,7 +106,7 @@ func _draw() -> void:
 				draw_colored_polygon(PackedVector2Array([q + Vector2(-3, 3), q + Vector2(-3, -1), q + Vector2(0, -4), q + Vector2(3, -1), q + Vector2(3, 3)]), Color("e8c890"))
 			"wreck":
 				draw_colored_polygon(PackedVector2Array([q + Vector2(-4, 0), q + Vector2(4, 0), q + Vector2(3, 3), q + Vector2(-3, 3)]), Color("8a5a32"))
-	for city in world.cities:
+	for city in _near_cities:
 		var cc: Vector2i = city.center
 		if not world.is_revealed(cc):
 			continue

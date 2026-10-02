@@ -739,6 +739,11 @@ func _update_health() -> void:
 		_death.hide()
 
 
+var _clock_timer := 0.0
+var _clock_night: Variant = null
+var _hud_slow := 0.0
+
+
 func _process(delta: float) -> void:
 	if _fps_label and _fps_label.visible:
 		_fps_label.text = "%d IPS" % Engine.get_frames_per_second()
@@ -760,11 +765,17 @@ func _process(delta: float) -> void:
 		_update_quests()
 		if _quest_box and player:
 			_quest_box.visible = not player.building
-	if _clock and day_cycle and day_cycle.is_inside_tree():
+	# horloge et météo : 4 fois par seconde suffisent (la météo cherche la région du village)
+	_clock_timer -= delta
+	if _clock and day_cycle and day_cycle.is_inside_tree() and _clock_timer <= 0.0:
+		_clock_timer = 0.25
 		_clock.text = day_cycle.clock_text()
 		if _weather_label:
 			_weather_label.text = (seasons.hud_text() + "  ·  " if seasons and seasons.is_inside_tree() else "") + (weather.hud_text() if weather and weather.is_inside_tree() else "") + ("\nMarchand au village" if trade and trade.is_here() else "")
-		_clock.add_theme_color_override("font_color", Color("b8c8ff") if day_cycle.is_night() else Color("fff2c8"))
+		var night := day_cycle.is_night()
+		if night != _clock_night:
+			_clock_night = night
+			_clock.add_theme_color_override("font_color", Color("b8c8ff") if night else Color("fff2c8"))
 	if guide:
 		guide.modulate.a = 0.35 if player and player.ui_open else 1.0
 	_update_breath()

@@ -18,7 +18,7 @@ const BODY_HEIGHT := 1.6
 const SHADER_OPAQUE := """
 shader_type spatial;
 render_mode cull_back;
-uniform sampler2D tex : source_color, filter_nearest_mipmap, repeat_enable;
+uniform sampler2DArray tex : source_color, filter_nearest_mipmap, repeat_enable;
 uniform vec3 cut_center = vec3(0.0);
 uniform float cut_y = 10000.0;
 uniform float cut_radius = 0.0;
@@ -56,15 +56,17 @@ bool hidden(vec2 frag) {
 }
 void fragment() {
 	if (hidden(FRAGCOORD.xy)) { discard; }
-	vec4 c = texture(tex, UV);
+	vec4 c = texture(tex, vec3(UV, UV2.x));
 	ALBEDO = c.rgb * COLOR.rgb * bevel() * block_tint();
 	ROUGHNESS = 0.95;
+	// blocs lumineux (pierre lumineuse, lanterne marine...)
+	EMISSION = c.rgb * UV2.y * 1.4;
 }
 """
 const SHADER_GLASS := """
 shader_type spatial;
 render_mode blend_mix, cull_disabled, depth_draw_opaque;
-uniform sampler2D tex : source_color, filter_nearest_mipmap, repeat_enable;
+uniform sampler2DArray tex : source_color, filter_nearest_mipmap, repeat_enable;
 uniform vec3 cut_center = vec3(0.0);
 uniform float cut_y = 10000.0;
 uniform float cut_radius = 0.0;
@@ -102,7 +104,7 @@ bool hidden(vec2 frag) {
 }
 void fragment() {
 	if (hidden(FRAGCOORD.xy)) { discard; }
-	vec4 c = texture(tex, UV);
+	vec4 c = texture(tex, vec3(UV, UV2.x));
 	ALBEDO = c.rgb * COLOR.rgb;
 	ALPHA = c.a;
 	ROUGHNESS = 0.1;
@@ -118,7 +120,11 @@ var furniture := {}
 var _block_cols := {}   # Vector2i -> Array[int] (niveaux)
 var _furn_cols := {}    # Vector2i -> Array[Vector3i]
 var _chunk_nodes := {}  # Vector2i -> Node3D
-var _materials := {}    # texture -> ShaderMaterial
+var _materials := {}    # "opaque" / "glass" -> ShaderMaterial
+## Couche de texture et lueur du bloc en cours de construction (voir _layer_of).
+var _layer := 0
+var _glow := 0.0
+const MAX_LIGHTS_PER_CHUNK := 4
 var _dirty := {}        # morceaux à redessiner
 var _shader_opaque: Shader
 var _shader_glass: Shader
@@ -243,16 +249,24 @@ func column(col: Vector2i) -> Array:
 	var out := []
 	for y in _block_cols.get(col, []):
 		var it: ItemData = blocks[Vector3i(col.x, y, col.y)]
-		out.append([y, float(y), float(y) + block_height(it), it])
+		# un escalier ne bloque que sa moitié basse (on peut s'y tenir à mi-hauteur puis en haut)
+		out.append([y, float(y), float(y) + (0.5 if is_stair(it) else block_height(it)), it])
 	return out
 
 
+static func is_stair(it: ItemData) -> bool:
+	return it != null and it.has_meta("stair_dir")
+
+
 ## Plus haut dessus de bloc sur lequel on peut se tenir sans dépasser `max_y` (-INF s'il n'y en a pas).
+## Un escalier offre deux marches : sa moitié (y + 0,5) puis son dessus (y + 1).
 func support(col: Vector2i, max_y: float) -> float:
 	var best := -INF
 	for b in column(col):
 		if b[2] <= max_y + 0.001:
 			best = maxf(best, b[2])
+		if is_stair(b[3]) and b[1] + 1.0 <= max_y + 0.001:
+			best = maxf(best, b[1] + 1.0)
 	return best
 
 
@@ -392,29 +406,102 @@ func set_cut(center: Vector3, height: float, radius: float) -> void:
 		(m as ShaderMaterial).set_shader_parameter("cut_radius", radius)
 
 
+## Toutes les textures de blocs dans un seul tableau de textures (Texture2DArray) : chaque morceau n'a plus
+## qu'un maillage opaque et un maillage de verre, au lieu d'un maillage par texture (bien moins d'appels de
+## dessin avec les ~300 blocs du catalogue). Le numéro de couche voyage dans UV2.x, la lueur dans UV2.y.
+static var _layers := {}          # Texture2D -> couche
+static var _images: Array[Image] = []
+static var _array: Texture2DArray
+static var _array_dirty := true
+static var _grids: Array = []      # grilles à prévenir quand le tableau change
+const LAYER_SIZE := 16
+
+
+static func _layer_of(tex: Texture2D) -> int:
+	if tex == null:
+		return 0
+	if _layers.has(tex):
+		return _layers[tex]
+	var img := tex.get_image()
+	if img == null or img.is_empty():
+		img = Image.create(LAYER_SIZE, LAYER_SIZE, false, Image.FORMAT_RGBA8)
+		img.fill(Color.MAGENTA)
+	img = img.duplicate()
+	if img.is_compressed():
+		img.decompress()
+	img.clear_mipmaps()
+	if img.get_format() != Image.FORMAT_RGBA8:
+		img.convert(Image.FORMAT_RGBA8)
+	if img.get_size() != Vector2i(LAYER_SIZE, LAYER_SIZE):
+		img.resize(LAYER_SIZE, LAYER_SIZE, Image.INTERPOLATE_NEAREST)
+	img.generate_mipmaps()
+	_layers[tex] = _images.size()
+	_images.append(img)
+	_array_dirty = true
+	return _layers[tex]
+
+
+## Prépare d'un coup les couches de tous les blocs connus (un seul tableau construit au démarrage).
+static func _prepare_layers() -> void:
+	if not _layers.is_empty():
+		return
+	var db := (Engine.get_main_loop() as SceneTree).root.get_node_or_null("Items")
+	if db:
+		for id in db.items:
+			var it: ItemData = db.items[id]
+			if it.is_block():
+				_layer_of(it.block_texture)
+
+
+static func _texture_array() -> Texture2DArray:
+	if _array_dirty or _array == null:
+		_array_dirty = false
+		_array = Texture2DArray.new()
+		if _images.is_empty():
+			var img := Image.create(LAYER_SIZE, LAYER_SIZE, true, Image.FORMAT_RGBA8)
+			_images.append(img)
+		_array.create_from_images(_images)
+		for g in _grids:
+			if is_instance_valid(g):
+				for m in g._materials.values():
+					(m as ShaderMaterial).set_shader_parameter("tex", _array)
+	return _array
+
+
+## Le matériau (opaque ou verre) de cette grille.
 func _material(item: ItemData) -> ShaderMaterial:
-	if _materials.has(item.block_texture):
-		return _materials[item.block_texture]
+	var key := "glass" if item.block_transparent else "opaque"
+	if _materials.has(key):
+		return _materials[key]
 	var m := ShaderMaterial.new()
 	m.shader = _shader_glass if item.block_transparent else _shader_opaque
-	m.set_shader_parameter("tex", item.block_texture)
+	m.set_shader_parameter("tex", _texture_array())
 	m.set_shader_parameter("cut_center", _cut[0])
 	m.set_shader_parameter("cut_y", _cut[1])
 	m.set_shader_parameter("cut_radius", _cut[2])
-	_materials[item.block_texture] = m
+	_materials[key] = m
+	if not _grids.has(self):
+		_grids.append(self)
 	return m
+
+
+## Blocs qui éclairent autour d'eux.
+static func is_glowing(it: ItemData) -> bool:
+	return it != null and it.has_meta("glow")
 
 
 func _opaque_full(key: Vector3i) -> bool:
 	var it: ItemData = blocks.get(key)
-	return it != null and not it.block_slab and not it.block_transparent
+	return it != null and not it.block_slab and not it.block_transparent and not is_stair(it)
 
 
 func _rebuild_chunk(c: Vector2i) -> void:
 	if _chunk_nodes.has(c) and is_instance_valid(_chunk_nodes[c]):
 		_chunk_nodes[c].queue_free()
 	_chunk_nodes.erase(c)
-	var tools := {}   # texture -> [SurfaceTool, item]
+	_prepare_layers()
+	var tools := {}   # "opaque" / "glass" -> [SurfaceTool, item]
+	var lights := []
 	for x in range(c.x * CHUNK, (c.x + 1) * CHUNK):
 		for z in range(c.y * CHUNK, (c.y + 1) * CHUNK):
 			var col := Vector2i(x, z)
@@ -423,29 +510,81 @@ func _rebuild_chunk(c: Vector2i) -> void:
 			for y in _block_cols[col]:
 				var key := Vector3i(x, y, z)
 				var it: ItemData = blocks[key]
-				if not tools.has(it.block_texture):
+				var kind := "glass" if it.block_transparent else "opaque"
+				if not tools.has(kind):
 					var st := SurfaceTool.new()
 					st.begin(Mesh.PRIMITIVE_TRIANGLES)
-					tools[it.block_texture] = [st, it]
-				_add_block(tools[it.block_texture][0], key, it)
+					tools[kind] = [st, it]
+				_layer = _layer_of(it.block_texture)
+				_glow = 1.0 if is_glowing(it) else 0.0
+				if _glow > 0.0 and lights.size() < MAX_LIGHTS_PER_CHUNK:
+					lights.append([key, it])
+				_add_block(tools[kind][0], key, it)
 	if tools.is_empty():
 		return
+	_texture_array()
 	var holder := Node3D.new()
 	holder.name = "Blocs_%d_%d" % [c.x, c.y]
-	for tex in tools:
-		var st: SurfaceTool = tools[tex][0]
+	for kind in tools:
+		var st: SurfaceTool = tools[kind][0]
 		var mi := MeshInstance3D.new()
 		mi.mesh = st.commit()
-		mi.material_override = _material(tools[tex][1])
+		mi.material_override = _material(tools[kind][1])
 		mi.visibility_range_end = DRAW_DISTANCE + 20.0
-		if (tools[tex][1] as ItemData).block_transparent:
+		if kind == "glass":
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(mi)
+	# les blocs lumineux éclairent vraiment (quelques lumières par morceau au plus)
+	for l in lights:
+		var key: Vector3i = l[0]
+		var om := OmniLight3D.new()
+		om.light_color = BuildMode.it_color(l[1]).lightened(0.3)
+		om.light_energy = 1.3
+		om.omni_range = 7.0
+		om.shadow_enabled = false
+		om.distance_fade_enabled = true
+		om.distance_fade_begin = 40.0
+		om.distance_fade_length = 15.0
+		om.position = Vector3(key.x + 0.5, key.y + 1.2, key.z + 0.5)
+		holder.add_child(om)
 	add_child(holder)
 	_chunk_nodes[c] = holder
 
 
+## Escalier : une dalle, et un demi-bloc au-dessus du côté « haut » (direction 0 : nord, 1 : est, 2 : sud, 3 : ouest).
+func _add_stair(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
+	var p := Vector3(key)
+	_box(st, p, p + Vector3(1, 0.5, 1))
+	var d := int(it.get_meta("stair_dir"))
+	var lo := p + Vector3(0, 0.5, 0)
+	var hi := p + Vector3(1, 1, 1)
+	match d:
+		0:
+			hi.z = p.z + 0.5
+		1:
+			lo.x = p.x + 0.5
+		2:
+			lo.z = p.z + 0.5
+		_:
+			hi.x = p.x + 0.5
+	_box(st, lo, hi)
+
+
+## Une boîte quelconque (toutes ses faces), textures à l'échelle.
+func _box(st: SurfaceTool, a: Vector3, b: Vector3) -> void:
+	var h := b.y - a.y
+	_face(st, [Vector3(a.x, b.y, b.z), Vector3(b.x, b.y, b.z), Vector3(b.x, b.y, a.z), Vector3(a.x, b.y, a.z)], Vector3.UP, 1.0, h, false)
+	_face(st, [Vector3(a.x, a.y, a.z), Vector3(b.x, a.y, a.z), Vector3(b.x, a.y, b.z), Vector3(a.x, a.y, b.z)], Vector3.DOWN, 0.6, h, false)
+	_face(st, [Vector3(b.x, a.y, b.z), Vector3(b.x, a.y, a.z), Vector3(b.x, b.y, a.z), Vector3(b.x, b.y, b.z)], Vector3.RIGHT, 0.82, h, true)
+	_face(st, [Vector3(a.x, a.y, a.z), Vector3(a.x, a.y, b.z), Vector3(a.x, b.y, b.z), Vector3(a.x, b.y, a.z)], Vector3.LEFT, 0.82, h, true)
+	_face(st, [Vector3(a.x, a.y, b.z), Vector3(b.x, a.y, b.z), Vector3(b.x, b.y, b.z), Vector3(a.x, b.y, b.z)], Vector3.BACK, 0.9, h, true)
+	_face(st, [Vector3(b.x, a.y, a.z), Vector3(a.x, a.y, a.z), Vector3(a.x, b.y, a.z), Vector3(b.x, b.y, a.z)], Vector3.FORWARD, 0.9, h, true)
+
+
 func _add_block(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
+	if is_stair(it):
+		_add_stair(st, key, it)
+		return
 	var x := float(key.x)
 	var y := float(key.y)
 	var z := float(key.z)
@@ -484,6 +623,7 @@ func _face(st: SurfaceTool, v: Array, n: Vector3, shade: float, h: float, side: 
 		st.set_normal(n)
 		st.set_color(Color(cols[k], cols[k], cols[k]))
 		st.set_uv(uvs[k])
+		st.set_uv2(Vector2(_layer, _glow))
 		st.add_vertex(v[k])
 
 

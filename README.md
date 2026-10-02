@@ -413,7 +413,7 @@ Règles :
 - Les blocs ne sont dessinés qu'autour du héros (environ 150 m), quelques morceaux par image : les grandes constructions apparaissent sans à-coup.
 
 ## Catalogue de construction façon Minecraft (283 blocs) et panoplies
-- **283 blocs de construction** (dont 46 dalles), textures dessinées par le jeu, dans l'onglet **Construction** de l'artisanat, rangés par famille :
+- **316 blocs de construction** (dont 46 dalles et 33 escaliers posables dans 4 sens), textures dessinées par le jeu, dans l'onglet **Construction** de l'artisanat, rangés par famille :
   - **Pierres** : 12 pierres (pierre, granite, diorite, andésite, basalte, calcaire, grès, grès rouge, schiste, obsidienne, quartz, prismarine) en pavés, polie, briques, petites briques, sculptée et briques fissurées, plus les pavés moussus (table du tailleur de pierre) ;
   - **Bois** : 9 essences (chêne, bouleau, sapin, acajou, ébène, cerisier, acacia, saule, palmier) en planches, rondins, bois écorcé et parquet. Chaque région a ses arbres : bouleau des prairies et toundras, sapin des forêts et montagnes, acajou et palmier de la jungle, cerisier du bois enchanté, acacia du désert, saule et ébène des marais...
   - **16 couleurs** de laine, de béton, de terre cuite, de terre cuite émaillée et de verre teinté, grâce à **16 teintures** (os : blanc, charbon : noir, baies : rouge, blé : jaune, fibres : vert, lazurite : bleu, et les mélanges : orange, rose, cyan, violet, magenta...) ;
@@ -653,6 +653,29 @@ La carte montre maintenant les **capitales** (avec leur enceinte et leur populat
 - **Aide-mémoire** (F2) : un petit cadre à gauche de l'écran avec les touches principales.
 - **Qualité graphique** (Options) : basse, moyenne ou haute (ombres, distance d'affichage du monde, petite végétation au loin). **Images par seconde** : à afficher en haut à gauche.
 - Les **sauvegardes des anciennes versions** se chargent toujours : ce qui n'existait pas encore (diplomatie, succès, bannière...) démarre avec ses valeurs par défaut (test `tests/test_compat.gd` avec une vraie sauvegarde d'une version d'avant la forge).
+
+## Limites connues et optimisations
+Audit fait sur tout le jeu (profilage des scripts, du moteur, des nœuds et des appels de dessin). Outil : `tools/profile_systems.gd` (temps de chaque script par image, nœuds par type, objets au sol).
+
+**Optimisé**
+- **Interface (HUD)** : l'horloge, la météo et la couleur du jour étaient recalculées et réappliquées à chaque image (la météo cherchait la région du village à chaque fois) : 4 fois par seconde suffisent. Coût du HUD : 1,3 ms → 0,26 ms par image. Temps total des scripts au village : 3,1 ms → 2,0 ms.
+- **Mini-carte** : redessinée seulement quand le héros bouge ou tourne (et 5 fois par seconde pour les pillards et compagnons), avec la liste des lieux proches mise en cache au lieu de parcourir tous les châteaux, hameaux, épaves et villes du monde à chaque dessin.
+- **Objets au sol** : les tas identiques tout proches se regroupent ; les objets tombés disparaissent au bout de 10 minutes (30 pour les rares et mieux), comme dans Minecraft ; loin du héros (30 m), un objet « dort » (ni détection de collision ni animation). Les objets semés par le monde ne disparaissent pas.
+- **Icônes** : chaque icône gardait pour toujours sa petite scène 3D de rendu (des centaines avec l'arsenal et les blocs) ; elle est maintenant copiée dans une texture ordinaire puis la scène est libérée.
+- **Blocs** : toutes les textures de blocs sont réunies dans un seul tableau de textures. Un morceau de construction n'a plus qu'un maillage opaque et un maillage de verre, au lieu d'un maillage par texture (vitrine de tous les blocs : 35 maillages pour 26 morceaux, contre plusieurs centaines avant).
+- **Objets sans modèle** : la pièce d'or, le lingot d'or, l'or brut, le marbre brut, la barque, le voilier et le sifflet du griffon avaient une icône vide ; ils ont maintenant un modèle.
+
+**Limites levées**
+- **Blocs lumineux** : la pierre lumineuse et la lanterne marine brillent et éclairent vraiment (quelques lumières par morceau au plus, qui s'estompent au loin).
+- **Arcs** : ils tiraient des sorts ; ils tirent maintenant de vraies flèches (bois, pointe, empennage), plus rapides, qui comptent sur l'attaque.
+- **Escaliers** : 33 escaliers (pierres polies et en briques, tous les bois), posés dans le sens du regard, qu'on monte sans sauter (deux demi-marches). 316 blocs de construction en tout.
+- **Failles** : elles étaient toutes pareilles. 5 thèmes d'arène (cristal, lave, glace, sylvestre, abysses), 3 dispositions (couronne de piliers, croix de murets, quatre gros piliers), une taille qui varie, et des **modificateurs** à la Diablo dès le rang 3 (Rapides, Robustes, Enragés, Explosifs, Nombreux ; 2 dès le rang 10, 3 dès le rang 25), chacun ajoutant un objet au trésor du gardien. Le panneau du portail montre le thème et les modificateurs du rang choisi.
+
+**Limites qui restent (choix ou coût)**
+- La **physique** du moteur (déplacements des personnages contre le décor) coûte 3 à 5 ms par image au village : c'est maintenant le plus gros poste, devant tous les scripts réunis. Les monstres loin du héros ne calculent déjà presque rien.
+- Les **armures** des panoplies réutilisent les modèles en fer et en cuir, teints de la couleur du matériau (pas de modèle propre à chaque matériau).
+- Plafonds de jeu volontaires : 3 familiers, 2 compagnons d'expédition, 4 quêtes en cours, 6 bêtes par espèce, raffinage +15, enchantements rang V, 5 emplacements d'enchantement.
+- Les escaliers et dalles sont les seules formes de blocs (pas de murets, barrières ou blocs en pente).
 
 ## Tests automatiques
 - Le dossier `tests/` contient 53 tests de jeu (histoire, interface, sauvegarde, donjons, siège, forge, diplomatie, événements, métiers, guide, équilibrage...). Chacun lance une vraie partie, joue un scénario et vérifie le résultat (« OK » / « ÉCHEC »).
