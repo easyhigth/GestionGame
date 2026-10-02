@@ -412,8 +412,8 @@ Règles :
 - Ces constructions ne comptent pas comme pièces du royaume. Ce qui a été cassé le reste après une sauvegarde.
 - Les blocs ne sont dessinés qu'autour du héros (environ 150 m), quelques morceaux par image : les grandes constructions apparaissent sans à-coup.
 
-## Catalogue de construction façon Minecraft (283 blocs) et panoplies
-- **337 blocs de construction** (dont 46 dalles, 33 escaliers posables dans 4 sens, 12 murets et 9 barrières), textures dessinées par le jeu, dans l'onglet **Construction** de l'artisanat, rangés par famille :
+## Catalogue de construction façon Minecraft (493 blocs) et panoplies
+- **493 blocs de construction** (dont 46 dalles, 33 escaliers et 12 pentes posables dans 4 sens, 12 murets, 9 barrières et 9 portillons), textures dessinées par le jeu, dans l'onglet **Construction** de l'artisanat, rangés par famille :
   - **Pierres** : 12 pierres (pierre, granite, diorite, andésite, basalte, calcaire, grès, grès rouge, schiste, obsidienne, quartz, prismarine) en pavés, polie, briques, petites briques, sculptée et briques fissurées, plus les pavés moussus (table du tailleur de pierre) ;
   - **Bois** : 9 essences (chêne, bouleau, sapin, acajou, ébène, cerisier, acacia, saule, palmier) en planches, rondins, bois écorcé et parquet. Chaque région a ses arbres : bouleau des prairies et toundras, sapin des forêts et montagnes, acajou et palmier de la jungle, cerisier du bois enchanté, acacia du désert, saule et ébène des marais...
   - **16 couleurs** de laine, de béton, de terre cuite, de terre cuite émaillée et de verre teinté, grâce à **16 teintures** (os : blanc, charbon : noir, baies : rouge, blé : jaune, fibres : vert, lazurite : bleu, et les mélanges : orange, rose, cyan, violet, magenta...) ;
@@ -681,10 +681,20 @@ Audit fait sur tout le jeu (profilage des scripts, du moteur, des nœuds et des 
 - **Murets et barrières** : 12 murets (un par pierre) et 9 barrières (une par bois) qui se raccordent tout seuls aux murets, barrières et murs voisins ; ils bloquent le passage comme un bloc. 337 blocs de construction en tout.
 - **Panoplies** : chaque matériau a ses ornements en blocs, placés d'après la pièce (donc à la taille de chaque race) : rivets (cuivre, acier), cimier et gemme rouge (bronze, or), pointes d'os, cristaux d'obsidienne lumineux, gemmes d'argent, runes de mithril, flammes d'orichalque, cornes et écailles draconiques. Les boucliers prennent entièrement la couleur du matériau (l'emblème doré reste).
 
+**Grande passe**
+- **Équilibrage du niveau 1 au niveau 1000** (`tools/balance_sim.gd`) : la simulation compare à chaque niveau une arme forgée (meilleur matériau maîtrisé, raffinée, enchantée) au butin épique et mythique et aux monstres. Le butin de niveau suit maintenant une courbe en `0,03 × niveau^0,95` (au lieu de `niveau / 12`, qui rendait le butin bien plus fort que la forge) : un objet épique vaut à peu près une arme forgée, un mythique la dépasse.
+- **Prix** : les ressources rares (mithril, orichalque, écailles, larmes, gemmes, pierres d'âme, nouveaux minerais, pierres et bois) avaient la valeur par défaut (1 pièce) ; elles ont maintenant un vrai prix. Le butin de niveau vaut selon son niveau et sa rareté, les enchantements ajoutent à la valeur. Le marchand vend les nouveaux matériaux et des armes de l'arsenal.
+- **Artisanat plus pratique** : barre de **recherche** (sans accents) sur des centaines de recettes, case **« Fabricable »**, onglet **★ Favoris** (sauvegardé), et dans la fiche d'un objet la **comparaison** avec l'objet porté (attaque, défense, magie).
+- **Habitants artisans** : ils montent eux aussi de niveau 1 à 100 en travaillant. Le **forgeron** du village fabrique des armes de l'arsenal (du meilleur matériau qu'il maîtrise, parfois déjà raffinées) et prend des **commandes** (bouton « Commander » dans l'Armurerie : ingrédients + or), l'**enchanteur** produit de la poussière arcanique et parfois une pierre d'âme, le maçon, le bûcheron, le tisserand et le verrier produisent minerais, pierres, essences de bois, teintures et verre teinté.
+- **Guide** : deux nouveaux chapitres, **L'ARTISAN** (arme de l'arsenal, métier au niveau 10, enchantement, bloc du catalogue) et **LA FIN DE PARTIE** (palier du monde, faille, titan), et 4 astuces (poussière arcanique, premier niveau de métier, failles, recherche). 45 étapes en 11 chapitres.
+- **Portillons** : 9 portes de barrière (une par bois) qui se raccordent aux barrières et s'ouvrent ou se ferment avec **E** ; ouvertes, on passe.
+- **Toits en pente** : 12 pentes (tuiles, ardoise, chaume, planches, pierre polie, cuivre, terre cuite, sapin, ébène, quartz, obsidienne...) posées dans le sens du regard ; on y monte comme sur un escalier.
+- **Silhouettes d'armures** : en plus des ornements, chaque matériau change la forme des pièces : épaulières de plus en plus massives (aucune pour le cuivre, légères pour le bronze, l'os et l'argent, larges pour l'acier, l'or, l'obsidienne et le mithril, énormes pour l'orichalque et le dragon), tassettes sur le plastron, visière sur les casques (acier, obsidienne, mithril, dragon), genouillères sur les jambières.
+
 **Limites qui restent (choix ou coût)**
 - Le moteur garde un coût de base (~1,4 ms de physique) et les habitants proches du héros se calculent à chaque pas.
-- Les armures restent bâties sur les formes en fer et en cuir (ornements et couleurs propres, mais pas de silhouette propre à chaque matériau).
-- Formes de blocs : plein, dalle, escalier, muret, barrière (pas de blocs en pente ni de portes de barrière).
+- Les armures gardent la base des modèles en fer et en cuir (la silhouette change par des pièces ajoutées, pas par un modèle entièrement nouveau).
+- Formes de blocs : plein, dalle, escalier, pente, muret, barrière, portillon (pas de portes de maison en blocs ni de trappes).
 - Plafonds volontaires : raffinage +15, enchantements rang V, 5 emplacements d'enchantement, 8 familiers en tout (10 avec la ménagerie).
 
 ## Tests automatiques

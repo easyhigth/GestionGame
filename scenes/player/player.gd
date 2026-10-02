@@ -84,6 +84,8 @@ var profile: HeroProfile
 var talents := {}
 ## Métiers (voir Crafts) : { métier: expérience }.
 var crafts := {}
+## Recettes favorites (identifiants des objets fabriqués).
+var craft_favs: Array = []
 ## Évolution du héros (0 à 3), donnée par l'histoire principale (voir Evolution).
 var hero_evo := 0
 var _evo_fx := 0.0
@@ -1492,6 +1494,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		var cv := get_tree().get_first_node_in_group("caves")
 		if cv and cv.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
+		var bg := get_tree().get_first_node_in_group("build_grid") as BuildGrid
+		if bg and bg.toggle_gate_near(global_position):
+			Sound.play("door", global_position)
 			get_viewport().set_input_as_handled()
 			return
 		var eg := get_tree().get_first_node_in_group("endgame")

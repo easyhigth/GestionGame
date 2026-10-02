@@ -11,7 +11,7 @@ extends RefCounted
 ## - des dalles (demi-blocs) pour les pierres et les bois.
 ## Chaque recette porte une « famille » (méta « family ») pour l'onglet Construction.
 
-const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles", "Escaliers", "Murets et barrières"]
+const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles", "Escaliers", "Murets et barrières", "Toits en pente"]
 
 ## Pierres : identifiant, nom, féminin, couleur, ressource brute.
 const STONES := [
@@ -323,6 +323,7 @@ static func register(db: Node) -> void:
 	_nature(db)
 	_stairs(db)
 	_posts(db)
+	_slopes(db)
 
 
 static func _stones(db: Node) -> void:
@@ -473,6 +474,37 @@ static func _posts(db: Node) -> void:
 		var it := _block(db, "barriere_" + w[0], "Barrière de %s" % w[1], "Une barrière qui se raccorde aux barrières et aux murs voisins.", src.block_texture, 0)
 		it.set_meta("shape", "fence")
 		_recipe(db, it, 3, [["wood" if w[0] == "chene" else "bois_" + w[0], 2], ["fiber", 1]], "", "Murets et barrières")
+
+
+## Portillons (un par bois, ils s'ouvrent avec E) et pentes de toit (tuiles, ardoise, chaume, planches, cuivre...).
+static func _slopes(db: Node) -> void:
+	for w in WOODS:
+		var src: ItemData = db.items.get("bloc_planches" if w[0] == "chene" else "bloc_%s_planches" % w[0])
+		if src == null:
+			continue
+		var g := _block(db, "portillon_" + w[0], "Portillon de %s" % w[1], "Une porte de barrière : E pour l'ouvrir ou la fermer.", src.block_texture, 0)
+		g.set_meta("shape", "gate")
+		_recipe(db, g, 1, [["wood" if w[0] == "chene" else "bois_" + w[0], 2], ["fiber", 2]], "", "Murets et barrières")
+	for src_id in ["bloc_tuiles", "bloc_ardoise", "bloc_chaume", "bloc_planches", "bloc_pierre_polie", "bloc_m_cuivre", "bloc_terre_cuite_rouge",
+			"bloc_terre_cuite_bleu", "bloc_sapin_planches", "bloc_ebene_planches", "bloc_quartz_polie", "bloc_obsidienne_briques"]:
+		var src: ItemData = db.items.get(src_id)
+		if src == null:
+			continue
+		var sid: String = "pente_" + str(src_id).trim_prefix("bloc_")
+		var variants := []
+		for d in 4:
+			var id := sid if d == 0 else "%s_r%d" % [sid, d]
+			var it := _block(db, id, "Pente : " + src.display_name, "Pour les toits : un demi-bloc en pente, posé dans le sens du regard (on peut y marcher).",
+				src.block_texture, src.block_tier)
+			it.set_meta("stair_dir", d)
+			it.set_meta("slope", true)
+			if d > 0:
+				it.set_meta("stair_base", sid)
+				it.set_meta("hidden", true)
+			variants.append(id)
+		db.items[sid].set_meta("stair_variants", variants)
+		var src_recipe_ing: String = src_id
+		_recipe(db, db.items[sid], 2, [[src_recipe_ing, 2]], "", "Toits en pente")
 
 
 ## Nombre de blocs de construction (blocs, dalles et escaliers ; sans les variantes tournées).

@@ -45,7 +45,9 @@ static func make(id: String, base: ItemData) -> ItemData:
 	var v := base.duplicate() as ItemData
 	v.base_id = base.id
 	v.id = id
-	var scale := (1.0 + ilvl / 12.0) * float(RARITY_MULT[rar])
+	# courbe réglée avec tools/balance_sim.gd : un butin épique vaut un peu moins que l'arme forgée et raffinée
+	# du même niveau, un mystique à peu près autant (avant : linéaire, il écrasait toute arme forgée)
+	var scale := (1.0 + 0.03 * pow(float(ilvl), 0.95)) * float(RARITY_MULT[rar])
 	if base.attack > 0:
 		v.attack = roundi(base.attack * scale)
 	if base.defense > 0:

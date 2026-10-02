@@ -37,6 +37,16 @@ const VALUES := {
 	"potion_soin": 6.0, "potion_force": 10.0, "potion_garde": 10.0, "potion_celerite": 10.0,
 	"rune_force": 25.0, "rune_garde": 25.0, "rune_vie": 25.0, "rune_celerite": 25.0,
 	"poisson_scorpion": 8.0, "poisson_lave": 20.0, "poisson_lune": 25.0, "perle": 15.0, "vieille_botte": 0.5,
+	# ressources rares (elles valaient 1 pièce faute de recette)
+	"mithril_brut": 30.0, "orichalque": 160.0, "ecaille_dragon": 90.0, "larme_esprit": 45.0, "sang_demon": 45.0,
+	"fragment_brume": 35.0, "cristal_aube": 120.0,
+	"gemme_rubis": 40.0, "gemme_saphir": 40.0, "gemme_emeraude": 40.0, "gemme_topaze": 40.0, "gemme_amethyste": 40.0, "gemme_diamant": 60.0,
+	# ressources de l'arsenal et du catalogue de construction
+	"minerai_cuivre": 2.0, "minerai_etain": 2.5, "minerai_argent": 7.0, "charbon": 1.5, "os": 1.0, "obsidienne": 25.0,
+	"poussiere_arcane": 6.0, "pierre_ame": 120.0, "lazurite": 3.0, "quartz": 3.0, "prismarine": 3.0, "gravier": 0.2, "argile": 0.5,
+	"granite": 0.8, "diorite": 0.8, "andesite": 0.8, "basalte": 0.8, "calcaire": 0.8,
+	"bois_bouleau": 1.0, "bois_sapin": 1.0, "bois_acajou": 1.5, "bois_ebene": 2.0, "bois_cerisier": 1.5, "bois_acacia": 1.0,
+	"bois_saule": 1.0, "bois_palmier": 1.0,
 }
 const CRAFT_BONUS := 1.3
 
@@ -44,7 +54,9 @@ const CRAFT_BONUS := 1.3
 const GOODS := {
 	"Graines": [["graines_ble", 6, 12], ["carotte", 4, 8], ["pomme_de_terre", 4, 8]],
 	"Nourriture": [["oeuf", 4, 8], ["fromage", 2, 4], ["pain", 3, 6], ["viande_cuite", 2, 5], ["soupe_legumes", 1, 3], ["ragout", 1, 3]],
-	"Matériaux": [["iron_ingot", 3, 6], ["leather", 3, 6], ["lingot_or", 1, 2], ["marbre_brut", 3, 6], ["bloc_verre", 6, 12], ["bloc_briques", 10, 20]],
+	"Matériaux": [["iron_ingot", 3, 6], ["leather", 3, 6], ["lingot_or", 1, 2], ["marbre_brut", 3, 6], ["bloc_verre", 6, 12], ["bloc_briques", 10, 20],
+		["minerai_cuivre", 6, 12], ["minerai_etain", 4, 8], ["charbon", 6, 12], ["poussiere_arcane", 2, 5], ["teinture_bleu", 2, 4], ["teinture_rouge", 2, 4]],
+	"Armes": [["arm_epee_fer_0", 1, 1], ["arm_hache_bronze_0", 1, 1], ["arm_lance_fer_0", 1, 1], ["arm_arc_bois_1", 1, 1], ["arm_dague_acier_2", 1, 1], ["arm_baton_argent_0", 1, 1]],
 	"Outils": [["houe", 1, 1], ["canne_peche", 1, 1], ["pioche_pierre", 1, 1], ["hache_pierre", 1, 1], ["pioche_fer", 1, 1], ["hache_fer", 1, 1]],
 	"Mobilier": [["lit", 1, 2], ["coffre", 1, 2], ["lanterne", 2, 3], ["etal", 2, 2], ["comptoir", 1, 1], ["table", 1, 1], ["mangeoire", 1, 1], ["barriere", 6, 12]],
 }
@@ -285,8 +297,17 @@ func value_of(it: ItemData, depth := 0) -> float:
 		return _values[it.id]
 	var v := 0.0
 	# objet amélioré à la forge : la valeur de l'objet de base, plus son niveau et ses gemmes
+	# butin de niveau : la valeur de la base selon son niveau d'objet et sa rareté
+	if it.id.contains("#"):
+		var spec := Loot.parse(it.id)
+		v = value_of(Items.get_item(it.base_id), depth + 1) * (1.0 + float(spec[1]) / 40.0) * (1.0 + 0.6 * int(spec[2]))
+		_values[it.id] = v
+		return v
 	if it.base_id != "":
 		v = value_of(Items.get_item(it.base_id), depth + 1) * (1.0 + 0.25 * it.upgrade) + 40.0 * it.gems.size()
+		# les enchantements comptent aussi (de plus en plus cher par rang)
+		for e in it.enchants:
+			v += 30.0 * pow(float(it.enchants[e]), 1.5)
 		_values[it.id] = v
 		return v
 	if VALUES.has(it.id):

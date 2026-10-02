@@ -204,7 +204,7 @@ func _build() -> void:
 	tabs.add_theme_constant_override("h_separation", 2)
 	tabs.add_theme_constant_override("v_separation", 2)
 	tabs.custom_minimum_size.x = 320
-	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Armurerie", "Armures", "Forge", "Enchantement", "Métiers"]:
+	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Armurerie", "Armures", "Forge", "Enchantement", "Métiers", "★ Favoris"]:
 		var tb := Button.new()
 		tb.text = cname
 		tb.toggle_mode = true
@@ -217,6 +217,22 @@ func _build() -> void:
 	_bench.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_bench.custom_minimum_size = Vector2(310, 0)
 	c3.add_child(_bench)
+	# recherche dans toutes les recettes, filtre « fabricable »
+	var srow := HBoxContainer.new()
+	srow.add_theme_constant_override("separation", 4)
+	_search = LineEdit.new()
+	_search.placeholder_text = "Rechercher (ex. épée acier, laine bleue)..."
+	_search.custom_minimum_size = Vector2(210, 26)
+	_search.add_theme_font_size_override("font_size", 10)
+	_search.clear_button_enabled = true
+	_search.text_changed.connect(func(_t): _refresh())
+	srow.add_child(_search)
+	_only_ok = CheckBox.new()
+	_only_ok.text = "Fabricable"
+	_only_ok.add_theme_font_size_override("font_size", 10)
+	_only_ok.toggled.connect(func(_on): _refresh())
+	srow.add_child(_only_ok)
+	c3.add_child(srow)
 	var rscroll := ScrollContainer.new()
 	rscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -313,6 +329,18 @@ func _refresh() -> void:
 		_cat_buttons[cn].set_pressed_no_signal(cn == _cat)
 	for c in _recipes.get_children():
 		c.queue_free()
+	if _search and _search.text.strip_edges() != "":
+		_search_rows(near)
+		_refresh_job()
+		return
+	if _cat == "★ Favoris":
+		var favs: Array = Items.recipes.filter(func(r): return r.result and player.craft_favs.has(r.result.id))
+		if favs.is_empty():
+			_recipes.add_child(_label("Aucune recette favorite : clique sur ☆ à côté d'une recette.", 10, C_DIM))
+		for r: RecipeData in _filter_ok(favs, near):
+			_recipes.add_child(_recipe_row(r, near))
+		_refresh_job()
+		return
 	if _cat == "Forge":
 		_forge_rows()
 		_refresh_job()
@@ -339,7 +367,7 @@ func _refresh() -> void:
 		return
 	var list: Array = Items.recipes.filter(func(r): return r.category == _cat or (_cat == "Matériaux" and r.category == "Matériaux"))
 	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
-	for r: RecipeData in list:
+	for r: RecipeData in _filter_ok(list, near):
 		_recipes.add_child(_recipe_row(r, near))
 	_refresh_job()
 
@@ -564,6 +592,32 @@ func _recipe_row(r: RecipeData, near: bool) -> Control:
 	ing.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	txt.add_child(ing)
 	row.add_child(txt)
+	var fav := Button.new()
+	var is_fav: bool = player.craft_favs.has(r.result.id)
+	fav.text = "★" if is_fav else "☆"
+	fav.flat = true
+	fav.tooltip_text = "Retirer des favoris" if is_fav else "Ajouter aux favoris"
+	fav.add_theme_font_size_override("font_size", 13)
+	fav.add_theme_color_override("font_color", Color("ffd24a") if is_fav else C_DIM)
+	fav.pressed.connect(func():
+		if player.craft_favs.has(r.result.id):
+			player.craft_favs.erase(r.result.id)
+		else:
+			player.craft_favs.append(r.result.id)
+		_refresh())
+	row.add_child(fav)
+	# armes de l'arsenal : on peut aussi les commander au forgeron du village
+	if r.category == "Armurerie" and Artisans.has_smith(get_tree()):
+		var ob := Button.new()
+		ob.text = "Commander"
+		ob.add_theme_font_size_override("font_size", 9)
+		ob.tooltip_text = "Le forgeron du village la fabrique pour toi (ingrédients + %d or), même si ton métier est trop bas." % Artisans.order_gold(r)
+		ob.disabled = not r.can_craft(player.inventory, true, [r.station]) or player.inventory.count(Items.get_item("piece_or")) < Artisans.order_gold(r)
+		ob.pressed.connect(func():
+			if Artisans.order(player, r):
+				player.notify.emit("Commande passée au forgeron : %s." % r.result.display_name)
+			_refresh())
+		row.add_child(ob)
 	var b := Button.new()
 	b.text = "Fabriquer"
 	b.disabled = not ok
@@ -579,7 +633,7 @@ func _show_info(item: ItemData) -> void:
 	_info_name.text = "%s  ·  %s" % [item.display_name, item.slot_name()]
 	_info_name.add_theme_color_override("font_color", item.rarity_color())
 	var st := item.stats_text()
-	_info_text.text = (st + "\n" if st != "" else "") + item.description + ("\nDeux mains." if item.two_handed else "")
+	_info_text.text = (st + "\n" if st != "" else "") + item.description + ("\nDeux mains." if item.two_handed else "") + _compare_text(item)
 
 
 func _use_item(item: ItemData) -> void:
@@ -661,6 +715,9 @@ func _armory_rows(near: bool) -> void:
 		func(): _arm_mat = (_arm_mat + nm - 1) % nm, func(): _arm_mat = (_arm_mat + 1) % nm))
 	var flv := Crafts.level(player, "forgeron")
 	_recipes.add_child(_label("Forgeron d'armes : niveau %d  ·  ce matériau : niveau %d" % [flv, int(m.level)], 9, C_OK if flv >= int(m.level) else C_BAD))
+	var kg := get_tree().get_first_node_in_group("kingdom")
+	if kg and Artisans.has_smith(get_tree()):
+		_recipes.add_child(_label("Forgeron du village au travail · commandes en attente : %d" % kg.forge_orders.size(), 9, C_DIM))
 	for d in 4:
 		var id := Arsenal.make_id(type, m.id, d)
 		for r: RecipeData in Items.recipes:
@@ -779,7 +836,7 @@ func _construction_rows(near: bool) -> void:
 	_recipes.add_child(_stepper("%s (%d)" % [fams[_family], list.size()],
 		func(): _family = (_family + fams.size() - 1) % fams.size(), func(): _family = (_family + 1) % fams.size()))
 	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
-	for r: RecipeData in list:
+	for r: RecipeData in _filter_ok(list, near):
 		_recipes.add_child(_recipe_row(r, near))
 
 
@@ -795,5 +852,58 @@ func _armor_rows(near: bool) -> void:
 	_recipes.add_child(_label("%d pièces d'armure en panoplies" % ArmorSets.count(Items), 9, C_DIM))
 	var title := "Cuir teint" if fam == "cuir" else str(Arsenal.material(fam).suffix).trim_prefix("en ").trim_prefix("d'").capitalize()
 	_recipes.add_child(_stepper("Panoplie : %s" % title, func(): _armor_fam -= 1, func(): _armor_fam += 1))
-	for r: RecipeData in list:
+	for r: RecipeData in _filter_ok(list, near):
 		_recipes.add_child(_recipe_row(r, near))
+
+
+var _search: LineEdit
+var _only_ok: CheckBox
+
+
+## Sans accents ni majuscules (pour la recherche).
+static func _plain(t: String) -> String:
+	t = t.to_lower()
+	for pair in [["é", "e"], ["è", "e"], ["ê", "e"], ["ë", "e"], ["à", "a"], ["â", "a"], ["î", "i"], ["ï", "i"], ["ô", "o"], ["ù", "u"], ["û", "u"], ["ç", "c"], ["œ", "oe"]]:
+		t = t.replace(pair[0], pair[1])
+	return t
+
+
+func _filter_ok(list: Array, near: bool) -> Array:
+	if _only_ok == null or not _only_ok.button_pressed:
+		return list
+	return list.filter(func(r): return r.can_craft(player.inventory, near, _stations) and Crafts.level(player, Crafts.craft_of_recipe(r)) >= Crafts.recipe_level(r))
+
+
+## Recherche : tous les mots doivent se trouver dans le nom de l'objet (60 résultats au plus).
+func _search_rows(near: bool) -> void:
+	var words := _plain(_search.text.strip_edges()).split(" ", false)
+	var found: Array = Items.recipes.filter(func(r):
+		if r.result == null or r.result.has_meta("hidden"):
+			return false
+		var n := _plain(r.result.display_name)
+		for w in words:
+			if not n.contains(w):
+				return false
+		return true)
+	found = _filter_ok(found, near)
+	found.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
+	_recipes.add_child(_label("%d recette(s) trouvée(s)%s" % [found.size(), " (60 premières)" if found.size() > 60 else ""], 9, C_DIM))
+	for r: RecipeData in found.slice(0, 60):
+		_recipes.add_child(_recipe_row(r, near))
+
+
+## Comparaison avec ce que le héros porte à la même place.
+func _compare_text(item: ItemData) -> String:
+	if not item.is_equipment() or player == null or player.equipment == null:
+		return ""
+	var cur: ItemData = player.equipment.get_item(item.slot)
+	if cur == null or cur == item:
+		return ""
+	var parts := []
+	for f in [["Attaque", "attack"], ["Défense", "defense"], ["Magie", "magic"]]:
+		var d: int = int(item.get(f[1])) - int(cur.get(f[1]))
+		if d != 0:
+			parts.append("[%s %+d]" % [f[0], d])
+	if parts.is_empty():
+		return "\nComme %s." % cur.display_name
+	return "\nComparé à %s : %s" % [cur.display_name, " ".join(PackedStringArray(parts))]
