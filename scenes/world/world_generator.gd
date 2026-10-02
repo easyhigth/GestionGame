@@ -244,7 +244,12 @@ func _ready() -> void:
 		rm.name = "Menaces"
 		add_child(rm)
 	apply_quality.call_deferred(int(SaveGame.options.get("graphics", 2)))
-	if generate_on_start:
+	if generate_on_start and pregenerated:
+		# l'écran de chargement a déjà calculé le monde : il reste la 3D
+		generate_nodes()
+		if SaveGame.pending_seed() >= 0:
+			SaveGame.apply_pending.call_deferred(self)
+	elif generate_on_start:
 		var loaded_seed := SaveGame.pending_seed()
 		if loaded_seed >= 0:
 			# la taille du monde de la sauvegarde (les parties d'avant le monde immense : 640 × 640 m)
@@ -282,7 +287,31 @@ func clear() -> void:
 		build.clear()
 
 
+## Avancement de la création du monde (0 à 1) et son étape, pour l'écran de chargement (voir LoadingScreen).
+var gen_progress := 0.0
+var gen_stage := ""
+## Les données du monde ont déjà été calculées (par l'écran de chargement, en arrière-plan) :
+## à l'entrée dans l'arbre, il ne reste qu'à bâtir la 3D.
+var pregenerated := false
+
+
+func _progress(p: float, stage := "") -> void:
+	gen_progress = p
+	if stage != "":
+		gen_stage = stage
+
+
+## Crée tout le monde d'un coup (écran titre, tests). Le jeu, lui, passe par l'écran de chargement :
+## prepare_generation, puis generate_data en arrière-plan, puis generate_nodes.
 func generate(seed_value: int) -> void:
+	prepare_generation(seed_value)
+	generate_data()
+	generate_nodes()
+
+
+## Prépare la création (fil principal : chargement des régions, nettoyage).
+func prepare_generation(seed_value: int) -> void:
+	_progress(0.0, "Préparation...")
 	world_seed = seed_value
 	_ensure_noises()
 	height_noise.seed = seed_value
@@ -315,15 +344,32 @@ func generate(seed_value: int) -> void:
 	map_image.fill(Color(0, 0, 0, 0))
 	map_texture = ImageTexture.create_from_image(map_image)
 
+
+## Les données du monde : relief, régions, capitales, routes, lieux. Ne touche pas à l'arbre de scène :
+## l'écran de chargement l'appelle dans un fil à part et affiche l'avancement.
+func generate_data() -> void:
+	_progress(0.02, "Formation des régions...")
 	_make_zones()
 	var center := Vector2(world_size) / 2.0
+	_progress(0.05, "Le village s'installe...")
 	spawn_cell = _find_spawn(center)
 	_make_clearing(spawn_cell)
+	_progress(0.08, "Fondation des capitales...")
 	_plan_cities()
+	_progress(0.3, "Tracé des routes...")
 	_plan_roads()
+	_progress(0.45, "Obélisques et donjons...")
 	_place_sites()
+	_progress(0.75, "Châteaux, ruines et épaves...")
 	_plan_structures()
+	_progress(0.9, "Hameaux...")
 	_plan_hamlets()
+	_progress(0.92, "Construction du monde...")
+
+
+## La 3D du monde (fil principal) : eau, terrain autour du héros, constructions.
+func generate_nodes() -> void:
+	var seed_value := world_seed
 	_build_water()
 	_generated = true
 	var focus := cell_center(spawn_cell)
@@ -845,6 +891,7 @@ func _find_site(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
 ## Place un obélisque et une entrée de donjon dans chaque zone.
 func _place_sites() -> void:
 	for z in zones:
+		_progress(lerpf(0.45, 0.75, float(z.id) / zones.size()))
 		var site: Vector2 = z.site
 		var start: bool = z.dist == 0.0
 		var ob: Vector2i
@@ -2163,6 +2210,7 @@ var structure_sites: Array = []
 func _plan_structures() -> void:
 	structure_sites.clear()
 	for z in zones:
+		_progress(lerpf(0.75, 0.9, float(z.id) / zones.size()))
 		if float(z.dist) == 0.0:
 			continue
 		var rid: String = (z.type as RegionData).id if z.type else "prairie"
@@ -2266,7 +2314,9 @@ func _plan_roads() -> void:
 					best = [i, j, d]
 		linked.append(best[1])
 		edges.append([nodes[best[0]], nodes[best[1]]])
-	for e in edges:
+	for ei in edges.size():
+		var e: Array = edges[ei]
+		_progress(lerpf(0.3, 0.45, float(ei) / edges.size()))
 		var path := _road_path(e[0], e[1])
 		if path.size() >= 2:
 			roads.append(path)
@@ -2542,7 +2592,10 @@ func city_at(pos: Vector3, margin := 0.0) -> Dictionary:
 func _plan_cities() -> void:
 	cities.clear()
 	_city_plans.clear()
+	var ni := 0
 	for nation in CityPlans.CITIES:
+		_progress(lerpf(0.08, 0.3, float(ni) / CityPlans.CITIES.size()), "Fondation de %s..." % CityPlans.CITIES[nation].name)
+		ni += 1
 		var info: Dictionary = CityPlans.CITIES[nation]
 		var r := int(info.radius)
 		var margin := r + 16

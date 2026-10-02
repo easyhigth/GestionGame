@@ -9,9 +9,13 @@ var t0 := 0
 var t_title := 0
 var saw_loading := false
 var old_pos := Vector3.ZERO
+var load_frames := 0
+var load_values := {}
+var load_stages := {}
 
 func _initialize():
 	t0 = Time.get_ticks_msec()
+	load("res://scenes/ui/loading_screen.gd").force_background = true
 	# une sauvegarde « ancienne » : sans taille de monde, comme avant le monde immense
 	change_scene_to_file("res://scenes/ui/title_screen.tscn")
 
@@ -40,9 +44,12 @@ func _process(d) -> bool:
 	f += 1
 	wait += d
 	if scene().ends_with("loading_screen.tscn"):
-		if not saw_loading:
-			shot("02_chargement.png")
 		saw_loading = true
+		load_frames += 1
+		load_values[snappedf(current_scene._shown, 0.05)] = true
+		load_stages[current_scene._stage] = true
+		if load_frames == 40:
+			shot("02_chargement.png")
 	match step:
 		0:
 			if scene().ends_with("title_screen.tscn") and f > 3:
@@ -65,6 +72,9 @@ func _process(d) -> bool:
 			var p = get_first_node_in_group("player")
 			if scene().ends_with("main.tscn") and p and f > 0:
 				check("un écran de chargement pendant la création du monde", saw_loading)
+				check("l'écran de chargement reste vivant (%d images)" % load_frames, load_frames >= 20)
+				check("la barre de progression avance (%d paliers)" % load_values.size(), load_values.size() >= 8)
+				check("les étapes s'affichent : %s" % ", ".join(load_stages.keys().slice(0, 6)), load_stages.size() >= 4)
 				check("la partie commence (%.1f s après « Commencer l'aventure »)" % now(), true)
 				check("monde immense", get_first_node_in_group("world").world_size.x >= 1500)
 				step = 4; wait = 0.0
