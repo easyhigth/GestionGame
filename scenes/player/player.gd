@@ -1491,6 +1491,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if cv and cv.try_interact(self):
 			get_viewport().set_input_as_handled()
 			return
+		var eg := get_tree().get_first_node_in_group("endgame")
+		if eg and eg.try_interact(self):
+			get_viewport().set_input_as_handled()
+			return
 		var mcv := get_tree().get_first_node_in_group("mountain_caves")
 		if mcv and mcv.try_interact(self):
 			get_viewport().set_input_as_handled()

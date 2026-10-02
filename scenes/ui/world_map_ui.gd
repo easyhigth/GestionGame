@@ -259,6 +259,21 @@ func _draw() -> void:
 	draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color.BLACK, false, 2.0)
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	_text_center(k.title() if k else "Village", v + Vector2(0, 30), 11, Color("f2c86a"))
+	# fin de partie : le Portail des Failles et le titan éveillé
+	var eg := get_tree().get_first_node_in_group("endgame") as Endgame
+	if eg:
+		var ppos := eg.portal_pos()
+		var pc := cell_to_screen(Vector2(ppos.x, ppos.z))
+		draw_arc(pc, 5.0, 0, TAU, 16, Color("b05aff"), 2.5)
+		if zoom >= 2.0:
+			_text_center("Portail des Failles", pc + Vector2(0, -14), 10, Color("e0b0ff"))
+		var tq := eg.titan_pos()
+		if tq != Vector3.INF:
+			var q := cell_to_screen(Vector2(tq.x, tq.z))
+			draw_circle(q, 10.0, Color(0.6, 0.1, 0.05, 0.85))
+			draw_arc(q, 10.0, 0, TAU, 20, Color("ffb050"), 2.0)
+			_text_center("☠", q + Vector2(0, -4), 14, Color("ffe0b0"))
+			_text_center("%s · Nv %d" % [eg.titan.name, int(eg.titan.level)], q + Vector2(0, -22), 12, Color("ffb050"))
 	# objectif de l'histoire
 	var st := get_tree().get_first_node_in_group("story") as Story
 	var tp := st.target_pos() if st else Vector3.INF

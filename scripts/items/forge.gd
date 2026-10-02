@@ -35,7 +35,7 @@ const RUNES := {
 
 
 static func is_upgradable(item: ItemData) -> bool:
-	return item != null and item.is_equipment() and (item.attack > 0 or item.defense > 0 or item.magic > 0)
+	return item != null and item.is_equipment() and not item.id.contains("#") and (item.attack > 0 or item.defense > 0 or item.magic > 0)
 
 
 static func base_of(item: ItemData) -> String:
@@ -235,7 +235,7 @@ static func workable(p: Player) -> Array:
 
 ## Plafonds des bonus de gemmes et de runes cumulés sur tout l'équipement porté (équilibrage).
 const BONUS_CAPS := {"crit": 0.3, "crit_mult": 0.6, "lifesteal": 0.12, "burn": 0.4, "slow": 0.4, "atk_pct": 0.4,
-	"mag_pct": 0.4, "hp_pct": 0.4, "cdr_pct": 0.25, "spd_pct": 0.2, "aspd_pct": 0.2, "regen": 3.0, "def_flat": 20.0}
+	"mag_pct": 0.5, "hp_pct": 0.5, "cdr_pct": 0.25, "spd_pct": 0.2, "aspd_pct": 0.25, "regen": 15.0, "def_flat": 60.0}
 
 
 ## Bonus des gemmes et des runes de tout ce que porte le héros (plafonnés).

@@ -4,7 +4,7 @@ extends Resource
 ## Chaque objet est un fichier .tres dans data/items/ : duplique-en un pour en créer un nouveau.
 
 enum Slot { NONE, MAIN_HAND, OFF_HAND, HEAD, CHEST, ARMS, LEGS, BACK }
-enum Rarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY }
+enum Rarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC }
 ## Façon de se battre avec l'arme (choisit la suite de coups du combo).
 enum WeaponStyle { SWORD, SPEAR, HEAVY, STAFF, UNARMED }
 
@@ -25,6 +25,7 @@ const RARITY_COLORS := {
 	Rarity.RARE: Color("6aa8ff"),
 	Rarity.EPIC: Color("c88aff"),
 	Rarity.LEGENDARY: Color("ffa640"),
+	Rarity.MYTHIC: Color("ff3a7a"),
 }
 
 ## Identifiant unique (sert aussi de nom du modèle 3D dans les fichiers <race>_equipment.glb
@@ -177,7 +178,24 @@ func stats_text() -> String:
 		for gem in gems:
 			g.append(all_gems[gem].name if all_gems.has(gem) else gem)
 		t += "\nGemmes : " + ", ".join(PackedStringArray(g))
+	if id.contains("#") and not bonus.is_empty():
+		t += "\n" + affix_text()
 	if rune != "":
 		var all_runes: Dictionary = load("res://scripts/items/forge.gd").RUNES
 		t += "\nRune : " + (all_runes[rune].name + " (" + all_runes[rune].text + ")" if all_runes.has(rune) else rune)
 	return t
+
+
+## Bonus tirés au sort d'un objet de butin (voir Loot), ex. « Attaque +12 %  Critique +4 % ».
+func affix_text() -> String:
+	const NAMES := {"atk_pct": "Attaque", "mag_pct": "Magie", "hp_pct": "Vie", "crit": "Critique",
+		"crit_mult": "Dégâts critiques", "lifesteal": "Vol de vie", "cdr_pct": "Recharge", "spd_pct": "Vitesse",
+		"regen": "Régénération", "def_flat": "Armure", "aspd_pct": "Vitesse d'attaque"}
+	var parts := []
+	for k in bonus:
+		var v := float(bonus[k])
+		if k in ["regen", "def_flat"]:
+			parts.append("%s +%s" % [NAMES.get(k, k), str(snappedf(v, 0.1))])
+		else:
+			parts.append("%s +%s %%" % [NAMES.get(k, k), str(snappedf(v * 100.0, 0.1))])
+	return "  ".join(parts)
