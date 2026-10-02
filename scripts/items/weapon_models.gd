@@ -523,3 +523,19 @@ func _arc(d: int) -> void:
 		gem(0.9, 0, 0, 0.9)
 		for s in [-1, 1]:
 			box(1.4, 1.4, 1.4, c_accent, 0, s * 2.2, 0)
+
+
+static var _arrow: ArrayMesh
+
+
+## Une flèche (pointe vers +Z), pour les arcs.
+static func arrow_mesh() -> ArrayMesh:
+	if _arrow == null:
+		var b := WeaponModels.new()
+		b.box(0.5, 0.5, 14, WOOD, 0, 0, 0)
+		b.box(1.2, 1.2, 1.6, Color("b8bcc4"), 0, 0, 7.6, 0.0, 0.78)
+		for s in [-1, 1]:
+			b.box(0.2, 1.4, 2.4, Color("e8e0d0"), s * 0.4, 0, -6.2)
+			b.box(1.4, 0.2, 2.4, Color("c83a3a"), 0, s * 0.4, -6.2)
+		_arrow = b._build()
+	return _arrow

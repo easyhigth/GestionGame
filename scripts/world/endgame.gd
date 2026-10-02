@@ -30,6 +30,23 @@ const TITANS := [["boss_ours_ancien", "Ursok, Titan des glaces"], ["boss_seigneu
 	["boss_ogre_roi", "Gromm, Titan des montagnes"], ["boss_dryade_mere", "Sylvara, Titan des forêts"],
 	["boss_scorpion_empereur", "Kar'Zeth, Titan des sables"], ["seigneur_demon", "Azgaroth, Titan des abîmes"]]
 const PORTAL_OFFSET := Vector3(-16, 0, 14)
+## Thèmes d'arène (un par rang, en boucle) : nom, sol, murs, piliers, couleurs des lumières, fond.
+const THEMES := [
+	["Faille de cristal", "bloc_marbre_noir", "bloc_pierre_polie", "bloc_minerai_cristal", ["b05aff", "ff6ad0"], "12001c"],
+	["Faille de lave", "bloc_basalte_polie", "bloc_obsidienne_briques", "bloc_pierre_lumineuse", ["ff6a2a", "ffb03a"], "200400"],
+	["Faille de glace", "bloc_neige", "bloc_diorite_briques", "bloc_glace", ["8ad0ff", "e0f4ff"], "06101c"],
+	["Faille sylvestre", "bloc_mousse", "bloc_ebene_rondins", "bloc_feuillage", ["7aff6a", "e0ff8a"], "04120a"],
+	["Faille des abysses", "bloc_prismarine_polie", "bloc_prismarine_briques", "bloc_lanterne_marine", ["4ae0d0", "2a8aff"], "02101a"],
+]
+## Modificateurs (façon Diablo) : nom, description. Un dès le rang 3, deux dès le rang 10, trois dès le rang 25 ;
+## chacun ajoute un objet au trésor du gardien.
+const AFFIXES := {
+	"rapides": ["Rapides", "les monstres courent 35 % plus vite"],
+	"robustes": ["Robustes", "les monstres ont 60 % de vie en plus"],
+	"enrages": ["Enragés", "les monstres frappent 30 % plus fort"],
+	"explosifs": ["Explosifs", "les monstres explosent en mourant (éloigne-toi !)"],
+	"nombreux": ["Nombreux", "50 % de monstres en plus par vague"],
+}
 
 var world: WorldGenerator
 var player: Player
@@ -57,6 +74,9 @@ var _saved_light := {}
 var _day := -1
 var _tick := 0.0
 var _rng := RandomNumberGenerator.new()
+## Rayon de l'arène de la faille en cours, et ses modificateurs.
+var _r := 16
+var affixes: Array = []
 var _portal_cell := Vector2i(-1, -1)
 
 
@@ -259,6 +279,28 @@ func rift_level(rank: int) -> int:
 	return 10 + rank * 5
 
 
+## Les modificateurs d'un rang (toujours les mêmes pour un rang donné).
+func rift_affixes(rank: int) -> Array:
+	var n := 0 if rank < 3 else (1 if rank < 10 else (2 if rank < 25 else 3))
+	var keys := AFFIXES.keys()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = rank * 7919 + 13
+	var out := []
+	while out.size() < n:
+		var k: String = keys[rng.randi() % keys.size()]
+		if not out.has(k):
+			out.append(k)
+	return out
+
+
+func rift_theme(rank: int) -> Array:
+	return THEMES[rank % THEMES.size()]
+
+
+func affixes_text(list: Array) -> String:
+	return ", ".join(PackedStringArray(list.map(func(a): return "%s (%s)" % [AFFIXES[a][0], AFFIXES[a][1]])))
+
+
 func _arena_origin() -> Vector2i:
 	return world.spawn_cell + Vector2i(0, 0)
 
@@ -297,44 +339,92 @@ func _build_arena() -> void:
 	wave = 0
 	_alive.clear()
 	_boss = null
+	affixes = rift_affixes(rift_rank)
+	var th := rift_theme(rift_rank)
+	_r = 13 + rift_rank % 4
 	var grid := world.dungeon_grid
 	grid.clear()
 	var o := _arena_origin()
-	var floor_it := Items.get_item("bloc_marbre_noir")
-	var wall_it := Items.get_item("bloc_pierre_polie")
-	var crystal := Items.get_item("bloc_minerai_cristal")
-	for dz in range(-RIFT_R - 1, RIFT_R + 2):
-		for dx in range(-RIFT_R - 1, RIFT_R + 2):
+	var floor_it := Items.get_item(th[1])
+	var wall_it := Items.get_item(th[2])
+	var pillar := Items.get_item(th[3])
+	for dz in range(-_r - 1, _r + 2):
+		for dx in range(-_r - 1, _r + 2):
 			var d := Vector2(dx, dz).length()
-			if d > RIFT_R + 1.0:
+			if d > _r + 1.0:
 				continue
 			grid.place_block(Vector3i(o.x + dx, RIFT_FLOOR - 1, o.y + dz), floor_it)
-			if d > RIFT_R - 0.5:
+			if d > _r - 0.5:
 				for h in 4:
 					grid.place_block(Vector3i(o.x + dx, RIFT_FLOOR + h, o.y + dz), wall_it)
-	# des piliers de cristal
+	# trois dispositions : couronne de piliers, croix de murets, quatre gros piliers
+	match rift_rank % 3:
+		0:
+			for i in 8:
+				var a := TAU * i / 8.0
+				var c := o + Vector2i(roundi(cos(a) * (_r - 4)), roundi(sin(a) * (_r - 4)))
+				for h in 3:
+					grid.place_block(Vector3i(c.x, RIFT_FLOOR + h, c.y), pillar)
+		1:
+			for k in range(3, _r - 3):
+				if k % 4 == 0:
+					continue
+				for v in [Vector2i(k, 0), Vector2i(-k, 0), Vector2i(0, k), Vector2i(0, -k)]:
+					grid.place_block(Vector3i(o.x + v.x, RIFT_FLOOR, o.y + v.y), wall_it)
+			for v in [Vector2i(3, 3), Vector2i(-3, 3), Vector2i(3, -3), Vector2i(-3, -3)]:
+				for h in 3:
+					grid.place_block(Vector3i(o.x + v.x, RIFT_FLOOR + h, o.y + v.y), pillar)
+		2:
+			for v in [Vector2i(5, 5), Vector2i(-6, 5), Vector2i(5, -6), Vector2i(-6, -6)]:
+				for ox in 2:
+					for oz in 2:
+						for h in 4:
+							grid.place_block(Vector3i(o.x + v.x + ox, RIFT_FLOOR + h, o.y + v.y + oz), pillar)
+	var cols: Array = th[4]
 	for i in 8:
 		var a := TAU * i / 8.0
-		var c := o + Vector2i(roundi(cos(a) * (RIFT_R - 4)), roundi(sin(a) * (RIFT_R - 4)))
-		for h in 3:
-			grid.place_block(Vector3i(c.x, RIFT_FLOOR + h, c.y), crystal)
 		var l := OmniLight3D.new()
-		l.light_color = Color("b05aff") if i % 2 == 0 else Color("ff6ad0")
+		l.light_color = Color(cols[i % cols.size()])
 		l.light_energy = 2.2
 		l.omni_range = 11.0
 		_arena.add_child(l)
-		l.global_position = Vector3(c.x + 0.5, RIFT_FLOOR + 3.5, c.y + 0.5)
-	_set_lighting(true)
-	player.global_position = _arena_center() + Vector3(0, 0.1, 6)
+		l.global_position = Vector3(o.x + 0.5 + cos(a) * (_r - 4), RIFT_FLOOR + 3.5, o.y + 0.5 + sin(a) * (_r - 4))
+	_set_lighting(true, Color(th[5]), Color(cols[0]).lerp(Color.WHITE, 0.45))
+	player.global_position = _arena_center() + Vector3(0, 0.1, 9)
 	player.snap_camera()
 	_timer = 3.0
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud and hud.has_method("show_banner"):
-		hud.show_banner("Faille — rang %d" % rift_rank, "Monstres de niveau %d : trois vagues, puis le gardien." % rift_level(rift_rank), Color("e0b0ff"))
+		var sub := "Monstres de niveau %d : trois vagues, puis le gardien." % rift_level(rift_rank)
+		if not affixes.is_empty():
+			sub += "\nModificateurs : " + affixes_text(affixes)
+		hud.show_banner("%s — rang %d" % [th[0], rift_rank], sub, Color(cols[0]).lightened(0.3))
 	Sound.ui("war_drums")
 
 
-func _set_lighting(on: bool) -> void:
+## Les modificateurs de la faille appliqués à un monstre (avant son entrée dans l'arène).
+func _apply_affixes_before(e: Enemy) -> void:
+	if "enrages" in affixes:
+		e.power *= 1.3
+	if "rapides" in affixes:
+		e.speed_mult = 1.35
+
+
+func _apply_affixes_after(e: Enemy) -> void:
+	if "robustes" in affixes:
+		e.health.set_max(roundi(e.health.max_health * 1.6), true)
+	if "explosifs" in affixes:
+		e.died_at.connect(_explode.bind(e.attack_power()))
+
+
+func _explode(pos: Vector3, atk: int) -> void:
+	VoxelBurst.spawn(_arena, pos + Vector3(0, 0.6, 0), Color("ff6a2a"), 40, 7.0, 0.14, 0.6, "sphere", 4.0)
+	SkillFX.shockwave(_arena, pos, 3.0, Color("ff8a3a"), 1, 0.4)
+	if player and player.is_alive() and player.global_position.distance_to(pos) < 3.0:
+		player.receive_hit(roundi(atk * 1.5), _arena, 4.0)
+
+
+func _set_lighting(on: bool, bg := Color(0.06, 0.0, 0.1), ambient := Color(0.7, 0.55, 0.9)) -> void:
 	var scene_root: Node = world.get_parent()
 	var sun := scene_root.get_node_or_null("Soleil") as DirectionalLight3D
 	var env_node := scene_root.get_node_or_null("Ambiance") as WorldEnvironment
@@ -346,8 +436,8 @@ func _set_lighting(on: bool) -> void:
 			sun.shadow_enabled = false
 		if env and not _saved_light.has("env"):
 			_saved_light["env"] = [env.background_color, env.ambient_light_color, env.ambient_light_energy]
-			env.background_color = Color(0.06, 0.0, 0.1)
-			env.ambient_light_color = Color(0.7, 0.55, 0.9)
+			env.background_color = bg
+			env.ambient_light_color = ambient
 			env.ambient_light_energy = 1.2
 	else:
 		if sun and _saved_light.has("sun"):
@@ -363,6 +453,8 @@ func _set_lighting(on: bool) -> void:
 func _spawn_wave() -> void:
 	var lv := rift_level(rift_rank)
 	var n := 5 + wave * 2 + mini(rift_rank / 10, 6)
+	if "nombreux" in affixes:
+		n = roundi(n * 1.5)
 	var scene := load("res://scenes/enemies/enemy.tscn") as PackedScene
 	var c := _arena_center()
 	for i in n:
@@ -371,9 +463,11 @@ func _spawn_wave() -> void:
 		e.level = lv
 		e.power = 1.0 + 0.06 * lv
 		e.set_meta("rift", true)
+		_apply_affixes_before(e)
 		_arena.add_child(e)
+		_apply_affixes_after(e)
 		var a := TAU * i / n + wave
-		e.global_position = c + Vector3(cos(a), 0, sin(a)) * (RIFT_R - 3.0)
+		e.global_position = c + Vector3(cos(a), 0, sin(a)) * (_r - 3.0)
 		e.home = c
 		e.set("_wander_to", c)
 		e.set("_returning", true)
@@ -415,7 +509,7 @@ func _on_rift_boss_died(pos: Vector3) -> void:
 	if rift_rank > best_rift:
 		best_rift = rift_rank
 	var lv := rift_level(rift_rank)
-	var n := 2 + rift_rank / 15
+	var n := 2 + rift_rank / 15 + affixes.size()
 	for i in n:
 		_drop(Loot.roll(lv, 0.15, rift_rank / 6, 2 if i == 0 else 0), pos)
 	if player:

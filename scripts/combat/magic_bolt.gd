@@ -13,9 +13,14 @@ var color := Color(0.5, 0.9, 1.0)
 var on_hit: Callable
 var _t := 0.0
 var _core: MeshInstance3D
+## Flèche (arcs de l'arsenal) : un trait de bois empenné, plus rapide, sans lueur.
+var arrow := false
 
 
 func _ready() -> void:
+	if arrow:
+		_build_arrow()
+		return
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.emission_enabled = true
@@ -49,7 +54,8 @@ func _physics_process(delta: float) -> void:
 	var step := direction * speed * delta
 	global_position += step
 	range_left -= step.length()
-	_core.rotation = Vector3(_t * 9.0, _t * 7.0, 0)
+	if not arrow:
+		_core.rotation = Vector3(_t * 9.0, _t * 7.0, 0)
 	if shooter and is_instance_valid(shooter):
 		for n in get_tree().get_nodes_in_group(shooter.hostile_group()):
 			var target := n as Combatant
@@ -66,7 +72,24 @@ func _physics_process(delta: float) -> void:
 		_burst()
 
 
+func _build_arrow() -> void:
+	speed = 24.0
+	knockback = 1.5
+	_core = MeshInstance3D.new()
+	_core.mesh = WeaponModels.arrow_mesh()
+	_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_core)
+	# la flèche regarde dans sa direction (pointe vers +Z du maillage)
+	_core.basis = Basis.looking_at(-direction, Vector3.UP)
+
+
 func _burst() -> void:
+	if arrow:
+		set_physics_process(false)
+		var tw := create_tween()
+		tw.tween_property(self, "scale", Vector3.ONE * 0.01, 0.08)
+		tw.tween_callback(queue_free)
+		return
 	set_physics_process(false)
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector3.ONE * 2.2, 0.12)

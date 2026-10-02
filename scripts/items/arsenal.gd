@@ -25,7 +25,7 @@ const TYPES := {
 	"faux": {"names": ["Faux", "Faux de guerre", "Faucille longue", "Faux de la Moissonneuse"], "atk": 12, "reach": 2.6, "speed": 0.8, "kb": 1.5, "style": 2, "two": true, "ingots": 4, "extra": [["wood", 3]], "bonus": {"execute": 0.04}},
 	"baton": {"names": ["Bâton", "Bâton spirale", "Bâton noueux", "Bâton de l'archimage"], "atk": 2, "mag": 12, "reach": 11.0, "speed": 0.9, "kb": 0.0, "style": 3, "two": true, "proj": true, "ingots": 2, "extra": [["wood", 4]]},
 	"sceptre": {"names": ["Sceptre", "Sceptre couronné", "Sceptre lunaire", "Sceptre sacré"], "atk": 3, "mag": 10, "reach": 10.0, "speed": 1.05, "kb": 0.0, "style": 3, "proj": true, "ingots": 3, "extra": [["wood", 1]], "bonus": {"cdr_pct": 0.03}},
-	"arc": {"names": ["Arc", "Arc long", "Arc de chasse", "Arc elfique"], "atk": 3, "mag": 10, "reach": 14.0, "speed": 1.0, "kb": 0.5, "style": 3, "two": true, "proj": true, "ingots": 1, "extra": [["wood", 3], ["fiber", 3]]},
+	"arc": {"names": ["Arc", "Arc long", "Arc de chasse", "Arc elfique"], "atk": 9, "reach": 14.0, "speed": 1.0, "kb": 0.5, "style": 3, "two": true, "proj": true, "ingots": 1, "extra": [["wood", 3], ["fiber", 3]]},
 }
 const TYPE_ORDER := ["epee", "espadon", "sabre", "katana", "rapiere", "dague", "hache", "hache_bataille", "marteau",
 	"masse", "morgenstern", "lance", "hallebarde", "faux", "baton", "sceptre", "arc"]

@@ -11,7 +11,7 @@ extends RefCounted
 ## - des dalles (demi-blocs) pour les pierres et les bois.
 ## Chaque recette porte une « famille » (méta « family ») pour l'onglet Construction.
 
-const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles"]
+const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles", "Escaliers"]
 
 ## Pierres : identifiant, nom, féminin, couleur, ressource brute.
 const STONES := [
@@ -321,6 +321,7 @@ static func register(db: Node) -> void:
 	_colors(db)
 	_metals(db)
 	_nature(db)
+	_stairs(db)
 
 
 static func _stones(db: Node) -> void:
@@ -418,15 +419,49 @@ static func _nature(db: Node) -> void:
 	for n in NATURE:
 		seed += 1
 		var it := _block(db, "bloc_" + n[0], n[1], "Bloc naturel.", texture(n[3], n[2], seed), int(n[7]), false, bool(n[6]))
+		if n[3] == "glow":
+			it.set_meta("glow", true)
+			it.description = "Un bloc qui éclaire autour de lui."
 		_recipe(db, it, int(n[5]), n[4], n[8], "Nature")
 
 
-## Nombre de blocs de construction (blocs et dalles).
+## Escaliers : chaque pierre (polie et briques), la pierre polie et chaque bois (planches). L'objet du sac est
+## l'escalier « nord » ; trois variantes tournées (cachées) servent à le poser dans le sens du regard.
+static func _stairs(db: Node) -> void:
+	var bases := []
+	for st in STONES:
+		for vid in ["polie", "briques"]:
+			var bid := "bloc_%s_%s" % [st[0], vid]
+			if st[0] == "pierre":
+				bid = "bloc_pierre_polie" if vid == "polie" else "bloc_briques"
+			bases.append([bid, st[4]])
+	for w in WOODS:
+		bases.append(["bloc_planches" if w[0] == "chene" else "bloc_%s_planches" % w[0], "wood" if w[0] == "chene" else "bois_" + w[0]])
+	for b in bases:
+		var src: ItemData = db.items.get(b[0])
+		if src == null:
+			continue
+		var sid := "escalier_" + str(b[0]).trim_prefix("bloc_")
+		var variants := []
+		for d in 4:
+			var id := sid if d == 0 else "%s_r%d" % [sid, d]
+			var it := _block(db, id, "Escalier : " + src.display_name, "Un escalier qu'on monte sans sauter. Il se pose dans le sens du regard.",
+				src.block_texture, src.block_tier)
+			it.set_meta("stair_dir", d)
+			if d > 0:
+				it.set_meta("stair_base", sid)
+				it.set_meta("hidden", true)
+			variants.append(id)
+		db.items[sid].set_meta("stair_variants", variants)
+		_recipe(db, db.items[sid], 4, [[b[1], 3]], "table_tailleur" if b[1] != "wood" and not str(b[1]).begins_with("bois_") else "", "Escaliers")
+
+
+## Nombre de blocs de construction (blocs, dalles et escaliers ; sans les variantes tournées).
 static func count_blocks(db: Node) -> int:
 	var n := 0
 	for id in db.items:
 		var it: ItemData = db.items[id]
-		if it.is_block():
+		if it.is_block() and not it.has_meta("hidden"):
 			n += 1
 	return n
 

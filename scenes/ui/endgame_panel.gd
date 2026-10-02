@@ -97,6 +97,8 @@ func _refresh() -> void:
 		func(): _rank = maxi(1, _rank - 1),
 		func(): _rank = mini(eg.best_rift + 1, _rank + 1)))
 	_box.add_child(_text("Trois vagues de monstres, puis le gardien. Le vaincre ouvre le rang suivant et fait tomber du butin de niveau %d (jusqu'à Mystique)." % eg.rift_level(_rank)))
+	var afx: Array = eg.rift_affixes(_rank)
+	_box.add_child(_text("%s%s" % [eg.rift_theme(_rank)[0], ("  ·  Modificateurs : " + eg.affixes_text(afx)) if not afx.is_empty() else "  ·  aucun modificateur"], 10, Color("ff9a6a") if not afx.is_empty() else MenuKit.C_DIM))
 	_box.add_child(_text("Meilleur rang vaincu : %d" % eg.best_rift, 12, MenuKit.C_GOLD))
 	var enter := MenuKit.button("Entrer dans la faille", 260, 14)
 	enter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

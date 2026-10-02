@@ -256,6 +256,8 @@ static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Pla
 			_drop(world, res[0], int(res[1]), at - Vector3(0, 0.4, 0), cave._content)
 		return
 	var got: ItemData = grid.remove_block(key) if t.has("block") else grid.remove_furniture(key)
+	if got and got.has_meta("stair_base"):
+		got = Items.get_item(got.get_meta("stair_base"))
 	if got:
 		_drop(world, got, 1, at - Vector3(0, 0.4, 0))
 

@@ -120,6 +120,9 @@ func _process(_d) -> bool:
 	if later("portal2", 400):
 		shot("eg_02_portail.png")
 		print("== faille rang 1")
+		check("modificateurs : rang 1 aucun, rang 3 un, rang 12 deux, rang 30 trois", eg.rift_affixes(1).is_empty() and eg.rift_affixes(3).size() == 1 and eg.rift_affixes(12).size() == 2 and eg.rift_affixes(30).size() == 3)
+		check("modificateurs stables pour un rang (%s)" % eg.affixes_text(eg.rift_affixes(12)), eg.rift_affixes(12) == eg.rift_affixes(12))
+		check("5 thèmes d'arène (%s, %s)" % [eg.rift_theme(1)[0], eg.rift_theme(2)[0]], eg.rift_theme(1)[0] != eg.rift_theme(2)[0])
 		check("rang 3 verrouillé", not eg.enter_rift(3))
 		check("entrée rang 1", eg.enter_rift(1))
 		start("rift")
