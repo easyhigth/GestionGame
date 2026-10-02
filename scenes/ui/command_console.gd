@@ -22,6 +22,7 @@ const COMMANDS := {
 	"vitesse": ["/vitesse <x>", "vitesse de marche multipliée (1 = normale, jusqu'à 10)"],
 	"niveau": ["/niveau <n>", "monte jusqu'au niveau n (jusqu'à 1000)"],
 	"competences": ["/competences", "apprend tout l'arbre de compétences jusqu'à ton niveau, sans dépenser de points"],
+	"metier": ["/metier <métier|tous> <niveau>", "met un métier (ou tous) à ce niveau (1 à 100)"],
 	"palier": ["/palier <0-10>", "change le palier du monde (monstres plus forts, plus d'expérience et de butin)"],
 	"faille": ["/faille <rang>", "ouvre les failles jusqu'à ce rang et y entre"],
 	"titan": ["/titan", "éveille un titan près de toi"],
@@ -38,7 +39,7 @@ const COMMANDS := {
 }
 const ALIASES := {"help": "aide", "map": "carte", "tp": "tp", "give": "donner", "heal": "soin", "god": "dieu",
 	"speed": "vitesse", "time": "heure", "weather": "meteo", "météo": "meteo", "kill": "tuer", "seed": "graine",
-	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp", "world": "monde", "war": "guerre", "événement": "evenement", "event": "evenement", "compétences": "competences", "skills": "competences"}
+	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp", "world": "monde", "war": "guerre", "événement": "evenement", "event": "evenement", "compétences": "competences", "skills": "competences", "métier": "metier", "metiers": "metier", "craft": "metier"}
 const MAX_LINES := 14
 ## Temps de calcul accordé par image au dévoilement de la carte (le jeu reste fluide pendant ce temps).
 const REVEAL_BUDGET_USEC := 18000
@@ -230,6 +231,19 @@ func run(text: String) -> bool:
 	match cmd:
 		"palier", "faille", "titan", "butin":
 			return _cmd_endgame(cmd, args)
+		"metier":
+			var lv := clampi(int(args[1]), 1, Crafts.MAX_LEVEL) if args.size() > 1 and str(args[1]).is_valid_int() else Crafts.MAX_LEVEL
+			var which := _plain(str(args[0])) if not args.is_empty() else "tous"
+			var done := []
+			for c in Crafts.ORDER:
+				if which in ["tous", "all"] or c.begins_with(which) or _plain(Crafts.CRAFTS[c].name).begins_with(which):
+					player.crafts[c] = Crafts.xp_for_level(lv)
+					done.append(Crafts.CRAFTS[c].name)
+			if done.is_empty():
+				_err("Métiers : " + ", ".join(PackedStringArray(Crafts.ORDER)))
+				return false
+			_ok("%s : niveau %d." % [", ".join(PackedStringArray(done)), lv])
+			return true
 		"aide":
 			for c in COMMANDS:
 				_say("[color=#ffd24a]%s[/color]  %s" % [COMMANDS[c][0].replace("[", "[lb]"), COMMANDS[c][1]])

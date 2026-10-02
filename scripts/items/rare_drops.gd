@@ -11,13 +11,17 @@ const ENEMY := {
 	"dryade_corrompue": [["larme_esprit", 0.05]], "harpie": [["larme_esprit", 0.015]],
 	"salamandre": [["ecaille_dragon", 0.025]], "slime_magma": [["ecaille_dragon", 0.015]],
 	"demon": [["sang_demon", 0.04], ["fragment_brume", 0.03]], "seigneur_demon": [["sang_demon", 0.25], ["fragment_brume", 0.15]],
-	"squelette": [["fragment_brume", 0.02]], "seigneur_squelette": [["fragment_brume", 0.2], ["mithril_brut", 0.1]],
+	"squelette": [["fragment_brume", 0.02], ["os", 0.6]], "seigneur_squelette": [["fragment_brume", 0.2], ["mithril_brut", 0.1], ["os", 1.0]],
+	"loup": [["os", 0.3]], "loup_givre": [["os", 0.3]], "ours_neige": [["os", 0.4]], "sanglier": [["os", 0.3]],
 	"ogre": [["mithril_brut", 0.05]], "orc_brute": [["mithril_brut", 0.02]], "loup_alpha": [["mithril_brut", 0.02]],
 	"grenouille": [["larme_esprit", 0.03]], "serpent": [["ecaille_dragon", 0.02]], "panthere": [["mithril_brut", 0.02]],
 	"serpent_roi": [["ecaille_dragon", 0.15], ["gemme_emeraude", 0.1]],
 }
 ## Tous les boss : [objet, chance, minimum, maximum].
-const BOSS := [["mithril_brut", 0.7, 2, 3], ["fragment_brume", 0.4, 1, 2], ["orichalque", 0.06, 1, 1]]
+const BOSS := [["mithril_brut", 0.7, 2, 3], ["fragment_brume", 0.4, 1, 2], ["orichalque", 0.06, 1, 1],
+	["poussiere_arcane", 1.0, 3, 6], ["pierre_ame", 0.5, 1, 1]]
+## Tous les monstres : poussière arcanique (pour les enchantements).
+const ANY := [["poussiere_arcane", 0.06]]
 ## Boss particuliers.
 const BOSS_EXTRA := {
 	"boss_seigneur_ignarok": [["ecaille_dragon", 1.0, 3, 5], ["sang_demon", 0.5, 1, 2]],
@@ -37,7 +41,7 @@ const GEM_CHANCE := {"boss": 0.45, "ile": 0.3, "grotte": 0.15, "donjon_boss": 0.
 const CHESTS := {
 	"ile": [["orichalque", 0.08, 1, 1], ["mithril_brut", 0.3, 1, 2], ["ecaille_dragon", 0.12, 1, 1]],
 	"grotte": [["mithril_brut", 0.15, 1, 1], ["larme_esprit", 0.1, 1, 1]],
-	"donjon_boss": [["mithril_brut", 0.5, 1, 2], ["orichalque", 0.08, 1, 1], ["sang_demon", 0.15, 1, 1]],
+	"donjon_boss": [["mithril_brut", 0.5, 1, 2], ["orichalque", 0.08, 1, 1], ["sang_demon", 0.15, 1, 1], ["poussiere_arcane", 1.0, 2, 4], ["pierre_ame", 0.3, 1, 1]],
 }
 
 
@@ -53,7 +57,7 @@ static func roll_enemy(e: Enemy, mult := 1.0) -> Array:
 	if e.data == null:
 		return out
 	var id := e.data.resource_path.get_file().get_basename()
-	for pair in ENEMY.get(id, []):
+	for pair in ENEMY.get(id, []) + ANY:
 		if randf() < float(pair[1]) * mult:
 			out.append([_item(pair[0]), 1])
 	var table: Array = []

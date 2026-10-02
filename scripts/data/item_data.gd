@@ -44,6 +44,8 @@ const RARITY_COLORS := {
 @export var bonus: Dictionary = {}
 ## Rune gravée (voir Forge.RUNES) : "" ou identifiant de la rune.
 @export var rune := ""
+## Enchantements (Forge.ENCHANTS) : { enchantement: rang 1 à 5 }.
+@export var enchants: Dictionary = {}
 ## Arme à deux mains : retire le bouclier quand on l'équipe.
 @export var two_handed: bool = false
 ## Nombre maximum d'exemplaires dans une case d'inventaire.
@@ -178,8 +180,10 @@ func stats_text() -> String:
 		for gem in gems:
 			g.append(all_gems[gem].name if all_gems.has(gem) else gem)
 		t += "\nGemmes : " + ", ".join(PackedStringArray(g))
-	if id.contains("#") and not bonus.is_empty():
+	if (id.contains("#") or id.begins_with("arm_")) and not bonus.is_empty() and enchants.is_empty() and gems.is_empty():
 		t += "\n" + affix_text()
+	if not enchants.is_empty():
+		t += "\nEnchantements : " + load("res://scripts/items/forge.gd").enchants_text(self)
 	if rune != "":
 		var all_runes: Dictionary = load("res://scripts/items/forge.gd").RUNES
 		t += "\nRune : " + (all_runes[rune].name + " (" + all_runes[rune].text + ")" if all_runes.has(rune) else rune)
@@ -190,11 +194,14 @@ func stats_text() -> String:
 func affix_text() -> String:
 	const NAMES := {"atk_pct": "Attaque", "mag_pct": "Magie", "hp_pct": "Vie", "crit": "Critique",
 		"crit_mult": "Dégâts critiques", "lifesteal": "Vol de vie", "cdr_pct": "Recharge", "spd_pct": "Vitesse",
-		"regen": "Régénération", "def_flat": "Armure", "aspd_pct": "Vitesse d'attaque"}
+		"regen": "Régénération", "def_flat": "Armure", "aspd_pct": "Vitesse d'attaque", "burn": "Brûlure", "slow": "Givre",
+		"execute": "Exécution", "stun": "Assommer", "berserk": "Furie", "kill_heal": "Soin à chaque victoire", "xp": "Expérience",
+		"loot": "Butin", "thorns": "Épines", "dodge": "Esquive", "poise": "Équilibre", "parry": "Parade", "absorb": "Absorption",
+		"last_stand": "Dernier rempart"}
 	var parts := []
 	for k in bonus:
 		var v := float(bonus[k])
-		if k in ["regen", "def_flat"]:
+		if k in ["regen", "def_flat", "kill_heal", "last_stand"]:
 			parts.append("%s +%s" % [NAMES.get(k, k), str(snappedf(v, 0.1))])
 		else:
 			parts.append("%s +%s %%" % [NAMES.get(k, k), str(snappedf(v * 100.0, 0.1))])

@@ -21,13 +21,19 @@ const DECOR_LOOT := {
 ## Bonus possibles : [identifiant, chance, niveau de pioche requis (0 aucun, 1 bois/pierre, 2 fer)].
 const DECOR_BONUS := {
 	WorldGenerator.D_OAK: [["fiber", 0.3, 0]], WorldGenerator.D_PINE: [["fiber", 0.3, 0]],
-	WorldGenerator.D_ROCK: [["iron_ore", 0.3, 1], ["marbre_brut", 0.1, 2], ["or_brut", 0.05, 2], ["mithril_brut", 0.006, 2]],
-	WorldGenerator.D_IRON: [["iron_ore", 0.4, 1], ["mithril_brut", 0.02, 2], ["gemme_saphir", 0.01, 2], ["gemme_emeraude", 0.01, 2], ["gemme_amethyste", 0.008, 2]],
-	WorldGenerator.D_GOLD: [["mithril_brut", 0.03, 2], ["orichalque", 0.002, 2], ["gemme_topaze", 0.02, 2], ["gemme_rubis", 0.015, 2], ["gemme_diamant", 0.005, 2]],
+	WorldGenerator.D_ROCK: [["iron_ore", 0.3, 1], ["marbre_brut", 0.1, 2], ["or_brut", 0.05, 2], ["mithril_brut", 0.006, 2],
+		["minerai_cuivre", 0.3, 1], ["minerai_etain", 0.18, 1], ["charbon", 0.3, 1], ["obsidienne", 0.012, 2]],
+	WorldGenerator.D_IRON: [["iron_ore", 0.4, 1], ["mithril_brut", 0.02, 2], ["gemme_saphir", 0.01, 2], ["gemme_emeraude", 0.01, 2], ["gemme_amethyste", 0.008, 2],
+		["charbon", 0.4, 1], ["minerai_argent", 0.12, 2], ["minerai_cuivre", 0.2, 1]],
+	WorldGenerator.D_GOLD: [["mithril_brut", 0.03, 2], ["orichalque", 0.002, 2], ["gemme_topaze", 0.02, 2], ["gemme_rubis", 0.015, 2], ["gemme_diamant", 0.005, 2],
+		["minerai_argent", 0.3, 2], ["obsidienne", 0.05, 2]],
 	WorldGenerator.D_GRASS: [["fiber", 0.25, 0], ["graines_ble", 0.45, 0]],
 	WorldGenerator.D_FLOWERS: [["graines_ble", 0.2, 0]],
 	WorldGenerator.D_BUSH: [["carotte", 0.2, 0], ["pomme_de_terre", 0.15, 0]],
 }
+## Expérience de métier d'un décor brisé.
+const CRAFT_XP := {WorldGenerator.D_OAK: 7, WorldGenerator.D_PINE: 7, WorldGenerator.D_ROCK: 6, WorldGenerator.D_IRON: 14,
+	WorldGenerator.D_GOLD: 22, WorldGenerator.D_BUSH: 2, WorldGenerator.D_GRASS: 1, WorldGenerator.D_FLOWERS: 1}
 ## Niveau de pioche qu'il faut pour miner un filon (1 : n'importe quelle pioche, 2 : pioche en fer).
 const VEIN_TIER := {WorldGenerator.D_IRON: 1, WorldGenerator.D_GOLD: 2}
 const DECOR_COLOR := {
@@ -170,10 +176,14 @@ static func harvest_crop(p: Player, cell: Vector2i) -> void:
 	if fm == null or world == null:
 		return
 	var crop: String = fm.crop_at(cell).get("c", "")
-	for l in fm.harvest(cell):
+	var got: Array = fm.harvest(cell)
+	for l in got:
 		_drop(world, l[0], l[1], world.cell_center(cell) + Vector3(0, 0.2, 0))
 	if crop != "":
 		p.crop_harvested.emit(crop)
+		Crafts.gain(p, "fermier", 8.0)
+		if not got.is_empty() and randf() < Crafts.double_chance(p, "fermier"):
+			_drop(world, got[0][0], got[0][1], world.cell_center(cell) + Vector3(0, 0.2, 0))
 
 
 ## Bloc ou meuble posé juste devant le héros (aux pieds, puis au-dessus, puis le sol posé devant).
@@ -320,10 +330,16 @@ static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_pare
 	VoxelBurst.spawn(fx_parent, at, col, 26, 4.0, 0.12, 0.7, "sphere", 10.0, false)
 	# sans pioche, un rocher ne donne que des cailloux ; il faut une pioche en fer pour l'or et le marbre
 	var tier := 2 if p == null else pick_tier(p)
-	for l in loot(kind, tier):
+	var drops := loot(kind, tier)
+	for l in drops:
 		_drop(world, l[0], l[1], world.cell_center(cell))
 	if p:
 		p.harvested.emit(_kind_name(kind))
+		# métiers : le mineur et le bûcheron progressent, et récoltent parfois le double
+		var craft := "mineur" if is_stone(kind) else ("bucheron" if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE] else "fermier")
+		Crafts.gain(p, craft, float(CRAFT_XP.get(kind, 1)), 1 + (30 if kind == WorldGenerator.D_GOLD else (12 if kind == WorldGenerator.D_IRON else 0)))
+		if not drops.is_empty() and randf() < Crafts.double_chance(p, craft):
+			_drop(world, drops[0][0], drops[0][1], world.cell_center(cell))
 
 
 static func _kind_name(kind: int) -> String:

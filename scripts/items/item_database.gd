@@ -21,6 +21,8 @@ func _ready() -> void:
 	for res in _load_dir(RECIPES_DIR):
 		if res is RecipeData:
 			recipes.append(res)
+	# l'arsenal (884 armes) et les nouvelles ressources, fabriqués par le code
+	Arsenal.register(self)
 	recipes.sort_custom(func(a: RecipeData, b: RecipeData): return a.result.display_name < b.result.display_name)
 
 
@@ -31,7 +33,7 @@ func get_item(id: String) -> ItemData:
 		var spec := Forge.parse(id)
 		var base: ItemData = items.get(spec[0])
 		if base:
-			it = Forge.make_variant(base, spec[1], spec[2], spec[3])
+			it = Forge.make_variant(base, spec[1], spec[2], spec[3], spec[4])
 			items[id] = it
 	# butin de niveau (failles, titans) : « base#niveau.rareté.graine »
 	if it == null and id.contains("#"):
@@ -99,6 +101,12 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 			copy.transform = xf
 			inner.add_child(copy)
 		f.free()
+	elif item.is_equipment() and Arsenal.is_arsenal(item.model_id()):
+		var mi := MeshInstance3D.new()
+		mi.mesh = Arsenal.mesh_for(item.model_id())
+		# en diagonale (comme les icônes d'armes de Minecraft), le tranchant vers la caméra
+		mi.transform = Transform3D(Basis(Vector3(0, 0, 1), -0.78) * Basis(Vector3.UP, 0.6), Vector3.ZERO)
+		inner.add_child(mi)
 	elif item.is_equipment():
 		parts = VoxelCharacter.library_parts(DISPLAY_EQUIPMENT).get(item.model_id(), [])
 		# on reconstruit les pièces à leur place sur un humain de référence
@@ -108,6 +116,8 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 			mi.mesh = p[1]
 			mi.transform = ref.get(p[0], Transform3D.IDENTITY)
 			inner.add_child(mi)
+	elif Arsenal.RESOURCES.has(item.id):
+		inner.add_child(ResourceModels.build(item.id))
 	else:
 		var inst := DISPLAY_MATERIALS.instantiate()
 		var mid: String = ICON_ALIAS.get(item.model_id(), item.model_id())

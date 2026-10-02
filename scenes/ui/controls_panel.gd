@@ -71,7 +71,7 @@ const ROW_ACTIONS := {"Sauter": "jump", "Roulade": "dash", "Compétence unique":
 	"Creuser": "dig", "Poser, semer": "place_block", "Parler": "interact", "Dormir": "interact", "Entrer dans un donjon": "interact",
 	"Manger": "eat", "Inventaire": "inventory", "Carte du monde": "world_map", "Mode construction": "build_mode",
 	"Royaume": "kingdom", "Journal": "journal", "Familiers": "familiar_order", "Diplomatie": "diplomacy",
-	"Boire une potion": "potion", "Succès et bestiaire": "achievements"}
+	"Boire une potion": "potion", "Succès et bestiaire": "achievements", "Métiers": "crafts"}
 
 var _page := 0
 var _tabs: HBoxContainer
