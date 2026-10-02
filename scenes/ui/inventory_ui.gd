@@ -360,10 +360,11 @@ func _refresh_job() -> void:
 	# compagnon d'expédition (2 au plus)
 	var n_comp := get_tree().get_nodes_in_group("villagers").filter(func(v): return v.get("companion")).size()
 	var comp := CheckButton.new()
-	comp.text = "Compagnon d'expédition (%d/2)" % n_comp
+	var max_comp: int = Villager.max_companions(get_tree())
+	comp.text = "Compagnon d'expédition (%d/%d)" % [n_comp, max_comp]
 	comp.add_theme_font_size_override("font_size", 11)
 	comp.button_pressed = target.get("companion")
-	comp.disabled = not target.get("companion") and n_comp >= 2
+	comp.disabled = not target.get("companion") and n_comp >= max_comp
 	comp.toggled.connect(func(on):
 		if on:
 			k.assign(target, null)

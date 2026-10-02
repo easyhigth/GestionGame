@@ -132,7 +132,7 @@ func _refresh() -> void:
 	# familiers
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam and not fam.list.is_empty():
-		_box.add_child(MenuKit.label("Familiers : %d avec toi (max %d), %d en tout (max %d)  ·  P : %s" % [fam.team().size(), Familiars.MAX,
+		_box.add_child(MenuKit.label("Familiers : %d avec toi (max %d), %d en tout (max %d)  ·  P : %s" % [fam.team().size(), Familiars.max_team(get_tree()),
 			fam.list.size(), Familiars.max_total(get_tree()), Familiars.ORDER_TEXT[fam.order]], 11, Color("b8f0a0")))
 		for entry in fam.list.duplicate():
 			var row := HBoxContainer.new()

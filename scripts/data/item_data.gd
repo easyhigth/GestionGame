@@ -163,6 +163,8 @@ func model_id() -> String:
 	var m := model_ref if model_ref != "" else (base_id if base_id != "" else id)
 	if tint.a > 0.0:
 		m += "*" + tint.to_html(false)
+		if has_meta("ornament"):
+			m += "*" + str(get_meta("ornament"))
 	return m
 
 

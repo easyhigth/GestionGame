@@ -492,7 +492,7 @@ static func is_glowing(it: ItemData) -> bool:
 
 func _opaque_full(key: Vector3i) -> bool:
 	var it: ItemData = blocks.get(key)
-	return it != null and not it.block_slab and not it.block_transparent and not is_stair(it)
+	return it != null and not it.block_slab and not it.block_transparent and not is_stair(it) and shape_of(it) == ""
 
 
 func _rebuild_chunk(c: Vector2i) -> void:
@@ -581,9 +581,46 @@ func _box(st: SurfaceTool, a: Vector3, b: Vector3) -> void:
 	_face(st, [Vector3(b.x, a.y, a.z), Vector3(a.x, a.y, a.z), Vector3(a.x, b.y, a.z), Vector3(b.x, b.y, a.z)], Vector3.FORWARD, 0.9, h, true)
 
 
+## Forme d'un bloc : « wall » (muret) ou « fence » (barrière), sinon "".
+static func shape_of(it: ItemData) -> String:
+	return str(it.get_meta("shape", "")) if it else ""
+
+
+## Muret ou barrière : un poteau au centre, et des liaisons vers les voisins (même forme, ou bloc plein).
+func _add_post(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
+	var p := Vector3(key)
+	var sh := shape_of(it)
+	var wall := sh == "wall"
+	var r := 0.25 if wall else 0.125
+	_box(st, p + Vector3(0.5 - r, 0, 0.5 - r), p + Vector3(0.5 + r, 1.0, 0.5 + r))
+	for d in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+		var o: ItemData = blocks.get(key + d)
+		if o == null or not (shape_of(o) == sh or _opaque_full(key + d)):
+			continue
+		var a := Vector3(0.5, 0, 0.5)
+		var b := Vector3(0.5, 0, 0.5) + Vector3(d) * 0.5
+		var lo := Vector3(minf(a.x, b.x), 0, minf(a.z, b.z))
+		var hi := Vector3(maxf(a.x, b.x), 0, maxf(a.z, b.z))
+		var w := 0.19 if wall else 0.06
+		if d.x != 0:
+			lo.z = 0.5 - w
+			hi.z = 0.5 + w
+		else:
+			lo.x = 0.5 - w
+			hi.x = 0.5 + w
+		if wall:
+			_box(st, p + Vector3(lo.x, 0, lo.z), p + Vector3(hi.x, 0.8, hi.z))
+		else:
+			for y in [0.35, 0.72]:
+				_box(st, p + Vector3(lo.x, y, lo.z), p + Vector3(hi.x, y + 0.14, hi.z))
+
+
 func _add_block(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
 	if is_stair(it):
 		_add_stair(st, key, it)
+		return
+	if shape_of(it) != "":
+		_add_post(st, key, it)
 		return
 	var x := float(key.x)
 	var y := float(key.y)

@@ -145,7 +145,28 @@ func _release_token() -> void:
 		_has_token = false
 
 
+## Loin du héros et au calme, le monstre ne se calcule qu'un pas de physique sur 4 (avec le temps cumulé).
+var _lod_far := false
+var _lod_acc := 0.0
+var _lod_check := randf() * 0.5
+var _lod_phase := randi() % 4
+
+
 func _physics_process(delta: float) -> void:
+	_lod_check -= delta
+	if _lod_check <= 0.0:
+		_lod_check = 0.5
+		var pl := get_tree().get_first_node_in_group("player") as Node3D
+		_lod_far = pl != null and not tamed and _target == null and is_alive() and not has_meta("raider") \
+				and pl.global_position.distance_squared_to(global_position) > 45.0 * 45.0
+	if _lod_far:
+		_lod_acc += delta
+		if Engine.get_physics_frames() % 4 != _lod_phase:
+			return
+		delta = _lod_acc
+		_lod_acc = 0.0
+	elif _lod_acc > 0.0:
+		_lod_acc = 0.0
 	_combat_step(delta)
 	if not is_alive():
 		_dead_time += delta

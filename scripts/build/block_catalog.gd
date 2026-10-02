@@ -11,7 +11,7 @@ extends RefCounted
 ## - des dalles (demi-blocs) pour les pierres et les bois.
 ## Chaque recette porte une « famille » (méta « family ») pour l'onglet Construction.
 
-const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles", "Escaliers"]
+const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles", "Escaliers", "Murets et barrières"]
 
 ## Pierres : identifiant, nom, féminin, couleur, ressource brute.
 const STONES := [
@@ -322,6 +322,7 @@ static func register(db: Node) -> void:
 	_metals(db)
 	_nature(db)
 	_stairs(db)
+	_posts(db)
 
 
 static func _stones(db: Node) -> void:
@@ -454,6 +455,24 @@ static func _stairs(db: Node) -> void:
 			variants.append(id)
 		db.items[sid].set_meta("stair_variants", variants)
 		_recipe(db, db.items[sid], 4, [[b[1], 3]], "table_tailleur" if b[1] != "wood" and not str(b[1]).begins_with("bois_") else "", "Escaliers")
+
+
+## Murets (chaque pierre, en pavés) et barrières (chaque bois) : ils se raccordent tout seuls à leurs voisins.
+static func _posts(db: Node) -> void:
+	for st in STONES:
+		var src: ItemData = db.items.get("bloc_pierre_brute" if st[0] == "pierre" else "bloc_%s_paves" % st[0])
+		if src == null:
+			continue
+		var it := _block(db, "muret_" + st[0], "Muret de %s" % st[1], "Un muret qui se raccorde aux murets et aux murs voisins.", src.block_texture, src.block_tier)
+		it.set_meta("shape", "wall")
+		_recipe(db, it, 3, [[st[4], 3]], "table_tailleur" if st[4] != "stone" else "", "Murets et barrières")
+	for w in WOODS:
+		var src: ItemData = db.items.get("bloc_planches" if w[0] == "chene" else "bloc_%s_planches" % w[0])
+		if src == null:
+			continue
+		var it := _block(db, "barriere_" + w[0], "Barrière de %s" % w[1], "Une barrière qui se raccorde aux barrières et aux murs voisins.", src.block_texture, 0)
+		it.set_meta("shape", "fence")
+		_recipe(db, it, 3, [["wood" if w[0] == "chene" else "bois_" + w[0], 2], ["fiber", 1]], "", "Murets et barrières")
 
 
 ## Nombre de blocs de construction (blocs, dalles et escaliers ; sans les variantes tournées).

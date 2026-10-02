@@ -75,9 +75,9 @@ func _refresh() -> void:
 	_box.add_child(_label("Récompense : %d pièces d'or, %d XP, et la gratitude de %s." % [int(q.gold), int(q.xp), q.giver_name], 11, MenuKit.C_DIM))
 	match q.state:
 		"offer":
-			var full := qb.active().size() >= QuestBoard.MAX_ACTIVE
+			var full := qb.active().size() >= QuestBoard.max_active(get_tree())
 			if full:
-				_box.add_child(_label("Tu as déjà %d quêtes en cours : termine-en une d'abord." % QuestBoard.MAX_ACTIVE, 11, MenuKit.C_BAD))
+				_box.add_child(_label("Tu as déjà %d quêtes en cours : termine-en une d'abord." % QuestBoard.max_active(get_tree()), 11, MenuKit.C_BAD))
 			_buttons([["Accepter", func():
 				if qb.accept(q):
 					player.notify.emit("Quête acceptée : %s." % q.title)
