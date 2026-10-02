@@ -121,6 +121,8 @@ var _block_cols := {}   # Vector2i -> Array[int] (niveaux)
 var _furn_cols := {}    # Vector2i -> Array[Vector3i]
 var _chunk_nodes := {}  # Vector2i -> Node3D
 var _materials := {}    # "opaque" / "glass" -> ShaderMaterial
+## Portillons ouverts (clé du bloc -> vrai).
+var open_gates := {}
 ## Couche de texture et lueur du bloc en cours de construction (voir _layer_of).
 var _layer := 0
 var _glow := 0.0
@@ -249,6 +251,9 @@ func column(col: Vector2i) -> Array:
 	var out := []
 	for y in _block_cols.get(col, []):
 		var it: ItemData = blocks[Vector3i(col.x, y, col.y)]
+		# un portillon ouvert ne bloque rien
+		if open_gates.has(Vector3i(col.x, y, col.y)):
+			continue
 		# un escalier ne bloque que sa moitié basse (on peut s'y tenir à mi-hauteur puis en haut)
 		out.append([y, float(y), float(y) + (0.5 if is_stair(it) else block_height(it)), it])
 	return out
@@ -590,12 +595,15 @@ static func shape_of(it: ItemData) -> String:
 func _add_post(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
 	var p := Vector3(key)
 	var sh := shape_of(it)
+	if sh == "gate":
+		_add_gate(st, key, p)
+		return
 	var wall := sh == "wall"
 	var r := 0.25 if wall else 0.125
 	_box(st, p + Vector3(0.5 - r, 0, 0.5 - r), p + Vector3(0.5 + r, 1.0, 0.5 + r))
 	for d in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
 		var o: ItemData = blocks.get(key + d)
-		if o == null or not (shape_of(o) == sh or _opaque_full(key + d)):
+		if o == null or not (shape_of(o) == sh or (sh == "fence" and shape_of(o) == "gate") or _opaque_full(key + d)):
 			continue
 		var a := Vector3(0.5, 0, 0.5)
 		var b := Vector3(0.5, 0, 0.5) + Vector3(d) * 0.5
@@ -615,7 +623,70 @@ func _add_post(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
 				_box(st, p + Vector3(lo.x, y, lo.z), p + Vector3(hi.x, y + 0.14, hi.z))
 
 
+## Portillon : deux poteaux et deux traverses ; ouvert, les traverses pivotent d'un quart de tour.
+func _add_gate(st: SurfaceTool, key: Vector3i, p: Vector3) -> void:
+	var along_x := blocks.has(key + Vector3i(1, 0, 0)) or blocks.has(key + Vector3i(-1, 0, 0)) or not (blocks.has(key + Vector3i(0, 0, 1)) or blocks.has(key + Vector3i(0, 0, -1)))
+	var opened := open_gates.has(key)
+	if along_x:
+		for x in [0.0, 0.875]:
+			_box(st, p + Vector3(x, 0, 0.44), p + Vector3(x + 0.125, 1.0, 0.56))
+	else:
+		for z in [0.0, 0.875]:
+			_box(st, p + Vector3(0.44, 0, z), p + Vector3(0.56, 1.0, z + 0.125))
+	for y in [0.32, 0.7]:
+		if along_x != opened:
+			_box(st, p + Vector3(0.125, y, 0.45), p + Vector3(0.875, y + 0.14, 0.55))
+		else:
+			_box(st, p + Vector3(0.45, y, 0.125), p + Vector3(0.55, y + 0.14, 0.875))
+
+
+## Ouvre ou ferme le portillon le plus proche (E). Vrai si un portillon a été trouvé.
+func toggle_gate_near(pos: Vector3, dist := 1.8) -> bool:
+	var c := Vector2i(floori(pos.x), floori(pos.z))
+	for dz in range(-2, 3):
+		for dx in range(-2, 3):
+			for y in _block_cols.get(c + Vector2i(dx, dz), []):
+				var key := Vector3i(c.x + dx, y, c.y + dz)
+				if shape_of(blocks[key]) != "gate":
+					continue
+				if Vector3(key.x + 0.5, key.y + 0.5, key.z + 0.5).distance_to(pos + Vector3(0, 0.5, 0)) > dist:
+					continue
+				if open_gates.has(key):
+					open_gates.erase(key)
+				else:
+					open_gates[key] = true
+				_mark(Vector2i(key.x, key.z))
+				return true
+	return false
+
+
+## Pente (toits) : un coin plein dont le dessus descend du côté « haut » (comme l'escalier) vers l'autre.
+func _add_slope(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
+	var p := Vector3(key)
+	var d := int(it.get_meta("stair_dir"))
+	var rot := func(v: Vector3) -> Vector3:
+		var q := Vector2(v.x - 0.5, v.z - 0.5).rotated(-PI / 2.0 * d)
+		return p + Vector3(q.x + 0.5, v.y, q.y + 0.5)
+	var faces := [
+		[[Vector3(0, 0, 0), Vector3(1, 0, 0), Vector3(1, 0, 1), Vector3(0, 0, 1)], 0.6],
+		[[Vector3(1, 0, 0), Vector3(0, 0, 0), Vector3(0, 1, 0), Vector3(1, 1, 0)], 0.9],
+		[[Vector3(0, 0, 0), Vector3(0, 0, 1), Vector3(0, 1, 0), Vector3(0, 1, 0)], 0.82],
+		[[Vector3(1, 0, 1), Vector3(1, 0, 0), Vector3(1, 1, 0), Vector3(1, 1, 0)], 0.82],
+		[[Vector3(0, 0, 1), Vector3(1, 0, 1), Vector3(1, 1, 0), Vector3(0, 1, 0)], 1.0],
+	]
+	for f in faces:
+		var v: Array = (f[0] as Array).map(func(x): return rot.call(x))
+		var n: Vector3 = (v[1] - v[0]).cross(v[2] - v[0]).normalized()
+		_face(st, v, n, f[1], 1.0, false)
+		# les deux côtés (la pente est vue de dessus comme de dessous)
+		var r := [v[1], v[0], v[3], v[2]]
+		_face(st, r, -n, f[1], 1.0, false)
+
+
 func _add_block(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
+	if it.has_meta("slope"):
+		_add_slope(st, key, it)
+		return
 	if is_stair(it):
 		_add_stair(st, key, it)
 		return

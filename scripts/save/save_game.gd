@@ -281,6 +281,9 @@ func save_game(slot: String) -> bool:
 	var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
 	if pol:
 		d.politics = pol.export_state()
+	var kg := get_tree().get_first_node_in_group("kingdom")
+	if kg:
+		d.forge_orders = kg.forge_orders.duplicate()
 	var eg := get_tree().get_first_node_in_group("endgame") as Endgame
 	if eg:
 		d.endgame = eg.export_state()
@@ -338,7 +341,7 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 		"inventory": inv, "equipment": _equip_ids(p.equipment),
 		"souls": p.souls, "absorbed": p.skill.absorbed if p.skill else {},
 		"talents": p.talents.keys(), "ability_slots": p.ability_slots, "hunger": p.hunger, "hero_evo": p.hero_evo,
-		"crafts": p.crafts,
+		"crafts": p.crafts, "craft_favs": p.craft_favs,
 	}
 
 
@@ -377,7 +380,7 @@ func _save_villagers() -> Array:
 			"equipment": _equip_ids(vv.equipment), "companion": vv.companion, "work": work,
 			"pos": [vv.global_position.x, vv.global_position.y, vv.global_position.z],
 			"home": [vv.home.x, vv.home.y, vv.home.z], "food": vv.food, "happiness": vv.happiness, "unhappy": vv.unhappy_time, "friend": vv.friendship,
-			"evo": vv.evo, "evo_title": vv.evo_title,
+			"evo": vv.evo, "evo_title": vv.evo_title, "artisan_xp": int(vv.get_meta("artisan_xp", 0)),
 			"variant": vv.model_variant, "evo_model": vv.evo_model})
 	return out
 
@@ -521,6 +524,7 @@ func apply_pending(world: WorldGenerator) -> void:
 		for c in cd:
 			p.crafts[str(c)] = int(cd[c])
 		Crafts.init_for(p)
+		p.craft_favs = Array(pd.get("craft_favs", [])).map(func(x): return str(x))
 		p._apply_evo_look()
 		p._give_class_talent()
 		p._apply_talents()
@@ -550,6 +554,7 @@ func apply_pending(world: WorldGenerator) -> void:
 		v.level = int(vd.level)
 		v.evo = int(vd.get("evo", 0))
 		v.evo_title = str(vd.get("evo_title", ""))
+		v.set_meta("artisan_xp", int(vd.get("artisan_xp", 0)))
 		v.model_variant = int(vd.get("variant", -1))
 		v.evo_model = int(vd.get("evo_model", mini(int(vd.get("evo", 0)), 2)))
 		holder.add_child(v)
@@ -616,6 +621,9 @@ func apply_pending(world: WorldGenerator) -> void:
 	if ach and not achievements_state.is_empty():
 		ach.import_state(achievements_state)
 		achievements_state = {}
+	var kgo := get_tree().get_first_node_in_group("kingdom")
+	if kgo:
+		kgo.forge_orders = Array(d.get("forge_orders", [])).map(func(x): return str(x))
 	politics_state = d.get("politics", {})
 	var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
 	if pol and not politics_state.is_empty():

@@ -55,7 +55,7 @@ func _process(_d) -> bool:
 		g = get_first_node_in_group("guide")
 		rm.enabled = false
 		print("== chapitres de l'aventure et des voisins")
-		check("%d étapes, %d chapitres" % [g.STEPS.size(), g.CHAPTERS.size()], g.STEPS.size() == 38 and g.CHAPTERS.size() == 9)
+		check("%d étapes, %d chapitres" % [g.STEPS.size(), g.CHAPTERS.size()], g.STEPS.size() == 45 and g.CHAPTERS.size() == 11)
 		g.step = 29
 		g.progress = 0
 		g._refresh()
@@ -107,6 +107,40 @@ func _process(_d) -> bool:
 		get_first_node_in_group("achievements").note("event_fete")
 		start("i")
 	if later("i", 1300):
+		check("événement -> arsenal (chapitre L'ARTISAN : %s)" % g._title.text, at("arsenal") and g._title.text.begins_with("L'ARTISAN"))
+		p.inventory.add(items.get_item("arm_epee_cuivre_0"), 1)
+		start("j")
+	if later("j", 1300):
+		check("arme d'arsenal -> métier niveau 10", at("metier10"))
+		p.crafts["mineur"] = 2000
+		start("k")
+	if later("k", 1300):
+		check("métier 12 -> enchantement", at("enchanter"))
+		p.equipment.equip(items.get_item("sword_iron@0^tranchant:1"))
+		start("l")
+	if later("l", 1300):
+		check("enchantement -> catalogue", at("catalogue"))
+		var blk = null
+		for it in items.items.values():
+			if it.is_block() and it.block_texture and it.block_texture.resource_path == "":
+				blk = it
+				break
+		p.inventory.add(blk, 1)
+		start("m")
+	if later("m", 1300):
+		check("bloc du catalogue -> palier (chapitre FIN DE PARTIE : %s)" % g._title.text, at("palier") and g._title.text.begins_with("LA FIN"))
+		var eg = get_first_node_in_group("endgame")
+		eg.tier = 1
+		start("n")
+	if later("n", 1300):
+		check("palier -> faille", at("faille"))
+		get_first_node_in_group("endgame").best_rift = 1
+		start("o")
+	if later("o", 1300):
+		check("faille -> titan", at("titan"))
+		get_first_node_in_group("endgame").titans_slain = 1
+		start("q")
+	if later("q", 1300):
 		check("guide terminé", g.is_done())
 		print("== astuces")
 		p.inventory.add(items.get_item("gemme_rubis"), 1)

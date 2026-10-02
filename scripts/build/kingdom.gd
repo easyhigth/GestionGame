@@ -401,6 +401,10 @@ func assign(villager: Node, room: Variant) -> bool:
 	return true
 
 
+## Commandes du héros au forgeron du village (identifiants d'objets), livrées une à une.
+var forge_orders: Array = []
+
+
 func _produce(delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	for v in get_tree().get_nodes_in_group("villagers"):
@@ -415,8 +419,21 @@ func _produce(delta: float) -> void:
 		if _prod_timers[v] >= t.production_interval:
 			_prod_timers[v] = 0.0
 			var prod: ItemData = t.production_pool.pick_random() if not t.production_pool.is_empty() else t.production
+			var count := t.production_count
+			var tag := ""
+			# l'artisan progresse et produit parfois autre chose (armes de l'arsenal, minerais, teintures...)
+			var alt := Artisans.produce(v, t.job_id, self)
+			if not alt.is_empty() and alt[0] != null:
+				prod = alt[0]
+				count = int(alt[1])
+				tag = str(alt[2])
 			var needs := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
-			if prod.is_food() and needs:
+			if prod == null:
+				continue
+			if not alt.is_empty() and player:
+				player.inventory.add(prod, count)
+				player.notify.emit("%s%s (%s, artisan niv. %d) : +%d %s" % [(tag + " · ") if tag != "" else "", t.display_name, v.get("villager_name"), Artisans.level(v), count, prod.display_name])
+			elif prod.is_food() and needs:
 				# la nourriture va dans la réserve du village
 				needs.add_food(prod.food * t.production_count)
 				if player:

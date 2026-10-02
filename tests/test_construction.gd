@@ -183,6 +183,21 @@ func _process(_d) -> bool:
 					w.build.place_block(Vector3i(c0.x + 6 + i, roundi(w.terrain_height(Vector2i(c0.x + 6 + i, c0.y - 9 + j))), c0.y - 9 + j), fence)
 		for i in 6:
 			w.build.place_block(Vector3i(c0.x + i, roundi(w.terrain_height(Vector2i(c0.x + i, c0.y - 10))), c0.y - 10), wall)
+		# un portillon dans l'enclos (E l'ouvre) et un petit toit en pente
+		var gate = items.get_item("portillon_bouleau")
+		var gc := Vector2i(c0.x + 8, c0.y - 5)
+		var gy: int = roundi(w.terrain_height(gc))
+		w.build.remove_block(Vector3i(gc.x, gy, gc.y))
+		w.build.place_block(Vector3i(gc.x, gy, gc.y), gate)
+		check("portillon fermé : bloque", gate != null and w.build.body_blocked(gc, float(gy)))
+		w.build.toggle_gate_near(Vector3(gc.x + 0.5, gy, gc.y + 0.5))
+		check("portillon ouvert : on passe", not w.build.body_blocked(gc, float(gy)))
+		var slopes: Array = items.items.keys().filter(func(k): return str(k).begins_with("pente_") and not items.items[k].get_meta("hidden", false))
+		check("toits en pente (%d)" % slopes.size(), slopes.size() >= 12)
+		for i in 4:
+			var sc := Vector2i(c0.x + 1 + i, c0.y - 6)
+			var sl = items.get_item(str(slopes[0]))
+			w.build.place_block(Vector3i(sc.x, roundi(w.terrain_height(sc)), sc.y), sl)
 		check("le muret bloque le passage comme un bloc", w.build.body_blocked(Vector2i(c0.x + 2, c0.y - 10), float(roundi(w.terrain_height(Vector2i(c0.x + 2, c0.y - 10))))))
 		p.global_position = Vector3(c0.x + 6.5, h0 + 0.1, c0.y - 4.5)
 		p.cam_yaw = deg_to_rad(90.0)

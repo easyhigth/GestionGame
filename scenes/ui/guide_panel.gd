@@ -52,13 +52,22 @@ const STEPS := [
 	["traite", "Signe un traité", "Paix dès que la relation est positive, commerce à 20 (caravanes, meilleurs prix), alliance à 60.", 1],
 	["metier", "Ouvre une pièce de métier avancé", "Laboratoire d'alchimie (chaudron, table, tonneau), Sanctuaire des runes, Ménagerie ou Bureau d'architecte.", 1],
 	["evenement", "Réussis un événement du monde", "Pluie d'étoiles, invasion, tournoi, fête, épidémie : il y en a un tous les 3 ou 4 jours.", 1],
+	# chapitre 10 : l'artisan
+	["arsenal", "Forge une arme de l'arsenal", "I → Artisanat → Armurerie : choisis un type et un matériau (bois, os et pierre à l'établi, les métaux à l'enclume).", 1],
+	["metier10", "Monte un métier au niveau 10", "Les métiers montent en pratiquant : forger, miner, couper du bois, cuisiner... F3 pour les voir.", 1],
+	["enchanter", "Enchante une arme ou une armure", "Près d'un autel : I → Artisanat → Enchantement. La poussière arcanique tombe des monstres, ou s'obtient en réduisant un objet.", 1],
+	["catalogue", "Fabrique un bloc du catalogue", "I → Artisanat → Construction : choisis une famille (pierres, bois, laine, béton, escaliers...). Les pierres et les bois changent selon les régions.", 1],
+	# chapitre 11 : la fin de partie
+	["palier", "Monte le palier du monde", "Au niveau 60, au Portail des Failles (près du village, E) : des monstres plus forts, plus d'expérience et du butin de niveau.", 1],
+	["faille", "Vaincs le gardien d'une faille", "Au Portail des Failles : trois vagues puis le gardien. Dès le rang 3, des modificateurs pimentent l'arène.", 1],
+	["titan", "Abats un titan", "Dès le niveau 30, un titan s'éveille tous les 2 ou 3 jours : il est marqué sur la carte (M).", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
 const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26], ["L'EAU", 26, 29],
-	["L'AVENTURE", 29, 33], ["LES VOISINS", 33, 38]]
+	["L'AVENTURE", 29, 33], ["LES VOISINS", 33, 38], ["L'ARTISAN", 38, 42], ["LA FIN DE PARTIE", 42, 45]]
 ## Icône de chaque chapitre (assets/ui/icon_*.png).
 const CHAPTER_ICONS := {"PREMIERS PAS": "compass", "L'ÂGE DU FER": "sword", "LE VILLAGE": "house", "LES CHAMPS": "food",
-	"LE COMMERCE": "coin", "L'ÉLEVAGE": "people", "L'EAU": "gem", "L'AVENTURE": "skull", "LES VOISINS": "shield"}
+	"LE COMMERCE": "coin", "L'ÉLEVAGE": "people", "L'EAU": "gem", "L'AVENTURE": "skull", "LES VOISINS": "shield", "L'ARTISAN": "sword", "LA FIN DE PARTIE": "skull"}
 var _icon: TextureRect
 ## Astuces affichées une seule fois, la première fois que la situation se présente : [identifiant, texte].
 const TIPS := [
@@ -71,6 +80,10 @@ const TIPS := [
 	["guerre", "Tu es en guerre ! Repousse 3 armées pour faire capituler la nation, ou assiège sa capitale (Y, à partir du niveau 6)."],
 	["malade", "Des habitants sont malades : soigne-les dans le panneau du royaume (U) avec une soupe ou une potion."],
 	["succes", "Premier succès ! F1 : succès, titres, auras et bestiaire."],
+	["poussiere", "De la poussière arcanique ! Elle sert à enchanter à l'autel (I → Artisanat → Enchantement)."],
+	["metier", "Ton premier niveau de métier ! F3 pour voir tes 12 métiers et ce qu'ils débloquent."],
+	["failles", "Niveau 60 : le Portail des Failles s'ouvre (près du village) ; tu peux y monter le palier du monde."],
+	["recherche", "Astuce : dans l'artisanat, la barre de recherche trouve une recette parmi des centaines ; ★ pour les favoris."],
 ]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
 const VERSION := 2
@@ -362,6 +375,25 @@ func _check_state() -> void:
 			var ach := get_tree().get_first_node_in_group("achievements") as Achievements
 			if ach and ach.counters.keys().any(func(k): return str(k).begins_with("event_")):
 				_advance("evenement")
+		"arsenal":
+			if _has_prefix("arm_") or player.equipment.slots.values().any(func(it): return it != null and Arsenal.is_arsenal(it.model_id())):
+				_advance("arsenal")
+		"metier10":
+			if Crafts.ORDER.any(func(c): return Crafts.level(player, c) >= 10 and int(player.crafts.get(c, 0)) > Crafts.xp_for_level(10) + 1) \
+					or Crafts.ORDER.filter(func(c): return Crafts.level(player, c) >= 11).size() > 0:
+				_advance("metier10")
+		"enchanter":
+			if _best_item(func(it): return it.enchants.size()) >= 1:
+				_advance("enchanter")
+		"catalogue":
+			for e in player.inventory.entries:
+				if e.item and e.item.is_block() and e.item.block_texture and e.item.block_texture.resource_path == "":
+					_advance("catalogue")
+					return
+		"palier", "faille", "titan":
+			var eg := get_tree().get_first_node_in_group("endgame")
+			if eg and ((current_id() == "palier" and eg.tier >= 1) or (current_id() == "faille" and eg.best_rift >= 1) or (current_id() == "titan" and eg.titans_slain >= 1)):
+				_advance(current_id())
 		"torche":
 			var grid := get_tree().get_first_node_in_group("build_grid") as BuildGrid
 			if grid:
@@ -417,6 +449,14 @@ func _check_tips() -> void:
 			"succes":
 				var ach := tree.get_first_node_in_group("achievements") as Achievements
 				show_it = ach != null and not ach.done.is_empty()
+			"poussiere":
+				show_it = player.inventory.count(Items.get_item("poussiere_arcane")) > 0
+			"metier":
+				show_it = Crafts.ORDER.any(func(c): return Crafts.level(player, c) >= 2 and Crafts.level(player, c) != Crafts.START_LEVEL)
+			"failles":
+				show_it = player.level >= 60
+			"recherche":
+				show_it = Crafts.total_level(player) >= 16
 		if show_it:
 			tips_seen[id] = true
 			player.notify.emit("Astuce : " + t[1])

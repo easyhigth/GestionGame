@@ -251,7 +251,7 @@ static func parts_for(scene: PackedScene, model: String) -> Array:
 		out.append([part[0], tinted_mesh(part[1], tint, model.begins_with("shield"))])
 		# les ornements du matériau (panoplies), placés d'après la pièce
 		if mat != "":
-			var orn := ArmorOrnaments.mesh(mat, String(part[0]), (part[1] as Mesh).get_aabb())
+			var orn := ArmorOrnaments.mesh(mat, String(part[0]), (part[1] as Mesh).get_aabb(), model.get_slice("*", 0))
 			if orn:
 				out.append([part[0], orn])
 	_tint_cache[key] = out
