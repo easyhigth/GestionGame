@@ -109,7 +109,7 @@ func _refresh() -> void:
 			else:
 				cur_label = _label("   ➤ " + st.tracker_text(), 13, Color("fff2c8"))
 				_list.add_child(cur_label)
-				_list.add_child(_label("      " + s[3], 11, Color("c8b89a")))
+				_list.add_child(_label("      " + st.hint(s), 11, Color("c8b89a")))
 	if st.is_done():
 		var nat := st.nation_name()
 		cur_label = _label("Épilogue : %s est née. Tous les obélisques brillent et tes habitants sont plus heureux." % (nat if nat != "" else "ta nation"), 13, MenuKit.C_OK)
