@@ -616,6 +616,7 @@ Les cinq nations vivent leur vie (voir `scripts/world/world_politics.gd`) :
 - Tout est sauvegardé (guerres, armées, réserves, hameaux, événement, nouvelles). Test : `tests/test_world_life.gd`.
 
 ## Terminal de commandes (Entrée ou /)
+- Le texte du terminal **défile** : molette de la souris, ou Page ↑ / Page ↓ depuis la ligne de commande. Une longue réponse (/aide, /competences...) garde le terminal ouvert, au début de la réponse ; Échap le ferme.
 Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas à gauche. Le jeu continue pendant qu'on écrit ; la ligne se ferme après chaque commande et les réponses restent affichées quelques secondes. **Échap** referme, **↑ / ↓** rappellent les commandes précédentes, **Tab** complète le nom d'une commande. Les accents sont facultatifs.
 
 | Commande | Effet |

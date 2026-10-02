@@ -41,6 +41,8 @@ const ALIASES := {"help": "aide", "map": "carte", "tp": "tp", "give": "donner", 
 	"speed": "vitesse", "time": "heure", "weather": "meteo", "météo": "meteo", "kill": "tuer", "seed": "graine",
 	"clear": "effacer", "fly": "vol", "voler": "vol", "summon": "invoquer", "spawn": "invoquer", "obélisques": "obelisques", "level": "niveau", "gold": "or", "lieu": "lieux", "teleport": "tp", "world": "monde", "war": "guerre", "événement": "evenement", "event": "evenement", "compétences": "competences", "skills": "competences", "métier": "metier", "metiers": "metier", "craft": "metier"}
 const MAX_LINES := 14
+## Lignes gardées dans la console (on les relit en faisant défiler).
+const MAX_SHOWN := 200
 ## Temps de calcul accordé par image au dévoilement de la carte (le jeu reste fluide pendant ce temps).
 const REVEAL_BUDGET_USEC := 18000
 
@@ -73,10 +75,10 @@ func _ready() -> void:
 	box.anchor_bottom = 1.0
 	box.offset_left = 16
 	box.offset_right = 720
-	box.offset_top = -330
-	box.offset_bottom = -96
+	box.offset_top = -480
+	box.offset_bottom = -160
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.03, 0.03, 0.05, 0.82)
+	sb.bg_color = Color(0.03, 0.03, 0.05, 0.93)
 	sb.border_color = Color("c8a24a")
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(4)
@@ -91,10 +93,13 @@ func _ready() -> void:
 	_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log.add_theme_font_size_override("normal_font_size", 13)
 	_log.add_theme_font_override("normal_font", UiTheme.font("body"))
+	# la molette fait défiler le texte (Page ↑ / Page ↓ aussi, depuis la ligne de commande)
 	_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_log.scroll_active = true
+	_log.selection_enabled = false
 	v.add_child(_log)
 	_input = LineEdit.new()
-	_input.placeholder_text = "Tape une commande (/aide) — Entrée : valider · Échap : fermer"
+	_input.placeholder_text = "Tape une commande (/aide) — Entrée : valider · molette ou Page ↑/↓ : défiler · Échap : fermer"
 	_input.add_theme_font_override("font", UiTheme.font("body"))
 	_input.add_theme_font_size_override("font_size", 15)
 	_input.text_submitted.connect(_on_submit)
@@ -115,6 +120,7 @@ func open(prefill := "") -> void:
 	_box.show()
 	_input.show()
 	_box.modulate.a = 1.0
+	_log.mouse_filter = Control.MOUSE_FILTER_STOP
 	player.ui_open = true
 	_input.text = prefill
 	_input.grab_focus.call_deferred()
@@ -128,6 +134,7 @@ func close(linger := 0.0) -> void:
 	_open = false
 	_input.release_focus()
 	_input.hide()
+	_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_linger = linger
 	if linger <= 0.0:
 		_box.hide()
@@ -174,6 +181,10 @@ func _on_input_key(event: InputEvent) -> void:
 		KEY_TAB:
 			_complete()
 			_input.accept_event()
+		KEY_PAGEUP, KEY_PAGEDOWN:
+			var bar := _log.get_v_scroll_bar()
+			bar.value += (-1.0 if k.keycode == KEY_PAGEUP else 1.0) * _log.size.y * 0.8
+			_input.accept_event()
 
 
 func _complete() -> void:
@@ -198,8 +209,21 @@ func _on_submit(text: String) -> void:
 		_history.append(text)
 	_hist_i = -1
 	_say("[color=#8a8a9a]> %s[/color]" % text.replace("[", "[lb]"))
+	var first := _lines.size() - 1
 	run(text)
+	# une longue réponse (/aide, /competences...) : la console reste ouverte, au début de la réponse,
+	# pour la lire en faisant défiler ; une réponse courte : on referme, elle reste affichée un moment
+	if _lines.size() - first > 8:
+		_scroll_to_line.call_deferred(first)
+		_input.grab_focus.call_deferred()
+		return
 	close(LINGER)
+
+
+func _scroll_to_line(i: int) -> void:
+	var shown := mini(_lines.size(), MAX_SHOWN)
+	_log.scroll_following = false
+	_log.scroll_to_paragraph(maxi(0, i - (_lines.size() - shown)))
 
 
 func _say(t: String) -> void:
@@ -207,7 +231,8 @@ func _say(t: String) -> void:
 	while _lines.size() > 200:
 		_lines.pop_front()
 	if _log:
-		_log.text = "\n".join(_lines.slice(-MAX_LINES * 4))
+		_log.scroll_following = true
+		_log.text = "\n".join(_lines.slice(-MAX_SHOWN))
 
 
 func _ok(t: String) -> void:
