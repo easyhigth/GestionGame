@@ -119,6 +119,8 @@ static func craft_of_recipe(r: RecipeData) -> String:
 	var it := r.result
 	if it == null:
 		return ""
+	if r.has_meta("craft"):
+		return r.get_meta("craft")
 	if r.category == "Armurerie":
 		return "forgeron"
 	if it.potion_heal > 0.0 or not it.potion_buff.is_empty():
@@ -146,6 +148,8 @@ static func craft_of_recipe(r: RecipeData) -> String:
 
 ## Niveau de métier requis pour une recette (seules les armes de l'arsenal en demandent un).
 static func recipe_level(r: RecipeData) -> int:
+	if r.has_meta("level"):
+		return int(r.get_meta("level"))
 	if r.result and Arsenal.is_arsenal(r.result.id):
 		return int(Arsenal.material(Arsenal.parse(r.result.id)[1]).level)
 	return 1

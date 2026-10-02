@@ -14,12 +14,29 @@ static func build(id: String) -> MeshInstance3D:
 	return mi
 
 
+## Vrai si l'objet a un modèle fabriqué ici.
+static func has_model(id: String) -> bool:
+	return Arsenal.RESOURCES.has(id) or not BlockCatalog.resource_spec(id).is_empty()
+
+
 static func _make(id: String) -> ArrayMesh:
 	var b := WeaponModels.new()
 	var c := Arsenal.resource_color(id)
+	var shape := Arsenal.resource_shape(id)
+	var spec := BlockCatalog.resource_spec(id)
+	if not spec.is_empty():
+		c = spec[0]
+		shape = spec[1]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(id)
-	match Arsenal.resource_shape(id):
+	match shape:
+		"log":
+			var inner: Color = spec[2] if spec.size() > 2 else c.lightened(0.3)
+			for i in 2:
+				b.box(4, 4, 11, c, -2.2 + i * 4.4, 2, 0)
+				b.box(3, 3, 0.4, inner, -2.2 + i * 4.4, 2, 5.6)
+			b.box(4, 4, 11, c.darkened(0.1), 0, 5.6, 0.5)
+			b.box(3, 3, 0.4, inner, 0, 5.6, 6.1)
 		"ore":
 			var rock := Color("7a7a76")
 			b.box(8, 6, 7, rock, 0, 3, 0)

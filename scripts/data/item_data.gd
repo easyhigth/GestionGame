@@ -44,6 +44,9 @@ const RARITY_COLORS := {
 @export var bonus: Dictionary = {}
 ## Rune gravée (voir Forge.RUNES) : "" ou identifiant de la rune.
 @export var rune := ""
+## Modèle emprunté à un autre objet (panoplies d'ArmorSets), et teinte appliquée à ce modèle (alpha 0 : aucune).
+@export var model_ref := ""
+@export var tint := Color(0, 0, 0, 0)
 ## Enchantements (Forge.ENCHANTS) : { enchantement: rang 1 à 5 }.
 @export var enchants: Dictionary = {}
 ## Arme à deux mains : retire le bouclier quand on l'équipe.
@@ -157,7 +160,10 @@ func rarity_color() -> Color:
 ## Résumé des bonus, ex. « Attaque +8  Défense +2 ».
 ## Identifiant du modèle 3D (celui de l'objet de base pour un objet amélioré).
 func model_id() -> String:
-	return base_id if base_id != "" else id
+	var m := model_ref if model_ref != "" else (base_id if base_id != "" else id)
+	if tint.a > 0.0:
+		m += "*" + tint.to_html(false)
+	return m
 
 
 func stats_text() -> String:

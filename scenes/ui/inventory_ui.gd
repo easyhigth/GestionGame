@@ -204,7 +204,7 @@ func _build() -> void:
 	tabs.add_theme_constant_override("h_separation", 2)
 	tabs.add_theme_constant_override("v_separation", 2)
 	tabs.custom_minimum_size.x = 320
-	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Armurerie", "Forge", "Enchantement", "Métiers"]:
+	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Armurerie", "Armures", "Forge", "Enchantement", "Métiers"]:
 		var tb := Button.new()
 		tb.text = cname
 		tb.toggle_mode = true
@@ -315,6 +315,14 @@ func _refresh() -> void:
 		c.queue_free()
 	if _cat == "Forge":
 		_forge_rows()
+		_refresh_job()
+		return
+	if _cat == "Armures":
+		_armor_rows(near)
+		_refresh_job()
+		return
+	if _cat == "Construction":
+		_construction_rows(near)
 		_refresh_job()
 		return
 	if _cat == "Armurerie":
@@ -757,3 +765,34 @@ func _crafts_rows() -> void:
 func open_tab(who: Node, tab: String) -> void:
 	_cat = tab
 	open(who)
+
+
+var _family := 0
+
+
+## Onglet « Construction » : les blocs par famille (pierres, bois, laine, béton...), façon Minecraft.
+func _construction_rows(near: bool) -> void:
+	var fams := BlockCatalog.FAMILIES
+	var list: Array = Items.recipes.filter(func(r): return r.category == "Construction" and r.get_meta("family", "Classiques") == fams[_family])
+	_recipes.add_child(_label("%d blocs de construction en tout" % BlockCatalog.count_blocks(Items), 9, C_DIM))
+	_recipes.add_child(_stepper("%s (%d)" % [fams[_family], list.size()],
+		func(): _family = (_family + fams.size() - 1) % fams.size(), func(): _family = (_family + 1) % fams.size()))
+	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
+	for r: RecipeData in list:
+		_recipes.add_child(_recipe_row(r, near))
+
+
+var _armor_fam := 3
+
+
+## Onglet « Armures » : les panoplies, matériau par matériau (et le cuir teint).
+func _armor_rows(near: bool) -> void:
+	var fams := ArmorSets.families()
+	_armor_fam = posmod(_armor_fam, fams.size())
+	var fam: String = fams[_armor_fam]
+	var list: Array = Items.recipes.filter(func(r): return r.category == "Armures" and r.get_meta("family", "") == fam)
+	_recipes.add_child(_label("%d pièces d'armure en panoplies" % ArmorSets.count(Items), 9, C_DIM))
+	var title := "Cuir teint" if fam == "cuir" else str(Arsenal.material(fam).suffix).trim_prefix("en ").trim_prefix("d'").capitalize()
+	_recipes.add_child(_stepper("Panoplie : %s" % title, func(): _armor_fam -= 1, func(): _armor_fam += 1))
+	for r: RecipeData in list:
+		_recipes.add_child(_recipe_row(r, near))
