@@ -836,7 +836,8 @@ func _make_clearing(cell: Vector2i) -> void:
 				_decor[i] = D_NONE if d <= r else _decor[i]
 				_heights[i] = base
 				if d <= plaza_radius + 0.5:
-					_types[i] = PLAZA
+					# départ à mains nues : pas de place dallée, juste de l'herbe
+					_types[i] = GRASS if GameState.bare_start else PLAZA
 					_decor[i] = D_NONE
 				elif d <= r and t == STONE:
 					_types[i] = GRASS
@@ -3462,11 +3463,13 @@ func _face_center(n: Node3D) -> void:
 
 func _build_village() -> void:
 	_village_props.clear()
-	_spawn(campfire_scene, Vector2(0, 0))
+	# départ à mains nues (GameState.bare_start) : le héros arrive seul, sans feu ni habitants ;
+	# tout est à fabriquer, et les habitants viendront plus tard (voyageurs à recruter)
+	var bare: bool = GameState.bare_start
+	if not bare:
+		_spawn(campfire_scene, Vector2(0, 0))
 	# pas de cabanes toutes faites : le campement n'a que des meubles posés comme ceux du joueur
 	# (ils se cassent et se ramassent pareil) ; les maisons, c'est au joueur de les bâtir
-	# départ à mains nues (GameState.bare_start) : rien que le feu, tout est à fabriquer
-	var bare: bool = GameState.bare_start and SaveGame.pending.is_empty()
 	for f in [["etabli", Vector2(-8.5, 3.5)], ["ratelier", Vector2(9.0, 2.5)], ["tonneau", Vector2(-3.8, -5.8)],
 			["tonneau", Vector2(-3.0, -6.6)], ["coffre", Vector2(3.6, -6.4)]]:
 		if not bare:
@@ -3477,7 +3480,7 @@ func _build_village() -> void:
 		var off := Vector2.from_angle(a) * (2.6 + (i % 2) * 1.0)
 		var origin := cell_center(spawn_cell)
 		spawn_pickup(starting_loot[i], Vector3(origin.x + off.x, origin.y, origin.z + off.y))
-	if villager_scene == null or villager_races.is_empty():
+	if villager_scene == null or villager_races.is_empty() or bare:
 		return
 	var pool := villager_races.duplicate()
 	pool.shuffle()

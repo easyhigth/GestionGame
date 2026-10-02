@@ -55,8 +55,48 @@ func selected_item() -> ItemData:
 	return Items.get_item(selected) if selected != "" else null
 
 
-## Objet suivant (+1) ou précédent (-1) ; après le dernier, on revient aux mains nues.
+## Barre de construction (10 cases, Ctrl+1 à Ctrl+0) : identifiants des objets posables ("" = case vide).
+## Elle se remplit toute seule avec ce qui arrive dans le sac, comme la barre de Minecraft ; une case dont
+## l'objet est épuisé se vide et reprend le prochain objet nouveau.
+const SLOTS := 10
+var slots: Array = ["", "", "", "", "", "", "", "", "", ""]
+
+
+## Range les objets posables du sac dans les cases libres de la barre.
+func sync_slots() -> void:
+	if player == null:
+		return
+	for i in SLOTS:
+		var id: String = slots[i]
+		if id != "" and player.inventory.count(Items.get_item(id)) <= 0:
+			slots[i] = ""
+	for it in choices():
+		if slots.has(it.id):
+			continue
+		var free := slots.find("")
+		if free < 0:
+			break
+		slots[free] = it.id
+
+
+## Ctrl + chiffre : prend en main l'objet de la case (la même touche une 2e fois : mains nues).
+func select_slot(i: int) -> void:
+	sync_slots()
+	var id: String = slots[i] if i >= 0 and i < SLOTS else ""
+	if id == "":
+		selected = ""
+		player.notify.emit("Case %d vide : ramasse ou fabrique des blocs, des meubles ou des graines." % ((i + 1) % 10))
+	elif selected == id:
+		selected = ""
+	else:
+		selected = id
+	selection_changed.emit()
+
+
+## Objet suivant (+1) ou précédent (-1) : d'abord les cases de la barre, puis le reste du sac ;
+## après le dernier, on revient aux mains nues.
 func cycle(dir: int) -> void:
+	sync_slots()
 	var list := choices()
 	if list.is_empty():
 		selected = ""
@@ -64,8 +104,12 @@ func cycle(dir: int) -> void:
 		selection_changed.emit()
 		return
 	var ids: Array = [""]
+	for id in slots:
+		if id != "":
+			ids.append(id)
 	for it in list:
-		ids.append(it.id)
+		if not ids.has(it.id):
+			ids.append(it.id)
 	var i := ids.find(selected)
 	i = (maxi(i, 0) + dir + ids.size()) % ids.size()
 	selected = ids[i]
@@ -73,6 +117,7 @@ func cycle(dir: int) -> void:
 
 
 func _on_inventory_changed() -> void:
+	sync_slots()
 	# l'objet choisi est épuisé : mains nues
 	if selected != "" and player.inventory.count(Items.get_item(selected)) <= 0:
 		selected = ""

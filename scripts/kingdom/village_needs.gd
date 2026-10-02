@@ -296,7 +296,12 @@ func _arrivals(dt: float, list: Array, p: Player) -> void:
 	_arrival = ARRIVAL_EVERY
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
-	if world == null or world.villager_scene == null or list.is_empty() or average_happiness() < 65.0:
+	if world == null or world.villager_scene == null:
+		return
+	# seul au monde (départ à mains nues) : le premier voyageur vient dès qu'un abri est bâti
+	if list.is_empty() and (k == null or k.rooms.is_empty()):
+		return
+	if not list.is_empty() and average_happiness() < 65.0:
 		return
 	if k and list.size() >= k.population_cap():
 		return

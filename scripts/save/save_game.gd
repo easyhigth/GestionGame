@@ -344,7 +344,7 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 		"pos": [pos.x, pos.y, pos.z],
 		"inventory": inv, "equipment": _equip_ids(p.equipment),
 		"souls": p.souls, "absorbed": p.skill.absorbed if p.skill else {},
-		"talents": p.talents.keys(), "ability_slots": p.ability_slots, "hunger": p.hunger, "hero_evo": p.hero_evo,
+		"talents": p.talents.keys(), "ability_slots": p.ability_slots, "build_slots": p.hand.slots if p.hand else [], "hunger": p.hunger, "hero_evo": p.hero_evo,
 		"crafts": p.crafts, "craft_favs": p.craft_favs,
 	}
 
@@ -517,6 +517,10 @@ func apply_pending(world: WorldGenerator) -> void:
 			if not TalentTree.node(id).is_empty():
 				p.talents[id] = true
 		p.hunger = float(pd.get("hunger", Player.HUNGER_MAX))
+		var bslots: Array = pd.get("build_slots", [])
+		if p.hand and bslots.size() == HandBuild.SLOTS:
+			for i in HandBuild.SLOTS:
+				p.hand.slots[i] = str(bslots[i])
 		var slots: Array = pd.get("ability_slots", [])
 		p.ability_slots = ["", "", "", "", "", "", "", "", "", ""]
 		for i in mini(10, slots.size()):

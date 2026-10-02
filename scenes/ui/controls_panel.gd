@@ -25,7 +25,7 @@ const PAGES := [
 	]],
 	["Compétences et talents", [
 		["Compétence unique", "Q", "RB"],
-		["Attaques et sorts des emplacements", "1 / 2 / 3 / 4", "R3"],
+		["Barre de compétences (rangée du bas)", "1 … 9, 0", "R3"],
 		["Changer d'emplacement choisi", "—", "Croix droite"],
 		["Arbre de talents", "T", "Croix gauche"],
 		["Apprendre un talent", "Clic deux fois", "A deux fois"],
@@ -34,7 +34,9 @@ const PAGES := [
 	["Monde et royaume", [
 		["Récolter : frapper arbres, rochers, buissons, décors", "Clic gauche / J", "X"],
 		["Creuser le sol devant soi (maintenir) · dans l'eau : plonger", "G", "RT"],
-		["Choisir un bloc, un meuble, des graines ou la houe", "C / X", "LB + croix gauche/droite"],
+		["Barre de construction : prendre l'objet d'une case (la même touche : le ranger)", "Ctrl + 1 … 0", "LB + croix gauche/droite"],
+		["Objet suivant / précédent de la barre", "C / X", "LB + croix gauche/droite"],
+		["Ranger l'objet tenu (mains nues)", "Échap", "—"],
 		["Poser, semer ou labourer devant soi · frapper un bloc le casse", "V", "L3"],
 		["Parler · équiper un habitant · recruter", "E", "Y"],
 		["Dormir dans un lit (la nuit)", "E", "Y"],

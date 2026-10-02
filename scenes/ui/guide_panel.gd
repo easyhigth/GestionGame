@@ -8,21 +8,21 @@ extends PanelContainer
 ## Dans les textes, {action} est remplacé par la touche choisie par le joueur (ex. {inventory} -> I).
 const STEPS := [
 	# chapitre 0 : les bases (on apprend en faisant)
-	["bouger", "Fais quelques pas", "{move_up} {move_left} {move_down} {move_right} pour marcher, {dash} pour une roulade. Approche-toi du feu de camp : tes habitants t'attendent.", 1],
+	["bouger", "Fais quelques pas", "{move_up} {move_left} {move_down} {move_right} pour marcher, {dash} pour une roulade. Tu es seul au monde, sans rien : tout est à trouver, à fabriquer et à bâtir.", 1],
 	["regard", "Regarde autour de toi", "Bouge la souris pour tourner la caméra (Alt maintenu libère la souris). {camera_view} change de vue : 3e personne, vue de dessus, 1re personne.", 1],
 	["sauter", "Saute", "{jump}. Tu montes ainsi sur un bloc ou une marche.", 1],
 	["sac", "Ouvre ton sac", "{inventory} : ton sac, ton équipement et l'Artisanat (tout ce qui se fabrique). Tu commences les mains vides : tout est à trouver. {inventory} ou Échap pour refermer.", 1],
 	# chapitre 1 : les premiers pas
 	["arbre", "Récolte du bois à mains nues", "Face à un arbre, frappe-le ({attack}). Le bois tombe au sol : marche dessus pour le ramasser.", 3],
-	["etabli", "Fabrique et pose un établi", "{inventory} → Artisanat → Mobilier : 4 bois. Ensuite, {hotbar_next} pour le prendre en main et {place_block} pour le poser (Échap pour ranger ce que tu tiens). Près de lui, on fabrique bien plus de choses.", 1],
+	["etabli", "Fabrique et pose un établi", "{inventory} → Artisanat → Mobilier : 4 bois. Il se range dans ta barre de construction (en bas) : Ctrl+chiffre de sa case pour le prendre en main, {place_block} pour le poser, Échap pour ranger. Près de lui, on fabrique bien plus de choses.", 1],
 	["rocher", "Casse 2 rochers", "Les rochers donnent des cailloux, même à mains nues. Avec une pioche, ça va plus vite et donne du minerai.", 2],
 	["outil", "Fabrique une hache ou une pioche", "Près de l'établi : {inventory} → Artisanat → Outils (bois, puis pierre). Il suffit de l'avoir dans ton sac.", 1],
 	["arme", "Fabrique une arme et équipe-la", "Près de l'établi : Artisanat → Armurerie → une épée en bois ou en pierre. Clique-la dans le sac pour l'équiper : les monstres sortent la nuit !", 1],
 	["planches", "Fabrique des planches", "{inventory} → Artisanat → Construction : 1 bois donne 4 planches.", 1],
-	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit. Le plus simple : le mode construction ({build_mode}), outil « Pièce », tu glisses un rectangle et tes habitants bâtissent. Ou à la main : {hotbar_next} pour choisir un bloc, {place_block} pour le poser.", 1],
-	["torche", "Pose une torche", "Fabrique-la (bois et charbon ou fibres), prends-la avec {hotbar_next} et pose-la avec {place_block}. Les monstres n'apparaissent pas près des lumières.", 1],
-	["repas", "Mange un repas cuit", "Baies (buissons) ou viande (animaux) : cuis-les près du feu de camp (Artisanat → Cuisine), puis mange avec {eat}.", 1],
-	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit ({interact}) ou tiens jusqu'au matin près du feu.", 1],
+	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit. Le plus simple : le mode construction ({build_mode}), outil « Pièce », tu glisses un rectangle et tes habitants bâtissent. Ou à la main, comme dans Minecraft : Ctrl+1…0 prend un bloc de ta barre de construction, {place_block} le pose.", 1],
+	["torche", "Pose une torche", "Fabrique-la (bois et charbon ou fibres), prends-la avec Ctrl+chiffre de sa case et pose-la avec {place_block}. Les monstres n'apparaissent pas près des lumières.", 1],
+	["repas", "Mange un repas cuit", "Fabrique un feu de camp (3 bois et 3 cailloux, Artisanat → Mobilier) et pose-le. Baies (buissons) ou viande (animaux) : cuis-les près de lui (Artisanat → Cuisine), puis mange avec {eat}.", 1],
+	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit ({interact}) ou tiens jusqu'au matin près de ton feu et de tes torches.", 1],
 	# chapitre 2 : l'âge du fer
 	["filon_fer", "Mine 2 filons de fer", "Des rochers piquetés d'orange, dans la roche des collines. Il faut une pioche.", 2],
 	["four", "Fabrique et pose un four", "Près d'un établi : 6 cailloux et 2 blocs de terre (Artisanat → Mobilier). Pose-le avec V.", 1],
@@ -31,7 +31,7 @@ const STEPS := [
 	["pioche_fer", "Forge une pioche en fer", "À l'enclume : 2 lingots et 2 bois (Artisanat → Outils). Elle mine l'or et le marbre.", 1],
 	# chapitre 3 : le village
 	["reserve", "Remplis la réserve du village", "Ouvre le royaume (U) et dépose de la nourriture. Une boulangerie ou une grange la remplissent aussi.", 1],
-	["lits", "Un lit pour chaque habitant", "Une maison (pièce fermée, porte, un lit et un coffre) donne 2 lits ; un dortoir (4 lits et un coffre) en donne 6.", 1],
+	["lits", "Recrute un habitant et loge-le", "Seul au début, tu attires des voyageurs dès que tu as bâti un abri : parle-leur ({interact}) pour les recruter. Une maison (porte, un lit, un coffre) donne 2 lits ; un dortoir (4 lits, un coffre) en donne 6.", 1],
 	["bonheur", "Rends ton village heureux", "Bonheur moyen de 70 % : nourriture, lits, taverne, temple... Le royaume (U) dit ce qui manque.", 1],
 	# chapitre 4 : les champs
 	["houe", "Fabrique une houe", "Inventaire (I) → Artisanat → Outils : 2 bois et 2 cailloux. Elle laboure l'herbe et la terre.", 1],
@@ -93,8 +93,8 @@ const TIPS := [
 	["poussiere", "De la poussière arcanique ! Elle sert à enchanter à l'autel (I → Artisanat → Enchantement)."],
 	["metier", "Ton premier niveau de métier ! F3 pour voir tes 12 métiers et ce qu'ils débloquent."],
 	["failles", "Niveau 60 : le Portail des Failles s'ouvre (près du village) ; tu peux y monter le palier du monde."],
-	["recherche", "Astuce : dans l'artisanat, la barre de recherche trouve une recette parmi des centaines ; ★ pour les favoris."],
-	["en_main", "Tu tiens quelque chose en main : {place_block} pour le poser devant toi, {hotbar_next} pour changer, Échap pour le ranger."],
+	["recherche", "Dans l'artisanat, la barre de recherche trouve une recette parmi des centaines ; ★ pour les favoris."],
+	["en_main", "Barre de construction (en bas, au-dessus des compétences) : Ctrl+1…0 prend un objet, {place_block} le pose devant toi, Échap ou le même Ctrl+chiffre le range. Les chiffres seuls restent aux compétences."],
 	["soir", "Le soleil se couche : les monstres sortent la nuit. Reste près du feu ou d'une torche, ou dors dans un lit ({interact})."],
 	["construire", "Mode construction : choisis un outil en bas, glisse sur le sol pour tracer, et tes habitants bâtissent avec ce qu'il y a dans ton sac. {build_mode}, Échap ou ✕ pour en sortir."],
 	["royaume", "Ton royaume ({kingdom}) : ce qu'il manque à tes habitants (lits, nourriture, bonheur) et ce qu'il faut pour passer au rang suivant."],

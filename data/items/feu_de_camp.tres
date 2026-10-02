@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/environment/models/campfire.glb" id="m"]
+
+[resource]
+script = ExtResource("1")
+id = "feu_de_camp"
+display_name = "Feu de camp"
+description = "Éclaire, éloigne les monstres et permet de cuisiner (viande, poisson, pain, soupe...)."
+max_stack = 5
+furniture_model = ExtResource("m")
+furniture_solid = false
+furniture_light = true
