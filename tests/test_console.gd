@@ -56,13 +56,21 @@ func _process(_d) -> bool:
 		con._unhandled_input(ev)
 		check("Entrée ouvre le terminal", con.is_open() and p.ui_open)
 		con._on_submit("/aide")
-		check("/aide liste les commandes, puis la ligne se ferme", con._lines.size() > 15 and not con.is_open() and not p.ui_open)
-		var ev2 := InputEventKey.new(); ev2.keycode = KEY_SLASH; ev2.unicode = 47; ev2.pressed = true
-		con._unhandled_input(ev2)
-		check("« / » ouvre le terminal avec un /", con.is_open() and con._input.text == "/")
+		check("/aide liste les commandes et le terminal reste ouvert pour les lire", con._lines.size() > 15 and con.is_open() and p.ui_open)
 		start("aide")
 	if later("aide", 400):
 		shot("01_aide.png")
+		var bar = con._log.get_v_scroll_bar()
+		check("le texte défile (%.0f / %.0f) et commence au début de l'aide" % [bar.value, bar.max_value], bar.max_value > bar.page and bar.value < bar.max_value - bar.page)
+		var v0: float = bar.value
+		var pd := InputEventKey.new(); pd.keycode = KEY_PAGEDOWN; pd.pressed = true
+		con._on_input_key(pd)
+		check("Page ↓ fait défiler (%.0f -> %.0f)" % [v0, bar.value], bar.value > v0)
+		con.close()
+		check("Échap / fermer : le terminal se ferme", not con.is_open() and not p.ui_open)
+		var ev2 := InputEventKey.new(); ev2.keycode = KEY_SLASH; ev2.unicode = 47; ev2.pressed = true
+		con._unhandled_input(ev2)
+		check("« / » ouvre le terminal avec un /", con.is_open() and con._input.text == "/")
 		con._on_submit("/donner épée en fer 2")
 		var sw = items.get_item("sword_iron")
 		check("/donner épée en fer 2", p.inventory.count(sw) >= 2)
