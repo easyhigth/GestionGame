@@ -106,7 +106,7 @@ const STEPS := [
 	["vharok", 13, "Trouve le dernier des dragonides", "Vharok garde les écailles des anciens dragons (étoile sur la carte).", "talk", "vharok"],
 	["vharok_bete", 13, "Vaincs la bête qui profane le nid des dragons", "Le donjon près du camp de Vharok (carré rouge sur la carte).", "boss_of", "vharok"],
 	# ---------------------------------------------------------------- XIV
-	["vharok_2", 14, "Reçois l'héritage des dragons", "Vharok t'attend à son camp.", "talk", "vharok", {"reward": {"skill": "pac_souffle", "items": [["ecaille_dragon", 6], ["sang_demon", 2]]}}],
+	["vharok_2", 14, "Reçois l'héritage des dragons", "Vharok t'attend à son camp.", "talk", "vharok", {"reward": {"skill": "pac_souffle", "items": [["ecaille_dragon", 6], ["sang_demon", 2], ["sifflet_griffon", 1]]}}],
 	["eclats_tous", 14, "Rassemble tous les éclats du Cœur", "Il reste des grandes bêtes à vaincre, une par région.", "shards", -1],
 	["temple", 14, "Construis un temple", "Pièce fermée avec un autel et 2 bougeoirs : c'est là que le Cœur pourra renaître.", "room", "temple"],
 	["aurele", 14, "Un ange est descendu", "Une lumière aveuglante s'est posée non loin (étoile sur la carte).", "talk", "aurele"],

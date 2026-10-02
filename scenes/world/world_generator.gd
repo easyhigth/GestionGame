@@ -362,8 +362,9 @@ func generate_data() -> void:
 	_place_sites()
 	_progress(0.75, "Châteaux, ruines et épaves...")
 	_plan_structures()
-	_progress(0.9, "Hameaux...")
+	_progress(0.9, "Hameaux et cités englouties...")
 	_plan_hamlets()
+	_plan_sunken()
 	_progress(0.92, "Construction du monde...")
 
 
@@ -1859,9 +1860,9 @@ func _build_content(ch: Vector2i) -> void:
 			if _chunk_of(st.cell) == ch:
 				_add_hamlet_content(holder, st)
 			continue
-		if st.kind != "castle" and st.kind != "wreck":
+		if st.kind != "castle" and st.kind != "wreck" and st.kind != "sunken":
 			continue
-		var center: Vector2i = st.cell + (Vector2i(10, 10) if st.kind == "castle" else Vector2i(1, 6))
+		var center: Vector2i = st.cell + {"castle": Vector2i(10, 10), "wreck": Vector2i(1, 6), "sunken": Vector2i(7, 7)}[st.kind]
 		if _chunk_of(center) == ch:
 			_add_structure_content(holder, st, center)
 	# camp de monstres (un au plus par morceau)
@@ -2037,6 +2038,26 @@ func _add_structure_content(holder: Node3D, st: Dictionary, center: Vector2i) ->
 	var pos := Vector3(center.x + 0.5, floor_y, center.y + 0.5)
 	if st.kind == "wreck":
 		_add_chest(holder, st.id, "wreck", pos + Vector3(0, 1.0, 0))
+		return
+	if st.kind == "sunken":
+		var mid := pos
+		_add_chest(holder, st.id, "sunken", pos + Vector3(0, 1.0, 0))
+		# une bouée et son nom, à la surface : on la voit depuis le bateau
+		var buoy := Label3D.new()
+		buoy.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		buoy.text = "≈ %s ≈\ncité engloutie" % st.get("name", "Cité engloutie")
+		buoy.font_size = 44
+		buoy.pixel_size = 0.009
+		buoy.outline_size = 10
+		buoy.modulate = Color("8ad8ff")
+		holder.add_child(buoy)
+		buoy.global_position = Vector3(mid.x, water_surface + 3.0, mid.z)
+		var glow := OmniLight3D.new()
+		glow.light_color = Color("6ad0ff")
+		glow.light_energy = 2.0
+		glow.omni_range = 10.0
+		holder.add_child(glow)
+		glow.global_position = Vector3(mid.x, floor_y + 2.0, mid.z)
 		return
 	if st.abandoned:
 		# château abandonné : les morts y montent la garde, le trésor dort dans le donjon
@@ -2501,6 +2522,60 @@ func _plan_hamlets() -> void:
 				structure_sites.append({"kind": "house", "cell": c + Vector2i(hx, hz), "region": rid, "seed": rng.randi(), "hamlet": id})
 
 
+## Cités englouties : 3 à 5 ruines au fond de la mer, là où l'eau est profonde sur toute leur emprise.
+const SUNKEN_MAX := 5
+func _plan_sunken() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([world_seed, 717])
+	var cands := []
+	var step := 23
+	for gy in range(20, world_size.y - 36, step):
+		for gx in range(20, world_size.x - 36, step):
+			var c := Vector2i(gx + rng.randi_range(-6, 6), gy + rng.randi_range(-6, 6))
+			if _sunken_spot_ok(c):
+				cands.append(c)
+	# mélange déterministe (le monde doit être le même à chaque chargement)
+	for i in range(cands.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp = cands[i]
+		cands[i] = cands[j]
+		cands[j] = tmp
+	var picked := []
+	for c in cands:
+		if picked.size() >= SUNKEN_MAX:
+			break
+		var ok := true
+		for o in picked:
+			if Vector2(c - (o as Vector2i)).length() < 220.0:
+				ok = false
+				break
+		if not ok:
+			continue
+		picked.append(c)
+		var zid := _zone[_idx(c + Vector2i(7, 7))]
+		var z: Dictionary = zones[zid]
+		structure_sites.append({"kind": "sunken", "cell": c, "region": (z.type as RegionData).id if z.type else "prairie",
+			"seed": rng.randi(), "id": "sunken_%d" % picked.size(), "zone": zid, "name": SUNKEN_NAMES[(picked.size() - 1) % SUNKEN_NAMES.size()]})
+
+
+const SUNKEN_NAMES := ["Ys la Noyée", "Thalassor", "Atlantée", "Corail-des-Rois", "Vel-Marin"]
+
+
+func _sunken_spot_ok(c: Vector2i) -> bool:
+	if not _inside(c) or not _inside(c + Vector2i(15, 15)):
+		return false
+	for z in range(-3, 18, 3):
+		for x in range(-3, 18, 3):
+			if _type(c + Vector2i(x, z)) != DEEP:
+				return false
+	if not island_of(Vector2i((c.x + 7) / ISLAND_GRID, (c.y + 7) / ISLAND_GRID)).is_empty():
+		return false
+	for st in structure_sites:
+		if Vector2(c - (st.cell as Vector2i)).length() < 60.0:
+			return false
+	return true
+
+
 func _hamlet_spot_ok(c: Vector2i) -> bool:
 	if not _inside(c) or c.x < 20 or c.y < 20 or c.x >= world_size.x - 20 or c.y >= world_size.y - 20:
 		return false
@@ -2842,6 +2917,9 @@ func _build_structures() -> void:
 				style = {}
 			"wreck":
 				plan = WorldStructures.shipwreck_plan(rng)
+				style = {}
+			"sunken":
+				plan = WorldStructures.sunken_plan(rng)
 				style = {}
 		_clear_decor_under(plan, st.cell)
 		if st.kind == "castle":

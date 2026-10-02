@@ -1084,8 +1084,10 @@ func _update_hotbar() -> void:
 		verb = "labourer"
 	elif cur and cur.is_seed():
 		verb = "semer (les poules te suivent)" if HandBuild.is_lure(cur) else "semer"
-	elif cur and cur.id == "barque":
+	elif cur and (cur.id == "barque" or cur.id == "voilier"):
 		verb = "mettre à l'eau (face à l'eau)"
+	elif cur and cur.id == "sifflet_griffon":
+		verb = "appeler le griffon"
 	elif cur and cur.id == "canne_peche":
 		verb = "pêcher (face à l'eau)"
 	elif cur and HandBuild.is_lure(cur):

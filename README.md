@@ -497,6 +497,17 @@ L'histoire passe maintenant par les capitales, les châteaux, les grottes et les
 - **Rencontres sur les routes** : on croise des **caravanes** (un marchand et ses gardes : E pour commercer), des **patrouilles** de la nation voisine, ou on tombe dans une **embuscade de bandits** (des bandits et leur chef, plus fréquente la nuit).
 - La **mini-carte** montre aussi les capitales (leur nom et leur enceinte), les châteaux, les hameaux et les épaves.
 
+## Explorer : voilier, cités englouties, griffon, souterrains des capitales
+- **Voilier** (établi : 30 planches, 8 rondins, 12 laines, 4 lingots de fer) : choisis-le (C) et appuie sur V face à l'eau. Il file **deux fois plus vite** que la barque, sa voile se gonfle quand il avance et il tangue sur les vagues. E pour monter, E près d'une berge pour débarquer.
+- **Cités englouties** : cinq ruines au fond de la mer (Ys la Noyée, Thalassor, Atlantée...), un dallage de marbre, des colonnes brisées qui affleurent et un temple au centre. Une bouée et son nom flottent à la surface. Plonge (Creuser) jusqu'au **trésor englouti** : or, perles, gemmes, parfois de l'orichalque ou un cristal d'aube. Elles sont sur la carte ; `/tp cité engloutie`.
+- **Griffon** (fin de partie) : Vharok t'offre le **sifflet du griffon** avec l'héritage des dragons (les parties qui ont déjà passé cette étape le reçoivent automatiquement). Choisis le sifflet (C), puis V : le griffon se pose devant toi. **E** pour monter ; en vol, **Saut** pour monter, **Creuser** pour descendre, et 1,6 fois plus vite qu'à pied en vol. **E** pour se poser (pas sur l'eau). Il t'attend là où tu l'as laissé, même après une sauvegarde.
+- **Souterrains des capitales** : un escalier sous une arche de pierre, près du palais de chaque capitale. On y trouve les Catacombes des Jarls, les Cryptes de Lothëlia, les Égouts de Qasr-Ammar, les Fosses de Gor-Karath et les Catacombes de Minas Cendrys. Trois niveaux de salles et de couloirs de briques (on peut creuser les murs) :
+  - les cryptes sont peuplées de squelettes et d'esprits, les égouts de slimes, d'araignées et de bandits ;
+  - les coffres sont plus riches (lingots d'or, orichalque au fond) ;
+  - au troisième niveau, un **gardien** (Gardien des tombeaux, Roi des égouts) veille.
+  - `/tp catacombes` mène à l'entrée la plus proche.
+- Test : `tests/test_explore.gd`.
+
 ## Un monde qui vit sans toi
 Les cinq nations vivent leur vie (voir `scripts/world/world_politics.gd`) :
 - **Guerres entre nations** : de temps en temps, une nation en attaque une autre. Son **armée marche sur les routes pavées** d'une capitale à l'autre, bannière en tête ; quand le héros passe à moins de 140 m, ses soldats apparaissent sur la route. En chemin, elle prend les **hameaux** de l'ennemi, qui **changent de camp** (nouvelle bannière sur la carte et dans le hameau, nouveaux habitants). Devant la capitale ennemie, elle est repoussée ou pille les faubourgs (la ville paie tribut). Si tu es toi-même en guerre contre cette nation, ses soldats t'attaquent, et mettre l'armée en déroute rapporte or, expérience et l'estime de ses ennemis.

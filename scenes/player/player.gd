@@ -1217,11 +1217,11 @@ func in_water() -> bool:
 func _move_on_ground(delta: float) -> void:
 	if _world == null:
 		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
-	if cheat_fly and _world:
+	var mo := _mounts_node()
+	if (cheat_fly or (mo and mo.is_flying())) and _world:
 		_fly_move(delta)
 		return
 	# en barque : on glisse sur l'eau
-	var mo := _mounts_node()
 	if mo and mo.sail_move(delta):
 		swimming = false
 		breath = BREATH_MAX

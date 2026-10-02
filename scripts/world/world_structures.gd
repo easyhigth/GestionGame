@@ -215,6 +215,36 @@ static func castle_plan(size := 21, wall_h := 5, mat := "bloc_briques", trim := 
 
 
 ## Épave de navire échouée (repère local : x de 0 à 3, z de 0 à 11), penchée et à demi brisée.
+## Cité engloutie (15 × 15, au fond de la mer) : dallage de marbre, colonnes brisées en cercle,
+## et un petit temple sans toit au centre, où dort le trésor.
+static func sunken_plan(rng: RandomNumberGenerator) -> Dictionary:
+	var out := {}
+	for z in 15:
+		for x in 15:
+			if Vector2(x - 7, z - 7).length() < 7.2 and rng.randf() < 0.8:
+				out[Vector3i(x, 0, z)] = "bloc_marbre" if (x + z) % 2 == 0 else "bloc_pierre_polie"
+	for i in 10:
+		var a := TAU * i / 10.0
+		var c := Vector2i(roundi(7 + cos(a) * 6.0), roundi(7 + sin(a) * 6.0))
+		var h := rng.randi_range(1, 5)
+		for y in range(1, h + 1):
+			out[Vector3i(c.x, y, c.y)] = "bloc_marbre"
+		if h >= 4:
+			out[Vector3i(c.x, h + 1, c.y)] = "bloc_pierre_polie"
+	# le temple : quatre murs bas percés d'une porte, des marches
+	for z in range(5, 10):
+		for x in range(5, 10):
+			var edge := x == 5 or x == 9 or z == 5 or z == 9
+			if edge and not (z == 9 and x == 7):
+				for y in range(1, 3 if rng.randf() < 0.75 else 2):
+					out[Vector3i(x, y, z)] = "bloc_pierre_polie"
+	for z in range(6, 9):
+		for x in range(6, 9):
+			out[Vector3i(x, 0, z)] = "bloc_marbre"
+	out[Vector3i(7, 1, 10)] = "bloc_marbre"
+	return out
+
+
 static func shipwreck_plan(rng: RandomNumberGenerator) -> Dictionary:
 	var out := {}
 	for z in 12:

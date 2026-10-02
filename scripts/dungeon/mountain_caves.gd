@@ -24,6 +24,18 @@ const ROCK := preload("res://assets/environment/models/rock_big.glb")
 const ORE_DROPS := {"bloc_minerai_fer": ["iron_ore", 1, 2], "bloc_minerai_or": ["or_brut", 1, 1],
 	"bloc_minerai_cristal": ["", 1, 1], "bloc_minerai_mithril": ["mithril_brut", 1, 1]}
 const GEMS := ["gemme_rubis", "gemme_saphir", "gemme_emeraude", "gemme_topaze", "gemme_amethyste"]
+## Sous chaque capitale : [nom, thème (« crypte » ou « egout »)]. Même système que les grottes (3 niveaux, coffres),
+## mais des salles et des couloirs de briques, et un gardien au fond.
+const CITY_DUNGEONS := {"givre": ["Catacombes des Jarls", "crypte"], "sylvae": ["Cryptes de Lothëlia", "crypte"],
+	"sables": ["Égouts de Qasr-Ammar", "egout"], "karg": ["Fosses de Gor-Karath", "egout"], "cendres": ["Catacombes de Minas Cendrys", "crypte"]}
+const THEMES := {
+	"crypte": {"wall": "bloc_briques", "wall2": "bloc_pierre_polie", "floor": "bloc_pierre_polie", "light": Color("ffb060"),
+		"monsters": [["squelette", "esprit_follet", "squelette"], ["squelette", "esprit_follet", "seigneur_squelette"], ["squelette", "seigneur_squelette", "demon"]],
+		"guard": "seigneur_squelette", "guard_name": "Gardien des tombeaux"},
+	"egout": {"wall": "bloc_pierre_brute", "wall2": "bloc_briques", "floor": "bloc_pierre_polie", "light": Color("9aff8a"),
+		"monsters": [["slime_acide", "araignee", "bandit"], ["slime_acide", "bandit", "bandit_chef"], ["slime_magma", "bandit_chef", "araignee"]],
+		"guard": "bandit_chef", "guard_name": "Roi des égouts"},
+}
 ## Monstres de chaque niveau.
 const MONSTERS := [["araignee", "slime_acide", "squelette"], ["araignee", "squelette", "orc_brute", "slime_magma"],
 	["squelette", "seigneur_squelette", "demon", "araignee"]]
@@ -107,8 +119,38 @@ func entrance_of(ch: Vector2i) -> Dictionary:
 	return out
 
 
+## Les entrées des souterrains des capitales : un escalier dans une rue, près du palais.
+var _city_entrances: Array = []
+func city_entrances() -> Array:
+	if not _city_entrances.is_empty() or world == null:
+		return _city_entrances
+	for city in world.cities:
+		var info: Array = CITY_DUNGEONS.get(city.nation, [])
+		if info.is_empty():
+			continue
+		var hall: Vector2i = city.hall
+		var best := Vector2i(-9999, -9999)
+		var bd := INF
+		for st in city.streets:
+			var d := Vector2(st - hall).length()
+			if d >= 6.0 and d < bd:
+				bd = d
+				best = st
+		if best.x == -9999:
+			continue
+		var cell: Vector2i = (city.center as Vector2i) + best
+		var p := world.cell_center(cell)
+		p.y = world.support_height(p, world.terrain_height(cell) + 0.3)
+		_city_entrances.append({"id": "cata_" + str(city.nation), "cell": cell, "dir": Vector2i(0, 1), "pos": p,
+			"theme": info[1], "name": info[0], "nation": city.nation})
+	return _city_entrances
+
+
 func entrances_near(pos: Vector3, radius_chunks := 2) -> Array:
 	var out := []
+	for e in city_entrances():
+		if Vector2(e.pos.x - pos.x, e.pos.z - pos.z).length() < (radius_chunks + 0.5) * WorldGenerator.CHUNK:
+			out.append(e)
 	var ch := Vector2i(floori(pos.x) / WorldGenerator.CHUNK, floori(pos.z) / WorldGenerator.CHUNK)
 	for dz in range(-radius_chunks, radius_chunks + 1):
 		for dx in range(-radius_chunks, radius_chunks + 1):
@@ -152,6 +194,8 @@ func _process(delta: float) -> void:
 
 ## La bouche de la grotte : deux rochers, une ouverture noire contre la falaise, une lueur de torche.
 func _make_entrance(e: Dictionary) -> Node3D:
+	if e.has("theme"):
+		return _make_stairs(e)
 	var n := Node3D.new()
 	n.name = "EntreeGrotteMontagne_" + e.id
 	world.add_child(n)
@@ -189,6 +233,66 @@ func _make_entrance(e: Dictionary) -> Node3D:
 	lab.outline_size = 9
 	lab.modulate = Color("ffd9a0")
 	lab.position.y = 2.8
+	lab.no_depth_test = true
+	n.add_child(lab)
+	return n
+
+
+func _make_stairs(e: Dictionary) -> Node3D:
+	var n := Node3D.new()
+	n.name = "EntreeSouterrain_" + e.id
+	world.add_child(n)
+	n.global_position = e.pos
+	var stone := StandardMaterial3D.new()
+	stone.albedo_color = Color(0.55, 0.52, 0.48)
+	var dark := StandardMaterial3D.new()
+	dark.albedo_color = Color(0.03, 0.02, 0.02)
+	dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for sx in [-1.1, 1.1]:
+		var p := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.5, 2.6, 0.5)
+		p.mesh = bm
+		p.material_override = stone
+		p.position = Vector3(sx, 1.3, 0)
+		n.add_child(p)
+	var top := MeshInstance3D.new()
+	var tb := BoxMesh.new()
+	tb.size = Vector3(2.8, 0.45, 0.6)
+	top.mesh = tb
+	top.material_override = stone
+	top.position = Vector3(0, 2.75, 0)
+	n.add_child(top)
+	# les marches qui s'enfoncent dans le noir
+	for i in 4:
+		var s := MeshInstance3D.new()
+		var sb := BoxMesh.new()
+		sb.size = Vector3(1.7, 0.08, 0.45)
+		s.mesh = sb
+		s.material_override = stone if i < 2 else dark
+		s.position = Vector3(0, 0.05 - i * 0.12, -0.1 - i * 0.4)
+		n.add_child(s)
+	var hole := MeshInstance3D.new()
+	var hb := BoxMesh.new()
+	hb.size = Vector3(1.7, 0.02, 1.4)
+	hole.mesh = hb
+	hole.material_override = dark
+	hole.position = Vector3(0, 0.02, -1.2)
+	n.add_child(hole)
+	var l := OmniLight3D.new()
+	l.light_color = (THEMES[e.theme] as Dictionary).light
+	l.light_energy = 1.3
+	l.omni_range = 5.0
+	l.position = Vector3(0, 2.2, 0.6)
+	n.add_child(l)
+	var lab := Label3D.new()
+	lab.text = "%s\nE : descendre" % e.name
+	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lab.font_size = 34
+	lab.pixel_size = 0.007
+	lab.outline_size = 9
+	lab.modulate = Color("ffd9a0")
+	lab.position.y = 3.6
 	lab.no_depth_test = true
 	n.add_child(lab)
 	return n
@@ -309,8 +413,22 @@ func _layout(rng: RandomNumberGenerator) -> Dictionary:
 	return keep
 
 
+func _theme() -> Dictionary:
+	return THEMES.get(_entry.get("theme", ""), {})
+
+
+func _floor_item() -> ItemData:
+	var th := _theme()
+	if not th.is_empty():
+		return Items.get_item(th.floor)
+	return Items.get_item("bloc_pierre_brute" if level == 1 else "bloc_roche_profonde")
+
+
 ## Bloc de paroi : roche, ou minerai selon la profondeur.
 func _wall_item(rng: RandomNumberGenerator, lv: int) -> ItemData:
+	var th := _theme()
+	if not th.is_empty():
+		return Items.get_item(th.wall2 if rng.randf() < 0.25 else th.wall)
 	var r := rng.randf()
 	if lv >= 3 and r < 0.015:
 		return Items.get_item("bloc_minerai_mithril")
@@ -340,12 +458,13 @@ func _build(e: Dictionary, lv: int) -> void:
 	rng.seed = hash([world.world_seed, e.cell.x, e.cell.y, lv])
 	_rng.seed = rng.seed + 1
 	_origin = Vector2i(clampi(e.cell.x - SIZE / 2, 0, world.world_size.x - SIZE), clampi(e.cell.y - SIZE / 2, 0, world.world_size.y - SIZE))
-	var local := _layout(rng)
+	var themed := e.has("theme")
+	var local := _crypt_layout(rng) if themed else _layout(rng)
 	_open = {}
 	for c in local:
 		_open[c + _origin] = true
 	var grid := _grid()
-	var floor_it := Items.get_item("bloc_pierre_brute" if lv == 1 else "bloc_roche_profonde")
+	var floor_it := _floor_item()
 	for c in _open:
 		grid.place_block(Vector3i(c.x, FLOOR_Y - 1, c.y), floor_it)
 	var walls := {}
@@ -364,14 +483,14 @@ func _build(e: Dictionary, lv: int) -> void:
 	for i in 12 + lv * 3:
 		var c: Vector2i = cells[rng.randi() % cells.size()]
 		var l := OmniLight3D.new()
-		l.light_color = [Color("6ad8ff"), Color("9aff8a"), Color("ffb070")][rng.randi() % 3]
+		l.light_color = _theme().light if themed else [Color("6ad8ff"), Color("9aff8a"), Color("ffb070")][rng.randi() % 3]
 		l.light_energy = 1.6
 		l.omni_range = 9.0
 		_content.add_child(l)
 		l.global_position = floor_pos(c) + Vector3(0, 1.2, 0)
 	# entrée / sortie, passage vers le bas, coffres, monstres
 	var start := _origin + Vector2i(SIZE / 2, SIZE - 6)
-	_add_marker(start + Vector2i(0, 2), "exit", "Sortie\nE : remonter" if lv == 1 else "Remonter\nE : niveau %d" % (lv - 1), Color("ffe0a0"))
+	_add_marker(start + Vector2i(0, 2), "exit", ("Sortie\nE : remonter dans la ville" if themed else "Sortie\nE : remonter") if lv == 1 else "Remonter\nE : niveau %d" % (lv - 1), Color("ffe0a0"))
 	var far := start
 	var far_d := 0.0
 	for c in cells:
@@ -380,7 +499,9 @@ func _build(e: Dictionary, lv: int) -> void:
 			far_d = dd
 			far = c
 	if lv < LEVELS:
-		_add_marker(far, "down", "Galerie profonde\nE : descendre (niveau %d)" % (lv + 1), Color("ff9a6a"))
+		_add_marker(far, "down", ("Escalier\nE : descendre (niveau %d)" if themed else "Galerie profonde\nE : descendre (niveau %d)") % (lv + 1), Color("ff9a6a"))
+	elif themed:
+		_spawn_guard(far)
 	var done: Array = opened.get(_key(), [])
 	var placed := 0
 	for i in 40:
@@ -399,7 +520,9 @@ func _build(e: Dictionary, lv: int) -> void:
 	player.global_position = floor_pos(start) + Vector3(0, 0.1, 0)
 	player.snap_camera()
 	entered.emit(cave_id, lv)
-	if lv == 1:
+	if themed:
+		player.notify.emit("%s, niveau %d : %s" % [e.name, lv, "des salles oubliées, des tombeaux, et ce qui y rôde." if lv < LEVELS else "le dernier niveau. Un gardien veille sur le plus grand trésor."])
+	elif lv == 1:
 		player.notify.emit("Une grotte dans la montagne... Creuse les parois à la pioche : fer, or, cristaux et mithril s'y cachent.")
 	else:
 		player.notify.emit("Niveau %d de la grotte : plus profond, plus dangereux, plus riche." % lv)
@@ -409,7 +532,8 @@ func _spawn_monsters(cells: Array, start: Vector2i, rng: RandomNumberGenerator, 
 	var scene := load("res://scenes/enemies/enemy.tscn") as PackedScene
 	var z := world.zone_at(_entry.pos)
 	var base_lv: int = (z.level as Vector2i).x if not z.is_empty() else 3
-	var kinds: Array = MONSTERS[clampi(lv - 1, 0, MONSTERS.size() - 1)]
+	var mlist: Array = _theme().get("monsters", MONSTERS)
+	var kinds: Array = mlist[clampi(lv - 1, 0, mlist.size() - 1)]
 	var count := 4 + lv * 2
 	var n := 0
 	for i in 60:
@@ -426,6 +550,97 @@ func _spawn_monsters(cells: Array, start: Vector2i, rng: RandomNumberGenerator, 
 		e.global_position = floor_pos(c)
 		e.home = e.global_position
 		n += 1
+
+
+## Salles reliées par des couloirs (un arbre au hasard sur une grille de 5 × 5 salles), une salle d'entrée en bas.
+func _crypt_layout(rng: RandomNumberGenerator) -> Dictionary:
+	var cells := {}
+	var n := 5
+	var step := 10
+	var centers := {}
+	for j in n:
+		for i in n:
+			var c := Vector2i(4 + i * step + rng.randi_range(0, 2), 4 + j * step + rng.randi_range(0, 2))
+			centers[Vector2i(i, j)] = c
+			var hw := rng.randi_range(2, 3)
+			var hh := rng.randi_range(2, 3)
+			for y in range(-hh, hh + 1):
+				for x in range(-hw, hw + 1):
+					cells[c + Vector2i(x, y)] = true
+	# un arbre couvrant au hasard : chaque salle reliée à une voisine déjà reliée
+	var linked := {Vector2i(n / 2, n - 1): true}
+	var todo := []
+	for k in centers:
+		if not linked.has(k):
+			todo.append(k)
+	while not todo.is_empty():
+		var shuffled := todo.duplicate()
+		for i in range(shuffled.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp = shuffled[i]
+			shuffled[i] = shuffled[j]
+			shuffled[j] = tmp
+		var done := false
+		for k in shuffled:
+			var opts := []
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if linked.has(k + d):
+					opts.append(k + d)
+			if opts.is_empty():
+				continue
+			var o: Vector2i = opts[rng.randi() % opts.size()]
+			_corridor(cells, centers[k], centers[o])
+			linked[k] = true
+			todo.erase(k)
+			done = true
+			break
+		if not done:
+			break
+	# quelques boucles en plus
+	for i in 4:
+		var a := Vector2i(rng.randi_range(0, n - 2), rng.randi_range(0, n - 1))
+		_corridor(cells, centers[a], centers[a + Vector2i(1, 0)])
+	# l'entrée : reliée à la salle du bas, au milieu
+	var start := Vector2i(SIZE / 2, SIZE - 6)
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			cells[start + Vector2i(dx, dy)] = true
+	_corridor(cells, start, centers[Vector2i(n / 2, n - 1)])
+	var out := {}
+	for c in cells:
+		if c.x > 1 and c.y > 1 and c.x < SIZE - 2 and c.y < SIZE - 2:
+			out[c] = true
+	return out
+
+
+func _corridor(cells: Dictionary, a: Vector2i, b: Vector2i) -> void:
+	var c := a
+	while c.x != b.x:
+		cells[c] = true
+		cells[c + Vector2i(0, 1)] = true
+		c.x += signi(b.x - c.x)
+	while c.y != b.y:
+		cells[c] = true
+		cells[c + Vector2i(1, 0)] = true
+		c.y += signi(b.y - c.y)
+	cells[b] = true
+
+
+## Le gardien du dernier niveau des souterrains d'une capitale.
+func _spawn_guard(c: Vector2i) -> void:
+	var th := _theme()
+	var e := (load("res://scenes/enemies/enemy.tscn") as PackedScene).instantiate() as Enemy
+	var d := (load("res://data/enemies/%s.tres" % th.guard) as EnemyData).duplicate() as EnemyData
+	d.display_name = th.guard_name
+	e.data = d
+	var z := world.zone_at(_entry.pos)
+	e.level = ((z.level as Vector2i).y if not z.is_empty() else 8) + 6
+	e.power = 1.6 + 0.05 * e.level
+	e.set_meta("guardian", true)
+	_content.add_child(e)
+	e.global_position = floor_pos(c)
+	e.home = e.global_position
+	e.visual.scale *= 1.4
 
 
 func _add_marker(c: Vector2i, kind: String, text: String, col: Color) -> void:
@@ -487,6 +702,10 @@ func _open_chest(it: Dictionary) -> void:
 		loot.append([Items.get_item("mithril_brut"), 1])
 	if randf() < 0.4 and not world.wild_loot.is_empty():
 		loot.append([world.wild_loot.pick_random(), 1])
+	if not _theme().is_empty():
+		loot.append([Items.get_item("lingot_or"), randi_range(1, level)])
+		if level >= 3:
+			loot.append([Items.get_item("orichalque" if randf() < 0.4 else "cristal_aube"), 1])
 	var rare := RareDrops.roll_chest("grotte")
 	loot.append_array(rare)
 	RareDrops.announce(player, rare)
@@ -536,7 +755,7 @@ func _carve(key: Vector3i, _live: bool) -> void:
 		grid.remove_block(Vector3i(c.x, FLOOR_Y + h, c.y))
 	_open[c] = true
 	if grid.block_at(Vector3i(c.x, FLOOR_Y - 1, c.y)) == null:
-		grid.place_block(Vector3i(c.x, FLOOR_Y - 1, c.y), Items.get_item("bloc_pierre_brute" if level == 1 else "bloc_roche_profonde"))
+		grid.place_block(Vector3i(c.x, FLOOR_Y - 1, c.y), _floor_item())
 	# la roche continue derrière : de nouvelles parois autour de la case ouverte
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([cave_id, level, c.x, c.y])
@@ -546,7 +765,7 @@ func _carve(key: Vector3i, _live: bool) -> void:
 			if _open.has(n):
 				continue
 			if grid.block_at(Vector3i(n.x, FLOOR_Y - 1, n.y)) == null:
-				grid.place_block(Vector3i(n.x, FLOOR_Y - 1, n.y), Items.get_item("bloc_pierre_brute" if level == 1 else "bloc_roche_profonde"))
+				grid.place_block(Vector3i(n.x, FLOOR_Y - 1, n.y), _floor_item())
 			_wall_column(n, rng)
 
 
