@@ -43,6 +43,7 @@ func _ready() -> void:
 	if player:
 		player.open_inventory.connect(open)
 		player.inventory.changed.connect(_refresh)
+	add_to_group("inventory_ui")
 	hide()
 
 
@@ -81,7 +82,7 @@ func _set_hud_info(on: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
-	if event.is_action_pressed("inventory") or event.is_action_pressed("interact") or event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("inventory") or event.is_action_pressed("interact") or event.is_action_pressed("ui_cancel") or event.is_action_pressed("crafts"):
 		close()
 		get_viewport().set_input_as_handled()
 
@@ -203,7 +204,7 @@ func _build() -> void:
 	tabs.add_theme_constant_override("h_separation", 2)
 	tabs.add_theme_constant_override("v_separation", 2)
 	tabs.custom_minimum_size.x = 320
-	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Forge"]:
+	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Armurerie", "Forge", "Enchantement", "Métiers"]:
 		var tb := Button.new()
 		tb.text = cname
 		tb.toggle_mode = true
@@ -314,6 +315,18 @@ func _refresh() -> void:
 		c.queue_free()
 	if _cat == "Forge":
 		_forge_rows()
+		_refresh_job()
+		return
+	if _cat == "Armurerie":
+		_armory_rows(near)
+		_refresh_job()
+		return
+	if _cat == "Enchantement":
+		_enchant_rows()
+		_refresh_job()
+		return
+	if _cat == "Métiers":
+		_crafts_rows()
 		_refresh_job()
 		return
 	var list: Array = Items.recipes.filter(func(r): return r.category == _cat or (_cat == "Matériaux" and r.category == "Matériaux"))
@@ -505,7 +518,10 @@ func _forge_rows() -> void:
 
 
 func _recipe_row(r: RecipeData, near: bool) -> Control:
-	var ok := r.can_craft(player.inventory, near, _stations)
+	var craft := Crafts.craft_of_recipe(r)
+	var need_lv := Crafts.recipe_level(r)
+	var lv_ok := Crafts.level(player, craft) >= need_lv
+	var ok := r.can_craft(player.inventory, near, _stations) and lv_ok
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _style(C_SLOT if ok else C_SLOT.darkened(0.2), C_FRAME.darkened(0.5 if ok else 0.7), 1))
 	var row := HBoxContainer.new()
@@ -527,6 +543,8 @@ func _recipe_row(r: RecipeData, near: bool) -> Control:
 	if r.station != "":
 		var st_item: ItemData = Items.get_item(r.station)
 		parts.append("[color=#%s]près : %s[/color]" % [(C_OK if _stations.has(r.station) else C_BAD).to_html(false), st_item.display_name if st_item else r.station])
+	if need_lv > 1:
+		parts.append("[color=#%s]%s niv. %d[/color]" % [(C_OK if lv_ok else C_BAD).to_html(false), Crafts.CRAFTS[craft].name, need_lv])
 	var ing := RichTextLabel.new()
 	ing.bbcode_enabled = true
 	ing.fit_content = true
@@ -580,8 +598,11 @@ func _unequip(slot: int) -> void:
 
 
 func _craft(r: RecipeData) -> void:
+	if Crafts.level(player, Crafts.craft_of_recipe(r)) < Crafts.recipe_level(r):
+		return
 	if r.craft(player.inventory, player.is_near_workbench(), player.nearby_stations()):
-		player.notify.emit("Fabriqué : %s" % r.result.display_name)
+		var extra := Crafts.on_crafted(player, r)
+		player.notify.emit("Fabriqué : %s%s" % [r.result.display_name, ("  ·  " + extra) if extra != "" else ""])
 		player.crafted.emit(r.result.id)
 		Sound.ui("craft")
 	_refresh()
@@ -589,3 +610,150 @@ func _craft(r: RecipeData) -> void:
 
 func _who() -> String:
 	return "Vous" if target == player else String(target.get("villager_name"))
+
+
+# ---------------------------------------------------------------- armurerie, enchantement, métiers
+
+var _arm_type := 0
+var _arm_mat := 5
+var _ench_item: ItemData
+
+
+func _stepper(text: String, on_prev: Callable, on_next: Callable) -> HBoxContainer:
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 4)
+	var a := Button.new()
+	a.text = "◀"
+	a.add_theme_font_size_override("font_size", 10)
+	a.pressed.connect(func(): on_prev.call(); _refresh())
+	h.add_child(a)
+	var l := _label(text, 11, C_TEXT)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(l)
+	var b := Button.new()
+	b.text = "▶"
+	b.add_theme_font_size_override("font_size", 10)
+	b.pressed.connect(func(): on_next.call(); _refresh())
+	h.add_child(b)
+	return h
+
+
+## Onglet « Armurerie » : les 884 armes, par type et par matériau (4 designs chacun).
+func _armory_rows(near: bool) -> void:
+	var nt := Arsenal.TYPE_ORDER.size()
+	var nm := Arsenal.MATERIALS.size()
+	var type: String = Arsenal.TYPE_ORDER[_arm_type]
+	var m: Dictionary = Arsenal.MATERIALS[_arm_mat]
+	_recipes.add_child(_label("Arsenal : %d armes (%d types × %d matériaux × 4 designs)" % [nt * nm * 4, nt, nm], 9, C_DIM))
+	_recipes.add_child(_stepper("Type : %s (%d/%d)" % [Arsenal.TYPES[type].names[0], _arm_type + 1, nt],
+		func(): _arm_type = (_arm_type + nt - 1) % nt, func(): _arm_type = (_arm_type + 1) % nt))
+	_recipes.add_child(_stepper("Matériau : %s" % str(m.suffix).trim_prefix("en ").trim_prefix("d'").capitalize(),
+		func(): _arm_mat = (_arm_mat + nm - 1) % nm, func(): _arm_mat = (_arm_mat + 1) % nm))
+	var flv := Crafts.level(player, "forgeron")
+	_recipes.add_child(_label("Forgeron d'armes : niveau %d  ·  ce matériau : niveau %d" % [flv, int(m.level)], 9, C_OK if flv >= int(m.level) else C_BAD))
+	for d in 4:
+		var id := Arsenal.make_id(type, m.id, d)
+		for r: RecipeData in Items.recipes:
+			if r.result and r.result.id == id:
+				_recipes.add_child(_recipe_row(r, near))
+				break
+
+
+## Onglet « Enchantement » (près d'un autel) : enchanter, désenchanter, réduire en poussière.
+func _enchant_rows() -> void:
+	var altar := _stations.has("autel")
+	var lv := Crafts.level(player, "enchanteur")
+	_recipes.add_child(_label("Enchanteur niveau %d : rang max %s  ·  %s" % [lv, Forge.RANK_NAMES[Crafts.max_enchant_rank(player)],
+		"autel à proximité" if altar else "approche-toi d'un autel"], 10, C_OK if altar else C_BAD))
+	_recipes.add_child(_label("Poussière arcanique : %d  ·  Pierres d'âme : %d" % [player.inventory.count(Items.get_item("poussiere_arcane")),
+		player.inventory.count(Items.get_item("pierre_ame"))], 9, C_DIM))
+	var items := Forge.workable(player)
+	if items.is_empty():
+		_recipes.add_child(_label("Aucun objet à enchanter.", 10, C_DIM))
+		return
+	if _ench_item == null or not items.has(_ench_item):
+		_ench_item = player.weapon() if items.has(player.weapon()) else items[0]
+	var idx := items.find(_ench_item)
+	_recipes.add_child(_stepper(_ench_item.display_name, func(): _ench_item = items[(idx + items.size() - 1) % items.size()],
+		func(): _ench_item = items[(idx + 1) % items.size()]))
+	var it := _ench_item
+	_recipes.add_child(_label("Emplacements : %d / %d  ·  rang max sur cet objet : %s (raffinage +%d)" % [it.enchants.size(),
+		Forge.ench_slots(it), Forge.RANK_NAMES[Forge.item_rank_cap(it)], it.upgrade], 9, C_TEXT))
+	for e in it.enchants:
+		var row := HBoxContainer.new()
+		row.add_child(_label("✦ %s %s" % [Forge.ENCHANTS[e][0], Forge.RANK_NAMES[int(it.enchants[e])]], 10, Color("c8a8ff")))
+		var rb := Button.new()
+		rb.text = "Retirer"
+		rb.add_theme_font_size_override("font_size", 9)
+		rb.disabled = not altar
+		rb.pressed.connect(func():
+			var v := Forge.disenchant(player, it, e, _stations)
+			if v:
+				_ench_item = v
+			_refresh())
+		row.add_child(rb)
+		_recipes.add_child(row)
+	for e in Forge.enchants_for(it):
+		var cur := int(it.enchants.get(e, 0))
+		if cur >= 5:
+			continue
+		var rank := cur + 1
+		var why := Forge.enchant_block(player, it, e, rank, _stations)
+		var b := Button.new()
+		b.text = "%s %s — %s" % [Forge.ENCHANTS[e][0], Forge.RANK_NAMES[rank], Forge.ENCHANTS[e][4]]
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.add_theme_font_size_override("font_size", 9)
+		b.disabled = why != ""
+		b.tooltip_text = "Coût : %s%s" % [Forge.ench_cost_text(player, e, rank), ("\n" + why) if why != "" else ""]
+		b.pressed.connect(func():
+			var v := Forge.enchant(player, it, e, rank, _stations)
+			if v:
+				_ench_item = v
+				_show_info(v)
+			_refresh())
+		_recipes.add_child(b)
+	# réduire en poussière les objets du sac
+	_recipes.add_child(_label("Réduire en poussière arcanique (objets du sac) :", 10, C_TEXT))
+	for en in player.inventory.entries:
+		var bi: ItemData = en.item
+		if not bi.is_equipment():
+			continue
+		var sb := Button.new()
+		sb.text = "%s → %d poussière" % [bi.display_name, Forge.salvage_value(bi)]
+		sb.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		sb.add_theme_font_size_override("font_size", 9)
+		sb.disabled = not altar
+		sb.pressed.connect(func():
+			Forge.salvage(player, bi, _stations)
+			_refresh())
+		_recipes.add_child(sb)
+
+
+## Onglet « Métiers » : les 12 métiers, leur niveau et leurs bonus.
+func _crafts_rows() -> void:
+	_recipes.add_child(_label("Les métiers montent en pratiquant (niveau 1 à 100). Total : %d / %d" % [Crafts.total_level(player), Crafts.ORDER.size() * Crafts.MAX_LEVEL], 9, C_DIM))
+	for c in Crafts.ORDER:
+		var info: Dictionary = Crafts.CRAFTS[c]
+		var lv := Crafts.level(player, c)
+		var pr := Crafts.progress(player, c)
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 0)
+		box.add_child(_label("%s %s — niveau %d" % [info.icon, info.name, lv], 11, Color(info.color)))
+		var bar := ProgressBar.new()
+		bar.custom_minimum_size = Vector2(300, 8)
+		bar.show_percentage = false
+		bar.max_value = maxi(1, int(pr[1]))
+		bar.value = int(pr[0])
+		box.add_child(bar)
+		var t := _label("%s  ·  %s" % [info.text, Crafts.perk_text(c, lv)], 8, C_DIM)
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		t.custom_minimum_size.x = 300
+		box.add_child(t)
+		_recipes.add_child(box)
+
+
+## Ouvre l'inventaire sur un onglet (ex. « Métiers »).
+func open_tab(who: Node, tab: String) -> void:
+	_cat = tab
+	open(who)

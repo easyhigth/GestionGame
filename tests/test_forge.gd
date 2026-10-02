@@ -55,6 +55,9 @@ func _process(_d) -> bool:
 				["gemme_rubis", 1], ["gemme_topaze", 1], ["gemme_emeraude", 1], ["gemme_diamant", 1]]:
 			p.inventory.add(items.get_item(pair[0]), pair[1])
 		var sword = items.get_item("sword_iron")
+		var CR = load("res://scripts/hero/crafts.gd")
+		check("métier débutant : raffinage limité à +%d" % CR.max_refine(p, sword), CR.max_refine(p, sword) == 5)
+		p.crafts["forgeron"] = CR.xp_for_level(100); p.crafts["armurier"] = CR.xp_for_level(100)
 		p.equipment.equip(sword)
 		var atk0: int = p.attack_power()
 		print("== renforcer")
@@ -73,7 +76,7 @@ func _process(_d) -> bool:
 		check("légendaire à +10", it.rarity == 4)
 		check("modèle de l'épée de base", p.visual._shown.get(1, "") == "sword_iron")
 		check("coût payé (orichalque utilisé)", count("orichalque") == 0)
-		check("pas de +11", FG.upgrade_block(p, it, st).begins_with("Niveau maximal"))
+		check("+11 demande de l'orichalque", FG.upgrade_block(p, it, st).begins_with("Il manque"))
 		print("== gemmes")
 		check("3 emplacements à +10", FG.sockets(it.upgrade) == 3)
 		for g in ["gemme_rubis", "gemme_topaze", "gemme_emeraude"]:

@@ -420,6 +420,9 @@ func _on_rift_boss_died(pos: Vector3) -> void:
 		_drop(Loot.roll(lv, 0.15, rift_rank / 6, 2 if i == 0 else 0), pos)
 	if player:
 		player.inventory.add(Items.get_item("piece_or"), 40 + 12 * rift_rank)
+		player.inventory.add(Items.get_item("poussiere_arcane"), 2 + rift_rank / 3)
+		if randf() < 0.25 + rift_rank * 0.01:
+			player.inventory.add(Items.get_item("pierre_ame"), 1)
 		player.gain_xp(200 + 30 * lv)
 		player.feat.emit("Faille %d vaincue !" % rift_rank, Color("e0b0ff"))
 		player.notify.emit("Faille %d vaincue ! Le rang %d est ouvert. Ramasse le butin, puis E au centre pour sortir." % [rift_rank, rift_rank + 1])
@@ -534,6 +537,8 @@ func _on_titan_died(pos: Vector3) -> void:
 		_drop(Loot.roll(lv, 0.6, tier + 4, 4 if i == 0 else 2), pos)
 	if player:
 		player.inventory.add(Items.get_item("piece_or"), 500 + 10 * lv)
+		player.inventory.add(Items.get_item("poussiere_arcane"), 12)
+		player.inventory.add(Items.get_item("pierre_ame"), 2)
 		player.gain_xp(1000 + 60 * lv)
 		player.feat.emit("Titan vaincu !", Color("ffb050"))
 		player.notify.emit("Le titan est tombé ! Son trésor est au sol.")

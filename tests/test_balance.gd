@@ -56,9 +56,9 @@ func _process(_d) -> bool:
 				p.equipment.equip(v)
 		var b: Dictionary = FG.equipment_bonus(p)
 		print("   bonus : ", b)
-		check("critiques plafonnés (%.2f)" % b.get("crit", 0.0), float(b.get("crit", 0.0)) <= 0.3001)
-		check("vol de vie plafonné (%.2f)" % b.get("lifesteal", 0.0), float(b.get("lifesteal", 0.0)) <= 0.1201)
-		check("attaque des runes plafonnée (%.2f)" % b.get("atk_pct", 0.0), float(b.get("atk_pct", 0.0)) <= 0.4001)
+		check("critiques plafonnés (%.2f)" % b.get("crit", 0.0), float(b.get("crit", 0.0)) <= float(load("res://scripts/items/forge.gd").BONUS_CAPS.crit) + 0.0001)
+		check("vol de vie plafonné (%.2f)" % b.get("lifesteal", 0.0), float(b.get("lifesteal", 0.0)) <= float(load("res://scripts/items/forge.gd").BONUS_CAPS.lifesteal) + 0.0001)
+		check("attaque des runes plafonnée (%.2f)" % b.get("atk_pct", 0.0), float(b.get("atk_pct", 0.0)) <= float(load("res://scripts/items/forge.gd").BONUS_CAPS.atk_pct) + 0.0001)
 		print("== bonus permanents du héros (âmes)")
 		var atk := 0.0
 		var def := 0.0

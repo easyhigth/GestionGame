@@ -82,6 +82,8 @@ var lock_target: Combatant
 var profile: HeroProfile
 ## Arbre de talents : talents débloqués (id -> true), emplacements des talents actifs (touches 1-4).
 var talents := {}
+## Métiers (voir Crafts) : { métier: expérience }.
+var crafts := {}
 ## Évolution du héros (0 à 3), donnée par l'histoire principale (voir Evolution).
 var hero_evo := 0
 var _evo_fx := 0.0
@@ -177,6 +179,7 @@ func _ready() -> void:
 	# nouvelle partie : équipement de départ ; partie chargée : tout vient de la sauvegarde
 	var loading: bool = not SaveGame.pending.is_empty()
 	apply_profile(hero, GameState.hero != null and not loading)
+	Crafts.init_for(self)
 	camera_zoom = float(SaveGame.options.camera_distance)
 	parried.connect(_on_parried)
 	_make_reticle()
@@ -1540,6 +1543,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("inventory"):
 		open_inventory.emit(self)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("crafts"):
+		var inv := get_tree().get_first_node_in_group("inventory_ui")
+		if inv:
+			inv.open_tab(self, "Métiers")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("skill") and not building:
 		use_skill()

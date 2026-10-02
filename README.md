@@ -323,13 +323,30 @@ Un panneau à gauche de l'écran guide le début de partie : couper 3 arbres, ca
 - **Habitants** : ils commencent avec une partie de la tenue d'un métier (garde, mage, guerrier...), vont chercher les armes et armures meilleures que les leurs qui traînent près d'eux et reposent l'ancienne au sol. Touche E près d'un habitant pour l'équiper avec le contenu de ton sac.
 - **Artisanat** (fenêtre I) : le bois, la pierre, le cuir et la fibre se ramassent dans la nature ; le minerai de fer se trouve sur la roche et se fond en lingots à l'**établi** du village. Les objets en fer demandent d'être près de l'établi.
 
-### Forge : renforcer et sertir des gemmes
-- Onglet **Forge** de l'artisanat (fenêtre I), près d'une **enclume** : toutes les armes et armures portées ou dans le sac.
-- **Renforcer** de +1 à +10 : +10 % des caractéristiques et +1 point par niveau. Rareté : rare à +4, épique à +7, légendaire à +10. L'objet garde son apparence.
-- Coût : +1 à +3 lingots de fer et or ; +4 à +6 lingots d'or, mithril brut et or ; +7 à +9 lingots de mithril, larme d'esprit et or ; +10 un orichalque, 3 lingots de mithril et 1 000 pièces d'or.
-- **Gemmes** : 1 emplacement, 2 à +4, 3 à +8. Rubis (brûlure, attaque), Saphir (givre, magie), Émeraude (vol de vie, régénération), Topaze (critiques), Améthyste (magie, recharges), Diamant (vie, défense). On les trouve en minant l'or et le fer, sur les boss, dans les grottes, les îles et les donjons.
-- Les bonus des gemmes et des runes de tout l'équipement porté sont plafonnés (par exemple 30 % de critiques, 12 % de vol de vie, +40 % d'attaque).
-- Un objet renforcé se vend plus cher au marchand (+25 % par niveau, +40 or par gemme) et se sauvegarde avec ses gemmes.
+### Arsenal : 884 armes à forger
+- Onglet **Armurerie** de l'artisanat (fenêtre I) : **17 types** d'armes × **13 matériaux** × **4 designs** = **884 armes**, chacune avec son modèle 3D en blocs et ses statistiques.
+- Types : épée, espadon, sabre, katana, rapière, dague, hache, hache de bataille, marteau de guerre, masse d'armes, morgenstern, lance, hallebarde, faux, bâton, sceptre, arc. Chacun a 4 designs (ex. Épée, Épée large, Épée dentelée, Épée royale ; Espadon, Claymore, Flamberge, Espadon du héraut...) : **équilibré**, **lourd** (+15 % de dégâts, plus lent), **vif** (plus rapide, critiques) ou **orné** (magie, dégâts critiques ; un lingot d'or en plus).
+- Matériaux, du plus simple au plus rare : bois, os, pierre (à l'établi), cuivre, bronze, fer, acier, argent, or (la magie), obsidienne, mithril, orichalque, écailles de dragon (à l'enclume). Chaque matériau demande un niveau de **Forgeron d'armes** (1 à 90).
+- Nouvelles ressources : minerais de cuivre, d'étain et d'argent, charbon (dans les rochers et les filons), os (squelettes, bêtes), obsidienne (filons d'or), poussière arcanique (tous les monstres, les boss, en réduisant des objets), pierre d'âme (boss, failles, titans). Au four : lingots de cuivre, de bronze (cuivre + étain), d'acier (fer + charbon), d'argent ; charbon de bois.
+- Les armes de l'arsenal servent aussi de base au butin de niveau (failles, titans, paliers du monde).
+
+### Forge : raffiner (+15), sertir, enchanter
+- Onglet **Forge**, près d'une **enclume** : **raffiner** de +1 à **+15** : +10 % des caractéristiques et +1 point par niveau. Le niveau de Forgeron (armes) ou d'Armurier (armures) fixe le raffinage maximum : +5 au niveau 1, +15 au niveau 100.
+- Coût : +1 à +3 lingots de fer et or ; +4 à +6 lingots d'or, mithril brut et or ; +7 à +9 lingots de mithril, larme d'esprit et or ; +10 un orichalque ; +11 à +15 de plus en plus d'orichalque, du mithril, une larme d'esprit et beaucoup d'or.
+- **Gemmes** : 1 emplacement, 2 à +4, 3 à +8 (Rubis, Saphir, Émeraude, Topaze, Améthyste, Diamant). **Runes** gravées par les enchanteurs.
+- Onglet **Enchantement**, près d'un **autel** : **26 enchantements** du rang I au rang V — Tranchant, Embrasement, Givre, Vampirisme, Précision, Brutalité, Célérité, Exécution, Tonnerre, Arcanes, Furie, Moisson d'âmes, Sagesse, Fortune (armes) ; Protection, Vitalité, Épines, Régénération, Esquive, Vivacité, Stabilité, Absorption, Dernier rempart (armures) ; Concentration, Parade et **Éveil** (attaque, magie et vie).
+  - **Emplacements** : 1, +1 tous les 5 niveaux de raffinage, +1 si l'objet est épique ou mieux (jusqu'à 5).
+  - **Rang maximum** selon le raffinage de l'objet (I jusqu'à +3, II dès +4, III dès +7, IV dès +11, V dès +14) et le niveau d'**Enchanteur** (II au niveau 15, III à 35, IV à 60, V à 85).
+  - Coût : poussière arcanique et or, larmes d'esprit dès le rang III, **pierre d'âme** au rang V. On peut retirer un enchantement (rend de la poussière) ou **réduire un objet en poussière**.
+  - **Rareté qui monte** : une arme ordinaire raffinée et enchantée devient rare, épique, **légendaire** (+10, ou 14 rangs d'enchantement), et même **mystique** (+15 avec 20 rangs : 4 enchantements au rang V).
+- Les bonus de tout l'équipement porté sont plafonnés (ex. 40 % de critiques, 15 % de vol de vie, +60 % d'attaque). Un objet amélioré se sauvegarde avec ses gemmes, sa rune et ses enchantements.
+
+### Métiers : 12 artisanats du niveau 1 au niveau 100 (F3)
+- Comme dans Dofus, on **ne choisit pas** son métier : on le **pratique**. 12 métiers : Forgeron d'armes, Armurier, Enchanteur, Joaillier, Mineur, Bûcheron, Alchimiste, Cuisinier, Pêcheur, Fermier, Tailleur, Bâtisseur. Le métier choisi à la création du héros donne deux métiers au niveau 10.
+- On progresse en faisant : forger, raffiner, enchanter, sertir, miner, abattre, fondre, cuisiner, préparer des potions, pêcher, récolter, coudre, fabriquer des blocs et des meubles. Une action trop facile pour son niveau rapporte moins.
+- Courbe douce : environ 27 000 points d'expérience pour le niveau 100 (quelques centaines d'actions par métier).
+- Bonus : matériaux plus nobles et raffinage plus poussé (Forgeron, Armurier), **chef-d'œuvre** (l'arme ou l'armure sort déjà raffinée, jusqu'à 45 %), rangs d'enchantement (Enchanteur), récolte double (Mineur, Bûcheron, Fermier, Pêcheur), double fabrication (Alchimiste, Cuisinier, Tailleur), blocs en plus (Bâtisseur).
+- Onglet **Métiers** de l'artisanat, ou touche **F3**. Commande `/metier <métier|tous> <niveau>`.
 
 ## Combat (temps réel, façon Zelda)
 Commandes (clavier-souris / manette) :
@@ -600,6 +617,7 @@ Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas 
 | `/kit` | un équipement complet en mithril, des outils, des potions, à manger et des blocs |
 | `/invoquer <monstre> [nombre]` | fait apparaître des monstres devant toi (`/invoquer loup 3`, `/invoquer chef des bandits`) |
 | `/graine` | la graine du monde |
+| `/metier <métier|tous> <niveau>` | met un métier (ou tous) à ce niveau |
 | `/palier <0-10>` | change le palier du monde (monte le héros au niveau requis si besoin) |
 | `/faille <rang>` | ouvre les failles jusqu'à ce rang et y entre |
 | `/titan` | éveille un titan devant toi |

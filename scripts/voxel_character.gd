@@ -217,6 +217,9 @@ func _apply_slot(slot: int) -> void:
 	if _instance == null or equipment_library == null or not _shown.has(slot):
 		return
 	var parts: Array = VoxelCharacter.library_parts(equipment_library).get(_shown[slot], [])
+	# armes de l'arsenal : modèle fabriqué par le code, tenu dans la main gauche
+	if parts.is_empty() and Arsenal.is_arsenal(_shown[slot]):
+		parts = [["HandL", Arsenal.mesh_for(_shown[slot])]]
 	var nodes := []
 	for part in parts:
 		var bone := _bones.get(part[0]) as Node3D

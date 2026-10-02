@@ -204,6 +204,9 @@ func _strike() -> String:
 		reel_in()
 		if it:
 			player.inventory.add(it, 1)
+			Crafts.gain(player, "pecheur", 10.0 + 8.0 * int(it.rarity))
+			if randf() < Crafts.double_chance(player, "pecheur"):
+				player.inventory.add(it, 1)
 			Sound.ui("pickup")
 			VoxelBurst.spawn(self, _at + Vector3(0, 0.3, 0), Color(0.6, 0.85, 1.0), 16, 3.0, 0.07, 0.5, "up", 8.0, false)
 			caught.emit(id)

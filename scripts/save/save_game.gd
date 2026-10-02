@@ -338,6 +338,7 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 		"inventory": inv, "equipment": _equip_ids(p.equipment),
 		"souls": p.souls, "absorbed": p.skill.absorbed if p.skill else {},
 		"talents": p.talents.keys(), "ability_slots": p.ability_slots, "hunger": p.hunger, "hero_evo": p.hero_evo,
+		"crafts": p.crafts,
 	}
 
 
@@ -514,6 +515,12 @@ func apply_pending(world: WorldGenerator) -> void:
 		for i in mini(10, slots.size()):
 			p.ability_slots[i] = str(slots[i])
 		p.hero_evo = int(pd.get("hero_evo", 0))
+		# métiers (une ancienne sauvegarde repart du métier choisi à la création)
+		p.crafts = {}
+		var cd: Dictionary = pd.get("crafts", {})
+		for c in cd:
+			p.crafts[str(c)] = int(cd[c])
+		Crafts.init_for(p)
 		p._apply_evo_look()
 		p._give_class_talent()
 		p._apply_talents()
