@@ -65,6 +65,9 @@ func _process(delta: float) -> void:
 			# pas de raid pendant que le héros est dans un donjon : on attend qu'il en sorte
 			if p and p.global_position.y < WorldGenerator.UNDERGROUND:
 				_timer = 20.0
+			# pas de village à piller tant que le héros est seul (départ à mains nues)
+			elif get_tree().get_nodes_in_group("villagers").filter(func(v): return not v.get("stranger") and not v.get("companion")).is_empty():
+				_timer = 60.0
 			else:
 				announce()
 		return

@@ -28,6 +28,7 @@ var _bag: GridContainer
 var _info_name: Label
 var _info_icon: TextureRect
 var _info_text: Label
+var _info_bar: HFlowContainer
 var _recipes: VBoxContainer
 var _bench: Label
 var _cat := "Outils"
@@ -197,6 +198,11 @@ func _build() -> void:
 	_info_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_info_text.custom_minimum_size = Vector2(210, 0)
 	ib.add_child(_info_text)
+	# objets posables : les ranger dans une case de la barre de construction (Ctrl+chiffre en jeu)
+	_info_bar = HFlowContainer.new()
+	_info_bar.add_theme_constant_override("h_separation", 2)
+	_info_bar.custom_minimum_size = Vector2(210, 0)
+	ib.add_child(_info_bar)
 
 	# 3. artisanat
 	var c3 := _column("Artisanat", 330, cols)
@@ -634,6 +640,34 @@ func _show_info(item: ItemData) -> void:
 	_info_name.add_theme_color_override("font_color", item.rarity_color())
 	var st := item.stats_text()
 	_info_text.text = (st + "\n" if st != "" else "") + item.description + ("\nDeux mains." if item.two_handed else "") + _compare_text(item)
+	_show_bar_choice(item)
+
+
+## Rangée « Barre : 1 … 0 » sous la fiche d'un objet posable (bloc, meuble, graine, outil à poser).
+func _show_bar_choice(item: ItemData) -> void:
+	if _info_bar == null:
+		return
+	for c in _info_bar.get_children():
+		c.queue_free()
+	var hb: HandBuild = player.hand if player else null
+	if hb == null or item == null or not hb.choices().has(item):
+		return
+	var cur := hb.slots.find(item.id)
+	_info_bar.add_child(_label("Barre de construction :", 10, C_DIM))
+	for i in HandBuild.SLOTS:
+		var b := Button.new()
+		b.text = str((i + 1) % 10)
+		b.custom_minimum_size = Vector2(20, 18)
+		b.add_theme_font_size_override("font_size", 10)
+		b.focus_mode = Control.FOCUS_NONE
+		b.tooltip_text = "Ranger %s dans la case %d (Ctrl+%d en jeu)" % [item.display_name, (i + 1) % 10, (i + 1) % 10]
+		if i == cur:
+			b.modulate = Color("ffe08a")
+		b.pressed.connect(func():
+			hb.assign_slot(i, item.id)
+			player.notify.emit("%s rangé dans la case %d de la barre (Ctrl+%d)." % [item.display_name, (i + 1) % 10, (i + 1) % 10])
+			_show_bar_choice(item))
+		_info_bar.add_child(b)
 
 
 func _use_item(item: ItemData) -> void:
