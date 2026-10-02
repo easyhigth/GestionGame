@@ -484,6 +484,17 @@ L'histoire passe maintenant par les capitales, les châteaux, les grottes et les
 - Trésors : fragments de Brume, gemmes, larmes d'esprit, orichalque et, sur les Seigneurs, parfois une pièce d'équipement légendaire (Lame de l'Éveil, Lance draconique...).
 - Le journal (O) indique le palier le plus haut et le nombre de Seigneurs vaincus. Les paliers sont sauvegardés.
 
+### Fin de partie : paliers du monde, failles et titans
+Pour les héros de haut niveau (jusqu'au niveau 1000), le **Portail des Failles** (anneaux violets, près du village ; E) ouvre un panneau :
+- **Paliers du monde** (Normal, Difficile, Expert, Maître, puis Tourment I à VII), débloqués aux niveaux 60, 120, 200, 300... 950. Chaque palier donne **+30 niveaux** à tous les monstres du monde, **+50 % d'expérience**, et les monstres laissent tomber du **butin de niveau** (3 % + 0,6 % par palier).
+- **Failles** : une arène de cristal hors du monde. Trois vagues de monstres, puis le **Gardien de la Faille**. Les rangs sont **sans limite** (monstres de niveau 10 + 5 × rang) ; vaincre le gardien ouvre le rang suivant et fait tomber 2 objets ou plus (le premier au moins Rare). E au centre de l'arène pour sortir ; mourir dans une faille ramène au village.
+- **Titans** : tous les deux ou trois jours (à partir du niveau 30), un titan géant s'éveille quelque part entre 220 et 480 m du village (Ursok, Ignarok, Gromm, Sylvara, Kar'Zeth, Azgaroth). Il est marqué sur la carte (☠), se réveille quand on approche, frappe très fort et a une énorme réserve de vie. Son trésor : 3 objets, dont un **légendaire ou mystique**.
+
+### Butin de niveau (raretés jusqu'à Mystique)
+- Les failles, les titans et les monstres des paliers élevés font tomber des pièces d'équipement **générées** : une arme, une armure ou un bijou ordinaire, avec un **niveau d'objet** (celui du monstre, jusqu'à 1000) et une **rareté** : commune, peu commune (« solide »), rare (« de maître »), épique (« de la Faille »), légendaire (« des Titans ») et **mystique** (✦ « de l'Éveil », en rose).
+- Les statistiques grandissent avec le niveau d'objet et la rareté (×3 pour un mystique), et chaque rareté ajoute un bonus tiré au sort (0 à 5) : attaque, magie, vie en %, critique, dégâts critiques, vol de vie, recharge, vitesse, régénération, armure, vitesse d'attaque. Les bonus sont affichés dans l'infobulle.
+- Ces objets sont sauvegardés par leur identifiant (« base#niveau.rareté.graine ») et ne s'améliorent pas à la forge.
+
 ## Recrutement, compagnons et raids
 - **Voyageurs** : des campements de voyageurs sont dispersés dans le monde (réglage **Traveler Density** des régions). Leurs races dépendent de la région (**Recruit Races** : nains et ogres en montagne, fées et esprits au bois enchanté, démons et onis dans les cendres...). Chacun a un niveau, un métier où il excelle et un second talent.
 - **E** près d'un voyageur : il se présente et dit ce qu'il demande pour rejoindre ton village (des matériaux selon son métier, et de l'or pour les plus expérimentés). Il faut aussi de la place : la population maximale vaut 8 + les lits de tes maisons et dortoirs. Une fois recruté, il part pour ton village où tu peux lui donner un poste.
@@ -589,6 +600,10 @@ Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas 
 | `/kit` | un équipement complet en mithril, des outils, des potions, à manger et des blocs |
 | `/invoquer <monstre> [nombre]` | fait apparaître des monstres devant toi (`/invoquer loup 3`, `/invoquer chef des bandits`) |
 | `/graine` | la graine du monde |
+| `/palier <0-10>` | change le palier du monde (monte le héros au niveau requis si besoin) |
+| `/faille <rang>` | ouvre les failles jusqu'à ce rang et y entre |
+| `/titan` | éveille un titan devant toi |
+| `/butin <niveau> [rareté 0-5]` | crée un objet de butin (5 : mystique) |
 
 La carte montre maintenant les **capitales** (avec leur enceinte et leur population), les **châteaux** (gris : abandonnés), les **épaves** et, en zoomant, les **entrées de grottes**. Sur le monde immense, les noms des zones apparaissent en zoomant.
 

@@ -33,6 +33,12 @@ func get_item(id: String) -> ItemData:
 		if base:
 			it = Forge.make_variant(base, spec[1], spec[2], spec[3])
 			items[id] = it
+	# butin de niveau (failles, titans) : « base#niveau.rareté.graine »
+	if it == null and id.contains("#"):
+		var lbase: ItemData = items.get(id.get_slice("#", 0))
+		if lbase:
+			it = Loot.make(id, lbase)
+			items[id] = it
 	return it
 
 

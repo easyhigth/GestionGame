@@ -69,6 +69,7 @@ var events_state := {}
 var achievements_state := {}
 var heraldry_state := {}
 var politics_state := {}
+var endgame_state := {}
 var _autosave_timer := 300.0
 
 
@@ -280,6 +281,9 @@ func save_game(slot: String) -> bool:
 	var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
 	if pol:
 		d.politics = pol.export_state()
+	var eg := get_tree().get_first_node_in_group("endgame") as Endgame
+	if eg:
+		d.endgame = eg.export_state()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var z := world.zone_at(p.global_position) if p.global_position.y > WorldGenerator.UNDERGROUND else {}
 	d.info = {"hero": p.profile.hero_name if p.profile else "Héros",
@@ -432,6 +436,7 @@ func new_game() -> void:
 	achievements_state = {}
 	heraldry_state = {}
 	politics_state = {}
+	endgame_state = {}
 	play_time = 0.0
 	get_tree().paused = false
 	get_tree().change_scene_to_file(CREATOR_SCENE)
@@ -609,6 +614,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if pol and not politics_state.is_empty():
 		pol.import_state(politics_state)
 		politics_state = {}
+	endgame_state = d.get("endgame", {})
+	var eg := get_tree().get_first_node_in_group("endgame") as Endgame
+	if eg and not endgame_state.is_empty():
+		eg.import_state(endgame_state)
+		endgame_state = {}
 	heraldry_state = d.get("heraldry", {})
 	var her := get_tree().get_first_node_in_group("heraldry") as Heraldry
 	if her and not heraldry_state.is_empty():

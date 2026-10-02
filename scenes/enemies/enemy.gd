@@ -52,6 +52,9 @@ func _ready() -> void:
 	add_to_group("familiars" if tamed else "enemy_units")
 	home = global_position
 	_wander_to = home
+	var eg := get_tree().get_first_node_in_group("endgame")
+	if eg and not tamed:
+		eg.scale_enemy(self)
 	if data:
 		_apply_data()
 
@@ -378,8 +381,12 @@ func _on_died() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player and player.has_method("on_enemy_killed"):
 		player.on_enemy_killed(self)
+	var eg := get_tree().get_first_node_in_group("endgame")
+	if eg:
+		eg.on_enemy_died(self)
 	if player and player.has_method("gain_xp") and data:
-		player.gain_xp(roundi((data.xp_reward if data.xp_reward > 0 else data.max_health / 4.0 + data.attack) * power))
+		var xm: float = eg.xp_mult() if eg and not has_meta("rift") and not has_meta("titan") else 1.0
+		player.gain_xp(roundi((data.xp_reward if data.xp_reward > 0 else data.max_health / 4.0 + data.attack) * power * xm))
 	died_at.emit(global_position)
 
 

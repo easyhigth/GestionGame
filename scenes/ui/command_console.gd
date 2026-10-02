@@ -22,6 +22,10 @@ const COMMANDS := {
 	"vitesse": ["/vitesse <x>", "vitesse de marche multipliée (1 = normale, jusqu'à 10)"],
 	"niveau": ["/niveau <n>", "monte jusqu'au niveau n (jusqu'à 1000)"],
 	"competences": ["/competences", "apprend tout l'arbre de compétences jusqu'à ton niveau, sans dépenser de points"],
+	"palier": ["/palier <0-10>", "change le palier du monde (monstres plus forts, plus d'expérience et de butin)"],
+	"faille": ["/faille <rang>", "ouvre les failles jusqu'à ce rang et y entre"],
+	"titan": ["/titan", "éveille un titan près de toi"],
+	"butin": ["/butin <niveau> [rareté 0-5]", "crée un objet de butin de ce niveau (5 : mystique)"],
 	"heure": ["/heure <0-24>", "change l'heure"],
 	"meteo": ["/meteo <clair|nuageux|pluie|orage|brouillard>", "change le temps"],
 	"obelisques": ["/obelisques", "active tous les obélisques (voyage rapide partout)"],
@@ -224,6 +228,8 @@ func run(text: String) -> bool:
 	if world == null:
 		world = get_tree().get_first_node_in_group("world") as WorldGenerator
 	match cmd:
+		"palier", "faille", "titan", "butin":
+			return _cmd_endgame(cmd, args)
 		"aide":
 			for c in COMMANDS:
 				_say("[color=#ffd24a]%s[/color]  %s" % [COMMANDS[c][0].replace("[", "[lb]"), COMMANDS[c][1]])
@@ -703,3 +709,49 @@ func _cmd_give(args: Array) -> bool:
 	player.inventory.add(it, n)
 	_ok("+%d %s (%s)." % [n, it.display_name, it.id])
 	return true
+
+
+func _cmd_endgame(cmd: String, args: Array) -> bool:
+	var eg := get_tree().get_first_node_in_group("endgame") as Endgame
+	if eg == null:
+		_err("Fin de partie indisponible.")
+		return false
+	var n := int(args[0]) if not args.is_empty() and str(args[0]).is_valid_int() else -1
+	match cmd:
+		"palier":
+			if n < 0 or n >= Endgame.TIER_LEVEL.size():
+				_err("Usage : /palier <0-10>  (actuel : %d, %s)" % [eg.tier, Endgame.TIER_NAMES[eg.tier]])
+				return false
+			if n > eg.max_tier() and player.level < Endgame.TIER_LEVEL[n]:
+				player.set_level_to(Endgame.TIER_LEVEL[n])
+			eg.set_tier(n)
+			_ok("Palier du monde : %s." % Endgame.TIER_NAMES[n])
+			return true
+		"faille":
+			n = maxi(1, n)
+			eg.best_rift = maxi(eg.best_rift, n - 1)
+			eg.player = player
+			if eg.enter_rift(n):
+				_ok("Faille de rang %d (monstres niveau %d)." % [n, eg.rift_level(n)])
+				return true
+			_err("Impossible d'entrer ici (déjà dans une faille, un donjon ou sous terre).")
+			return false
+		"titan":
+			eg.player = player
+			var t := eg.summon_titan(player.global_position + player.facing.normalized() * 40.0)
+			if t.is_empty():
+				_err("Impossible d'éveiller un titan ici.")
+				return false
+			_ok("%s (niveau %d) s'éveille devant toi." % [t.name, int(t.level)])
+			return true
+		"butin":
+			var lv := maxi(1, n if n > 0 else player.level)
+			var r := clampi(int(args[1]), 0, 5) if args.size() > 1 and str(args[1]).is_valid_int() else 3
+			var it := Loot.roll(lv, 0.0, 0, r)
+			if it == null:
+				_err("Aucun objet de base.")
+				return false
+			player.inventory.add(it, 1)
+			_ok("Ajouté : %s." % it.display_name)
+			return true
+	return false

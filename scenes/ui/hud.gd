@@ -55,6 +55,8 @@ var kingdom_panel: KingdomPanel
 var diplomacy_panel: DiplomacyPanel
 var achievements_panel: AchievementsPanel
 var heraldry_panel: HeraldryPanel
+var endgame_panel: EndgamePanel
+var endgame: Endgame
 var keys_help: KeysHelp
 var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
@@ -930,6 +932,11 @@ func _build_day_and_guide() -> void:
 	politics.world = world
 	politics.player = player
 	get_parent().add_child.call_deferred(politics)
+	endgame = Endgame.new()
+	endgame.name = "Endgame"
+	endgame.world = world
+	endgame.player = player
+	get_parent().add_child.call_deferred(endgame)
 	city_siege = CitySiege.new()
 	city_siege.name = "CitySiege"
 	city_siege.world = world
@@ -1016,6 +1023,9 @@ func _build_day_and_guide() -> void:
 	heraldry_panel = HeraldryPanel.new()
 	heraldry_panel.player = player
 	add_child(heraldry_panel)
+	endgame_panel = EndgamePanel.new()
+	endgame_panel.player = player
+	add_child(endgame_panel)
 	diplomacy_panel = DiplomacyPanel.new()
 	diplomacy_panel.player = player
 	add_child(diplomacy_panel)
