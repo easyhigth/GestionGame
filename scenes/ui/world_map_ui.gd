@@ -340,6 +340,15 @@ func _draw_places() -> void:
 			var c: Vector2i = st.cell + Vector2i(1, 6)
 			if world.is_revealed(c):
 				_wreck_icon(cell_to_screen(Vector2(c)))
+		elif st.kind == "sunken":
+			var c: Vector2i = st.cell + Vector2i(7, 7)
+			if world.is_revealed(c):
+				var q := cell_to_screen(Vector2(c))
+				for k in 3:
+					draw_rect(Rect2(q + Vector2(-6 + k * 5, -5), Vector2(2.5, 9)), Color("bfe8ff"))
+				draw_rect(Rect2(q + Vector2(-7, -7), Vector2(14, 2)), Color("bfe8ff"))
+				if zoom >= 1.5:
+					_text_center(str(st.get("name", "Cité engloutie")), q + Vector2(0, -13), 10, Color("8ad8ff"))
 	for st in world.structure_sites:
 		if st.kind == "hamlet" and world.is_revealed(st.cell):
 			var q := cell_to_screen(Vector2(st.cell))
@@ -352,6 +361,15 @@ func _draw_places() -> void:
 			if zoom >= 2.0:
 				_text_center(st.name + (" (ravagé)" if st.get("ravaged", false) else ""), q + Vector2(0, -12), 10, Color("f2dca0"))
 	_draw_politics()
+	var mcv := get_tree().get_first_node_in_group("mountain_caves")
+	if mcv and zoom >= 1.5:
+		for e in mcv.city_entrances():
+			if world.is_revealed(e.cell):
+				var q := cell_to_screen(Vector2(e.cell))
+				draw_rect(Rect2(q + Vector2(-4, -4), Vector2(8, 8)), Color("2a1e14"))
+				draw_rect(Rect2(q + Vector2(-4, -4), Vector2(8, 8)), Color("c8a070"), false, 1.5)
+				if zoom >= 2.5:
+					_text_center(str(e.name), q + Vector2(0, 14), 9, Color("c8a070"))
 	for city in world.cities:
 		var c: Vector2i = city.center
 		if not world.is_revealed(c):

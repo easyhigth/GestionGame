@@ -506,6 +506,24 @@ func _cmd_tp(args: Array) -> bool:
 			if s:
 				dest = _cell_pos(s.cell + Vector2i(10, 24))
 				label = "le château %s (%s)" % ["abandonné" if s.abandoned else "habité", world.zones[int(s.zone)].name]
+		"cite", "cite engloutie", "englouti", "engloutie":
+			var s = _nearest(_sites("sunken"), func(s): return s.cell + Vector2i(7, 7))
+			if s:
+				dest = _cell_pos(s.cell + Vector2i(7, -4))
+				label = "la cité engloutie " + str(s.get("name", ""))
+		"catacombes", "egouts", "crypte":
+			var mc := get_tree().get_first_node_in_group("mountain_caves")
+			var best := {}
+			var bd := INF
+			if mc:
+				for e in mc.city_entrances():
+					var d: float = (e.pos as Vector3).distance_to(pp)
+					if d < bd:
+						bd = d
+						best = e
+			if not best.is_empty():
+				dest = best.pos + Vector3(0, 0, 2.5)
+				label = str(best.name)
 		"epave", "bateau":
 			var s = _nearest(_sites("wreck"), func(s): return s.cell)
 			if s:

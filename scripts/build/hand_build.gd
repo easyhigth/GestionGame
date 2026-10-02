@@ -46,7 +46,7 @@ func choices() -> Array[ItemData]:
 		return out
 	for e in player.inventory.entries:
 		var it := e.item as ItemData
-		if it and (it.is_placeable() or it.is_seed() or it.id in ["houe", "canne_peche", "barque"] or is_lure(it)) and not out.has(it):
+		if it and (it.is_placeable() or it.is_seed() or it.id in ["houe", "canne_peche", "barque", "voilier", "sifflet_griffon"] or is_lure(it)) and not out.has(it):
 			out.append(it)
 	return out
 
@@ -200,15 +200,22 @@ func place() -> bool:
 	if it == null:
 		cycle(1)
 		return false
-	if it.id == "barque":
+	if it.id == "barque" or it.id == "voilier":
 		var mo := player.get_tree().get_first_node_in_group("mounts") as Mounts
 		if mo:
-			var err := mo.place_boat(player)
+			var err := mo.place_boat(player, it.id)
 			if err != "":
 				player.notify.emit(err)
 			else:
 				player.inventory.remove(it, 1)
-				player.notify.emit("La barque est à l'eau : E pour monter, E près d'une berge pour débarquer.")
+				player.notify.emit("%s est à l'eau : E pour monter, E près d'une berge pour débarquer." % ("La barque" if it.id == "barque" else "Le voilier"))
+		return false
+	if it.id == "sifflet_griffon":
+		var mo := player.get_tree().get_first_node_in_group("mounts") as Mounts
+		if mo:
+			var err := mo.call_griffon(player)
+			if err != "":
+				player.notify.emit(err)
 		return false
 	if it.id == "canne_peche":
 		var fi := player.get_tree().get_first_node_in_group("fishing") as Fishing

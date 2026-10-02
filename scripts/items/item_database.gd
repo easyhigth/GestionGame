@@ -59,6 +59,10 @@ func _load_dir(path: String) -> Array:
 
 
 ## Modèle 3D d'un objet, centré sur l'origine et mis à l'échelle (taille max = `max_size` m).
+## Objets sans modèle à eux : ils empruntent celui d'un autre.
+const ICON_ALIAS := {"voilier": "barque", "sifflet_griffon": "croc_meute"}
+
+
 func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 	var holder := Node3D.new()
 	var inner := Node3D.new()
@@ -100,8 +104,9 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 			inner.add_child(mi)
 	else:
 		var inst := DISPLAY_MATERIALS.instantiate()
+		var mid: String = ICON_ALIAS.get(item.model_id(), item.model_id())
 		for mi in inst.find_children("*", "MeshInstance3D", true, false):
-			if String(mi.name) == item.model_id():
+			if String(mi.name) == mid:
 				var copy := MeshInstance3D.new()
 				copy.mesh = (mi as MeshInstance3D).mesh
 				inner.add_child(copy)
