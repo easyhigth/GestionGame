@@ -497,6 +497,19 @@ L'histoire passe maintenant par les capitales, les châteaux, les grottes et les
 - **Rencontres sur les routes** : on croise des **caravanes** (un marchand et ses gardes : E pour commercer), des **patrouilles** de la nation voisine, ou on tombe dans une **embuscade de bandits** (des bandits et leur chef, plus fréquente la nuit).
 - La **mini-carte** montre aussi les capitales (leur nom et leur enceinte), les châteaux, les hameaux et les épaves.
 
+## Un monde qui vit sans toi
+Les cinq nations vivent leur vie (voir `scripts/world/world_politics.gd`) :
+- **Guerres entre nations** : de temps en temps, une nation en attaque une autre. Son **armée marche sur les routes pavées** d'une capitale à l'autre, bannière en tête ; quand le héros passe à moins de 140 m, ses soldats apparaissent sur la route. En chemin, elle prend les **hameaux** de l'ennemi, qui **changent de camp** (nouvelle bannière sur la carte et dans le hameau, nouveaux habitants). Devant la capitale ennemie, elle est repoussée ou pille les faubourgs (la ville paie tribut). Si tu es toi-même en guerre contre cette nation, ses soldats t'attaquent, et mettre l'armée en déroute rapporte or, expérience et l'estime de ses ennemis.
+- **Économie** : chaque capitale a ses réserves d'armes, de vivres, de bijoux et de matériaux. La guerre vide les arsenaux et les greniers, les caravanes de capitale en capitale les remplissent, et les bandits en pillent parfois. Les **prix des marchands suivent** : jusqu'à +50 % en pénurie, −35 % en abondance ; le marchand l'annonce (« pénurie d'armes (+36 %) »).
+- **Événements de saison**, dans une capitale en paix avec toi :
+  - **Printemps — Foire** : les marchands de la ville baissent leurs prix (−20 %) et rachètent plus cher.
+  - **Été — Grand tournoi** : une lice devant la grande porte, trois champions de la nation à vaincre (250 or, une gemme, +10 de relations).
+  - **Automne — Foire des moissons** : les vivres sont bon marché partout.
+  - **Hiver — Invasion des morts** : les morts-vivants sortent d'un château abandonné et marchent sur le hameau le plus proche. Arrête-les avant qu'ils ne le ravagent (sinon, ses habitants fuient trois jours).
+- Les **nouvelles du monde** s'affichent à l'écran, et les dernières en bas du panneau de la diplomatie (Y). La **carte** montre les armées en marche (et leur chemin), la bannière des hameaux, les hameaux ravagés et l'événement en cours.
+- Terminal : `/monde` (guerres, armées, prix, nouvelles), `/guerre karg givre`, `/evenement tournoi`.
+- Tout est sauvegardé (guerres, armées, réserves, hameaux, événement, nouvelles). Test : `tests/test_world_life.gd`.
+
 ## Terminal de commandes (Entrée ou /)
 Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas à gauche. Le jeu continue pendant qu'on écrit ; la ligne se ferme après chaque commande et les réponses restent affichées quelques secondes. **Échap** referme, **↑ / ↓** rappellent les commandes précédentes, **Tab** complète le nom d'une commande. Les accents sont facultatifs.
 

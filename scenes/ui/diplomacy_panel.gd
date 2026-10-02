@@ -68,11 +68,37 @@ func _refresh() -> void:
 	_box.add_child(sub)
 	for id in Diplomacy.NATIONS:
 		_box.add_child(_row(dip, id))
+	_box.add_child(_world_news())
 	var close_b := MenuKit.button("Fermer (Y)", 200, 13)
 	close_b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close_b.pressed.connect(close)
 	_box.add_child(close_b)
 	close_b.grab_focus.call_deferred()
+
+
+## Le monde sans toi : guerres entre nations, événement de saison et dernières nouvelles (voir WorldPolitics).
+func _world_news() -> Control:
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", MenuKit.card(false, 6))
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 2)
+	pc.add_child(v)
+	var pol := get_tree().get_first_node_in_group("world_politics") as WorldPolitics
+	if pol == null:
+		v.add_child(MenuKit.label("Le monde est calme.", 11, MenuKit.C_DIM))
+		return pc
+	var wars: Array = pol.wars_text()
+	var head := "Le monde — " + ("guerres : " + " · ".join(wars) if not wars.is_empty() else "aucune guerre entre les nations")
+	if not pol.event.is_empty():
+		head += "  ·  " + WorldPolitics.EVENT_NAMES.get(pol.event.kind, "")
+	v.add_child(MenuKit.heading(head, 12, MenuKit.C_GOLD))
+	var last: Array = pol.news.slice(-2)
+	last.reverse()
+	for n in last:
+		var l := MenuKit.label("Jour %d — %s" % [int(n[0]), n[1]], 10, MenuKit.C_DIM)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		v.add_child(l)
+	return pc
 
 
 func _row(dip: Diplomacy, id: String) -> Control:
