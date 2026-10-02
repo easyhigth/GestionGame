@@ -23,6 +23,10 @@ func _ready() -> void:
 			recipes.append(res)
 	# l'arsenal (884 armes) et les nouvelles ressources, fabriqués par le code
 	Arsenal.register(self)
+	# le catalogue de construction (blocs, dalles, teintures, pierres et bois des régions)
+	BlockCatalog.register(self)
+	# les panoplies d'armures (par matériau, modèles teints)
+	ArmorSets.register(self)
 	recipes.sort_custom(func(a: RecipeData, b: RecipeData): return a.result.display_name < b.result.display_name)
 
 
@@ -108,7 +112,7 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 		mi.transform = Transform3D(Basis(Vector3(0, 0, 1), -0.78) * Basis(Vector3.UP, 0.6), Vector3.ZERO)
 		inner.add_child(mi)
 	elif item.is_equipment():
-		parts = VoxelCharacter.library_parts(DISPLAY_EQUIPMENT).get(item.model_id(), [])
+		parts = VoxelCharacter.parts_for(DISPLAY_EQUIPMENT, item.model_id())
 		# on reconstruit les pièces à leur place sur un humain de référence
 		var ref := _reference_bones()
 		for p in parts:
@@ -116,7 +120,7 @@ func build_display(item: ItemData, max_size: float = 0.8) -> Node3D:
 			mi.mesh = p[1]
 			mi.transform = ref.get(p[0], Transform3D.IDENTITY)
 			inner.add_child(mi)
-	elif Arsenal.RESOURCES.has(item.id):
+	elif ResourceModels.has_model(item.id):
 		inner.add_child(ResourceModels.build(item.id))
 	else:
 		var inst := DISPLAY_MATERIALS.instantiate()

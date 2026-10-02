@@ -216,7 +216,7 @@ func _apply_slot(slot: int) -> void:
 	_clear_slot(slot)
 	if _instance == null or equipment_library == null or not _shown.has(slot):
 		return
-	var parts: Array = VoxelCharacter.library_parts(equipment_library).get(_shown[slot], [])
+	var parts: Array = VoxelCharacter.parts_for(equipment_library, _shown[slot])
 	# armes de l'arsenal : modèle fabriqué par le code, tenu dans la main gauche
 	if parts.is_empty() and Arsenal.is_arsenal(_shown[slot]):
 		parts = [["HandL", Arsenal.mesh_for(_shown[slot])]]
@@ -234,6 +234,42 @@ func _apply_slot(slot: int) -> void:
 		if slot == ItemData.Slot.MAIN_HAND and part[0] == "HandL":
 			_weapon_len = maxf(_weapon_len, (part[1] as Mesh).get_aabb().end.y)
 	_equip_nodes[slot] = nodes
+
+
+## Les pièces d'un modèle ; « modèle*rrggbb » : le modèle teint de cette couleur (panoplies d'ArmorSets).
+static func parts_for(scene: PackedScene, model: String) -> Array:
+	if not model.contains("*"):
+		return library_parts(scene).get(model, [])
+	var key := [scene, model]
+	if _tint_cache.has(key):
+		return _tint_cache[key]
+	var tint := Color(model.get_slice("*", 1))
+	var out := []
+	for part in library_parts(scene).get(model.get_slice("*", 0), []):
+		out.append([part[0], tinted_mesh(part[1], tint)])
+	_tint_cache[key] = out
+	return out
+
+
+static var _tint_cache := {}
+
+
+## Copie d'un maillage dont les couleurs ternes (métal, cuir) prennent la teinte ; les couleurs vives
+## (dorures, tissus, gemmes) restent.
+static func tinted_mesh(m: Mesh, tint: Color) -> Mesh:
+	var copy := m.duplicate() as Mesh
+	for i in copy.get_surface_count():
+		var mat := copy.surface_get_material(i) as BaseMaterial3D
+		if mat == null:
+			continue
+		var c := mat.albedo_color
+		if c.s > 0.55 or mat.emission_enabled:
+			continue
+		var nm := mat.duplicate() as BaseMaterial3D
+		var l := clampf(c.get_luminance() * 1.35, 0.25, 1.15)
+		nm.albedo_color = Color(minf(1.0, tint.r * l), minf(1.0, tint.g * l), minf(1.0, tint.b * l), c.a)
+		copy.surface_set_material(i, nm)
+	return copy
 
 
 ## Découpe une bibliothèque d'équipement en pièces : { id_objet: [[nom_du_nœud, maillage], ...] }.

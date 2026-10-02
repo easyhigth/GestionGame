@@ -412,6 +412,18 @@ Règles :
 - Ces constructions ne comptent pas comme pièces du royaume. Ce qui a été cassé le reste après une sauvegarde.
 - Les blocs ne sont dessinés qu'autour du héros (environ 150 m), quelques morceaux par image : les grandes constructions apparaissent sans à-coup.
 
+## Catalogue de construction façon Minecraft (283 blocs) et panoplies
+- **283 blocs de construction** (dont 46 dalles), textures dessinées par le jeu, dans l'onglet **Construction** de l'artisanat, rangés par famille :
+  - **Pierres** : 12 pierres (pierre, granite, diorite, andésite, basalte, calcaire, grès, grès rouge, schiste, obsidienne, quartz, prismarine) en pavés, polie, briques, petites briques, sculptée et briques fissurées, plus les pavés moussus (table du tailleur de pierre) ;
+  - **Bois** : 9 essences (chêne, bouleau, sapin, acajou, ébène, cerisier, acacia, saule, palmier) en planches, rondins, bois écorcé et parquet. Chaque région a ses arbres : bouleau des prairies et toundras, sapin des forêts et montagnes, acajou et palmier de la jungle, cerisier du bois enchanté, acacia du désert, saule et ébène des marais...
+  - **16 couleurs** de laine, de béton, de terre cuite, de terre cuite émaillée et de verre teinté, grâce à **16 teintures** (os : blanc, charbon : noir, baies : rouge, blé : jaune, fibres : vert, lazurite : bleu, et les mélanges : orange, rose, cyan, violet, magenta...) ;
+  - **Métaux et gemmes** : blocs de fer, d'or, de cuivre, de bronze, d'acier, d'argent, de mithril, d'orichalque, de charbon, d'os, de diamant, d'émeraude, de rubis, de saphir, d'améthyste, de topaze, de lazurite ;
+  - **Nature** : gravier, argile, neige, glace, mousse, motte d'herbe, terre battue, foin, feuillage, citrouille, melon, bibliothèque, pierre lumineuse, lanterne marine, champignons ;
+  - **Dalles** (demi-blocs) de toutes les pierres et de tous les bois.
+- Ressources : les rochers donnent la pierre de leur région (granite, diorite, andésite, basalte, calcaire, quartz, prismarine) et parfois de la lazurite ; en creusant, du gravier et de l'argile (surtout dans le sable).
+- Le mode construction (B) propose les blocs de base et tous ceux que le héros possède. Fabriquer des blocs fait monter le métier de **Bâtisseur**.
+- **92 pièces d'armure en panoplies** (onglet **Armures**) : casque, heaume à cornes, plastron, gantelets, jambières et bouclier en cuivre, bronze, os, acier, argent, or, obsidienne, mithril, orichalque et écailles de dragon (Armurier, niveau du matériau), et l'armure de cuir teinte en 8 couleurs (Tailleur). Les modèles prennent la couleur du matériau.
+
 ## Construction du royaume (façon Going Medieval)
 Touche **B** (croix bas à la manette) : mode construction. Le héros reste sur place et une **caméra libre** survole le village : ZQSD/flèches pour la déplacer (Maj : plus vite), molette pour zoomer, clic molette + glisser ou A/E (Q/E en QWERTY) pour tourner. B ou Échap pour revenir au héros (on y revient aussi tout seul si le héros est attaqué).
 - On trace des **plans** : ils apparaissent en fantômes bleus, et les **habitants libres** (sans poste de travail ni expédition) viennent les construire eux-mêmes, du bas vers le haut, avec les matériaux de ton sac. Un plan sans matériaux devient rouge et attend. Clic droit : effacer le plan visé. Case « Construction instantanée » pour tout réaliser tout de suite.

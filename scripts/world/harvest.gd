@@ -340,6 +340,18 @@ static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_pare
 		Crafts.gain(p, craft, float(CRAFT_XP.get(kind, 1)), 1 + (30 if kind == WorldGenerator.D_GOLD else (12 if kind == WorldGenerator.D_IRON else 0)))
 		if not drops.is_empty() and randf() < Crafts.double_chance(p, craft):
 			_drop(world, drops[0][0], drops[0][1], world.cell_center(cell))
+	# chaque région a ses essences de bois et ses pierres (voir BlockCatalog)
+	var zone := world.zone_at(world.cell_center(cell))
+	var rid: String = zone.type.id if not zone.is_empty() and zone.get("type") else "prairie"
+	if kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE]:
+		var wid := BlockCatalog.wood_for_region(rid, cell)
+		if wid != "wood":
+			_drop(world, Items.get_item(wid), randi_range(2, 3), world.cell_center(cell))
+	elif kind == WorldGenerator.D_ROCK and tier >= 1:
+		if randf() < 0.6:
+			_drop(world, Items.get_item(BlockCatalog.stone_for_region(rid, cell)), randi_range(1, 2), world.cell_center(cell))
+		if randf() < 0.07:
+			_drop(world, Items.get_item("lazurite"), 1, world.cell_center(cell))
 
 
 static func _kind_name(kind: int) -> String:
@@ -435,6 +447,11 @@ static func dig(p: Player) -> ItemData:
 		_drop(world, it, 1, at)
 	if t == WorldGenerator.STONE and randf() < 0.08:
 		_drop(world, Items.get_item("iron_ore"), 1, at)
+	# gravier et argile en creusant (l'argile surtout près de l'eau, dans le sable)
+	if t != WorldGenerator.STONE and randf() < 0.18:
+		_drop(world, Items.get_item("gravier"), 1, at)
+	if randf() < (0.3 if t == WorldGenerator.SAND else 0.1):
+		_drop(world, Items.get_item("argile"), 1, at)
 	return it
 
 

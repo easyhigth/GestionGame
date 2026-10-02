@@ -263,9 +263,11 @@ func _cycle_material(step: int) -> void:
 
 func _block_items() -> Array:
 	var out := []
+	var cur: Variant = Items.get_item(materials.get(_category().id, "")) if materials.has(_category().id) else null
 	for id in Items.items:
 		var it: ItemData = Items.get_item(id)
-		if it and it.is_block():
+		# les blocs de base, et ceux du catalogue (BlockCatalog) que le héros possède
+		if it and it.is_block() and (it.block_texture.resource_path != "" or it == cur or (player and player.inventory.count(it) > 0)):
 			out.append(it)
 	out.sort_custom(func(a, b): return a.block_tier < b.block_tier or (a.block_tier == b.block_tier and a.id < b.id))
 	return out
