@@ -192,7 +192,7 @@ func _process(_d) -> bool:
 	if later("cata_shot", 1100):
 		shot("05_cataclysme.png")
 		start("cata_end")
-	if later("cata_end", 3000):
+	if later("cata_end", 7000):
 		var h1: float = w.terrain_height(c0 + Vector2i(3, 3))
 		var rim: float = w.terrain_height(c0 + Vector2i(24, 0))
 		check("un cratère géant (centre %.1f -> %.1f m, rebord %.1f m)" % [h0, h1, rim], (h1 < h0 - 5.0 or h1 <= w.water_surface + 0.6) and rim > h1 + 3.0)
