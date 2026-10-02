@@ -59,7 +59,8 @@ func _ready() -> void:
 	if not SaveGame.farm_state.is_empty():
 		import_state(SaveGame.farm_state)
 		SaveGame.farm_state = {}
-	else:
+	elif not GameState.bare_start:
+		# départ à mains nues : pas de champ tout prêt, on laboure soi-même
 		_starter_field.call_deferred()
 
 

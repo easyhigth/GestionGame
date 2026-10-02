@@ -201,7 +201,7 @@ func _process(_d) -> bool:
 		var wild: Array = ls.animals().filter(func(a): return not a.domestic)
 		check("des bêtes sauvages apparaissent dans les prés (%d)" % wild.size(), not wild.is_empty())
 		print("== guide")
-		gd.step = 23; gd.progress = 0; gd._refresh()
+		gd.step = 29; gd.progress = 0; gd._refresh()
 		gd._check_state()
 		check("guide : mangeoire posée, bête apprivoisée -> produits", gd.current_id() == "produits")
 		for i in 3: ls.produced.emit("oeuf")

@@ -18,8 +18,10 @@ const PAGES := [
 		["Frapper · maintenir pour charger", "Clic gauche / J", "X"],
 		["Garde · parade au bon moment", "Clic droit / K", "LB"],
 		["Viser la cible la plus proche", "F / L / Clic molette", "LT"],
-		["Tourner la caméra à 360°", "Molette maintenue + glisser", "Joystick droit"],
+		["Tourner la caméra (3e et 1re personne : la souris suffit)", "Souris / Molette maintenue + glisser", "Joystick droit"],
 		["Zoom de la caméra", "Molette", "—"],
+		["Changer de vue : 3e personne · vue de dessus · 1re personne", "F5", "—"],
+		["Libérer la souris (pour cliquer à l'écran)", "Alt maintenu", "—"],
 	]],
 	["Compétences et talents", [
 		["Compétence unique", "Q", "RB"],
@@ -57,7 +59,7 @@ const PAGES := [
 		["Tracer un plan (glisser)", "Clic gauche", "A"],
 		["Annuler le tracé ou le plan visé", "Clic droit", "B"],
 		["Tourner le meuble", "R", "Y"],
-		["Catégorie", "1 à 7", "LB / RB"],
+		["Catégorie (8 : plans prêts)", "1 à 8", "LB / RB"],
 		["Outil · matériau", "Clic dans la barre", "Croix gauche/droite · haut"],
 		["Niveau de travail", "Page ↑ / Page ↓", "Gâchettes"],
 		["Hauteur des murs", "[ / ]", "—"],
@@ -71,7 +73,7 @@ const ROW_ACTIONS := {"Sauter": "jump", "Roulade": "dash", "Compétence unique":
 	"Creuser": "dig", "Poser, semer": "place_block", "Parler": "interact", "Dormir": "interact", "Entrer dans un donjon": "interact",
 	"Manger": "eat", "Inventaire": "inventory", "Carte du monde": "world_map", "Mode construction": "build_mode",
 	"Royaume": "kingdom", "Journal": "journal", "Familiers": "familiar_order", "Diplomatie": "diplomacy",
-	"Boire une potion": "potion", "Succès et bestiaire": "achievements", "Métiers": "crafts"}
+	"Boire une potion": "potion", "Succès et bestiaire": "achievements", "Métiers": "crafts", "Changer de vue": "camera_view"}
 
 var _page := 0
 var _tabs: HBoxContainer

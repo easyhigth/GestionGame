@@ -75,20 +75,22 @@ func _process(_d) -> bool:
 		for e in get_nodes_in_group("enemy_units"): e.queue_free()
 		print("== départ")
 		check("cycle présent, 8 h, jour 1", dc != null and absf(dc.hour - 8.0) < 0.2 and dc.day == 1)
-		check("guide à l'étape 1", gd != null and gd.step == 0)
+		check("guide aux bases", gd != null and gd.step == 0)
+		gd.step = 4
+		gd._refresh()
 		print("   horloge : ", dc.clock_text(), " · soleil ", dc._sun.light_energy)
 		print("== guide")
 		for i in 3: break_decor(1)
-		check("3 arbres -> étape 2", gd.step == 1)
+		check("3 arbres -> étape 2", gd.step == 6)
 		for i in 2: break_decor(4)
-		check("2 rochers -> étape 3", gd.step == 2)
+		check("2 rochers -> étape 3", gd.step == 7)
 		p.inventory.add(items.get_item("wood"), 10)
 		p.inventory.add(items.get_item("stone"), 6)
 		check("pioche en bois fabriquée", craft("pioche_bois"))
-		check("-> étape 4", gd.step == 3)
+		check("-> étape 4", gd.step == 9)
 		check("hache en pierre fabriquée", craft("hache_pierre"))
 		check("planches fabriquées", craft("bloc_planches"))
-		check("-> étape 5 (abri)", gd.step == 4)
+		check("-> étape 5 (abri)", gd.step == 10)
 		# abri : pièce fermée + porte + lit
 		s = w.spawn_cell + Vector2i(-1, 9)
 		H = roundi(w.terrain_height(s))
@@ -114,7 +116,7 @@ func _process(_d) -> bool:
 			print("   pièce: fermée ", r.enclosed, " portes ", r.doors, " meubles ", r.counts, " cases ", r.cells.size(), " type ", r.type.display_name if r.type else "-")
 		print("   meubles posés: ", w.build.furniture.values().map(func(x): return x.item.id), " plans restants ", bo.orders.size())
 		gd._check_state()
-		check("abri reconnu -> étape 6 (torche)", gd.step == 5)
+		check("abri reconnu -> étape 6 (torche)", gd.step == 11)
 		bm.toggle(true)
 		bm.furniture_index = bm._furniture_items.find(items.get_item("torche")); plan(5, 0, s + Vector2i(1, 4), s + Vector2i(1, 4), H + 1)
 		bm.toggle(false)
@@ -122,11 +124,11 @@ func _process(_d) -> bool:
 	if has_meta("t2") and int(game_ms) - int(get_meta("t2")) > 1500 and not has_meta("t2_done") and set_done("t2"):
 		gd._check_state()
 		print("   torche posée : ", w.build.furniture.values().map(func(x): return x.item.id))
-		check("torche posée -> étape 7 (repas)", gd.step == 6)
+		check("torche posée -> étape 7 (repas)", gd.step == 12)
 		p.inventory.add(items.get_item("viande_cuite"), 1)
 		p.hunger = 40.0
 		p.eat()
-		check("repas cuit mangé -> étape 8 (nuit)", gd.step == 7)
+		check("repas cuit mangé -> étape 8 (nuit)", gd.step == 13)
 		print("== nuit")
 		var noon_bg: Color = dc._env.background_color
 		dc.hour = 20.05
@@ -177,7 +179,7 @@ func _process(_d) -> bool:
 	if has_meta("t5") and int(game_ms) - int(get_meta("t5")) > 3000 and not has_meta("t5_done") and set_done("t5"):
 		check("réveil le matin (%.2f h), jour 2" % dc.hour, not dc.is_night() and dc.day == 2)
 		check("vie rendue", p.health.current == p.health.max_health)
-		check("chapitre 1 fini -> chapitre 2 (âge du fer)", gd.step == 8)
+		check("chapitre 1 fini -> chapitre 2 (âge du fer)", gd.step == 14)
 		var sg = root.get_node("SaveGame")
 		dc.hour = 15.5
 		sg.save_game("3")
@@ -187,7 +189,7 @@ func _process(_d) -> bool:
 	if has_meta("t6") and int(game_ms) - int(get_meta("t6")) > 1500 and not has_meta("t6_done") and set_done("t6"):
 		dc = get_first_node_in_group("day_cycle"); gd = get_first_node_in_group("guide")
 		check("heure et jour rechargés (%.2f, jour %d)" % [dc.hour, dc.day], absf(dc.hour - 15.5) < 0.3 and dc.day == 2)
-		check("guide rechargé au chapitre 2", gd.step == 8 and gd.visible)
+		check("guide rechargé au chapitre 2", gd.step == 14 and gd.visible)
 		print("RÉSULTAT : ", "tout est bon" if ok else "des vérifications ont échoué")
 		return true
 	OS.delay_msec(5)

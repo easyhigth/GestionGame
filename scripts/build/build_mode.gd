@@ -9,7 +9,7 @@ extends Node3D
 ## sont posés dessous, et tout ce qui est au-dessus peut être caché (C) pour voir l'intérieur.
 ##   Caméra : ZQSD/flèches (Maj : vite) · molette : zoom · clic molette + glisser ou A/E : tourner
 ##   Clic gauche (glisser) : tracer · Clic droit : annuler le tracé ou le plan visé · R : tourner le meuble
-##   1-7 : catégorie · [ ] : hauteur des murs · C : couper au-dessus du niveau · B / Échap : quitter
+##   1-8 : catégorie · [ ] : hauteur des murs · C : couper au-dessus du niveau · B / Échap : quitter
 ## Manette : joystick gauche : déplacer · droit : tourner / zoom · A : tracer · B : annuler · Y : tourner
 ##   LB/RB : catégorie · croix gauche/droite : outil · croix haut : matériau · gâchettes : niveau.
 
@@ -36,13 +36,16 @@ const CATEGORIES := [
 	{"id": "demolish", "name": "Démolir", "glyph": "✕", "tools": [
 		{"id": "demolish", "name": "Démolir", "desc": "Zone : démonter les blocs, les meubles et les décors du village (à partir du niveau choisi) ; tout revient dans le sac."},
 		{"id": "cancel", "name": "Annuler les plans", "desc": "Zone : effacer les plans pas encore construits."}]},
+	{"id": "plans", "name": "Plans prêts", "glyph": "★", "tools": []},
 ]
 ## Meubles sans pièce précise, montrés en premier.
 const COMMON_FURNITURE := ["torche", "lanterne", "table", "chaise", "coffre", "lit", "tonneau", "bougeoir", "statue"]
 const MAX_FROM_HERO := 55.0
 
 var active := false
-var cat := 1
+## catégorie au départ : les plans prêts (le plus simple pour commencer)
+var cat := 7
+var plan_index := 0
 var tool_index := 0
 var furniture_index := 0
 var wall_height := 3
@@ -185,6 +188,12 @@ func _category() -> Dictionary:
 
 func _tool() -> Dictionary:
 	var c := _category()
+	if c.id == "plans":
+		var t := _plan_type()
+		if t == null:
+			return {"id": "plan", "name": "Plans prêts", "desc": ""}
+		return {"id": "plan", "name": t.display_name,
+			"desc": "Clic : toute la pièce d'un coup (murs, sol, porte, toit et meubles). Tes habitants la bâtissent ; les meubles manquants sont à fabriquer. Matériaux : ceux choisis dans Murs, Sols et Toits."}
 	if c.id == "furniture":
 		var it := _furniture_item()
 		return {"id": "furniture", "name": it.display_name if it else "Mobilier",
@@ -243,7 +252,104 @@ func _set_category(i: int) -> void:
 	_refresh_ui()
 
 
+## Types de pièces des plans prêts (maison, dortoir et entrepôt d'abord).
+func _plan_types() -> Array:
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k == null:
+		return []
+	var list: Array = k.room_types.duplicate()
+	var first := ["maison", "dortoir", "entrepot"]
+	list.sort_custom(func(a, b):
+		var ia := first.find(a.id)
+		var ib := first.find(b.id)
+		if ia >= 0 or ib >= 0:
+			return ia >= 0 and (ib < 0 or ia < ib)
+		return a.display_name < b.display_name)
+	return list
+
+
+func _plan_type() -> RoomTypeData:
+	var list := _plan_types()
+	return list[clampi(plan_index, 0, list.size() - 1)] if not list.is_empty() else null
+
+
+## Plan d'une pièce complète centrée sur `c` : [[position, sorte, objet], ...]
+## (sortes : wall, floor, roof, gable, door, furniture).
+func plan_layout(t: RoomTypeData, c: Vector2i) -> Array:
+	var furn := []
+	for id in t.required:
+		for i in int(t.required[id]):
+			furn.append(id)
+	var area := maxi(t.min_cells, furn.size() + 3)
+	var w := maxi(2, ceili(sqrt(float(area))))
+	var d := maxi(2, ceili(float(area) / float(w)))
+	if d > w:
+		var tmp := w
+		w = d
+		d = tmp
+	var o := Vector2i(c.x - (w + 2) / 2, c.y - (d + 2) / 2)
+	var r := Rect2i(o, Vector2i(w + 2, d + 2))
+	var door := Vector2i(o.x + (w + 2) / 2, o.y)
+	var out := []
+	for x in range(r.position.x, r.end.x):
+		for z in range(r.position.y, r.end.y):
+			var cell := Vector2i(x, z)
+			var edge := x == r.position.x or x == r.end.x - 1 or z == r.position.y or z == r.end.y - 1
+			if not edge:
+				out.append([Vector3i(x, layer - 1, z), "floor"])
+				continue
+			for y in range(layer, layer + wall_height):
+				if cell == door and y < layer + 2:
+					continue
+				if y + 1 <= world.terrain_height(cell) - 0.3:
+					continue
+				out.append([Vector3i(x, y, z), "wall"])
+	# toit à deux pans, avec débord, pignons fermés
+	var top := layer + wall_height
+	var rr := r.grow(1)
+	var span := r.size.y
+	for x in range(rr.position.x, rr.end.x):
+		for z in range(rr.position.y, rr.end.y):
+			var i := z - rr.position.y
+			var st := mini(i, span + 1 - i)
+			out.append([Vector3i(x, top + st, z), "roof"])
+			if (x == r.position.x or x == r.end.x - 1) and st > 0:
+				for yy in range(top, top + st):
+					out.append([Vector3i(x, yy, z), "gable"])
+	out.append([Vector3i(door.x, layer, door.y), "door"])
+	# meubles : du fond vers l'entrée, en laissant libre la case devant la porte
+	var cells := []
+	for z in range(r.end.y - 2, r.position.y, -1):
+		for x in range(r.position.x + 1, r.end.x - 1):
+			if Vector2i(x, z) != door + Vector2i(0, 1):
+				cells.append(Vector2i(x, z))
+	for i in mini(furn.size(), cells.size()):
+		out.append([Vector3i(cells[i].x, layer, cells[i].y), "furniture", furn[i]])
+	return out
+
+
+## Ouvre le mode construction sur le plan prêt d'un type de pièce (depuis le panneau du royaume).
+func open_plan(type_id: String) -> void:
+	if not active:
+		toggle(true)
+	if not active:
+		return
+	cat = CATEGORIES.size() - 1
+	var list := _plan_types()
+	for i in list.size():
+		if list[i].id == type_id:
+			plan_index = i
+	_refresh_ui()
+	var t := _plan_type()
+	if t:
+		player.notify.emit("Plan « %s » : clique sur le sol pour le poser ; tes habitants le bâtiront." % t.display_name)
+
+
 func _cycle_tool(step: int) -> void:
+	if _category().id == "plans":
+		plan_index = posmod(plan_index + step, maxi(1, _plan_types().size()))
+		_refresh_ui()
+		return
 	if _category().id == "furniture":
 		furniture_index = posmod(furniture_index + step, maxi(1, _furniture_items.size()))
 	else:
@@ -324,7 +430,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var k := event as InputEventKey
 		match k.physical_keycode:
-			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7:
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
 				_set_category(k.physical_keycode - KEY_1)
 			KEY_PAGEUP:
 				_set_layer(layer + 1)
@@ -476,7 +582,7 @@ func _pad_recent() -> bool:
 # ---------------------------------------------------------------- tracé
 
 func _is_single() -> bool:
-	return _tool().id in ["door", "window", "furniture"]
+	return _tool().id in ["door", "window", "furniture", "plan"]
 
 
 func _press() -> void:
@@ -565,6 +671,10 @@ func _selection_from(a: Vector2i, b: Vector2i) -> void:
 					if on_gable and step > 0:
 						for yy in range(layer, layer + step):
 							_selection.append([Vector3i(x, yy, z), "gable"])
+		"plan":
+			var pt := _plan_type()
+			if pt:
+				_selection = plan_layout(pt, a)
 		"door":
 			_selection.append([Vector3i(a.x, layer, a.y), "door"])
 		"window":
@@ -594,6 +704,29 @@ func _commit_selection() -> void:
 				var m: ItemData = wall_mat if s[1] == "gable" else mat
 				if m and orders.block(s[0], m) > 0:
 					n += 1
+		"plan":
+			var list := _selection.duplicate()
+			list.sort_custom(func(p, q): return p[0].y < q[0].y)
+			var mats := {"wall": materials.get("walls", "bloc_planches"), "gable": materials.get("walls", "bloc_planches"),
+				"floor": materials.get("floors", "bloc_planches"), "roof": materials.get("roofs", "bloc_chaume")}
+			var missing := []
+			for e in list:
+				var k: Vector3i = e[0]
+				match e[1]:
+					"wall", "gable", "floor", "roof":
+						if orders.block(k, Items.get_item(mats[e[1]])) > 0:
+							n += 1
+					"door":
+						var col := Vector2i(k.x, k.z)
+						n += 1 if orders.furniture(col, float(layer), Items.get_item("porte"), 0) > 0 else 0
+					"furniture":
+						var it := Items.get_item(e[2]) as ItemData
+						if it and orders.furniture(Vector2i(k.x, k.z), float(layer), it, 2) > 0:
+							n += 1
+							if player.inventory.count(it) <= 0 and not missing.has(it.display_name):
+								missing.append(it.display_name)
+			if not missing.is_empty():
+				player.notify.emit("Meubles à fabriquer pour cette pièce : %s (Artisanat → Mobilier)." % ", ".join(PackedStringArray(missing)))
 		"door":
 			n += _plan_door(Vector2i(_selection[0][0].x, _selection[0][0].z))
 		"window":
@@ -748,6 +881,16 @@ func _update_preview() -> void:
 				info = "%s (tu en as %d)" % [it.display_name, player.inventory.count(it)] if it else ""
 			"door":
 				info = "Porte (tu en as %d)" % player.inventory.count(Items.get_item("porte"))
+			"plan":
+				var nb := _selection.filter(func(e): return e[1] in ["wall", "gable", "floor", "roof"]).size()
+				var have := []
+				var miss := []
+				for e in _selection:
+					if e[1] == "furniture":
+						var it := Items.get_item(e[2]) as ItemData
+						if it:
+							(have if player.inventory.count(it) > 0 else miss).append(it.display_name)
+				info = "%d blocs · porte · %d meuble(s)%s" % [nb, have.size() + miss.size(), ("  —  à fabriquer : " + ", ".join(PackedStringArray(miss))) if not miss.is_empty() else "  —  tout est dans ton sac"]
 			_:
 				var r := _rect(_drag_from if _dragging else _cursor, _cursor)
 				info = "Zone %d × %d" % [r.size.x, r.size.y]
@@ -813,8 +956,8 @@ func _build_ui() -> void:
 	top.add_theme_stylebox_override("panel", panel_st)
 	_ui.add_child(top)
 	top.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	top.offset_left = -330
-	top.offset_right = 330
+	top.offset_left = -420
+	top.offset_right = 420
 	top.offset_top = 8
 	var th := HBoxContainer.new()
 	th.add_theme_constant_override("separation", 10)
@@ -824,6 +967,7 @@ func _build_ui() -> void:
 	var down := Button.new()
 	down.text = "▼"
 	down.tooltip_text = "Niveau inférieur (Page ↓ ou Ctrl + molette)"
+	down.focus_mode = Control.FOCUS_NONE
 	down.pressed.connect(func(): _set_layer(layer - 1))
 	th.add_child(down)
 	_layer_label = _lbl("", 12)
@@ -831,6 +975,7 @@ func _build_ui() -> void:
 	var up := Button.new()
 	up.text = "▲"
 	up.tooltip_text = "Niveau supérieur (Page ↑ ou Ctrl + molette)"
+	up.focus_mode = Control.FOCUS_NONE
 	up.pressed.connect(func(): _set_layer(layer + 1))
 	th.add_child(up)
 	var cut := CheckBox.new()
@@ -851,6 +996,13 @@ func _build_ui() -> void:
 			# on réalise tout de suite ce qui attendait
 			orders.flush())
 	th.add_child(_instant_cb)
+	# toujours un moyen visible de sortir
+	var quit := Button.new()
+	quit.text = "✕ Quitter (B / Échap)"
+	quit.focus_mode = Control.FOCUS_NONE
+	quit.add_theme_color_override("font_color", Color("ffb08a"))
+	quit.pressed.connect(func(): toggle(false))
+	th.add_child(quit)
 	_builders_label = _lbl("", 10, Color("c8b89a"))
 	_ui.add_child(_builders_label)
 	_builders_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -907,7 +1059,7 @@ func _build_ui() -> void:
 		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_A)),
 		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_S)),
 		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_D))]
-	_help.text = "%s : déplacer (Maj : vite)   %s ou clic molette : tourner   Molette : zoom   Clic gauche (glisser) : tracer   Clic droit : annuler   R : tourner le meuble   [ ] : hauteur des murs   Tab : outil   V : matériau   1-7 : catégorie   B / Échap : quitter" % [move_keys, rot_keys]
+	_help.text = "%s : déplacer (Maj : vite)   %s ou clic molette : tourner   Molette : zoom   Clic gauche (glisser) : tracer   Clic droit : annuler   R : tourner le meuble   [ ] : hauteur des murs   Tab : outil   V : matériau   1-8 : catégorie   B / Échap : quitter" % [move_keys, rot_keys]
 	# droite : royaume
 	var kp := PanelContainer.new()
 	kp.add_theme_stylebox_override("panel", panel_st)
@@ -970,7 +1122,18 @@ func _refresh_ui() -> void:
 		var c: Dictionary = CATEGORIES[i]
 		_cat_bar.add_child(_button("%d %s %s" % [i + 1, c.glyph, c.name], i == cat, _set_category.bind(i)))
 	var category := _category()
-	if category.id == "furniture":
+	if category.id == "plans":
+		var types := _plan_types()
+		for i in types.size():
+			var t: RoomTypeData = types[i]
+			var need := []
+			for id in t.required:
+				var it := Items.get_item(id) as ItemData
+				need.append("%d %s" % [int(t.required[id]), it.display_name if it else id])
+			var b := _button(t.display_name, i == plan_index, func(): plan_index = i; _refresh_ui())
+			b.tooltip_text = "%s\nMeubles : %s" % [t.display_name, ", ".join(PackedStringArray(need))]
+			_mat_bar.add_child(b)
+	elif category.id == "furniture":
 		for i in _furniture_items.size():
 			var it: ItemData = _furniture_items[i]
 			_mat_bar.add_child(_icon_button(it, i == furniture_index, func(): furniture_index = i; _ghost_key = ""; _refresh_ui(),

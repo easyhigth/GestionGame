@@ -55,8 +55,10 @@ func _process(_d) -> bool:
 		g = get_first_node_in_group("guide")
 		rm.enabled = false
 		print("== chapitres de l'aventure et des voisins")
-		check("%d étapes, %d chapitres" % [g.STEPS.size(), g.CHAPTERS.size()], g.STEPS.size() == 45 and g.CHAPTERS.size() == 11)
-		g.step = 29
+		check("%d étapes, %d chapitres" % [g.STEPS.size(), g.CHAPTERS.size()], g.STEPS.size() == 51 and g.CHAPTERS.size() == 12)
+		check("le guide commence par les bases (%s)" % g.current_id(), g.current_id() == "bouger" or g.step > 0)
+		check("touches du joueur dans les conseils : %s" % g.with_keys("{inventory} / {attack}"), g.with_keys("{inventory} / {attack}") == "I / clic gauche")
+		g.step = 35
 		g.progress = 0
 		g._refresh()
 		check("chapitre « L'AVENTURE » : %s" % g._title.text, g._title.text.begins_with("L'AVENTURE"))

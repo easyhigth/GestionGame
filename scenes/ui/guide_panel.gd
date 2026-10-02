@@ -5,15 +5,24 @@ extends PanelContainer
 ## L'avancement est sauvegardé ; une fois fini, le guide disparaît.
 
 ## [identifiant, texte, conseil, nombre à atteindre]
+## Dans les textes, {action} est remplacé par la touche choisie par le joueur (ex. {inventory} -> I).
 const STEPS := [
-	["arbre", "Coupe 3 arbres", "Frappe-les avec ton arme (clic gauche / X). Le bois tombe au sol : marche dessus.", 3],
-	["rocher", "Casse 2 rochers", "Les rochers donnent des cailloux. Sans pioche, pas de minerai.", 2],
-	["outil", "Fabrique une hache ou une pioche", "Inventaire (I) → Artisanat → Outils. Il suffit de l'avoir dans ton sac.", 1],
-	["planches", "Fabrique des planches", "Inventaire (I) → Artisanat → Construction : 1 bois donne 4 planches.", 1],
-	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit : pose les blocs à la main (C pour choisir, V pour poser) ou avec le mode construction (B).", 1],
-	["torche", "Pose une torche", "Choisis-la avec C et pose-la avec V. Les monstres n'apparaissent pas près des lumières.", 1],
-	["repas", "Mange un repas cuit", "Baies (buissons) ou viande (animaux) : cuis-les près du feu de camp ou d'un four (Artisanat → Cuisine), puis mange avec H.", 1],
-	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit (E) ou tiens jusqu'au matin.", 1],
+	# chapitre 0 : les bases (on apprend en faisant)
+	["bouger", "Fais quelques pas", "{move_up} {move_left} {move_down} {move_right} pour marcher, {dash} pour une roulade. Approche-toi du feu de camp : tes habitants t'attendent.", 1],
+	["regard", "Regarde autour de toi", "Bouge la souris pour tourner la caméra (Alt maintenu libère la souris). {camera_view} change de vue : 3e personne, vue de dessus, 1re personne.", 1],
+	["sauter", "Saute", "{jump}. Tu montes ainsi sur un bloc ou une marche.", 1],
+	["sac", "Ouvre ton sac", "{inventory} : ton sac, ton équipement et l'Artisanat (tout ce qui se fabrique). Tu commences les mains vides : tout est à trouver. {inventory} ou Échap pour refermer.", 1],
+	# chapitre 1 : les premiers pas
+	["arbre", "Récolte du bois à mains nues", "Face à un arbre, frappe-le ({attack}). Le bois tombe au sol : marche dessus pour le ramasser.", 3],
+	["etabli", "Fabrique et pose un établi", "{inventory} → Artisanat → Mobilier : 4 bois. Ensuite, {hotbar_next} pour le prendre en main et {place_block} pour le poser (Échap pour ranger ce que tu tiens). Près de lui, on fabrique bien plus de choses.", 1],
+	["rocher", "Casse 2 rochers", "Les rochers donnent des cailloux, même à mains nues. Avec une pioche, ça va plus vite et donne du minerai.", 2],
+	["outil", "Fabrique une hache ou une pioche", "Près de l'établi : {inventory} → Artisanat → Outils (bois, puis pierre). Il suffit de l'avoir dans ton sac.", 1],
+	["arme", "Fabrique une arme et équipe-la", "Près de l'établi : Artisanat → Armurerie → une épée en bois ou en pierre. Clique-la dans le sac pour l'équiper : les monstres sortent la nuit !", 1],
+	["planches", "Fabrique des planches", "{inventory} → Artisanat → Construction : 1 bois donne 4 planches.", 1],
+	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit. Le plus simple : le mode construction ({build_mode}), outil « Pièce », tu glisses un rectangle et tes habitants bâtissent. Ou à la main : {hotbar_next} pour choisir un bloc, {place_block} pour le poser.", 1],
+	["torche", "Pose une torche", "Fabrique-la (bois et charbon ou fibres), prends-la avec {hotbar_next} et pose-la avec {place_block}. Les monstres n'apparaissent pas près des lumières.", 1],
+	["repas", "Mange un repas cuit", "Baies (buissons) ou viande (animaux) : cuis-les près du feu de camp (Artisanat → Cuisine), puis mange avec {eat}.", 1],
+	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit ({interact}) ou tiens jusqu'au matin près du feu.", 1],
 	# chapitre 2 : l'âge du fer
 	["filon_fer", "Mine 2 filons de fer", "Des rochers piquetés d'orange, dans la roche des collines. Il faut une pioche.", 2],
 	["four", "Fabrique et pose un four", "Près d'un établi : 6 cailloux et 2 blocs de terre (Artisanat → Mobilier). Pose-le avec V.", 1],
@@ -63,10 +72,11 @@ const STEPS := [
 	["titan", "Abats un titan", "Dès le niveau 30, un titan s'éveille tous les 2 ou 3 jours : il est marqué sur la carte (M).", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["PREMIERS PAS", 0, 8], ["L'ÂGE DU FER", 8, 13], ["LE VILLAGE", 13, 16], ["LES CHAMPS", 16, 20], ["LE COMMERCE", 20, 23], ["L'ÉLEVAGE", 23, 26], ["L'EAU", 26, 29],
-	["L'AVENTURE", 29, 33], ["LES VOISINS", 33, 38], ["L'ARTISAN", 38, 42], ["LA FIN DE PARTIE", 42, 45]]
+const CHAPTERS := [["LES BASES", 0, 4], ["PREMIERS PAS", 4, 14], ["L'ÂGE DU FER", 14, 19], ["LE VILLAGE", 19, 22], ["LES CHAMPS", 22, 26],
+	["LE COMMERCE", 26, 29], ["L'ÉLEVAGE", 29, 32], ["L'EAU", 32, 35], ["L'AVENTURE", 35, 39], ["LES VOISINS", 39, 44], ["L'ARTISAN", 44, 48],
+	["LA FIN DE PARTIE", 48, 51]]
 ## Icône de chaque chapitre (assets/ui/icon_*.png).
-const CHAPTER_ICONS := {"PREMIERS PAS": "compass", "L'ÂGE DU FER": "sword", "LE VILLAGE": "house", "LES CHAMPS": "food",
+const CHAPTER_ICONS := {"LES BASES": "compass", "PREMIERS PAS": "compass", "L'ÂGE DU FER": "sword", "LE VILLAGE": "house", "LES CHAMPS": "food",
 	"LE COMMERCE": "coin", "L'ÉLEVAGE": "people", "L'EAU": "gem", "L'AVENTURE": "skull", "LES VOISINS": "shield", "L'ARTISAN": "sword", "LA FIN DE PARTIE": "skull"}
 var _icon: TextureRect
 ## Astuces affichées une seule fois, la première fois que la situation se présente : [identifiant, texte].
@@ -84,9 +94,14 @@ const TIPS := [
 	["metier", "Ton premier niveau de métier ! F3 pour voir tes 12 métiers et ce qu'ils débloquent."],
 	["failles", "Niveau 60 : le Portail des Failles s'ouvre (près du village) ; tu peux y monter le palier du monde."],
 	["recherche", "Astuce : dans l'artisanat, la barre de recherche trouve une recette parmi des centaines ; ★ pour les favoris."],
+	["en_main", "Tu tiens quelque chose en main : {place_block} pour le poser devant toi, {hotbar_next} pour changer, Échap pour le ranger."],
+	["soir", "Le soleil se couche : les monstres sortent la nuit. Reste près du feu ou d'une torche, ou dors dans un lit ({interact})."],
+	["construire", "Mode construction : choisis un outil en bas, glisse sur le sol pour tracer, et tes habitants bâtissent avec ce qu'il y a dans ton sac. {build_mode}, Échap ou ✕ pour en sortir."],
+	["royaume", "Ton royaume ({kingdom}) : ce qu'il manque à tes habitants (lits, nourriture, bonheur) et ce qu'il faut pour passer au rang suivant."],
+	["faim", "Tu as faim : mange avec {eat} (baies, viande cuite, pain...). Le ventre vide, tu ne regagnes plus de vie."],
 ]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
-const VERSION := 2
+const VERSION := 3
 
 var player: Player
 var step := 0
@@ -100,6 +115,9 @@ var _hide_timer := -1.0
 ## Astuces déjà montrées.
 var tips_seen := {}
 var _tips_timer := 1.5
+var _start_pos := Vector3.INF
+var _start_yaw := NAN
+var _start_mode := 0
 
 
 func _ready() -> void:
@@ -283,6 +301,27 @@ func _check_state() -> void:
 	if player == null or is_done():
 		return
 	match current_id():
+		"bouger":
+			if _start_pos == Vector3.INF:
+				_start_pos = player.global_position
+			elif player.global_position.distance_to(_start_pos) > 5.0:
+				_advance("bouger")
+		"regard":
+			if is_nan(_start_yaw):
+				_start_yaw = player.cam_yaw
+				_start_mode = int(player.cam_mode)
+			elif absf(player.cam_yaw - _start_yaw) > 0.7 or int(player.cam_mode) != _start_mode:
+				_advance("regard")
+		"etabli":
+			var gw := get_tree().get_first_node_in_group("build_grid") as BuildGrid
+			if gw:
+				for key in gw.furniture:
+					if (gw.furniture[key].item as ItemData).id == "etabli":
+						_advance("etabli")
+						return
+		"arme":
+			if player.weapon() != null:
+				_advance("arme")
 		"outil":
 			for id in ["hache_bois", "pioche_bois", "hache_pierre", "pioche_pierre"]:
 				var it := Items.get_item(id)
@@ -451,6 +490,17 @@ func _check_tips() -> void:
 				show_it = ach != null and not ach.done.is_empty()
 			"poussiere":
 				show_it = player.inventory.count(Items.get_item("poussiere_arcane")) > 0
+			"en_main":
+				show_it = player.hand != null and player.hand.selected != ""
+			"soir":
+				var dc := tree.get_first_node_in_group("day_cycle") as DayCycle
+				show_it = dc != null and dc.hour >= 18.5 and dc.hour < 20.0
+			"construire":
+				show_it = player.building
+			"royaume":
+				show_it = step >= 19
+			"faim":
+				show_it = player.hunger < 30.0
 			"metier":
 				show_it = Crafts.ORDER.any(func(c): return Crafts.level(player, c) >= 2 and Crafts.level(player, c) != Crafts.START_LEVEL)
 			"failles":
@@ -459,12 +509,21 @@ func _check_tips() -> void:
 				show_it = Crafts.total_level(player) >= 16
 		if show_it:
 			tips_seen[id] = true
-			player.notify.emit("Astuce : " + t[1])
+			player.notify.emit("Astuce : " + with_keys(t[1]))
 			Sound.ui("ui_open")
 			return
 
 
 func _process(delta: float) -> void:
+	# les bases : on réagit tout de suite à l'action
+	match current_id():
+		"sauter":
+			if player and (player.airborne or Input.is_action_just_pressed("jump")):
+				_advance("sauter")
+		"sac":
+			var inv := get_tree().get_first_node_in_group("inventory_ui") as Control
+			if inv and inv.visible:
+				_advance("sac")
 	_tips_timer -= delta
 	if _tips_timer <= 0.0:
 		_tips_timer = 1.0
@@ -500,8 +559,27 @@ func _refresh() -> void:
 	_icon.texture = UiTheme.tex("icon_" + str(CHAPTER_ICONS.get(ch[0], "compass")))
 	var n := int(s[3])
 	_task.text = s[1] + ("  (%d / %d)" % [progress, n] if n > 1 else "")
-	_hint.text = s[2]
+	_hint.text = with_keys(s[2])
 	_bar.size.x = 236.0 * (float(step - first) + float(progress) / float(n)) / float(total)
+
+
+## Remplace {action} par la touche du joueur.
+static func with_keys(text: String) -> String:
+	var out := text
+	while out.contains("{"):
+		var a := out.find("{")
+		var b := out.find("}", a)
+		if b < 0:
+			break
+		var action := out.substr(a + 1, b - a - 1)
+		var k := KeyBindings.key_text(action)
+		# frapper et parer : la souris d'abord
+		if action == "attack":
+			k = "clic gauche"
+		elif action == "block":
+			k = "clic droit"
+		out = out.substr(0, a) + k + out.substr(b + 1)
+	return out
 
 
 func export_state() -> Dictionary:
@@ -517,5 +595,8 @@ func import_state(d: Dictionary) -> void:
 	# version 1 : l'étape « repas » n'existait pas (elle est avant « nuit », 7e étape)
 	if int(d.get("v", 1)) < 2 and step >= 6 and step < 99:
 		step += 1
+	# version 2 : ni « les bases », ni « établi », ni « arme » (arbre, rocher, outil, planches...)
+	if int(d.get("v", 1)) < 3 and step < 99:
+		step = 4 if step == 0 else (step + 5 if step <= 2 else step + 6)
 	_hide_timer = -1.0
 	_refresh()

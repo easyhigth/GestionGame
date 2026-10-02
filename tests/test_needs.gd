@@ -136,7 +136,7 @@ func _process(_d) -> bool:
 		vn._update(1.0)
 		gd.import_state({"step": 14, "progress": 0, "v": 2})
 		gd._check_state()
-		check("guide : un lit pour chacun -> étape bonheur", gd.step == 15)
+		check("guide : un lit pour chacun -> étape bonheur", gd.step == 21)
 		print("== bonheur retrouvé et voyageurs")
 		for v in vn.members():
 			v.food = 90.0
@@ -150,7 +150,7 @@ func _process(_d) -> bool:
 		var avg: float = vn.average_happiness()
 		check("et en sécurité (raid repoussé) : heureux (%d %%), travaillent plus vite" % roundi(avg), avg >= 70.0 and vn.members()[0].work_mult > 1.0)
 		gd._check_state()
-		check("guide chapitre 3 terminé (-> chapitre 4, les champs)", gd.step == 16 or gd.is_done())
+		check("guide chapitre 3 terminé (-> chapitre 4, les champs)", gd.step == 22 or gd.is_done())
 		# un voyageur attiré par le village (on libère une place)
 		var extra = vn.members()[0]
 		extra.queue_free()

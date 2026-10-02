@@ -116,6 +116,11 @@ var _tool_hold := 0.0
 const TOOL_HOLD := 3.0
 ## Distance de la caméra (option du joueur : 1 = normale ; molette pour zoomer).
 var camera_zoom := 1.0
+## Point de vue (F5) : 3e personne (par défaut), vue de dessus (l'ancienne caméra), 1re personne.
+enum CamMode { THIRD, TOP, FIRST }
+const CAM_NAMES := ["3e personne", "Vue de dessus", "1re personne"]
+var cam_mode := CamMode.THIRD
+var _crosshair: CanvasLayer
 ## Rotation de la caméra autour du héros (clic molette maintenu + glisser, ou joystick droit).
 var cam_yaw := 0.0
 ## Hauteur de la caméra (angle au-dessus de l'horizon, en radians).
@@ -185,6 +190,12 @@ func _ready() -> void:
 	camera_zoom = float(SaveGame.options.camera_distance)
 	parried.connect(_on_parried)
 	_make_reticle()
+	_make_crosshair()
+	# GG_CAMERA (tests) : impose un point de vue
+	var forced := OS.get_environment("GG_CAMERA")
+	set_camera_mode(int(forced) if forced != "" else int(SaveGame.options.get("camera_mode", 0)), false)
+	# la souris est gérée même quand le jeu est en pause (menu pause)
+	get_tree().process_frame.connect(_update_mouse_mode)
 	snap_camera()
 
 
@@ -203,6 +214,7 @@ func apply_profile(hero: HeroProfile, new_game := true) -> void:
 		skill_changed.emit(skill)
 	if new_game:
 		_give_class_talent()
+	if new_game and not GameState.bare_start:
 		if hero.hero_class:
 			for it in hero.hero_class.starting_equipment:
 				for old in equipment.equip(it):
@@ -490,6 +502,7 @@ func cast_ability(slot: int) -> bool:
 	if id == "" or not abilities.has(id) or not can_act() or ui_open or building:
 		return false
 	var hs: HeroSkill = abilities[id]
+	_aim_with_camera()
 	if not hs.activate():
 		return false
 	# les renforcements et barrières passent sur le héros (sa compétence principale)
@@ -632,8 +645,80 @@ func shake(strength: float) -> void:
 
 ## Place la caméra directement sur le joueur (sans glissement).
 func snap_camera() -> void:
+	if cam_mode != CamMode.TOP:
+		_update_camera(1000.0)
+		return
 	camera.global_position = global_position + camera_vector(camera_offset)
 	camera.look_at(global_position + Vector3(0, 0.8, 0))
+
+
+## Change de point de vue (`announce` : petit message à l'écran).
+func set_camera_mode(m: int, announce := true) -> void:
+	cam_mode = posmod(m, 3) as CamMode
+	cam_pitch = clamp_pitch(cam_pitch if cam_mode == CamMode.TOP else (deg_to_rad(16.0) if cam_mode == CamMode.THIRD else 0.0))
+	if cam_mode == CamMode.TOP:
+		cam_pitch = deg_to_rad(45.0)
+	if visual:
+		visual.visible = cam_mode != CamMode.FIRST
+	Villager.label_scale = [0.45, 1.0, 0.32][cam_mode]
+	if is_inside_tree():
+		snap_camera()
+	if announce:
+		SaveGame.options.camera_mode = int(cam_mode)
+		SaveGame.save_options()
+		notify.emit("Vue : %s (F5 pour changer)" % CAM_NAMES[cam_mode])
+
+
+func clamp_pitch(v: float) -> float:
+	match cam_mode:
+		CamMode.THIRD:
+			return clampf(v, deg_to_rad(-35.0), deg_to_rad(70.0))
+		CamMode.FIRST:
+			return clampf(v, deg_to_rad(-80.0), deg_to_rad(80.0))
+	return clampf(v, deg_to_rad(18.0), deg_to_rad(80.0))
+
+
+## Devant la caméra, à plat.
+func camera_forward() -> Vector3:
+	return Vector3(-sin(cam_yaw), 0.0, -cos(cam_yaw))
+
+
+## En 3e et 1re personne, on frappe et on lance ses sorts là où regarde la caméra.
+func _aim_with_camera() -> void:
+	if cam_mode != CamMode.TOP and not (lock_target and is_instance_valid(lock_target)):
+		facing = camera_forward()
+
+
+## Souris capturée (elle tourne la caméra) en 3e et 1re personne, sauf quand un menu est ouvert,
+## en construction, ou en maintenant Alt.
+func _update_mouse_mode() -> void:
+	if not is_inside_tree() or DisplayServer.get_name() == "headless":
+		return
+	var want := cam_mode != CamMode.TOP and not ui_open and not building and is_alive() and not get_tree().paused \
+		and not Input.is_key_pressed(KEY_ALT) and camera.current
+	var mode := Input.MOUSE_MODE_CAPTURED if want else Input.MOUSE_MODE_VISIBLE
+	if Input.mouse_mode != mode:
+		Input.mouse_mode = mode
+	if _crosshair:
+		_crosshair.visible = want
+
+
+func _make_crosshair() -> void:
+	_crosshair = CanvasLayer.new()
+	_crosshair.layer = 1
+	var l := Label.new()
+	l.text = "+"
+	l.add_theme_font_size_override("font_size", 22)
+	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	l.add_theme_constant_override("outline_size", 4)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_crosshair.add_child(l)
+	_crosshair.visible = false
+	add_child(_crosshair)
 
 
 # ---------------------------------------------------------------- boucle
@@ -692,6 +777,7 @@ func _physics_process(delta: float) -> void:
 		_dig_timer = maxf(0.0, _dig_timer - delta)
 		if Input.is_action_pressed("dig") and can_act() and not in_move() and not is_dashing() and not airborne and _dig_timer <= 0.0:
 			_dig_timer = DIG_TIME
+			_aim_with_camera()
 			visual.play_move("heavy_1", 1.4)
 			dig()
 	if input.length() > 1.0:
@@ -726,6 +812,9 @@ func _physics_process(delta: float) -> void:
 		else:
 			horizontal = horizontal.move_toward(Vector3.ZERO, stats.friction * delta)
 		velocity = horizontal
+	# 1re personne : le héros regarde toujours devant la caméra (on marche de côté)
+	if cam_mode == CamMode.FIRST and not lock_target and not is_dashing():
+		facing = camera_forward()
 	if lock_target and not is_dashing() and (not in_move() or move_t < 0.05):
 		var to := lock_target.global_position - global_position
 		to.y = 0.0
@@ -788,6 +877,7 @@ func _handle_combat_input(input: Vector3, delta: float) -> void:
 
 func _attack_pressed() -> void:
 	_held = 0.0
+	_aim_with_camera()
 	if blocking:
 		set_blocking(false)
 	# riposte après une esquive parfaite
@@ -1431,6 +1521,13 @@ func _start_dash(direction: Vector3) -> void:
 func _input(event: InputEvent) -> void:
 	if ui_open or building or not is_alive():
 		return
+	# Échap avec un bloc en main : on le range (mains nues) avant d'ouvrir le menu
+	if event.is_action_pressed("pause") and hand and hand.selected != "":
+		hand.selected = ""
+		hand.selection_changed.emit()
+		notify.emit("Bloc rangé : mains nues.")
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventJoypadButton and event.pressed and Input.is_action_pressed("block") \
 			and event.button_index in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_RIGHT]:
 		hand.cycle(1 if event.button_index == JOY_BUTTON_DPAD_RIGHT else -1)
@@ -1461,6 +1558,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("place_block"):
+		_aim_with_camera()
 		hand.place()
 		get_viewport().set_input_as_handled()
 		return
@@ -1558,6 +1656,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("skill") and not building:
 		use_skill()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("camera_view") and not building:
+		set_camera_mode(int(cam_mode) + 1)
 		get_viewport().set_input_as_handled()
 	elif not building and _camera_input(event):
 		get_viewport().set_input_as_handled()
@@ -1677,7 +1778,7 @@ func _update_orbit_stick(delta: float) -> void:
 	if absf(rx) > 0.2:
 		cam_yaw -= rx * delta * 2.4
 	if absf(ry) > 0.2:
-		cam_pitch = clampf(cam_pitch + ry * delta * 1.4, deg_to_rad(18.0), deg_to_rad(80.0))
+		cam_pitch = clamp_pitch(cam_pitch + ry * delta * 1.4)
 
 
 ## Molette : zoom ; clic molette maintenu : tourner la caméra (un simple clic : viser la cible).
@@ -1697,16 +1798,32 @@ func _camera_input(event: InputEvent) -> bool:
 		if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 			camera_zoom = clampf(camera_zoom * (0.9 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1.1), 0.45, 1.8)
 			return true
+	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and cam_mode != CamMode.TOP:
+		# 3e et 1re personne : la souris tourne la caméra
+		var mm := event as InputEventMouseMotion
+		cam_yaw -= mm.relative.x * 0.0032
+		cam_pitch = clamp_pitch(cam_pitch + mm.relative.y * 0.0028)
+		return true
 	elif event is InputEventMouseMotion and _orbiting:
 		var mm := event as InputEventMouseMotion
 		_orbit_moved += mm.relative.length()
 		cam_yaw -= mm.relative.x * 0.008
-		cam_pitch = clampf(cam_pitch + mm.relative.y * 0.006, deg_to_rad(18.0), deg_to_rad(80.0))
+		cam_pitch = clamp_pitch(cam_pitch + mm.relative.y * 0.006)
 		return true
 	return false
 
 
 func _update_camera(delta: float) -> void:
+	if cam_mode == CamMode.THIRD:
+		_update_camera_third(delta)
+		return
+	if cam_mode == CamMode.FIRST:
+		var eye := global_position + Vector3(0, 1.5 * visual.scale.y, 0)
+		camera.global_position = eye
+		var look := -Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch))
+		camera.look_at(eye + look)
+		_apply_shake(delta)
+		return
 	var offset := camera_vector(camera_offset)
 	var focus := global_position
 	if lock_target and is_instance_valid(lock_target):
@@ -1715,6 +1832,28 @@ func _update_camera(delta: float) -> void:
 	var target := focus + offset
 	camera.global_position = camera.global_position.lerp(target, clampf(camera_smoothing * delta, 0.0, 1.0))
 	camera.look_at(camera.global_position - offset + Vector3(0, 0.8, 0))
+	_apply_shake(delta)
+
+
+## 3e personne : derrière l'épaule du héros, assez près ; la caméra ne passe pas sous le sol.
+func _update_camera_third(delta: float) -> void:
+	var focus := global_position + Vector3(0, 1.45 * visual.scale.y, 0)
+	if lock_target and is_instance_valid(lock_target):
+		focus = focus.lerp(lock_target.global_position + Vector3(0, 1.0, 0), 0.3)
+	var dir := Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch))
+	# au-dessus de l'épaule droite : le viseur au centre ne cache pas le héros
+	focus += Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw)) * 0.7
+	var target := focus + dir * 4.6 * camera_zoom
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if w and global_position.y > WorldGenerator.UNDERGROUND:
+		target.y = maxf(target.y, w.terrain_height(w.cell_at(target)) + 0.6)
+	camera.global_position = camera.global_position.lerp(target, clampf(14.0 * delta, 0.0, 1.0))
+	if camera.global_position.distance_to(focus) > 0.05:
+		camera.look_at(focus)
+	_apply_shake(delta)
+
+
+func _apply_shake(delta: float) -> void:
 	if _shake > 0.0:
 		camera.global_position += Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)) * _shake * 0.1
 		_shake = maxf(_shake - delta * 4.0, 0.0)

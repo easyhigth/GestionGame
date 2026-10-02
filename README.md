@@ -8,6 +8,7 @@ Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par
 ## Commandes
 Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écran titre → **Commandes** (4 onglets, clavier-souris et manette côte à côte). En jeu, seul un petit rappel s'affiche sous la mini-carte (désactivable dans les options).
 
+- **F5 : changer de vue**, comme dans Minecraft : **3e personne** (par défaut : la caméra suit le héros au-dessus de son épaule, la souris la tourne, on frappe là où vise le viseur), **vue de dessus** (l'ancienne caméra, clic molette pour tourner) et **1re personne** (les yeux du héros). Alt maintenu libère la souris pour cliquer à l'écran ; elle se libère toute seule dès qu'un menu s'ouvre. Le choix est gardé dans les options (Options → Point de vue).
 - ZQSD ou flèches (joystick gauche) : se déplacer, dans le sens de la caméra
 - Espace (A à la manette) : sauter (assez haut pour monter sur un bloc de 1 m)
 - Maj (B à la manette) : roulade (esquive : invulnérable pendant la roulade)
@@ -120,7 +121,7 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Test : `tests/test_skills.gd`.
 
 ## Début de partie et récolte (façon Minecraft)
-- On commence avec peu de choses, de quoi se faire un premier abri : 24 planches, 12 blocs de chaume, 1 porte, 1 lit, 3 torches, 4 bois (plus l'équipement de sa classe, les objets de son métier, et une épée en bois, du bois, de la fibre et du cuir près du feu).
+- **On commence à mains nues, comme dans Minecraft** : ni arme, ni armure, ni ressources, ni meubles au campement, ni champ semé. Il n'y a que le héros, le feu de camp et ses habitants (sans équipement). Tout se trouve et se débloque : du bois en frappant un arbre à mains nues, un établi (4 bois), des outils en bois puis en pierre, une arme en bois à l'établi... (`GameState.bare_start` ; les tests gardent l'ancien départ avec `GG_CLASSIC_START=1`.)
 - Tout le reste se récolte. Chaque coup d'arme frappe aussi le décor devant le héros ; il se brise après quelques coups et lâche des ressources à ramasser en marchant dessus :
   - arbre (5 coups) : 3 à 5 bois, parfois de la fibre ; rocher (6 coups) : 2 à 4 cailloux, parfois du minerai de fer, du marbre ou de l'or ; buisson (2 coups) : fibre ; herbes et fleurs (1 coup) : fibre ;
   - décors du village : cabane (14 coups : planches, rondins, chaume), tonneau, caisse, établi, râtelier.
@@ -129,6 +130,13 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Ensuite on fabrique (inventaire, I) : bois → planches, rondins, portes, torches ; fibre → chaume ; cailloux → blocs de pierre...
 - **Outils** (inventaire → Artisanat → Outils) : hache et pioche en bois (3 bois), en pierre (2 bois + 3 cailloux, près d'un établi), en fer (voir « L'âge du fer »). Il suffit de les avoir dans son sac, le meilleur est utilisé tout seul : ×2 en bois, ×3 en pierre, ×4 en fer. Le héros le sort et le tient en main quand il récolte (la hache pour un arbre, un buisson ou un décor du village, la pioche pour un rocher ou pour creuser), puis reprend son arme 3 secondes après, ou tout de suite si un ennemi approche. Sans pioche, un rocher ne donne que des cailloux (pas de minerai) et on ne peut pas creuser la roche.
 - Les réglages sont dans `scripts/world/harvest.gd` (points de vie des décors, butin, outils).
+
+## Prise en main : tutoriel, menus et gestion simplifiés
+- **Tutoriel naturel** : le guide (à gauche) commence par un chapitre **LES BASES** où l'on apprend en faisant : marcher, regarder autour de soi (et F5), sauter, ouvrir son sac. Chaque étape se valide toute seule dès qu'on l'a faite. Viennent ensuite les **PREMIERS PAS** à mains nues : du bois, un établi, des cailloux, des outils, une arme, des planches, un abri, une torche, un repas, la première nuit. Les conseils montrent **les touches réglées par le joueur** (ZQSD sur un clavier AZERTY, la touche changée dans Commandes...). Au total, 51 étapes en 12 chapitres.
+- **Astuces au bon moment** : la première fois qu'on tient un bloc en main, que le soleil se couche, qu'on ouvre la construction, qu'on a faim, ou quand le village grandit (panneau du royaume).
+- **Menus qui se ferment toujours** : le mode construction a un bouton **✕ Quitter (B / Échap)** bien visible ; Échap avec un bloc en main le range (mains nues) au lieu d'ouvrir le menu.
+- **Plans prêts (construction, touche 8, catégorie par défaut)** : un clic sur le sol trace **une pièce complète** (murs, sol, porte, toit à deux pans et les meubles qu'il faut) pour chacun des 21 types de pièces : maison, dortoir, entrepôt, taverne, forge, marché, temple... L'aperçu dit combien de blocs il faut et quels meubles sont encore à fabriquer. Les habitants libres bâtissent avec les matériaux choisis dans Murs, Sols et Toits.
+- **Panneau du royaume (U)** : un cadre **« À faire maintenant »** en haut donne les 3 actions les plus utiles (habitants sans lit, réserve vide, habitants sans poste, champs, élevage, marché, taverne, temple, prochain rang), avec un bouton **Construire ▸** qui ouvre directement le bon plan prêt.
 
 ## Poser et casser à la main
 - Sans passer par le mode construction : **C** (ou X pour revenir en arrière) choisit un bloc ou un meuble du sac, **V** le pose devant soi. Une barre d'objets s'affiche au-dessus de la compétence ; après le dernier objet, on revient aux mains nues (plus rien ne s'affiche).

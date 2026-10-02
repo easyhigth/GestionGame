@@ -636,7 +636,13 @@ func is_sleeping() -> bool:
 	return _sleeping
 
 
+## Taille des bulles au-dessus des têtes : plus petites quand la caméra est proche (3e et 1re personne).
+static var label_scale := 1.0
+
+
 func _show_bubble(text: String, col: Color, seconds: float) -> void:
+	_bubble.pixel_size = 0.008 * label_scale
+	_mark.pixel_size = 0.009 * label_scale
 	_bubble.text = text
 	_bubble.modulate = col
 	_bubble.visible = true
@@ -1095,6 +1101,10 @@ func _drop(item: ItemData) -> void:
 
 
 func _update_label() -> void:
+	if label is Label3D:
+		if not label.has_meta("px"):
+			label.set_meta("px", (label as Label3D).pixel_size)
+		(label as Label3D).pixel_size = float(label.get_meta("px")) * label_scale
 	var player := get_tree().get_first_node_in_group("player") as Node3D
 	var d := player.global_position.distance_to(global_position) if player else 999.0
 	# un voyageur se repère de loin ; un compagnon ne s'affiche que tout près (il est toujours là)
