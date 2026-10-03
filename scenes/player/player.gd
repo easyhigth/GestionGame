@@ -333,6 +333,33 @@ func _give_class_talent() -> void:
 	grant_class_skills(false)
 
 
+## Spécialisation choisie (voie) : sa compétence ultime est offerte et rangée dans la barre.
+func _choose_spec(id: String) -> void:
+	var n := TalentTree.node(id)
+	var ult := id + "_ult"
+	talents[ult] = true
+	if not ability_slots.has(ult):
+		for i in range(ability_slots.size() - 1, -1, -1):
+			if ability_slots[i] == "":
+				ability_slots[i] = ult
+				break
+	_apply_talents()
+	var col: Color = n.get("color", Color("ffd27a"))
+	Sound.ui("levelup")
+	feat.emit("Spécialisation : %s !" % n.name, col.lightened(0.2))
+	notify.emit("Tu deviens %s. Compétence ultime : %s (barre de compétences)." % [n.name, TalentTree.node(ult).name])
+	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), col, 80, 5.0, 0.12, 1.4, "up", -1.5)
+	SkillFX.ring(self, global_position, 5.0, col, 0.8)
+
+
+## Titre du héros : sa spécialisation si elle est choisie, sinon sa classe.
+func class_title() -> String:
+	var sp := TalentTree.chosen_spec(class_id(), talents)
+	if sp != "":
+		return TalentTree.node(sp).name
+	return profile.hero_class.display_name if profile and profile.hero_class else ""
+
+
 ## Identifiant de la classe du héros (« guerrier »...), ou "".
 func class_id() -> String:
 	if profile == null or profile.hero_class == null:
@@ -393,6 +420,15 @@ func talent_block_reason(id: String) -> String:
 	if n.has("cls"):
 		if n.cls != class_id():
 			return "Compétence d'une autre classe"
+		if n.has("spec"):
+			if n.kind == "active":
+				return "Choisis d'abord la voie %s" % TalentTree.node(n.requires[0]).name
+			if level < TalentTree.SPEC_LEVEL:
+				return "Spécialisation : niveau %d requis" % TalentTree.SPEC_LEVEL
+			var chosen := TalentTree.chosen_spec(class_id(), talents)
+			if chosen != "":
+				return "Tu as déjà choisi la voie %s (« Tout oublier » pour changer)" % TalentTree.node(chosen).name
+			return ""
 		return "Offerte par ta classe au niveau %d" % int(n.level)
 	if n.get("story", false):
 		return "Se débloque en avançant dans l'histoire principale"
@@ -465,6 +501,9 @@ func unlock_talent(id: String) -> bool:
 		return false
 	talents[id] = true
 	var n := TalentTree.node(id)
+	if n.has("spec"):
+		_choose_spec(id)
+		return true
 	if n.kind == "active":
 		var free := ability_slots.find("")
 		if free >= 0:
@@ -535,6 +574,11 @@ func talent_bonus(key: String) -> float:
 
 
 ## Lance le talent actif de l'emplacement `slot` (0 à 3).
+## Le héros n'avance pas tout seul en frappant (seuls les coups reçus le font reculer).
+func lunge_velocity() -> Vector3:
+	return Vector3.ZERO
+
+
 func cast_ability(slot: int) -> bool:
 	var id: String = ability_slots[slot] if slot < ability_slots.size() else ""
 	if id == "" or not abilities.has(id) or not can_act() or ui_open or building:
@@ -654,6 +698,9 @@ func gain_xp(amount: int) -> void:
 			abilities[id].set_level(level)
 		feat.emit("Niveau %d !" % level, Color("ffd24a"))
 		grant_class_skills()
+		if level == TalentTree.SPEC_LEVEL and TalentTree.chosen_spec(class_id(), talents) == "" and not TalentTree.spec_nodes(class_id()).is_empty():
+			var sn := TalentTree.spec_nodes(class_id())
+			notify.emit("Niveau %d : choisis ta spécialisation, %s ou %s (T : arbre, onglet Classe et Pacte)." % [TalentTree.SPEC_LEVEL, sn[0].name, sn[2].name])
 		Sound.ui("levelup")
 		notify.emit("+%d point%s de compétence (T : arbre de compétences)." % [TalentTree.points_for_level(level), "s" if TalentTree.points_for_level(level) > 1 else ""])
 		talents_changed.emit()
@@ -938,8 +985,11 @@ func _physics_process(delta: float) -> void:
 			_spawn_ghosts(delta)
 		if not is_dashing():
 			visual.set_trail(false)
-	elif in_move() or not can_act():
+	elif not can_act():
 		velocity = velocity.move_toward(Vector3.ZERO, stats.friction * delta)
+	elif in_move():
+		# comme dans Minecraft : frapper ne déplace pas le héros (pas d'élan) ; il peut marcher en frappant, plus lentement
+		velocity = input * speed * 0.55 if input != Vector3.ZERO else Vector3.ZERO
 	else:
 		var horizontal := Vector3(velocity.x, 0, velocity.z)
 		var max_speed := speed

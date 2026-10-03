@@ -18,6 +18,6 @@ bonus_attack = 1
 bonus_defense = 6
 bonus_magic = 3
 health_per_level = 16
-attack_per_level = 0.8
+attack_per_level = 0.95
 defense_per_level = 0.8
 magic_per_level = 0.6

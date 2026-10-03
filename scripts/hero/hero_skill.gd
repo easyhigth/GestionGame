@@ -391,7 +391,7 @@ func _a_summon(prm: Dictionary) -> void:
 		e.tamed = true
 		e.data = load(data_path) as EnemyData
 		e.level = maxi(1, owner.level)
-		e.power = 0.6 + 0.004 * owner.level + 0.002 * owner.magic_power()
+		e.power = 0.45 + 0.004 * owner.level + 0.002 * owner.magic_power()
 		e.familiar_name = "Serviteur"
 		e.familiar_title = "Mort-vivant invoqué"
 		e.familiar_slot = 5 + i
