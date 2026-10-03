@@ -94,7 +94,10 @@ func _process(_d) -> bool:
 		check("les autres nations désapprouvent (%d -> %d)" % [rs, dip.rel("sylvae")], dip.rel("sylvae") < rs)
 		dip.states.cendres.treaties = ["paix"]   # les Cendres ne s'en mêlent pas pendant ce test
 		var tries := 0
-		while rm.raid.is_empty() and tries < 30:
+		# un autre raid (bande ordinaire, autre nation) peut occuper la place : on l'écarte, seul celui de Karg compte ici
+		rm.raid = {}
+		while rm.raid.get("story", "") != "guerre_karg" and tries < 30:
+			rm.raid = {}
 			day += 1; tries += 1
 			dip.new_day(day)
 		check("l'armée de Karg marche sur le village : %s" % rm.raid.get("name", "-"), rm.raid.get("story", "") == "guerre_karg")
