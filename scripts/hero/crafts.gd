@@ -43,6 +43,31 @@ const JOB_START := {"forgeron": ["forgeron", "armurier"], "mineur": ["mineur", "
 	"cuisinier": ["cuisinier", "fermier"], "fermier": ["fermier", "cuisinier"], "joaillier": ["joaillier", "mineur"],
 	"enchanteur": ["enchanteur", "joaillier"], "architecte": ["batisseur", "bucheron"]}
 const START_LEVEL := 10
+## Savoir-faire du métier du héros (en plus des deux métiers d'artisanat de départ) : petits effets en jeu.
+const JOB_SPECIALTY := {
+	"cuisinier": "Les repas te nourrissent 40 % de plus et soignent davantage.",
+	"joaillier": "En cassant la roche, tu trouves parfois une gemme (5 %).",
+	"fermier": "Récoltes plus généreuses : 30 % de chances d'une récolte en plus.",
+	"pecheur": "Les poissons mordent bien plus vite (attente -40 %).",
+	"herboriste": "Les buissons donnent plus de baies (35 % de chances en plus).",
+	"bucheron": "Les arbres donnent parfois du bois en plus (25 %).",
+	"mineur": "Les rochers et filons donnent parfois une pierre en plus (25 %).",
+	"chasseur": "Les bêtes et les monstres laissent plus de butin.",
+	"marchand": "Beaucoup plus de butin sur les monstres.",
+	"forgeron": "Forge et armurerie commencent au niveau 10.",
+	"tisserand": "Couture et construction commencent au niveau 10.",
+	"alchimiste": "Les potions de soin te soignent 50 % de plus.",
+	"enchanteur": "Enchantement et joaillerie commencent au niveau 10.",
+	"architecte": "Construction et bûcheronnage commencent au niveau 10.",
+}
+const GEMS := ["gemme_amethyste", "gemme_topaze", "gemme_emeraude", "gemme_rubis", "gemme_saphir"]
+
+
+## Métier choisi par le héros à la création (« pecheur »...), ou "".
+static func hero_job(p: Node) -> String:
+	if p == null or not p.get("profile") or p.profile == null or p.profile.job == null:
+		return ""
+	return p.profile.job.resource_path.get_file().get_basename()
 
 
 ## Expérience pour passer du niveau `l` au suivant (courbe douce : ~25 000 xp en tout pour le niveau 100).

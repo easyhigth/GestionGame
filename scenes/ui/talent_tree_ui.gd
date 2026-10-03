@@ -51,9 +51,12 @@ class TreeCanvas extends Control:
 		queue_redraw()
 
 	func node_pos(n: Dictionary) -> Vector2:
+		if n.has("cls"):
+			# compétences de classe : une rangée au-dessus du Pacte
+			return Vector2((float(n.col) - 1.0) * 190.0, -330.0)
 		if n.get("story", false):
 			# Pacte : une grille à part, centrée
-			return Vector2((float(n.col) - 1.0) * 190.0, (float(n.row) - 2.0) * 120.0)
+			return Vector2((float(n.col) - 1.0) * 190.0, (float(n.row) - 1.5) * 100.0)
 		return n.pos
 
 	func node_size(n: Dictionary) -> float:
@@ -66,7 +69,10 @@ class TreeCanvas extends Control:
 		return 15.0 if not n.has("bridge") else 13.0
 
 	func visible_nodes() -> Array:
-		return TalentTree.nodes().filter(func(n): return n.get("story", false) == ui._show_pacte)
+		if ui._show_pacte:
+			var cid: String = ui.player.class_id() if ui.player else ""
+			return TalentTree.nodes().filter(func(n): return n.get("story", false) or n.get("cls", "-") == cid)
+		return TalentTree.nodes().filter(func(n): return not n.get("story", false) and not n.has("cls"))
 
 	func node_at(s: Vector2) -> String:
 		var best := ""
@@ -123,6 +129,12 @@ class TreeCanvas extends Control:
 			var sp := Vector2(rng.randf_range(-2200, 2200), rng.randf_range(-2200, 2200))
 			draw_circle(to_screen(sp), 1.2, Color(1, 1, 1, rng.randf_range(0.08, 0.3)))
 		var list := visible_nodes()
+		if ui._show_pacte:
+			var cname: String = p.profile.hero_class.display_name if p.profile and p.profile.hero_class else "Classe"
+			draw_string(font, to_screen(Vector2(0, -385)) - Vector2(200, 0), "Compétences de classe : %s (offertes aux niveaux 1, 6 et 15)" % cname,
+				HORIZONTAL_ALIGNMENT_CENTER, 400, 13, C_GOLD)
+			draw_string(font, to_screen(Vector2(0, -222)) - Vector2(200, 0), "Pacte : compétences uniques de l'histoire",
+				HORIZONTAL_ALIGNMENT_CENTER, 400, 13, Color("c8a8ff"))
 		if not ui._show_pacte:
 			# anneaux de niveaux
 			for ring in [1, 4, 8, 12, 16]:
@@ -155,7 +167,7 @@ class TreeCanvas extends Control:
 				var open: bool = p.talents.has(r) or p.talents.has(n.id)
 				draw_line(to_screen(node_pos(m)), to_screen(node_pos(n)), col if on else (Color(col.darkened(0.45), 0.8) if open else Color(0.25, 0.22, 0.2, 0.7)),
 					(4.0 if on else 2.0) * clampf(zoom * 1.6, 0.6, 1.6), true)
-			if not n.get("story", false) and int(n.ring) == 1:
+			if not n.get("story", false) and int(n.get("ring", 0)) == 1:
 				draw_line(to_screen(Vector2.ZERO), to_screen(node_pos(n)), Color(col, 0.6 if p.talents.has(n.id) else 0.25), 2.0, true)
 		# nœuds
 		var t := Time.get_ticks_msec() * 0.003
@@ -167,7 +179,7 @@ class TreeCanvas extends Control:
 			var can := p.talent_block_reason(n.id) == ""
 			var rar: Dictionary = TalentTree.RARITIES.get(n.get("rarity", "commune"), TalentTree.RARITIES.commune)
 			var rcol: Color = rar.color
-			var bcol: Color = TalentTree.branch(n.branch).color
+			var bcol: Color = n.get("color", TalentTree.branch(n.branch).color)
 			var r := maxf(node_size(n) * zoom, 5.0)
 			var fill: Color = bcol.darkened(0.2) if learned else (Color("3a2e26") if can else Color("1c1816"))
 			var border: Color = rcol if (learned or can) else Color(rcol, 0.45)
@@ -233,8 +245,8 @@ func _ready() -> void:
 	_tab.pressed.connect(func():
 		_show_pacte = not _show_pacte
 		_selected = ""
-		_canvas.zoom = 0.9 if _show_pacte else 0.55
-		_canvas.focus(Vector2.ZERO)
+		_canvas.zoom = 0.6 if _show_pacte else 0.55
+		_canvas.focus(Vector2(0, -60) if _show_pacte else Vector2.ZERO)
 		_refresh())
 	head.add_child(_tab)
 	# milieu : la carte et les informations
@@ -406,7 +418,7 @@ func _step(dir: Vector2) -> void:
 ## Sélectionne un nœud et centre la vue dessus.
 func select(id: String) -> void:
 	_selected = id
-	_show_pacte = TalentTree.is_story(id)
+	_show_pacte = TalentTree.is_story(id) or TalentTree.is_class_skill(id)
 	_canvas.focus(_canvas.node_pos(TalentTree.node(id)))
 	_refresh()
 
@@ -434,7 +446,11 @@ func _show(id: String) -> void:
 	var hidden: bool = n.get("story", false) and not player.talents.has(id)
 	_info_name.text = n.name if not hidden else "Compétence inconnue"
 	_info_name.add_theme_color_override("font_color", (rar.color as Color).lightened(0.25))
-	if n.get("story", false):
+	if n.has("cls"):
+		_info_rar.text = "%s  ·  Compétence de classe" % rar.name
+		_info_kind.text = "%s  ·  recharge %d s\nOfferte au niveau %d, sans point" % [player.profile.hero_class.display_name if player.profile and player.profile.hero_class else "Classe",
+			roundi(n.cooldown), int(n.level)]
+	elif n.get("story", false):
 		_info_rar.text = "Compétence unique de l'histoire"
 		_info_kind.text = "Pacte  ·  offerte par l'histoire principale"
 	else:
@@ -447,7 +463,7 @@ func _show(id: String) -> void:
 	_info_desc.text = n.desc if not hidden else "Une compétence unique t'attend quelque part dans l'histoire principale. Avance dans ta quête (O : journal) pour la découvrir."
 	var reason := player.talent_block_reason(id)
 	if player.talents.has(id):
-		_info_state.text = "Appris" + ("  ·  offert par ta classe" if id == player.class_talent() else "")
+		_info_state.text = "Appris" + ("  ·  offert par ta classe" if id == player.class_talent() or n.has("cls") else "")
 		_info_state.add_theme_color_override("font_color", MenuKit.C_OK)
 	elif reason == "":
 		_info_state.text = "Disponible : « Apprendre » (ou clique une deuxième fois)."
@@ -476,13 +492,13 @@ func _show(id: String) -> void:
 func _refresh() -> void:
 	if player == null:
 		return
-	var learned := player.talents.keys().filter(func(t): return not TalentTree.is_story(t)).size()
-	var total := TalentTree.nodes().filter(func(n): return not n.get("story", false)).size()
+	var learned := player.talents.keys().filter(func(t): return not TalentTree.is_story(t) and not TalentTree.is_class_skill(t)).size()
+	var total := TalentTree.nodes().filter(func(n): return not n.get("story", false) and not n.has("cls")).size()
 	_points.text = "Points : %d  ·  Niveau %d  ·  %d / %d nœuds" % [player.talent_points(), player.level, learned, total]
 	var known := player.talents.keys().filter(func(t): return TalentTree.is_story(t)).size()
 	var ptotal := TalentTree.nodes().filter(func(n): return n.get("story", false)).size()
-	_tab.text = "← Arbre de combat" if _show_pacte else "✦ Pacte : %d / %d" % [known, ptotal]
-	var actives := TalentTree.nodes().filter(func(n): return n.kind == "active" and not n.get("story", false))
+	_tab.text = "← Arbre de combat" if _show_pacte else "✦ Classe et Pacte (%d / %d)" % [known, ptotal]
+	var actives := TalentTree.nodes().filter(func(n): return n.kind == "active" and not n.get("story", false) and not n.has("cls"))
 	var by_rar := {}
 	for n in actives:
 		by_rar[n.rarity] = int(by_rar.get(n.rarity, 0)) + 1

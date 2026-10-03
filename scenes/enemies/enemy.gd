@@ -295,6 +295,14 @@ func _pact_hint(player_dist: float) -> void:
 func _familiar_process(delta: float, player: Node3D) -> void:
 	if player == null:
 		return
+	# serviteur invoqué (Nécromancien) : il retourne à la terre au bout d'un moment
+	if has_meta("summon_left"):
+		var left := float(get_meta("summon_left")) - delta
+		set_meta("summon_left", left)
+		if left <= 0.0:
+			VoxelBurst.spawn(self, global_position + Vector3(0, 0.6, 0), Color("9ad08a"), 18, 2.5, 0.1, 0.8, "up", 2.0, false)
+			queue_free()
+			return
 	# monté par le héros : c'est la monture qui le déplace (voir Mounts)
 	if has_meta("ridden"):
 		name_label.visible = false
@@ -383,6 +391,10 @@ func _on_died() -> void:
 	name_label.visible = false
 	bar.visible = false
 	var fm := get_tree().get_first_node_in_group("familiars_mgr")
+	if is_in_group("summons"):
+		VoxelBurst.spawn(self, global_position + Vector3(0, 0.6, 0), Color("9ad08a"), 18, 2.5, 0.1, 0.8, "up", 2.0, false)
+		get_tree().create_timer(0.8, false).timeout.connect(queue_free)
+		return
 	if tamed:
 		# un familier ne meurt pas : il tombe K.O. et revient plus tard
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color("b8f0a0"), 24, 3.0, 0.1, 0.8, "up", 2.0, false)

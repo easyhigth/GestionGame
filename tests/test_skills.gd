@@ -80,7 +80,7 @@ func _process(_d) -> bool:
 		tt = load("res://scripts/hero/talent_tree.gd")
 		print("== l'arbre")
 		var all: Array = tt.nodes()
-		var combat := all.filter(func(n): return not n.get("story", false))
+		var combat := all.filter(func(n): return not n.get("story", false) and not n.has("cls"))
 		var actives := combat.filter(func(n): return n.kind == "active")
 		var by := {}
 		for n in actives: by[n.rarity] = int(by.get(n.rarity, 0)) + 1
@@ -140,7 +140,7 @@ func _process(_d) -> bool:
 		check("niveau 1000 (%d points)" % p.talent_points(), p.level == 1000 and p.talent_points() > 900)
 		var a0: int = p.attack_power()
 		check("/competences", con.run("/competences"))
-		check("tout l'arbre est appris (%d)" % p.talents.keys().filter(func(t): return not tt.is_story(t)).size(), p.talents.keys().filter(func(t): return not tt.is_story(t)).size() == combat.size())
+		check("tout l'arbre est appris (%d)" % p.talents.keys().filter(func(t): return not tt.is_story(t) and not tt.is_class_skill(t)).size(), p.talents.keys().filter(func(t): return not tt.is_story(t) and not tt.is_class_skill(t)).size() == combat.size())
 		check("bien plus fort (attaque %d -> %d)" % [a0, p.attack_power()], p.attack_power() > a0 * 2)
 		var bar := ["lame_myth", "feu_myth", "fou_myth", "giv_myth", "sac_myth", "ter_myth", "san_myth", "omb_myth", "lame_jugement", "cataclysme"]
 		for i in bar.size(): p.set_ability_slot(i, bar[i])

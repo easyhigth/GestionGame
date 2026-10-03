@@ -559,6 +559,19 @@ Pour les héros de haut niveau (jusqu'au niveau 1000), le **Portail des Failles*
 - Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
 - Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
 
+## Compétences de classe et savoir-faire des métiers
+- **3 compétences par classe** (39 en tout, `TalentTree.CLASS_SKILLS`), offertes sans point aux niveaux **1, 6 et 15**. Elles se rangent dans la barre en partant de la droite (touches **0**, **9**, **8**) et se retrouvent dans l'arbre (T), onglet **Classe et Pacte**. Quelques exemples :
+  - Guerrier : Coup de bouclier, Cri de guerre, Tourbillon d'acier ; Barbare : Rage, Bond fracassant, Séisme ;
+  - Paladin : Lumière sacrée, Bouclier divin, Jugement ; Clerc : Prière de soin, Bénédiction, Marteau céleste ;
+  - Mage : Projectiles arcaniques, Arc électrique, Pluie de météores ; Cryomancien : Éclats de glace, Prison de glace, Blizzard ;
+  - Nécromancien : **Lever les morts** (des squelettes alliés combattent 30 s), Drain de vie, Terreur ;
+  - Druide : Ronces, Régénération, Colère de la terre ; Barde : Chant de bravoure (renforce et soigne les alliés), Dissonance, Crescendo ;
+  - Rôdeur : Salve, Piège à ronces, Pluie de flèches ; Assassin : Pas de l'ombre, Instinct du tueur, Exécution ;
+  - Moine : Paume foudroyante, Méditation, Cent poings ; Chevalier : Charge, Rempart, Percée.
+- **Les habitants combattent selon leur classe** (`Villager.CLASS_ROLE`), en plus de leurs coups : clercs, paladins et druides soignent l'allié le plus blessé (héros compris), le barde soigne tout le groupe, mages, cryomanciens (ralentit) et rôdeurs tirent de loin, le nécromancien draine la vie, chevaliers et guerriers sonnent d'un coup de bouclier, le moine repousse, le barbare entre en rage, l'assassin passe dans le dos de sa cible.
+- **Savoir-faire du métier du héros** (`Crafts.JOB_SPECIALTY`, affiché à la création) : Cuisinier (repas +40 %), Joaillier (gemmes en cassant la roche), Fermier (récoltes plus généreuses), Pêcheur (poissons qui mordent plus vite), Herboriste (plus de baies), Bûcheron et Mineur (bois et pierre en plus), Alchimiste (potions de soin +50 %).
+- Test : `tests/test_class_skills.gd`.
+
 ## Classes et métiers des habitants
 - Chaque habitant, voyageur, prisonnier ou citadin a une **classe de combat** (les 13 classes du héros, `Villager.CLASS_IDS`), le plus souvent liée à son métier (un garde est guerrier, chevalier, paladin ou barbare ; un mage est mage, cryomancien ou nécromancien ; un chasseur est rôdeur...). Elle donne ses bonus (vie, attaque, défense, magie) et sa **tenue de départ** : les voyageurs et les premiers habitants portent l'équipement de leur classe.
 - La classe s'affiche sur l'étiquette des voyageurs, dans la fiche de recrutement, dans la fiche de l'habitant et dans le panneau du royaume ; elle est sauvegardée.
