@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="p_leather"]
+[ext_resource type="Resource" path="res://data/items/viande_crue.tres" id="p_viande_crue"]
+[ext_resource type="Resource" path="res://data/items/croc_meute.tres" id="p_croc_meute"]
+
+[resource]
+script = ExtResource("1")
+id = "pavillon_chasse"
+display_name = "Pavillon de chasse"
+description = "Trophées, couteaux et peaux tendues."
+color = Color(0.6, 0.42, 0.25, 1)
+required = {"ratelier": 1, "billot": 1, "table": 1}
+min_cells = 6
+job_id = "chasseur"
+job_name = "Chasseur"
+job_slots = 2
+production_pool = Array[ExtResource("2")]([ExtResource("p_leather"), ExtResource("p_viande_crue"), ExtResource("p_viande_crue"), ExtResource("p_croc_meute")])
+production_count = 2
+production_interval = 90.0
+hero_bonus = {}
+effect_text = "Les chasseurs rapportent du cuir et de la viande."

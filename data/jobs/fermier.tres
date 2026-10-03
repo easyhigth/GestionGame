@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/job_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/graines_ble.tres" id="it_graines_ble"]
+[ext_resource type="Resource" path="res://data/items/houe.tres" id="it_houe"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Fermier"
+description = "La terre le nourrit, et il nourrit les autres. Commence avec des semences et une houe."
+starting_items = Array[ExtResource("2")]([ExtResource("it_graines_ble"), ExtResource("it_houe")])
+starting_counts = PackedInt32Array(8, 1)
+bonus_health = 15
+bonus_defense = 1

@@ -102,7 +102,8 @@ func _refresh() -> void:
 	var hv := VBoxContainer.new()
 	hv.alignment = BoxContainer.ALIGNMENT_CENTER
 	hv.add_child(MenuKit.heading(v.villager_name, 18))
-	hv.add_child(MenuKit.label("%s  ·  Niveau %d" % [v.race.display_name if v.race else "?", v.level], 12, C_DIM))
+	var cls: String = v.class_name_fr() if v.has_method("class_name_fr") else ""
+	hv.add_child(MenuKit.label("%s  ·  %s  ·  Niveau %d" % [v.race.display_name if v.race else "?", cls if cls != "" else "Sans classe", v.level], 12, C_DIM))
 	head.add_child(hv)
 	_box.add_child(head)
 	_box.add_child(_label("« %s »" % v.recruit_offer.get("text", "Je cherche un endroit où vivre."), 12, C_TEXT))

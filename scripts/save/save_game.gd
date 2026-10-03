@@ -384,7 +384,7 @@ func _save_villagers() -> Array:
 			"equipment": _equip_ids(vv.equipment), "companion": vv.companion, "work": work,
 			"pos": [vv.global_position.x, vv.global_position.y, vv.global_position.z],
 			"home": [vv.home.x, vv.home.y, vv.home.z], "food": vv.food, "happiness": vv.happiness, "unhappy": vv.unhappy_time, "friend": vv.friendship,
-			"evo": vv.evo, "evo_title": vv.evo_title, "artisan_xp": int(vv.get_meta("artisan_xp", 0)),
+			"evo": vv.evo, "evo_title": vv.evo_title, "fight_class": vv.fight_class, "artisan_xp": int(vv.get_meta("artisan_xp", 0)),
 			"variant": vv.model_variant, "evo_model": vv.evo_model})
 	return out
 
@@ -562,6 +562,7 @@ func apply_pending(world: WorldGenerator) -> void:
 		v.level = int(vd.level)
 		v.evo = int(vd.get("evo", 0))
 		v.evo_title = str(vd.get("evo_title", ""))
+		v.fight_class = str(vd.get("fight_class", ""))
 		v.set_meta("artisan_xp", int(vd.get("artisan_xp", 0)))
 		v.model_variant = int(vd.get("variant", -1))
 		v.evo_model = int(vd.get("evo_model", mini(int(vd.get("evo", 0)), 2)))

@@ -56,8 +56,8 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 ## Création du héros
 - **Race** : 22 races, chacune avec ses caractéristiques (vie, force, agilité, magie, vitesse) dans `data/races/*.tres`. L'agilité accélère les coups.
 - **Apparence** : style propre à la race (coiffure, cornes, espèce de l'homme-bête, élément de l'esprit, type d'ange...), barbe (humain), couleurs de peau, de cheveux (ou plumes, fourrure, feuillage) et d'yeux (pastilles de la race ou couleur libre), taille et carrure.
-- **Classe** (`data/classes/`) : Guerrier, Paladin, Barbare, Rôdeur, Assassin, Mage. Donne l'équipement de départ, des bonus et le gain de caractéristiques à chaque niveau.
-- **Métier** (`data/jobs/`) : Forgeron, Chasseur, Bûcheron, Mineur, Herboriste, Marchand, Tisserand. Donne des matériaux de départ et un avantage (vie, défense, vitesse, régénération, butin...).
+- **Classe** (`data/classes/`, 13 classes) : Guerrier, Paladin, Barbare, Rôdeur, Assassin, Mage, Moine, Nécromancien, Druide, Chevalier, Barde, Clerc, Cryomancien. Donne l'équipement de départ, des bonus, le gain de caractéristiques à chaque niveau et un talent offert dans l'arbre (ex. Nécromancien : Soif, Druide et Chevalier : Enraciné, Cryomancien : Sang-froid, Clerc : Foi, Moine et Barde : Étincelle).
+- **Métier** (`data/jobs/`, 14 métiers) : Forgeron, Chasseur, Bûcheron, Mineur, Herboriste, Marchand, Tisserand, Pêcheur, Alchimiste, Cuisinier, Fermier, Joaillier, Enchanteur, Architecte. Donne des objets de départ (sauf départ à mains nues), un avantage (vie, défense, magie, vitesse, régénération, butin...) et deux métiers d'artisanat qui commencent au niveau 10 (`Crafts.JOB_START`).
 - **Niveaux** : les monstres vaincus donnent de l'expérience ; chaque niveau augmente la vie, l'attaque, la défense et la magie selon la classe (barre bleue sous la vie).
 - Les modèles du héros sont dans `assets/characters/hero/` (outil `tools/voxel_hero_generator.py`) : la peau, les cheveux et les yeux y sont peints avec des couleurs repères, remplacées en jeu par les couleurs choisies (`VoxelCharacter.set_colors`).
 
@@ -558,6 +558,18 @@ Pour les héros de haut niveau (jusqu'au niveau 1000), le **Portail des Failles*
 - **Raids** : de temps en temps (premier raid après 8 minutes, puis toutes les 10 à 14 minutes, réglable dans le nœud **Menaces**), une bande de pillards attaque le village. Le raid est annoncé 45 secondes à l'avance avec sa direction. La bande dépend de ton niveau (gobelins, horde d'orcs, clan des ogres, légion des cendres) et grossit avec le rang de ton royaume.
 - Les pillards contournent le décor, s'en prennent aux habitants et au héros, et **cassent les murs construits** qui leur barrent la route : une palissade les retarde. Les **gardes** (habitants au camp d'entraînement) défendent tout le village avec un bonus d'attaque. Points rouges sur la mini-carte.
 - Tous les pillards vaincus : butin au feu de camp (or, lingots, cuir, bois) et expérience. Sinon, au bout de 3 min 30, ils repartent en volant un quart de trois de tes piles de ressources. Pas de raid pendant que tu es dans un donjon.
+
+## Classes et métiers des habitants
+- Chaque habitant, voyageur, prisonnier ou citadin a une **classe de combat** (les 13 classes du héros, `Villager.CLASS_IDS`), le plus souvent liée à son métier (un garde est guerrier, chevalier, paladin ou barbare ; un mage est mage, cryomancien ou nécromancien ; un chasseur est rôdeur...). Elle donne ses bonus (vie, attaque, défense, magie) et sa **tenue de départ** : les voyageurs et les premiers habitants portent l'équipement de leur classe.
+- La classe s'affiche sur l'étiquette des voyageurs, dans la fiche de recrutement, dans la fiche de l'habitant et dans le panneau du royaume ; elle est sauvegardée.
+- **5 nouveaux métiers d'habitants**, avec leur pièce :
+  - **Pavillon de chasse** (râtelier, billot, table) : 2 chasseurs rapportent cuir, viande et crocs ;
+  - **Cabane de pêche** (tonneau, étal, barrière) : 2 pêcheurs ramènent truites, carpes, gardons, saumons ;
+  - **Carrière** (meule, râtelier, coffre) : 2 mineurs extraient pierre, fer, pierre brute et un peu d'or ;
+  - **Cuisine** (four à pain, chaudron, table) : 2 cuisiniers préparent soupes, ragoûts, omelettes et viande cuite ;
+  - **Joaillerie** (établi, bougeoir, coffre) : 1 joaillier taille des gemmes (améthyste, topaze, émeraude, perles) et de l'or.
+- En progressant (voir Artisans), ils produisent aussi des prises rares, du cuivre et de l'étain, des gâteaux ou des rubis et diamants. Nouvelles affinités : nains mineurs et joailliers, orcs et lycans chasseurs, hommes-lézards et harpies pêcheurs, humains et slimes cuisiniers, gobelins joailliers. Les voyageurs de ces métiers demandent leurs propres matériaux pour te rejoindre.
+- Test : `tests/test_classes.gd`.
 
 ## Métiers avancés
 - **Laboratoire d'alchimie** (chaudron, table, tonneau) : 2 alchimistes préparent des potions. **Z** : boire une potion (soin si le héros est blessé, sinon une potion de renfort : force +25 % d'attaque, garde +8 défense, célérité +20 % de vitesse, 90 s). La potion de soin se fabrique aussi au chaudron (8 baies) et soigne les malades d'une épidémie.

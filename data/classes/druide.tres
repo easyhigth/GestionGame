@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="it_staff"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="it_leather_armor"]
+[ext_resource type="Resource" path="res://data/items/manteau_laine.tres" id="it_manteau_laine"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Druide"
+description = "Gardien des forêts : la terre et les racines le protègent. Magie solide et grande endurance."
+color = Color(0.35, 0.65, 0.3, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_staff"), ExtResource("it_leather_armor"), ExtResource("it_manteau_laine")])
+bonus_health = 15
+bonus_attack = 0
+bonus_defense = 2
+bonus_magic = 5
+health_per_level = 12
+attack_per_level = 0.5
+defense_per_level = 0.4
+magic_per_level = 1.4

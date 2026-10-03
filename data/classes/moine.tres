@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="it_staff"]
+[ext_resource type="Resource" path="res://data/items/manteau_laine.tres" id="it_manteau_laine"]
+[ext_resource type="Resource" path="res://data/items/leather_bracers.tres" id="it_leather_bracers"]
+[ext_resource type="Resource" path="res://data/items/leather_pants.tres" id="it_leather_pants"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Moine"
+description = "Ascète des monastères de montagne. Il frappe vite au bâton, esquive tout et ne s'essouffle jamais. Peu d'armure, beaucoup de souffle."
+color = Color(0.95, 0.65, 0.3, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_staff"), ExtResource("it_manteau_laine"), ExtResource("it_leather_bracers"), ExtResource("it_leather_pants")])
+bonus_health = 15
+bonus_attack = 3
+bonus_defense = 2
+bonus_magic = 2
+health_per_level = 12
+attack_per_level = 1.2
+defense_per_level = 0.4
+magic_per_level = 0.6

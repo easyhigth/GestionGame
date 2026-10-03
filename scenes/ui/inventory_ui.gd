@@ -428,6 +428,8 @@ func _refresh_job() -> void:
 	if target.get("companion"):
 		_job_box.add_child(_label("Niveau %d · progresse avec toi." % target.get("level"), 9, C_DIM))
 		return
+	if target.has_method("class_name_fr") and target.class_name_fr() != "":
+		_job_box.add_child(_label("Classe : %s" % target.class_name_fr(), 11, C_DIM))
 	_job_box.add_child(_label("Poste de travail", 12, Color("f2c86a")))
 	var cur = target.get("work_room")
 	var opt := OptionButton.new()
