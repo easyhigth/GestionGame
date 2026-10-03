@@ -663,12 +663,25 @@ func set_camera_mode(m: int, announce := true) -> void:
 		visual.visible = cam_mode != CamMode.FIRST
 	_update_viewmodel()
 	Villager.label_scale = [0.45, 1.0, 0.32][cam_mode]
+	_apply_view_range()
 	if is_inside_tree():
 		snap_camera()
 	if announce:
 		SaveGame.options.camera_mode = int(cam_mode)
 		SaveGame.save_options()
 		notify.emit("Vue : %s (F5 pour changer)" % CAM_NAMES[cam_mode])
+
+
+## Vue rapprochée : la caméra ne dessine que la zone chargée, que la brume efface au loin (deux fois moins
+## d'appels de dessin qu'en regardant jusqu'à 250 m) ; vue de dessus : comme avant.
+func _apply_view_range() -> void:
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator if is_inside_tree() else null
+	if w == null:
+		(func(): if is_inside_tree() and get_tree().get_first_node_in_group("world"): _apply_view_range()).call_deferred()
+		return
+	var close := cam_mode != CamMode.TOP
+	w.set_close_view(close)
+	camera.far = w.close_view_far() if close else 250.0
 
 
 func clamp_pitch(v: float) -> float:
@@ -1061,6 +1074,17 @@ func _do_hit(h: Dictionary) -> void:
 
 
 ## Chaque coup frappe aussi le décor devant le héros (arbre, rocher, cabane...), façon Minecraft.
+## Le héros donne un coup d'outil (bâtir un plan) : geste, et le bras bouge en 1re personne.
+func work_gesture(at: Vector3) -> void:
+	var to := at - global_position
+	to.y = 0.0
+	if to.length() > 0.2 and not in_move():
+		facing = to.normalized()
+	_vm_swing = 0.8
+	if visual and not in_move() and Vector2(velocity.x, velocity.z).length() < 0.5:
+		visual.play_move("heavy_1", 1.6)
+
+
 func _harvest_swing(h: Dictionary) -> bool:
 	if building or ui_open:
 		return false
@@ -1659,7 +1683,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("place_block"):
 		_aim_with_camera()
-		hand.place()
+		if hand.place():
+			_vm_swing = 0.7
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("hotbar_next") or event.is_action_pressed("hotbar_prev"):

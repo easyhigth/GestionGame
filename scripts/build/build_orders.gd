@@ -447,6 +447,7 @@ const HERO_RATE := 2.0
 const HERO_REACH := 4.5
 var _hero_order = null
 var _hero_told := false
+var _hero_fx := 0.0
 
 
 ## Le héros qui se tient près de ses plans les bâtit lui-même (indispensable quand il est seul au monde) :
@@ -488,6 +489,16 @@ func _physics_process(delta: float) -> void:
 		if not _hero_told and builders().is_empty():
 			_hero_told = true
 			p.notify.emit("Personne pour bâtir : c'est toi qui construis tes plans. Reste à côté, avec les matériaux dans ton sac.")
+	# on voit le héros travailler : un coup d'outil, des éclats et un petit bruit régulièrement
+	_hero_fx -= delta
+	if _hero_fx <= 0.0:
+		_hero_fx = 0.55
+		var at := order_position(_hero_order) + Vector3(0, 0.6, 0)
+		var col: Color = BuildMode.it_color(_hero_order.item) if _hero_order.get("item") is ItemData else Color(0.7, 0.6, 0.45)
+		VoxelBurst.spawn(self, at, col, 5, 1.6, 0.07, 0.3, "up", 5.0, false)
+		Sound.play("chop" if _hero_order.type != "remove" else "pick", at, -10.0)
+		if p.has_method("work_gesture"):
+			p.work_gesture(at)
 	if work(_hero_order, delta * HERO_RATE):
 		_hero_order = null
 

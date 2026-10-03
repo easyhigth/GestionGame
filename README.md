@@ -151,6 +151,11 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - Les armes **en bois, en os et en pierre** ont une poignée en fibres (et non en cuir) : on peut s'armer avant de pouvoir chasser.
 - Temps d'action mesuré (sans compter la recherche des ressources ni les menus ; un vrai joueur met environ 2 à 3 fois plus) : établi 0,3 min, outils et épée en bois 1 min, feu de camp 1,1 min, maison complète (58 planches, 42 chaume, porte, lit, coffre) 4,7 min, premier habitant au plus tard 3 min après.
 
+### Vue rapprochée plus légère, retours en jeu et glisser-déposer
+- **Performances en 3e et 1re personne** (mesure : appels de dessin au village, de dessus 3 666, en 3e personne 8 251 avant) : en vue rapprochée, la caméra ne dessine plus au-delà de la zone chargée (≈ 80 m au lieu de 250 m) et une **brume de distance** efface le monde avant sa limite (au lieu d'un bord net) ; les ombres ne sont calculées qu'à 28 m (elles coûtaient plus de 40 % des appels de dessin) et les petits décors s'arrêtent à 40 m. 3e personne : 8 251 → 6 239 appels de dessin (−24 %). La vue de dessus garde ses réglages. Le brouillard de la météo se superpose à cette brume.
+- **Retours en jeu** : le feu de camp fabriqué est le vrai feu animé (flammes qui dansent, lumière qui vacille, crépitement qu'on entend en s'approchant) ; quand le héros bâtit ses plans, on le voit donner des coups d'outil, avec des éclats et un petit bruit ; en 1re personne, le bras bouge aussi quand on pose un bloc.
+- **Glisser-déposer** : dans le sac, la rangée « Barre de construction » accepte un objet glissé depuis le sac (les deux objets s'échangent si la case est prise) ; clic droit sur une case : la vider.
+
 ## Poser et casser à la main
 - Sans passer par le mode construction : **C** (ou X pour revenir en arrière) choisit un bloc ou un meuble du sac, **V** le pose devant soi. Une barre d'objets s'affiche au-dessus de la compétence ; après le dernier objet, on revient aux mains nues (plus rien ne s'affiche).
 - Une case fantôme montre où l'objet ira : verte si c'est possible, rouge sinon. Un bloc se pose au niveau des pieds, puis au-dessus s'il y en a déjà un (jusqu'à 3 de haut) ; devant un trou ou de l'eau, il se pose un cran plus bas pour faire un pont. Il lui faut un appui : le sol, un bloc dessous ou à côté.

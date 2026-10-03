@@ -315,7 +315,8 @@ func place_furniture(col: Vector2i, base: float, item: ItemData, rot: int) -> bo
 	node.position = Vector3(col.x + 0.5, base, col.y + 0.5)
 	node.rotation.y = rot * PI * 0.5
 	add_child(node)
-	if item.furniture_light:
+	# (un meuble qui a déjà sa propre lumière, comme le feu de camp, n'en reçoit pas d'autre)
+	if item.furniture_light and node.find_children("*", "OmniLight3D", true, false).is_empty():
 		var l := OmniLight3D.new()
 		l.light_color = Color(1.0, 0.72, 0.4)
 		l.light_energy = 1.1

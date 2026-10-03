@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/campfire.glb" id="m"]
+[ext_resource type="PackedScene" path="res://scenes/props/campfire.tscn" id="m"]
 
 [resource]
 script = ExtResource("1")
