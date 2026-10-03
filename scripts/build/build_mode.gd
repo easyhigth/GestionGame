@@ -170,7 +170,7 @@ func toggle(on: bool) -> void:
 		_cam.make_current()
 		_update_camera(1.0)
 		_refresh_ui()
-		player.notify.emit("Mode construction : trace des plans, tes habitants libres viendront les bâtir.")
+		player.notify.emit("Mode construction : trace des plans ; tes habitants libres les bâtissent, ou toi-même en te tenant à côté.")
 	else:
 		player.camera.make_current()
 		world.stream_focus = Vector3.INF
@@ -193,7 +193,7 @@ func _tool() -> Dictionary:
 		if t == null:
 			return {"id": "plan", "name": "Plans prêts", "desc": ""}
 		return {"id": "plan", "name": t.display_name,
-			"desc": "Clic : toute la pièce d'un coup (murs, sol, porte, toit et meubles). Tes habitants la bâtissent ; les meubles manquants sont à fabriquer. Matériaux : ceux choisis dans Murs, Sols et Toits."}
+			"desc": "Clic : toute la pièce d'un coup (murs, sol, porte, toit et meubles). Tes habitants la bâtissent, ou toi-même en te tenant à côté ; les meubles manquants sont à fabriquer. Matériaux : ceux choisis dans Murs, Sols et Toits."}
 	if c.id == "furniture":
 		var it := _furniture_item()
 		return {"id": "furniture", "name": it.display_name if it else "Mobilier",

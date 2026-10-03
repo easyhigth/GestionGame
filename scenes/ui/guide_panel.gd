@@ -19,7 +19,7 @@ const STEPS := [
 	["outil", "Fabrique une hache ou une pioche", "Près de l'établi : {inventory} → Artisanat → Outils (bois, puis pierre). Il suffit de l'avoir dans ton sac.", 1],
 	["arme", "Fabrique une arme et équipe-la", "Près de l'établi : Artisanat → Armurerie → une épée en bois ou en pierre. Clique-la dans le sac pour l'équiper : les monstres sortent la nuit !", 1],
 	["planches", "Fabrique des planches", "{inventory} → Artisanat → Construction : 1 bois donne 4 planches.", 1],
-	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit. Le plus simple : le mode construction ({build_mode}), outil « Pièce », tu glisses un rectangle et tes habitants bâtissent. Ou à la main, comme dans Minecraft : Ctrl+1…0 prend un bloc de ta barre de construction, {place_block} le pose.", 1],
+	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit. Le plus simple : le mode construction ({build_mode}), catégorie ★ Plans prêts → Maison : un clic pose le plan, puis tiens-toi à côté pour le bâtir (seul, c'est toi qui construis). Ou à la main, comme dans Minecraft : Ctrl+1…0 prend un bloc de ta barre de construction, {place_block} le pose.", 1],
 	["torche", "Pose une torche", "Fabrique-la (bois et charbon ou fibres), prends-la avec Ctrl+chiffre de sa case et pose-la avec {place_block}. Les monstres n'apparaissent pas près des lumières.", 1],
 	["repas", "Mange un repas cuit", "Fabrique un feu de camp (3 bois et 3 cailloux, Artisanat → Mobilier) et pose-le. Baies (buissons) ou viande (animaux) : cuis-les près de lui (Artisanat → Cuisine), puis mange avec {eat}.", 1],
 	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit ({interact}) ou tiens jusqu'au matin près de ton feu et de tes torches.", 1],
@@ -96,7 +96,7 @@ const TIPS := [
 	["recherche", "Dans l'artisanat, la barre de recherche trouve une recette parmi des centaines ; ★ pour les favoris."],
 	["en_main", "Barre de construction (en bas, au-dessus des compétences) : Ctrl+1…0 prend un objet, {place_block} le pose devant toi, Échap ou le même Ctrl+chiffre le range. Les chiffres seuls restent aux compétences."],
 	["soir", "Le soleil se couche : les monstres sortent la nuit. Reste près du feu ou d'une torche, ou dors dans un lit ({interact})."],
-	["construire", "Mode construction : choisis un outil en bas, glisse sur le sol pour tracer, et tes habitants bâtissent avec ce qu'il y a dans ton sac. {build_mode}, Échap ou ✕ pour en sortir."],
+	["construire", "Mode construction : choisis un outil en bas, glisse sur le sol pour tracer, et tes habitants (ou toi, en te tenant à côté) bâtissent avec ce qu'il y a dans ton sac. {build_mode}, Échap ou ✕ pour en sortir."],
 	["royaume", "Ton royaume ({kingdom}) : ce qu'il manque à tes habitants (lits, nourriture, bonheur) et ce qu'il faut pour passer au rang suivant."],
 	["faim", "Tu as faim : mange avec {eat} (baies, viande cuite, pain...). Le ventre vide, tu ne regagnes plus de vie."],
 ]

@@ -440,6 +440,62 @@ func order_position(o: Dictionary) -> Vector3:
 	return Vector3(o.cell.x + 0.5, world.terrain_height(o.cell), o.cell.y + 0.5)
 
 
+# ---------------------------------------------------------------- le héros bâtit lui-même
+
+## Vitesse du héros quand il bâtit ses plans (un habitant : environ 1).
+const HERO_RATE := 2.0
+const HERO_REACH := 4.5
+var _hero_order = null
+var _hero_told := false
+
+
+## Le héros qui se tient près de ses plans les bâtit lui-même (indispensable quand il est seul au monde) :
+## un plan à la fois, du bas vers le haut, avec les matériaux de son sac.
+func _physics_process(delta: float) -> void:
+	if orders.is_empty() or instant:
+		return
+	var p := _player()
+	if p == null or not p.is_alive() or p.ui_open or p.global_position.y < WorldGenerator.UNDERGROUND:
+		_hero_order = null
+		return
+	if _hero_order != null and (not orders.has(_hero_order.id) or not ready_to_build(_hero_order) \
+			or _flat_dist(order_position(_hero_order), p.global_position) > HERO_REACH):
+		if orders.has(_hero_order.id) and _hero_order.builder == p:
+			_hero_order.builder = null
+		_hero_order = null
+	if _hero_order == null:
+		var best = null
+		var best_score := INF
+		for o in orders.values():
+			if o.type == "harvest" or not ready_to_build(o):
+				continue
+			if o.builder != null and is_instance_valid(o.builder) and o.builder != p:
+				continue
+			var pos := order_position(o)
+			var d := _flat_dist(pos, p.global_position)
+			if d > HERO_REACH:
+				continue
+			var score := pos.y * 3.0 + d
+			if o.type == "remove":
+				score -= pos.y * 6.0
+			if score < best_score:
+				best_score = score
+				best = o
+		if best == null:
+			return
+		_hero_order = best
+		best.builder = p
+		if not _hero_told and builders().is_empty():
+			_hero_told = true
+			p.notify.emit("Personne pour bâtir : c'est toi qui construis tes plans. Reste à côté, avec les matériaux dans ton sac.")
+	if work(_hero_order, delta * HERO_RATE):
+		_hero_order = null
+
+
+static func _flat_dist(a: Vector3, b: Vector3) -> float:
+	return Vector2(a.x - b.x, a.z - b.z).length()
+
+
 # ---------------------------------------------------------------- affichage des plans
 
 func _process(_delta: float) -> void:

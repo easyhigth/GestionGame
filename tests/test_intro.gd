@@ -52,7 +52,7 @@ func _process(_d) -> bool:
 		get_first_node_in_group("day_cycle").hour = 9.0
 		intro = get_first_node_in_group("intro")
 		check("nouvelle partie : l'introduction démarre", intro != null and intro.visible)
-		check("le reste de l'interface est caché", hud._skill_box.modulate.a < 0.01)
+		check("le reste de l'interface est caché (barres du bas, compétence)", hud._dock.modulate.a < 0.01)
 		check("le héros attend (commandes bloquées)", p.ui_open)
 		check("plus d'introduction en attente", not root.get_node("GameState").play_intro)
 		start("a")
@@ -76,7 +76,7 @@ func _process(_d) -> bool:
 		check("l'introduction est finie", not is_instance_valid(intro) or intro.is_queued_for_deletion() or intro._done)
 		check("caméra rendue au héros", p.camera.current)
 		check("commandes rendues", not p.ui_open)
-		check("interface de retour", hud.guide.modulate.a > 0.9 and hud._skill_box.modulate.a > 0.9)
+		check("interface de retour", hud.guide.modulate.a > 0.9 and hud._dock.modulate.a > 0.9)
 		shot("05_jeu.png")
 		# revoir l'introduction, puis la passer (Échap)
 		intro = hud.play_intro()

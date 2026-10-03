@@ -74,6 +74,8 @@ func _process(_d) -> bool:
 		check("le jour : musique « day » (%s), ambiance « amb_day » (%s)" % [snd.music_track, snd.amb_track], snd.music_track == "day" and snd.amb_track == "amb_day")
 		check("la musique joue", snd._music_a.playing or snd._music_b.playing)
 		dc.hour = 21.0
+		# la musique est réévaluée deux fois par seconde : on force la prochaine réévaluation
+		snd._think = 0.0
 	if wait(3000, "b"):
 		check("la nuit : « night » et « amb_night » (%s / %s)" % [snd.music_track, snd.amb_track], snd.music_track == "night" and snd.amb_track == "amb_night")
 		var rm = get_first_node_in_group("raids")
