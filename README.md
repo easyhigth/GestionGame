@@ -146,6 +146,11 @@ Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écra
 - **Barre de construction** : dans le sac, la fiche d'un bloc, d'un meuble ou de graines propose « Barre de construction : 1 … 0 » pour le ranger dans la case voulue (les deux objets s'échangent si la case est prise). À la manette : LB + croix gauche/droite parcourt la barre.
 - **Seul au début** : pas de raid tant que tu n'as aucun habitant ; la première nuit ne fait sortir que 2 monstres ; il n'y a plus de zone sûre invisible au point d'arrivée : ce sont tes torches et ton feu de camp qui protègent.
 
+### Rythme du départ en solo (mesuré par `tests/test_rythme.gd`)
+- Seul, **c'est le héros qui bâtit ses plans** : il suffit de se tenir à côté (4,5 m), avec les matériaux dans le sac ; un plan à la fois, du bas vers le haut. Quand il y a des habitants libres, ils bâtissent aussi.
+- Les armes **en bois, en os et en pierre** ont une poignée en fibres (et non en cuir) : on peut s'armer avant de pouvoir chasser.
+- Temps d'action mesuré (sans compter la recherche des ressources ni les menus ; un vrai joueur met environ 2 à 3 fois plus) : établi 0,3 min, outils et épée en bois 1 min, feu de camp 1,1 min, maison complète (58 planches, 42 chaume, porte, lit, coffre) 4,7 min, premier habitant au plus tard 3 min après.
+
 ## Poser et casser à la main
 - Sans passer par le mode construction : **C** (ou X pour revenir en arrière) choisit un bloc ou un meuble du sac, **V** le pose devant soi. Une barre d'objets s'affiche au-dessus de la compétence ; après le dernier objet, on revient aux mains nues (plus rien ne s'affiche).
 - Une case fantôme montre où l'objet ira : verte si c'est possible, rouge sinon. Un bloc se pose au niveau des pieds, puis au-dessus s'il y en a déjà un (jusqu'à 3 de haut) ; devant un trou ou de l'eau, il se pose un cran plus bas pour faire un pont. Il lui faut un appui : le sol, un bloc dessous ou à côté.

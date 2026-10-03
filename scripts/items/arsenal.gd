@@ -175,7 +175,12 @@ static func make_recipe(db: Node, it: ItemData, type: String, m: Dictionary, des
 	var am := PackedInt32Array()
 	var pairs := [[m.res, res_amount(t, m)]]
 	for e in t.extra:
-		pairs.append(e)
+		# armes primitives (bois, os, pierre) : une poignée en fibres tressées plutôt qu'en cuir,
+		# pour qu'un héros parti de rien puisse s'armer avant de chasser
+		if e[0] == "leather" and m.id in ["bois", "os", "pierre"]:
+			pairs.append(["fiber", int(e[1]) * 2])
+		else:
+			pairs.append(e)
 	if design == 3 and m.id != "or":
 		pairs.append(["lingot_or", 1])
 	var merged := {}
