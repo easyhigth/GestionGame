@@ -269,3 +269,247 @@ static func format_time(seconds: int) -> String:
 	var h := seconds / 3600
 	var m := (seconds / 60) % 60
 	return "%dh%02d" % [h, m] if h > 0 else "%d min" % m
+
+
+# ---------------------------------------------------------------- composants (tableaux de bord)
+
+## Jauge horizontale (fond sombre, remplissage coloré, liseré). `ratio` de 0 à 1.
+static func gauge(ratio: float, color: Color, width := 120.0, height := 9.0) -> Control:
+	var bg := Control.new()
+	bg.custom_minimum_size = Vector2(width, height)
+	bg.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frame := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.04, 0.03, 0.85)
+	sb.border_color = Color(C_FRAME, 0.8)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(3)
+	frame.add_theme_stylebox_override("panel", sb)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(frame)
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var r := clampf(ratio, 0.0, 1.0)
+	var fill := ColorRect.new()
+	fill.color = color
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fill.anchor_bottom = 1.0
+	fill.anchor_right = r
+	fill.offset_left = 1
+	fill.offset_top = 1
+	fill.offset_right = -1 if r > 0.0 else 0
+	fill.offset_bottom = -1
+	bg.add_child(fill)
+	var shine := ColorRect.new()
+	shine.color = Color(1, 1, 1, 0.18)
+	shine.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shine.anchor_right = r
+	shine.anchor_bottom = 0.45
+	shine.offset_left = 1
+	shine.offset_top = 1
+	bg.add_child(shine)
+	return bg
+
+
+## Pastille arrondie (étiquette colorée : classe, métier, état...).
+static func chip(text: String, color: Color, size := 10) -> PanelContainer:
+	var pc := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(color.darkened(0.55), 0.9)
+	sb.border_color = color
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 7
+	sb.content_margin_right = 7
+	sb.content_margin_top = 1
+	sb.content_margin_bottom = 1
+	pc.add_theme_stylebox_override("panel", sb)
+	pc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pc.mouse_filter = Control.MOUSE_FILTER_PASS
+	var l := label(text, size, color.lightened(0.35))
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pc.add_child(l)
+	return pc
+
+
+## Carte en bois clair (renvoie la carte ; son contenu va dans `card.get_child(0)`, une VBox).
+static func card_box(locked := false, pad := 8.0, sep := 4) -> PanelContainer:
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", card(locked, pad))
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", sep)
+	pc.add_child(v)
+	return pc
+
+
+## Tuile de chiffre clé : icône, grande valeur, légende, et une jauge si `ratio` >= 0.
+static func stat_tile(icon_name: String, value: String, caption: String, color := C_TEXT, ratio := -1.0, width := 150.0) -> PanelContainer:
+	var pc := card_box(false, 9.0, 2)
+	pc.custom_minimum_size.x = width
+	var v: VBoxContainer = pc.get_child(0)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 6)
+	top.add_child(icon(icon_name, 22))
+	var val := bold(value, 17, color)
+	top.add_child(val)
+	v.add_child(top)
+	v.add_child(label(caption, 10, C_DIM))
+	if ratio >= 0.0:
+		v.add_child(gauge(ratio, color, width - 20.0, 7.0))
+	return pc
+
+
+## En-tête de section : icône, titre calligraphié et filet.
+static func section(title_text: String, icon_name := "", size := 15) -> VBoxContainer:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 2)
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 6)
+	if icon_name != "":
+		h.add_child(icon(icon_name, size + 4))
+	h.add_child(heading(title_text, size))
+	v.add_child(h)
+	var line := ColorRect.new()
+	line.color = Color(C_GOLD, 0.35)
+	line.custom_minimum_size = Vector2(0, 1)
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(line)
+	return v
+
+
+## Barre d'onglets : [[id, texte, icône]...] ; `on_pick(id)` au clic.
+static func tab_bar(tabs: Array, active: String, on_pick: Callable, width := 0.0) -> HBoxContainer:
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 4)
+	h.alignment = BoxContainer.ALIGNMENT_CENTER
+	for t in tabs:
+		var b := tab(str(t[1]), t[0] == active, width, 12)
+		if t.size() > 2 and str(t[2]) != "":
+			b.icon = UiTheme.tex("icon_" + str(t[2]))
+			b.expand_icon = false
+			b.add_theme_constant_override("icon_max_width", 16)
+		var id: String = t[0]
+		b.pressed.connect(func(): on_pick.call(id))
+		h.add_child(b)
+	return h
+
+
+## Carte de conseil : icône, texte et un bouton d'action facultatif.
+static func tip_card(icon_name: String, text: String, button_text := "", on_press: Callable = Callable(), urgent := false) -> PanelContainer:
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", style(Color(0.35, 0.1, 0.06, 0.85) if urgent else Color(0.17, 0.13, 0.08, 0.9),
+		C_BAD if urgent else Color(C_GOLD, 0.6), 1, 4, 7))
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 8)
+	pc.add_child(h)
+	h.add_child(icon(icon_name, 20))
+	var l := label(text, 11, C_TEXT)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.custom_minimum_size.x = 200
+	h.add_child(l)
+	if button_text != "" and on_press.is_valid():
+		var b := button(button_text, 120, 11)
+		b.custom_minimum_size.y = 28
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.pressed.connect(on_press)
+		h.add_child(b)
+	return pc
+
+
+## Message quand une liste est vide.
+static func empty_state(icon_name: String, text: String) -> HBoxContainer:
+	var h := HBoxContainer.new()
+	h.alignment = BoxContainer.ALIGNMENT_CENTER
+	h.add_theme_constant_override("separation", 8)
+	var ic := icon(icon_name, 22)
+	ic.modulate = Color(1, 1, 1, 0.5)
+	h.add_child(ic)
+	h.add_child(label(text, 12, C_DIM))
+	return h
+
+
+## Petit portrait carré (sans cadre doré) pour les listes.
+static func mini_portrait(id: String, px := 34.0) -> PanelContainer:
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", style(Color(0.08, 0.06, 0.05), Color(C_FRAME, 0.9), 1, 3, 1))
+	pc.custom_minimum_size = Vector2(px, px)
+	pc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var r := TextureRect.new()
+	r.texture = portrait_texture(id)
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.custom_minimum_size = Vector2(px - 2, px - 2)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pc.add_child(r)
+	return pc
+
+
+## Icône d'objet (rendue par la base d'objets) avec son nombre.
+static func item_badge(item: ItemData, count := 0, px := 30.0) -> PanelContainer:
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", UiTheme.box("slot", 6, Vector4(2, 2, 2, 2)))
+	pc.custom_minimum_size = Vector2(px, px)
+	pc.tooltip_text = item.display_name if item else ""
+	var r := TextureRect.new()
+	r.texture = Items.get_icon(item) if item else null
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.custom_minimum_size = Vector2(px - 6, px - 6)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pc.add_child(r)
+	if count > 0:
+		var l := bold(str(count), 9, Color.WHITE)
+		l.add_theme_color_override("font_outline_color", Color.BLACK)
+		l.add_theme_constant_override("outline_size", 3)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		pc.add_child(l)
+	return pc
+
+
+## Bouton de navigation avec icône (bas des panneaux).
+static func nav_button(text: String, icon_name: String, width := 150.0) -> Button:
+	var b := button(text, width, 12)
+	if icon_name != "":
+		b.icon = UiTheme.tex("icon_" + icon_name)
+		b.add_theme_constant_override("icon_max_width", 16)
+	return b
+
+
+## Jauge centrée sur zéro (relation de -100 à +100) : la barre part du milieu vers la gauche ou la droite.
+static func center_gauge(value: float, color: Color, width := 160.0, height := 10.0) -> Control:
+	var bg := Control.new()
+	bg.custom_minimum_size = Vector2(width, height)
+	bg.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frame := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.04, 0.03, 0.85)
+	sb.border_color = Color(C_FRAME, 0.8)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(3)
+	frame.add_theme_stylebox_override("panel", sb)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(frame)
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var r := clampf(value / 100.0, -1.0, 1.0)
+	var fill := ColorRect.new()
+	fill.color = color
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fill.anchor_left = 0.5 + minf(r, 0.0) * 0.5
+	fill.anchor_right = 0.5 + maxf(r, 0.0) * 0.5
+	fill.anchor_bottom = 1.0
+	fill.offset_top = 1
+	fill.offset_bottom = -1
+	bg.add_child(fill)
+	var mid := ColorRect.new()
+	mid.color = Color(1, 1, 1, 0.55)
+	mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mid.anchor_left = 0.5
+	mid.anchor_right = 0.5
+	mid.anchor_bottom = 1.0
+	mid.offset_left = -1
+	mid.offset_right = 1
+	bg.add_child(mid)
+	return bg
