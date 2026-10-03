@@ -177,7 +177,8 @@ func _process(_d) -> bool:
 		var fish: String = fi.fish
 		var n0 := count(fish)
 		p.hand.place()
-		check("V dans le vert : poisson pêché (%s)" % fish, count(fish) == n0 + 1 and fi.state == "")
+		# un pêcheur expérimenté peut faire une prise double (métier Pêcheur) : 1 ou 2 de plus
+		check("V dans le vert : poisson pêché (%s, +%d)" % [fish, count(fish) - n0], count(fish) - n0 in [1, 2] and fi.state == "")
 		# raté
 		p.hand.place(); fi._timer = 0.0; fi._process(0.01); p.hand.place()
 		fi.cursor = 0.0 if fi.zone.x > 0.05 else 1.0

@@ -301,6 +301,20 @@ func _update_fog() -> void:
 	if _precip == "sable":
 		sand = clampf(_mix[1], 0.0, 1.0) * 0.8
 	var amount := maxf(fog, sand)
+	var wg := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if wg and wg.close_view:
+		# vue rapprochée : brume de distance toujours là (fin du monde chargé), plus proche par temps de brouillard
+		var reach := wg.view_distance * WorldGenerator.CHUNK
+		_env.fog_enabled = true
+		_env.fog_mode = Environment.FOG_MODE_DEPTH
+		_env.fog_density = 1.0
+		_env.fog_depth_end = reach * lerpf(0.95, 0.4, clampf(amount, 0.0, 1.0))
+		_env.fog_depth_begin = minf(reach * 0.45, _env.fog_depth_end * 0.3) if amount > 0.02 else reach * 0.45
+		_env.fog_sky_affect = 0.6
+		if amount > 0.02:
+			_env.fog_light_color = Color(0.72, 0.74, 0.78).lerp(Color(0.85, 0.72, 0.5), sand / maxf(amount, 0.001))
+		return
+	_env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
 	_env.fog_enabled = amount > 0.02
 	if _env.fog_enabled:
 		_env.fog_light_color = Color(0.72, 0.74, 0.78).lerp(Color(0.85, 0.72, 0.5), sand / maxf(amount, 0.001))

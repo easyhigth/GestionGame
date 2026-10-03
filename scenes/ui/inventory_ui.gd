@@ -29,6 +29,7 @@ var _info_name: Label
 var _info_icon: TextureRect
 var _info_text: Label
 var _info_bar: HFlowContainer
+var _bar_row: HBoxContainer
 var _recipes: VBoxContainer
 var _bench: Label
 var _cat := "Outils"
@@ -172,6 +173,11 @@ func _build() -> void:
 	_bag.add_theme_constant_override("h_separation", 4)
 	_bag.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(_bag)
+	# la barre de construction : on y glisse un objet du sac (bloc, meuble, graines...)
+	c2.add_child(_label("Barre de construction (glisse un objet du sac dans une case · Ctrl+chiffre en jeu)", 9, C_DIM))
+	_bar_row = HBoxContainer.new()
+	_bar_row.add_theme_constant_override("separation", 2)
+	c2.add_child(_bar_row)
 	# fiche de l'objet survolé : grande image dans sa case, nom, rareté, effets, description
 	var info := PanelContainer.new()
 	info.add_theme_stylebox_override("panel", MenuKit.card(false, 8))
@@ -319,9 +325,22 @@ func _refresh() -> void:
 			btn.add_child(n)
 		btn.mouse_entered.connect(_show_info.bind(item))
 		btn.pressed.connect(_use_item.bind(item))
+		# glisser un objet posable vers la barre de construction
+		if player.hand and player.hand.choices().has(item):
+			btn.gui_input.connect(func(ev):
+				if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
+					btn.set_meta("press_at", ev.position if ev.pressed else Vector2.INF)
+				elif ev is InputEventMouseMotion and (ev.button_mask & MOUSE_BUTTON_MASK_LEFT) and btn.has_meta("press_at"):
+					var at: Vector2 = btn.get_meta("press_at")
+					if at != Vector2.INF and at.distance_to(ev.position) > 6.0 and not btn.get_viewport().gui_is_dragging():
+						btn.set_meta("press_at", Vector2.INF)
+						var prev := _icon_box(item, 40)
+						prev.modulate.a = 0.85
+						btn.force_drag({"bar_item": item.id}, prev))
 		_bag.add_child(btn)
 	if player.inventory.entries.is_empty():
 		_bag.add_child(_label("Sac vide", 10, C_DIM))
+	_refresh_bar_row()
 
 	var near := player.is_near_workbench()
 	_stations = player.nearby_stations()
@@ -643,6 +662,47 @@ func _show_info(item: ItemData) -> void:
 	_show_bar_choice(item)
 
 
+## Les 10 cases de la barre de construction dans le sac : on y dépose un objet glissé ; clic droit : vider.
+func _refresh_bar_row() -> void:
+	if _bar_row == null or player == null or player.hand == null:
+		return
+	for c in _bar_row.get_children():
+		c.queue_free()
+	var hb: HandBuild = player.hand
+	hb.sync_slots()
+	for i in HandBuild.SLOTS:
+		var id: String = hb.slots[i]
+		var it := Items.get_item(id) as ItemData if id != "" else null
+		var cell := PanelContainer.new()
+		cell.custom_minimum_size = Vector2(27, 27)
+		cell.add_theme_stylebox_override("panel", UiTheme.box("slot", 6, Vector4(1, 1, 1, 1)))
+		cell.tooltip_text = ("%s · Ctrl+%d (clic droit : vider)" % [it.display_name, (i + 1) % 10]) if it else "Case %d : glisse un objet du sac ici" % ((i + 1) % 10)
+		if it:
+			var ic := TextureRect.new()
+			ic.texture = Items.get_icon(it)
+			ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			cell.add_child(ic)
+		else:
+			var n := _label(str((i + 1) % 10), 9, C_DIM)
+			n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			cell.add_child(n)
+		cell.set_drag_forwarding(Callable(),
+			func(_pos, data): return data is Dictionary and data.has("bar_item"),
+			func(_pos, data):
+				hb.assign_slot(i, str(data.bar_item))
+				Sound.ui("ui_click")
+				_refresh_bar_row())
+		cell.gui_input.connect(func(e):
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_RIGHT and hb.slots[i] != "":
+				hb.slots[i] = ""
+				hb.selection_changed.emit()
+				_refresh_bar_row())
+		_bar_row.add_child(cell)
+
+
 ## Rangée « Barre : 1 … 0 » sous la fiche d'un objet posable (bloc, meuble, graine, outil à poser).
 func _show_bar_choice(item: ItemData) -> void:
 	if _info_bar == null:
@@ -665,6 +725,7 @@ func _show_bar_choice(item: ItemData) -> void:
 			b.modulate = Color("ffe08a")
 		b.pressed.connect(func():
 			hb.assign_slot(i, item.id)
+			_refresh_bar_row()
 			player.notify.emit("%s rangé dans la case %d de la barre (Ctrl+%d)." % [item.display_name, (i + 1) % 10, (i + 1) % 10])
 			_show_bar_choice(item))
 		_info_bar.add_child(b)

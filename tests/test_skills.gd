@@ -155,6 +155,8 @@ func _process(_d) -> bool:
 		start("myth")
 	if later("myth", 1200):
 		foes0 = foes_near(20.0).size()
+		# les ennemis visés : on vérifie à la fin qu'eux sont anéantis (d'autres peuvent arriver entre-temps)
+		set_meta("cata_foes", foes_near(26.0))
 		check("Mille Soleils d'Acier lancée (%d ennemis autour)" % foes0, cast("lame_myth"))
 		p.cam_pitch = deg_to_rad(45); p.camera_zoom = 3.2; p.snap_camera()
 		start("myth_shot")
@@ -194,14 +196,15 @@ func _process(_d) -> bool:
 		start("cata_end")
 	if later("cata_end", 7000):
 		# machine chargée (CI, suite complète) : les dernières frappes peuvent tomber un peu plus tard
-		if foes_near(26.0).size() > 0 and not has_meta("cata_retry"):
+		var targets: Array = (get_meta("cata_foes") as Array).filter(func(e): return is_instance_valid(e) and e.is_alive())
+		if targets.size() > 0 and not has_meta("cata_retry"):
 			set_meta("cata_retry", true)
 			start("cata_end")
 			return false
 		var h1: float = w.terrain_height(c0 + Vector2i(3, 3))
 		var rim: float = w.terrain_height(c0 + Vector2i(24, 0))
 		check("un cratère géant (centre %.1f -> %.1f m, rebord %.1f m)" % [h0, h1, rim], (h1 < h0 - 5.0 or h1 <= w.water_surface + 0.6) and rim > h1 + 3.0)
-		check("les ennemis sont anéantis", foes_near(26.0).size() == 0)
+		check("les ennemis visés sont anéantis (%d restent)" % targets.size(), targets.is_empty())
 		p.global_position = w.cell_center(c0) + Vector3(0, 0, 30)
 		p.global_position.y = w.ground_height_at(p.global_position + Vector3(0, 40, 0))
 		p.cam_pitch = deg_to_rad(40); p.camera_zoom = 4.5; p.cam_yaw = 0.0; p.snap_camera()

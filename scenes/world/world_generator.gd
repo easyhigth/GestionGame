@@ -1325,10 +1325,33 @@ const QUALITY := [
 ]
 
 
+## Vue rapprochée (3e ou 1re personne) : brume de profondeur et caméra limitée à la zone chargée.
+var close_view := false
+var _quality := 2
+
+
+func set_close_view(on: bool) -> void:
+	if on == close_view:
+		return
+	close_view = on
+	# la qualité choisie dans les options (pas une valeur par défaut)
+	apply_quality(int(SaveGame.options.get("graphics", _quality)))
+
+
+## Distance jusqu'à laquelle la caméra dessine en vue rapprochée.
+func close_view_far() -> float:
+	return view_distance * CHUNK + 8.0
+
+
 func apply_quality(q: int) -> void:
+	_quality = q
 	var cfg: Dictionary = QUALITY[clampi(q, 0, QUALITY.size() - 1)]
 	view_distance = float(cfg.view)
 	small_decor_range = float(cfg.small)
+	# vue rapprochée : les petits décors et les ombres ne servent que tout près (mesuré : les ombres
+	# coûtent plus de 40 % des appels de dessin en 3e personne)
+	if close_view:
+		small_decor_range = minf(small_decor_range, 40.0)
 	for n in get_tree().get_nodes_in_group("small_decor"):
 		(n as GeometryInstance3D).visibility_range_end = small_decor_range
 	var sun := get_parent().get_node_or_null("Soleil") as DirectionalLight3D if get_parent() else null
@@ -1337,8 +1360,12 @@ func apply_quality(q: int) -> void:
 		# dans un donjon, l'ombre est coupée et sera rétablie à la sortie
 		if dm == null or not dm.active:
 			sun.shadow_enabled = bool(cfg.shadow)
-		sun.directional_shadow_max_distance = maxf(10.0, float(cfg.shadow_dist))
+		sun.directional_shadow_max_distance = maxf(10.0, float(cfg.shadow_dist) if not close_view else minf(28.0, float(cfg.shadow_dist)))
 	_apply_post(q)
+	if close_view:
+		var pl := get_tree().get_first_node_in_group("player")
+		if pl and pl.get("camera"):
+			pl.camera.far = close_view_far()
 
 
 ## Rendu de l'image : tons « filmiques », halo des lumières (torches, lave, feu), brume de distance
@@ -1357,10 +1384,21 @@ func _apply_post(q: int) -> void:
 	env.glow_bloom = 0.0
 	env.glow_hdr_threshold = 1.3
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
-	env.fog_enabled = q >= 1
+	env.fog_enabled = q >= 1 or close_view
 	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
 	env.fog_density = 0.003 if q >= 2 else 0.0042
-	env.fog_sky_affect = 0.0
+	if close_view:
+		# 3e et 1re personne : on regarde à l'horizon ; le monde s'efface dans la brume avant la fin
+		# de la zone chargée (au lieu de s'arrêter net), et rien n'est dessiné au-delà
+		var reach := view_distance * CHUNK
+		env.fog_mode = Environment.FOG_MODE_DEPTH
+		env.fog_density = 1.0
+		env.fog_depth_begin = reach * 0.45
+		env.fog_depth_end = reach * 0.95
+		env.fog_depth_curve = 1.6
+		env.fog_sky_affect = 0.6
+	if not close_view:
+		env.fog_sky_affect = 0.0
 	env.fog_aerial_perspective = 0.0
 	env.adjustment_enabled = true
 	env.adjustment_saturation = 0.98
