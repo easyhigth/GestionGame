@@ -290,21 +290,28 @@ func _refresh() -> void:
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
-	var dip_b := MenuKit.button("Diplomatie (Y)", 200, 13)
+	var dip_b := MenuKit.button("Diplomatie (Y)", 170, 13)
 	dip_b.pressed.connect(func():
 		close()
 		var hud := get_parent()
 		if hud and hud.get("diplomacy_panel"):
 			hud.diplomacy_panel.open())
 	row.add_child(dip_b)
-	var her_b := MenuKit.button("Bannière et trophées", 220, 13)
+	var exp_b := MenuKit.button("Expéditions", 170, 13)
+	exp_b.pressed.connect(func():
+		close()
+		var hud := get_parent()
+		if hud and hud.get("expedition_panel"):
+			hud.expedition_panel.open())
+	row.add_child(exp_b)
+	var her_b := MenuKit.button("Bannière et trophées", 190, 13)
 	her_b.pressed.connect(func():
 		close()
 		var hud := get_parent()
 		if hud and hud.get("heraldry_panel"):
 			hud.heraldry_panel.open())
 	row.add_child(her_b)
-	var close_b := MenuKit.button("Fermer (U)", 200, 13)
+	var close_b := MenuKit.button("Fermer (U)", 130, 13)
 	close_b.pressed.connect(close)
 	row.add_child(close_b)
 	_box.add_child(row)

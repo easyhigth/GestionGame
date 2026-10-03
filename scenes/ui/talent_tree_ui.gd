@@ -51,9 +51,12 @@ class TreeCanvas extends Control:
 		queue_redraw()
 
 	func node_pos(n: Dictionary) -> Vector2:
+		if n.has("spec"):
+			# spécialisations : la voie, et sa compétence ultime juste en dessous
+			return Vector2(200.0 if n.spec == "a" else 400.0, -400.0 if n.kind == "passive" else -300.0)
 		if n.has("cls"):
 			# compétences de classe : une rangée au-dessus du Pacte
-			return Vector2((float(n.col) - 1.0) * 190.0, -330.0)
+			return Vector2(-400.0 + float(n.col) * 170.0, -350.0)
 		if n.get("story", false):
 			# Pacte : une grille à part, centrée
 			return Vector2((float(n.col) - 1.0) * 190.0, (float(n.row) - 1.5) * 100.0)
@@ -131,7 +134,9 @@ class TreeCanvas extends Control:
 		var list := visible_nodes()
 		if ui._show_pacte:
 			var cname: String = p.profile.hero_class.display_name if p.profile and p.profile.hero_class else "Classe"
-			draw_string(font, to_screen(Vector2(0, -385)) - Vector2(200, 0), "Compétences de classe : %s (offertes aux niveaux 1, 6 et 15)" % cname,
+			draw_string(font, to_screen(Vector2(-230, -455)) - Vector2(200, 0), "Compétences de classe : %s (niveaux 1, 6, 15)" % cname,
+				HORIZONTAL_ALIGNMENT_CENTER, 400, 13, C_GOLD)
+			draw_string(font, to_screen(Vector2(300, -455)) - Vector2(200, 0), "Spécialisation (niveau %d) : une voie au choix" % TalentTree.SPEC_LEVEL,
 				HORIZONTAL_ALIGNMENT_CENTER, 400, 13, C_GOLD)
 			draw_string(font, to_screen(Vector2(0, -222)) - Vector2(200, 0), "Pacte : compétences uniques de l'histoire",
 				HORIZONTAL_ALIGNMENT_CENTER, 400, 13, Color("c8a8ff"))
@@ -246,7 +251,7 @@ func _ready() -> void:
 		_show_pacte = not _show_pacte
 		_selected = ""
 		_canvas.zoom = 0.6 if _show_pacte else 0.55
-		_canvas.focus(Vector2(0, -60) if _show_pacte else Vector2.ZERO)
+		_canvas.focus(Vector2(0, -95) if _show_pacte else Vector2.ZERO)
 		_refresh())
 	head.add_child(_tab)
 	# milieu : la carte et les informations
@@ -446,7 +451,11 @@ func _show(id: String) -> void:
 	var hidden: bool = n.get("story", false) and not player.talents.has(id)
 	_info_name.text = n.name if not hidden else "Compétence inconnue"
 	_info_name.add_theme_color_override("font_color", (rar.color as Color).lightened(0.25))
-	if n.has("cls"):
+	if n.has("spec"):
+		_info_rar.text = "Spécialisation" + ("  ·  voie" if n.kind == "passive" else "  ·  compétence ultime")
+		_info_kind.text = "%s  ·  niveau %d, sans point%s" % [player.profile.hero_class.display_name if player.profile and player.profile.hero_class else "Classe",
+			int(n.level), ("\nRecharge %d s" % roundi(n.cooldown)) if n.kind == "active" else "\nBonus permanent + compétence ultime"]
+	elif n.has("cls"):
 		_info_rar.text = "%s  ·  Compétence de classe" % rar.name
 		_info_kind.text = "%s  ·  recharge %d s\nOfferte au niveau %d, sans point" % [player.profile.hero_class.display_name if player.profile and player.profile.hero_class else "Classe",
 			roundi(n.cooldown), int(n.level)]

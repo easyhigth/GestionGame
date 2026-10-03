@@ -65,6 +65,7 @@ var story_state := {}
 var seasons_state := {}
 var mounts_state := {}
 var familiars_state := {}
+var expeditions_state := {}
 var side_quests_state := {}
 var diplomacy_state := {}
 var events_state := {}
@@ -267,6 +268,9 @@ func save_game(slot: String) -> bool:
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam:
 		d.familiars = fam.export_state()
+	var exn := get_tree().get_first_node_in_group("expeditions") as Expeditions
+	if exn:
+		d.expeditions = exn.export_state()
 	var sq := get_tree().get_first_node_in_group("side_quests") as SideQuests
 	if sq:
 		d.side_quests = sq.export_state()
@@ -374,7 +378,7 @@ func _save_build(grid: BuildGrid) -> Dictionary:
 
 func _save_villagers() -> Array:
 	var out := []
-	for v in get_tree().get_nodes_in_group("villagers"):
+	for v in get_tree().get_nodes_in_group("villagers") + get_tree().get_nodes_in_group("away_villagers"):
 		var vv := v as Villager
 		var work := {}
 		if vv.work_room != null and vv.work_room.type and not vv.work_room.get("fields", false) and not vv.work_room.cells.is_empty():
@@ -438,6 +442,7 @@ func new_game() -> void:
 	seasons_state = {}
 	mounts_state = {}
 	familiars_state = {}
+	expeditions_state = {}
 	side_quests_state = {}
 	diplomacy_state = {}
 	events_state = {}
@@ -546,10 +551,14 @@ func apply_pending(world: WorldGenerator) -> void:
 		p.health.current = clampi(int(pd.hp), 1, p.health.max_health)
 		p.health.changed.emit(p.health.current, p.health.max_health)
 		p.snap_camera()
-	# habitants : on remplace ceux du village de départ
-	for v in get_tree().get_nodes_in_group("villagers"):
+	# habitants : on remplace ceux du village de départ (et ceux partis en expédition)
+	for v in get_tree().get_nodes_in_group("villagers") + get_tree().get_nodes_in_group("away_villagers"):
 		v.remove_from_group("villagers")
+		v.remove_from_group("away_villagers")
 		v.queue_free()
+	var exn0 := get_tree().get_first_node_in_group("expeditions") as Expeditions
+	if exn0:
+		exn0.active.clear()
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k:
 		k.recompute()
@@ -648,6 +657,11 @@ func apply_pending(world: WorldGenerator) -> void:
 	if her and not heraldry_state.is_empty():
 		her.import_state(heraldry_state)
 		heraldry_state = {}
+	expeditions_state = d.get("expeditions", {})
+	var exn := get_tree().get_first_node_in_group("expeditions") as Expeditions
+	if exn and not expeditions_state.is_empty():
+		exn.import_state(expeditions_state)
+		expeditions_state = {}
 	familiars_state = d.get("familiars", {})
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam and not familiars_state.is_empty():

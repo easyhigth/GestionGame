@@ -52,6 +52,7 @@ var day_cycle: DayCycle
 var guide: GuidePanel
 var _clock: Label
 var kingdom_panel: KingdomPanel
+var expedition_panel: ExpeditionPanel
 var diplomacy_panel: DiplomacyPanel
 var achievements_panel: AchievementsPanel
 var heraldry_panel: HeraldryPanel
@@ -740,7 +741,7 @@ func _update_health() -> void:
 		_stat_labels[i].text = str(vals[i])
 	_xp_fill.size.x = HP_WIDTH * float(player.xp) / float(player.xp_to_next())
 	var who := player.profile.hero_name if player.profile else ""
-	var cls := player.profile.hero_class.display_name if player.profile and player.profile.hero_class else ""
+	var cls := player.class_title()
 	if player.hero_evo > 0:
 		who += " (%s)" % player.evo_title()
 	var ach := get_tree().get_first_node_in_group("achievements") as Achievements
@@ -1045,6 +1046,9 @@ func _build_day_and_guide() -> void:
 	heraldry_panel = HeraldryPanel.new()
 	heraldry_panel.player = player
 	add_child(heraldry_panel)
+	expedition_panel = ExpeditionPanel.new()
+	expedition_panel.player = player
+	add_child(expedition_panel)
 	endgame_panel = EndgamePanel.new()
 	endgame_panel.player = player
 	add_child(endgame_panel)

@@ -416,49 +416,49 @@ const CLASS_SKILLS := {
 			"desc": "Soigne 30 % de ta vie et celle des habitants proches (relève les blessés)."},
 		{"id": "cl_pal_bouclier", "glyph": "⛉", "name": "Bouclier divin", "active": "barrier", "params": {"dur": 5.0, "reduce": 0.5}, "cooldown": 20.0,
 			"desc": "Une bulle de lumière absorbe la moitié des dégâts pendant 5 s."},
-		{"id": "cl_pal_jugement", "glyph": "☀", "name": "Jugement", "active": "nova", "params": {"radius": 4.0, "dmg": 2.2, "heal": 0.1}, "cooldown": 12.0,
+		{"id": "cl_pal_jugement", "glyph": "☀", "name": "Jugement", "active": "nova", "params": {"radius": 4.0, "dmg": 2.6, "heal": 0.1}, "cooldown": 12.0,
 			"desc": "Une onde sacrée blesse les ennemis autour de toi et te soigne un peu."}],
 	"mage": [
-		{"id": "cl_mag_projectile", "glyph": "✧", "name": "Projectiles arcaniques", "active": "volley", "params": {"count": 3, "dmg": 1.2, "spread": 0.5}, "cooldown": 4.0,
+		{"id": "cl_mag_projectile", "glyph": "✧", "name": "Projectiles arcaniques", "active": "volley", "params": {"count": 3, "dmg": 1.4, "spread": 0.5}, "cooldown": 4.0,
 			"desc": "Trois traits d'énergie pure."},
-		{"id": "cl_mag_eclair", "glyph": "ϟ", "name": "Arc électrique", "active": "chain", "params": {"count": 4, "dmg": 1.6, "stun": 0.3}, "cooldown": 7.0,
+		{"id": "cl_mag_eclair", "glyph": "ϟ", "name": "Arc électrique", "active": "chain", "params": {"count": 4, "dmg": 1.9, "stun": 0.3}, "cooldown": 7.0,
 			"desc": "Un éclair qui saute d'ennemi en ennemi."},
-		{"id": "cl_mag_meteores", "glyph": "☄", "name": "Pluie de météores", "active": "meteor", "params": {"radius": 3.0, "dmg": 2.6, "count": 4, "burn": 0.5}, "cooldown": 20.0,
+		{"id": "cl_mag_meteores", "glyph": "☄", "name": "Pluie de météores", "active": "meteor", "params": {"radius": 3.0, "dmg": 2.6, "count": 5, "burn": 0.5}, "cooldown": 20.0,
 			"desc": "Des météores s'abattent autour de toi."}],
 	"rodeur": [
-		{"id": "cl_rod_salve", "glyph": "⇶", "name": "Salve", "active": "volley", "params": {"count": 5, "dmg": 1.0, "spread": 0.8}, "cooldown": 7.0,
+		{"id": "cl_rod_salve", "glyph": "⇶", "name": "Salve", "active": "volley", "params": {"count": 5, "dmg": 1.2, "spread": 0.8}, "cooldown": 7.0,
 			"desc": "Cinq traits en éventail."},
 		{"id": "cl_rod_piege", "glyph": "❦", "name": "Piège à ronces", "active": "slow_field", "params": {"radius": 3.8, "dps": 0.6, "factor": 0.4, "dur": 6.0}, "cooldown": 12.0,
 			"desc": "Des ronces ralentissent et blessent les ennemis qui passent."},
-		{"id": "cl_rod_pluie", "glyph": "⇓", "name": "Pluie de flèches", "active": "storm", "params": {"radius": 7.0, "dmg": 2.2, "count": 6, "fx": "blade"}, "cooldown": 18.0,
+		{"id": "cl_rod_pluie", "glyph": "⇓", "name": "Pluie de flèches", "active": "storm", "params": {"radius": 7.0, "dmg": 2.6, "count": 6, "fx": "blade"}, "cooldown": 18.0,
 			"desc": "Une nuée de flèches tombe sur les ennemis autour de toi."}],
 	"assassin": [
-		{"id": "cl_ass_ombre", "glyph": "◐", "name": "Pas de l'ombre", "active": "blink", "params": {"dist": 6.0, "dmg": 1.6}, "cooldown": 7.0,
+		{"id": "cl_ass_ombre", "glyph": "◐", "name": "Pas de l'ombre", "active": "blink", "params": {"dist": 6.0, "dmg": 3.0}, "cooldown": 6.0,
 			"desc": "Tu disparais et frappes un peu plus loin."},
-		{"id": "cl_ass_instinct", "glyph": "✦", "name": "Instinct du tueur", "active": "buff", "params": {"crit": 0.25, "spd": 0.15, "dur": 7.0}, "cooldown": 16.0,
-			"desc": "+25 % de coups critiques et +15 % de vitesse pendant 7 s."},
-		{"id": "cl_ass_execution", "glyph": "☠", "name": "Exécution", "active": "execute", "params": {"range": 7.0, "dmg": 3.0, "threshold": 0.35}, "cooldown": 14.0,
+		{"id": "cl_ass_instinct", "glyph": "✦", "name": "Instinct du tueur", "active": "buff", "params": {"crit": 0.35, "atk": 0.15, "spd": 0.15, "dur": 7.0}, "cooldown": 16.0,
+			"desc": "+35 % de coups critiques, +15 % d'attaque et de vitesse pendant 7 s."},
+		{"id": "cl_ass_execution", "glyph": "☠", "name": "Exécution", "active": "execute", "params": {"range": 7.0, "dmg": 3.5, "threshold": 0.35}, "cooldown": 10.0,
 			"desc": "Un coup terrible sur l'ennemi visé, mortel s'il est déjà affaibli."}],
 	"moine": [
 		{"id": "cl_moi_paume", "glyph": "✋", "name": "Paume foudroyante", "active": "cone", "params": {"range": 4.5, "dmg": 1.8, "kb": 14, "angle": 60}, "cooldown": 6.0,
 			"desc": "Une poussée d'énergie projette les ennemis devant toi."},
 		{"id": "cl_moi_meditation", "glyph": "☯", "name": "Méditation", "active": "heal", "params": {"pct": 0.35}, "cooldown": 20.0,
 			"desc": "Tu retrouves ton souffle : soigne 35 % de ta vie."},
-		{"id": "cl_moi_poings", "glyph": "✺", "name": "Cent poings", "active": "aura", "params": {"radius": 2.6, "dps": 1.2, "dur": 4.0}, "cooldown": 14.0,
+		{"id": "cl_moi_poings", "glyph": "✺", "name": "Cent poings", "active": "aura", "params": {"radius": 2.6, "dps": 1.0, "dur": 4.0}, "cooldown": 14.0,
 			"desc": "Une rafale de coups frappe sans cesse les ennemis collés à toi."}],
 	"necromancien": [
-		{"id": "cl_nec_squelettes", "glyph": "☠", "name": "Lever les morts", "active": "summon", "params": {"count": 2, "dur": 30.0, "monster": "squelette"}, "cooldown": 30.0,
-			"desc": "Deux squelettes sortent de terre et combattent pour toi pendant 30 s."},
-		{"id": "cl_nec_drain", "glyph": "♆", "name": "Drain de vie", "active": "drain", "params": {"radius": 5.0, "dmg": 1.6, "ratio": 0.5}, "cooldown": 10.0,
+		{"id": "cl_nec_squelettes", "glyph": "☠", "name": "Lever les morts", "active": "summon", "params": {"count": 2, "dur": 20.0, "monster": "squelette"}, "cooldown": 30.0,
+			"desc": "Deux squelettes sortent de terre et combattent pour toi pendant 20 s."},
+		{"id": "cl_nec_drain", "glyph": "♆", "name": "Drain de vie", "active": "drain", "params": {"radius": 5.0, "dmg": 1.3, "ratio": 0.35}, "cooldown": 12.0,
 			"desc": "Aspire la vie des ennemis proches pour te soigner."},
 		{"id": "cl_nec_terreur", "glyph": "☾", "name": "Terreur", "active": "fear", "params": {"radius": 6.0, "dur": 3.0, "dmg": 0.8}, "cooldown": 16.0,
 			"desc": "Les ennemis autour de toi fuient, terrifiés."}],
 	"druide": [
-		{"id": "cl_dru_ronces", "glyph": "❦", "name": "Ronces", "active": "dot", "params": {"radius": 4.0, "dps": 0.8, "dur": 6.0}, "cooldown": 10.0,
+		{"id": "cl_dru_ronces", "glyph": "❦", "name": "Ronces", "active": "dot", "params": {"radius": 4.0, "dps": 0.5, "dur": 6.0}, "cooldown": 10.0,
 			"desc": "Des ronces jaillissent et déchirent les ennemis autour de toi."},
-		{"id": "cl_dru_regeneration", "glyph": "♣", "name": "Régénération", "active": "heal", "params": {"pct": 0.3, "allies": 1}, "cooldown": 18.0,
-			"desc": "La sève te soigne de 30 %, toi et les habitants proches."},
-		{"id": "cl_dru_colere", "glyph": "▲", "name": "Colère de la terre", "active": "stun", "params": {"radius": 5.0, "dmg": 2.2, "dur": 1.6, "fx": "rocks"}, "cooldown": 18.0,
+		{"id": "cl_dru_regeneration", "glyph": "♣", "name": "Régénération", "active": "heal", "params": {"pct": 0.22, "allies": 1}, "cooldown": 18.0,
+			"desc": "La sève te soigne de 22 %, toi et les habitants proches."},
+		{"id": "cl_dru_colere", "glyph": "▲", "name": "Colère de la terre", "active": "stun", "params": {"radius": 5.0, "dmg": 1.8, "dur": 1.6, "fx": "rocks"}, "cooldown": 18.0,
 			"desc": "Des pics de roche sortent du sol et sonnent les ennemis."}],
 	"chevalier": [
 		{"id": "cl_che_charge", "glyph": "➹", "name": "Charge", "active": "dash", "params": {"dist": 8.0, "dmg": 1.8}, "cooldown": 8.0,
@@ -468,26 +468,124 @@ const CLASS_SKILLS := {
 		{"id": "cl_che_lance", "glyph": "⟋", "name": "Percée", "active": "cone", "params": {"range": 6.5, "dmg": 2.3, "kb": 12, "angle": 40}, "cooldown": 9.0,
 			"desc": "Un coup de lance qui transperce la ligne ennemie."}],
 	"barde": [
-		{"id": "cl_bar_chant", "glyph": "♪", "name": "Chant de bravoure", "active": "rally", "params": {"atk": 0.2, "aspd": 0.15, "dur": 10.0, "heal": 0.1}, "cooldown": 20.0,
-			"desc": "+20 % d'attaque et de vitesse d'attaque pendant 10 s ; tes alliés proches sont soignés de 10 %."},
-		{"id": "cl_bar_dissonance", "glyph": "♫", "name": "Dissonance", "active": "stun", "params": {"radius": 4.5, "dmg": 1.0, "dur": 1.6}, "cooldown": 12.0,
+		{"id": "cl_bar_chant", "glyph": "♪", "name": "Chant de bravoure", "active": "rally", "params": {"atk": 0.3, "aspd": 0.25, "dur": 10.0, "heal": 0.15}, "cooldown": 20.0,
+			"desc": "+30 % d'attaque, +25 % de vitesse d'attaque pendant 10 s ; tes alliés proches sont soignés de 15 %."},
+		{"id": "cl_bar_dissonance", "glyph": "♫", "name": "Dissonance", "active": "stun", "params": {"radius": 4.5, "dmg": 1.6, "dur": 1.6}, "cooldown": 12.0,
 			"desc": "Une note stridente sonne les ennemis proches."},
-		{"id": "cl_bar_crescendo", "glyph": "♬", "name": "Crescendo", "active": "nova", "params": {"radius": 5.0, "dmg": 2.4}, "cooldown": 14.0,
+		{"id": "cl_bar_crescendo", "glyph": "♬", "name": "Crescendo", "active": "nova", "params": {"radius": 5.0, "dmg": 3.0}, "cooldown": 11.0,
 			"desc": "Une onde sonore éclate autour de toi."}],
 	"clerc": [
 		{"id": "cl_cle_priere", "glyph": "✚", "name": "Prière de soin", "active": "heal", "params": {"pct": 0.35, "allies": 1}, "cooldown": 16.0,
 			"desc": "Soigne 35 % de ta vie et celle des habitants proches (relève les blessés)."},
-		{"id": "cl_cle_benediction", "glyph": "✝", "name": "Bénédiction", "active": "rally", "params": {"def": 6.0, "atk": 0.1, "dur": 12.0, "heal": 0.15}, "cooldown": 24.0,
-			"desc": "+6 défense et +10 % d'attaque pendant 12 s ; tes alliés proches sont soignés de 15 %."},
-		{"id": "cl_cle_marteau", "glyph": "⚒", "name": "Marteau céleste", "active": "meteor", "params": {"radius": 3.0, "dmg": 2.4, "count": 3}, "cooldown": 16.0,
+		{"id": "cl_cle_benediction", "glyph": "✝", "name": "Bénédiction", "active": "rally", "params": {"def": 6.0, "atk": 0.2, "dur": 12.0, "heal": 0.15}, "cooldown": 24.0,
+			"desc": "+6 défense et +20 % d'attaque pendant 12 s ; tes alliés proches sont soignés de 15 %."},
+		{"id": "cl_cle_marteau", "glyph": "⚒", "name": "Marteau céleste", "active": "meteor", "params": {"radius": 3.0, "dmg": 3.0, "count": 3}, "cooldown": 16.0,
 			"desc": "Des marteaux de lumière tombent du ciel sur tes ennemis."}],
 	"cryomancien": [
 		{"id": "cl_cry_eclats", "glyph": "❄", "name": "Éclats de glace", "active": "volley", "params": {"count": 3, "dmg": 1.3, "spread": 0.4, "stun": 0.25}, "cooldown": 4.0,
 			"desc": "Trois éclats de glace qui peuvent geler sur place."},
 		{"id": "cl_cry_prison", "glyph": "⬢", "name": "Prison de glace", "active": "stun", "params": {"radius": 4.0, "dmg": 0.8, "dur": 2.6}, "cooldown": 14.0,
 			"desc": "La glace emprisonne les ennemis proches pendant 2,6 s."},
-		{"id": "cl_cry_blizzard", "glyph": "❅", "name": "Blizzard", "active": "slow_field", "params": {"radius": 5.5, "dps": 1.0, "factor": 0.3, "dur": 8.0}, "cooldown": 20.0,
+		{"id": "cl_cry_blizzard", "glyph": "❅", "name": "Blizzard", "active": "slow_field", "params": {"radius": 5.5, "dps": 0.7, "factor": 0.3, "dur": 8.0}, "cooldown": 20.0,
 			"desc": "Une tempête de neige ralentit et blesse les ennemis pendant 8 s."}],
+}
+
+
+## Spécialisations (niveau SPEC_LEVEL) : deux voies par classe, on en choisit une (onglet Classe et Pacte, sans point).
+## Chaque voie donne un titre, un bonus permanent et une compétence ultime. « Tout oublier » permet d'en changer.
+const SPEC_LEVEL := 30
+const CLASS_SPECS := {
+	"guerrier": [
+		{"name": "Champion", "glyph": "♛", "bonus": {"atk_pct": 0.15, "crit": 0.05}, "desc": "Le duelliste parfait.",
+			"ult": {"name": "Frappe du champion", "glyph": "▼", "active": "stun", "params": {"radius": 5.0, "dmg": 3.2, "dur": 2.0}, "cooldown": 22.0,
+				"desc": "Un coup qui fend le sol et sonne tout autour de toi."}},
+		{"name": "Seigneur de guerre", "glyph": "⚑", "bonus": {"def_flat": 6.0, "hp_pct": 0.12}, "desc": "Le chef qui mène ses troupes.",
+			"ult": {"name": "Bannière de guerre", "glyph": "⚑", "active": "rally", "params": {"atk": 0.25, "def": 8.0, "dur": 12.0, "heal": 0.2}, "cooldown": 30.0,
+				"desc": "+25 % d'attaque et +8 défense pendant 12 s ; tes alliés proches sont soignés de 20 %."}}],
+	"barbare": [
+		{"name": "Berserker", "glyph": "♨", "bonus": {"aspd_pct": 0.15, "lifesteal": 0.03}, "desc": "La fureur sans limite.",
+			"ult": {"name": "Furie sanglante", "glyph": "♨", "active": "buff", "params": {"atk": 0.5, "aspd": 0.3, "lifesteal": 0.1, "cost": 0.1, "dur": 8.0}, "cooldown": 26.0,
+				"desc": "+50 % d'attaque, +30 % de vitesse d'attaque et 10 % de vol de vie pendant 8 s."}},
+		{"name": "Briseur de montagnes", "glyph": "▲", "bonus": {"hp_pct": 0.15, "poise": 0.3}, "desc": "Rien ne l'arrête.",
+			"ult": {"name": "Éboulement", "glyph": "▲", "active": "stun", "params": {"radius": 6.5, "dmg": 3.5, "dur": 2.0, "fx": "rocks"}, "cooldown": 24.0,
+				"desc": "La montagne s'écroule sur les ennemis autour de toi."}}],
+	"paladin": [
+		{"name": "Croisé", "glyph": "✠", "bonus": {"atk_pct": 0.12, "mag_pct": 0.1}, "desc": "L'épée de la foi.",
+			"ult": {"name": "Marteaux de la foi", "glyph": "⚒", "active": "meteor", "params": {"radius": 3.5, "dmg": 3.2, "count": 4}, "cooldown": 24.0,
+				"desc": "Des marteaux de lumière frappent les ennemis autour de toi."}},
+		{"name": "Gardien sacré", "glyph": "⛨", "bonus": {"def_flat": 8.0, "regen": 1.5}, "desc": "Le bouclier des innocents.",
+			"ult": {"name": "Sanctuaire", "glyph": "⛉", "active": "barrier", "params": {"dur": 7.0, "reduce": 0.7, "heal": 0.25}, "cooldown": 30.0,
+				"desc": "Soigne 25 % et absorbe 70 % des dégâts pendant 7 s."}}],
+	"mage": [
+		{"name": "Archimage", "glyph": "✧", "bonus": {"mag_pct": 0.18, "cdr_pct": 0.08}, "desc": "La maîtrise des arcanes.",
+			"ult": {"name": "Tempête arcanique", "glyph": "✺", "active": "storm", "params": {"radius": 9.0, "dmg": 3.6, "count": 8, "fx": "bolt"}, "cooldown": 26.0,
+				"desc": "Une tempête d'éclairs arcaniques s'abat autour de toi."}},
+		{"name": "Pyromancien", "glyph": "☄", "bonus": {"mag_pct": 0.12, "burn": 0.12}, "desc": "Le feu, rien que le feu.",
+			"ult": {"name": "Inferno", "glyph": "♨", "active": "cone", "params": {"range": 10.0, "dmg": 4.0, "angle": 80, "burn": 0.9, "kb": 12}, "cooldown": 22.0,
+				"desc": "Un torrent de flammes embrase tout devant toi."}}],
+	"rodeur": [
+		{"name": "Tireur d'élite", "glyph": "◎", "bonus": {"crit": 0.1, "crit_mult": 0.3}, "desc": "Chaque trait fait mouche.",
+			"ult": {"name": "Flèche perforante", "glyph": "➶", "active": "cone", "params": {"range": 14.0, "dmg": 4.5, "angle": 20, "kb": 16}, "cooldown": 18.0,
+				"desc": "Un trait qui transperce toute une ligne d'ennemis."}},
+		{"name": "Maître des bêtes", "glyph": "♞", "bonus": {"hp_pct": 0.1, "spd_pct": 0.08}, "desc": "La meute le suit.",
+			"ult": {"name": "Appel de la meute", "glyph": "♞", "active": "summon", "params": {"monster": "loup", "count": 3, "dur": 20.0}, "cooldown": 32.0,
+				"desc": "Trois loups accourent et combattent pour toi pendant 20 s."}}],
+	"assassin": [
+		{"name": "Ombre", "glyph": "◐", "bonus": {"dodge": 0.08, "crit": 0.08}, "desc": "Invisible jusqu'au dernier instant.",
+			"ult": {"name": "Danse des lames", "glyph": "✶", "active": "aura", "params": {"radius": 3.0, "dps": 2.0, "dur": 5.0}, "cooldown": 22.0,
+				"desc": "Tes lames tournoient et lacèrent tout autour de toi pendant 5 s."}},
+		{"name": "Empoisonneur", "glyph": "☣", "bonus": {"burn": 0.15, "atk_pct": 0.1}, "desc": "Une goutte suffit.",
+			"ult": {"name": "Nuage toxique", "glyph": "☣", "active": "dot", "params": {"radius": 5.0, "dps": 1.4, "dur": 8.0}, "cooldown": 22.0,
+				"desc": "Un nuage de poison ronge les ennemis pendant 8 s."}}],
+	"moine": [
+		{"name": "Maître du souffle", "glyph": "☯", "bonus": {"regen": 2.0, "cdr_pct": 0.1}, "desc": "L'harmonie du corps et de l'esprit.",
+			"ult": {"name": "Harmonie", "glyph": "☯", "active": "heal", "params": {"pct": 0.5, "allies": 1}, "cooldown": 28.0,
+				"desc": "Soigne 50 % de ta vie et celle des alliés proches."}},
+		{"name": "Poing de fer", "glyph": "✊", "bonus": {"atk_pct": 0.15, "aspd_pct": 0.1}, "desc": "Des poings plus durs que l'acier.",
+			"ult": {"name": "Mille paumes", "glyph": "✋", "active": "cone", "params": {"range": 6.0, "dmg": 4.0, "kb": 18, "angle": 90}, "cooldown": 20.0,
+				"desc": "Une rafale de paumes balaie tout devant toi."}}],
+	"necromancien": [
+		{"name": "Liche", "glyph": "☠", "bonus": {"mag_pct": 0.15, "last_stand": 1.0}, "desc": "La mort n'a plus prise sur lui.",
+			"ult": {"name": "Nova de mort", "glyph": "♆", "active": "drain", "params": {"radius": 7.0, "dmg": 3.0, "ratio": 0.4}, "cooldown": 24.0,
+				"desc": "Aspire la vie de tous les ennemis autour de toi."}},
+		{"name": "Seigneur des os", "glyph": "♜", "bonus": {"hp_pct": 0.1, "def_flat": 4.0}, "desc": "Une armée qui ne dort jamais.",
+			"ult": {"name": "Armée des morts", "glyph": "☠", "active": "summon", "params": {"monster": "squelette", "count": 4, "dur": 25.0}, "cooldown": 40.0,
+				"desc": "Quatre squelettes se lèvent et combattent pour toi pendant 25 s."}}],
+	"druide": [
+		{"name": "Gardien des bois", "glyph": "♣", "bonus": {"hp_pct": 0.15, "regen": 1.5}, "desc": "Solide comme un chêne millénaire.",
+			"ult": {"name": "Écorce", "glyph": "⬢", "active": "barrier", "params": {"dur": 8.0, "reduce": 0.6, "heal": 0.2}, "cooldown": 30.0,
+				"desc": "Soigne 20 % et absorbe 60 % des dégâts pendant 8 s."}},
+		{"name": "Mage tempête", "glyph": "ϟ", "bonus": {"mag_pct": 0.15, "aspd_pct": 0.05}, "desc": "Il commande au ciel.",
+			"ult": {"name": "Colère du ciel", "glyph": "↯", "active": "storm", "params": {"radius": 9.0, "dmg": 3.4, "count": 7, "fx": "bolt"}, "cooldown": 26.0,
+				"desc": "La foudre tombe sur tous les ennemis autour de toi."}}],
+	"chevalier": [
+		{"name": "Porte-étendard", "glyph": "⚑", "bonus": {"def_flat": 6.0, "hp_pct": 0.1}, "desc": "Là où flotte sa bannière, on ne recule pas.",
+			"ult": {"name": "Formation", "glyph": "⛨", "active": "rally", "params": {"def": 10.0, "atk": 0.15, "dur": 12.0, "heal": 0.2}, "cooldown": 30.0,
+				"desc": "+10 défense et +15 % d'attaque pendant 12 s ; tes alliés proches sont soignés de 20 %."}},
+		{"name": "Lancier dragon", "glyph": "⟋", "bonus": {"atk_pct": 0.15, "crit": 0.05}, "desc": "Il tombe du ciel, lance la première.",
+			"ult": {"name": "Saut du dragon", "glyph": "➹", "active": "dash", "params": {"dist": 10.0, "dmg": 3.5}, "cooldown": 16.0,
+				"desc": "Un bond fulgurant qui transperce tout sur 10 m."}}],
+	"barde": [
+		{"name": "Ménestrel", "glyph": "♪", "bonus": {"cdr_pct": 0.1, "regen": 1.0}, "desc": "Sa musique porte les héros.",
+			"ult": {"name": "Hymne héroïque", "glyph": "♬", "active": "rally", "params": {"atk": 0.35, "aspd": 0.3, "dur": 12.0, "heal": 0.3}, "cooldown": 32.0,
+				"desc": "+35 % d'attaque, +30 % de vitesse d'attaque pendant 12 s ; tes alliés proches sont soignés de 30 %."}},
+		{"name": "Chantelame", "glyph": "♫", "bonus": {"atk_pct": 0.12, "aspd_pct": 0.12}, "desc": "Elle se bat en rythme.",
+			"ult": {"name": "Lame sonore", "glyph": "◎", "active": "nova", "params": {"radius": 6.0, "dmg": 3.6}, "cooldown": 18.0,
+				"desc": "Une onde tranchante éclate autour de toi."}}],
+	"clerc": [
+		{"name": "Prêtre lumineux", "glyph": "✚", "bonus": {"hp_pct": 0.1, "regen": 2.0}, "desc": "Sa lumière relève les morts.",
+			"ult": {"name": "Résurrection", "glyph": "✚", "active": "heal", "params": {"pct": 0.6, "allies": 1}, "cooldown": 35.0,
+				"desc": "Soigne 60 % de ta vie et de celle des alliés proches, et relève les blessés."}},
+		{"name": "Inquisiteur", "glyph": "⚖", "bonus": {"atk_pct": 0.12, "mag_pct": 0.12}, "desc": "Le jugement est rendu.",
+			"ult": {"name": "Jugement divin", "glyph": "⚡", "active": "storm", "params": {"radius": 8.0, "dmg": 3.6, "count": 6, "fx": "bolt"}, "cooldown": 26.0,
+				"desc": "Des éclairs sacrés frappent les ennemis autour de toi."}}],
+	"cryomancien": [
+		{"name": "Seigneur de l'hiver", "glyph": "❅", "bonus": {"def_flat": 5.0, "mag_pct": 0.1}, "desc": "L'hiver éternel le suit.",
+			"ult": {"name": "Ère glaciaire", "glyph": "❄", "active": "stun", "params": {"radius": 7.0, "dmg": 2.4, "dur": 3.5}, "cooldown": 28.0,
+				"desc": "Tout gèle autour de toi pendant 3,5 s."}},
+		{"name": "Lame de givre", "glyph": "⟡", "bonus": {"atk_pct": 0.12, "crit": 0.08}, "desc": "L'acier et la glace ne font qu'un.",
+			"ult": {"name": "Tourbillon gelé", "glyph": "✺", "active": "vortex", "params": {"radius": 6.0, "dmg": 3.4}, "cooldown": 22.0,
+				"desc": "Un tourbillon de glace aspire et broie les ennemis devant toi."}}],
 }
 
 ## Tous les nœuds (générés au premier appel) : id, branch, name, glyph, kind, rarity, level, cost, requires,
@@ -678,6 +776,30 @@ static func _build() -> void:
 			var cd = load("res://data/classes/%s.tres" % cid) if ResourceLoader.exists("res://data/classes/%s.tres" % cid) else null
 			m["color"] = cd.color if cd else Color("ffd27a")
 			_add(m)
+	# les spécialisations (niveau SPEC_LEVEL) : un nœud « voie » (bonus) et sa compétence ultime
+	for cid in CLASS_SPECS:
+		var specs: Array = CLASS_SPECS[cid]
+		var cd = load("res://data/classes/%s.tres" % cid) if ResourceLoader.exists("res://data/classes/%s.tres" % cid) else null
+		for i in specs.size():
+			var sp: Dictionary = specs[i]
+			var key := "ab"[i]
+			var pid := "spec_%s_%s" % [cid, key]
+			var col: Color = cd.color if cd else Color("ffd27a")
+			_add({"id": pid, "cls": cid, "spec": key, "kind": "passive", "branch": "pacte", "rarity": "legendaire", "level": SPEC_LEVEL,
+				"cost": 0, "glyph": sp.glyph, "name": sp.name, "bonus": sp.bonus, "color": col.lightened(0.15),
+				"desc": "%s Voie de spécialisation : %s Débloque la compétence ultime %s." % [sp.desc, _bonus_text(sp.bonus).trim_suffix("."), sp.ult.name]})
+			var u: Dictionary = (sp.ult as Dictionary).duplicate(true)
+			u["id"] = pid + "_ult"
+			u["cls"] = cid
+			u["spec"] = key
+			u["kind"] = "active"
+			u["branch"] = "pacte"
+			u["rarity"] = "legendaire"
+			u["level"] = SPEC_LEVEL
+			u["cost"] = 0
+			u["requires"] = [pid]
+			u["color"] = col.lightened(0.15)
+			_add(u)
 	# les compétences uniques de l'histoire (branche Pacte)
 	for n in PACTE:
 		var m: Dictionary = n.duplicate(true)
@@ -702,9 +824,23 @@ static func is_class_skill(id: String) -> bool:
 	return node(id).has("cls")
 
 
-## Les compétences de la classe `cid`, dans l'ordre (niveaux CLASS_LEVELS).
+## Les compétences de la classe `cid`, dans l'ordre (niveaux CLASS_LEVELS), sans les spécialisations.
 static func class_skills(cid: String) -> Array:
-	return nodes().filter(func(n): return n.get("cls", "") == cid)
+	return nodes().filter(func(n): return n.get("cls", "") == cid and not n.has("spec"))
+
+
+## Les nœuds de spécialisation de la classe (voie a, son ultime, voie b, son ultime).
+static func spec_nodes(cid: String) -> Array:
+	return nodes().filter(func(n): return n.get("cls", "") == cid and n.has("spec"))
+
+
+## La voie choisie parmi `talents` pour la classe `cid` (identifiant du nœud « voie »), ou "".
+static func chosen_spec(cid: String, talents: Dictionary) -> String:
+	for k in ["a", "b"]:
+		var id := "spec_%s_%s" % [cid, k]
+		if talents.has(id):
+			return id
+	return ""
 
 
 static func level_of(id: String) -> int:

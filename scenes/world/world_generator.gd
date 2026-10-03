@@ -239,6 +239,10 @@ func _ready() -> void:
 		var bo := BuildOrders.new()
 		bo.name = "Chantiers"
 		add_child(bo)
+	if get_node_or_null("Expeditions") == null:
+		var ex := Expeditions.new()
+		ex.name = "Expeditions"
+		add_child(ex)
 	if get_node_or_null("Menaces") == null:
 		var rm := RaidManager.new()
 		rm.name = "Menaces"
