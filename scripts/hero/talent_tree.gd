@@ -388,7 +388,9 @@ const PACTE := [
 
 ## Talents offerts au départ selon la classe (ils ne coûtent pas de point).
 const CLASS_START := {"guerrier": "lame_force", "barbare": "lame_force", "paladin": "sac_foi",
-	"mage": "arc_affinite", "rodeur": "omb_reflexes", "assassin": "omb_reflexes"}
+	"mage": "arc_affinite", "rodeur": "omb_reflexes", "assassin": "omb_reflexes", "moine": "fou_etincelle",
+	"necromancien": "san_soif", "druide": "ter_racine", "chevalier": "ter_racine", "barde": "fou_etincelle",
+	"clerc": "sac_foi", "cryomancien": "giv_froid"}
 
 ## Tous les nœuds (générés au premier appel) : id, branch, name, glyph, kind, rarity, level, cost, requires,
 ## pos (position dans l'arbre), bonus | active + params + cooldown, desc. Les nœuds Pacte gardent row / col.

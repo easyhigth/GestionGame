@@ -39,7 +39,9 @@ const ORDER := ["forgeron", "armurier", "enchanteur", "joaillier", "mineur", "bu
 ## Métier du héros (choisi à la création) -> métiers qui commencent au niveau 10.
 const JOB_START := {"forgeron": ["forgeron", "armurier"], "mineur": ["mineur", "joaillier"], "bucheron": ["bucheron", "batisseur"],
 	"herboriste": ["alchimiste", "fermier"], "tisserand": ["tailleur", "batisseur"], "chasseur": ["pecheur", "cuisinier"],
-	"marchand": ["joaillier", "enchanteur"]}
+	"marchand": ["joaillier", "enchanteur"], "pecheur": ["pecheur", "cuisinier"], "alchimiste": ["alchimiste", "enchanteur"],
+	"cuisinier": ["cuisinier", "fermier"], "fermier": ["fermier", "cuisinier"], "joaillier": ["joaillier", "mineur"],
+	"enchanteur": ["enchanteur", "joaillier"], "architecte": ["batisseur", "bucheron"]}
 const START_LEVEL := 10
 
 

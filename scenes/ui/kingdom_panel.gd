@@ -243,8 +243,9 @@ func _refresh() -> void:
 		name_l.custom_minimum_size.x = 150
 		h.add_child(name_l)
 		var doing: String = v.ACTIVITY_NAMES.get(v.activity, "")
-		var job_l := MenuKit.label(job + ((" · " + doing) if doing != "" else ""), 11, MenuKit.C_DIM)
-		job_l.custom_minimum_size.x = 140
+		var cls: String = v.class_name_fr()
+		var job_l := MenuKit.label(((cls + " · ") if cls != "" else "") + job + ((" · " + doing) if doing != "" else ""), 11, MenuKit.C_DIM)
+		job_l.custom_minimum_size.x = 200
 		h.add_child(job_l)
 		var bed_l := MenuKit.label({"lit": "Lit", "cabane": "Cabane"}.get(v.bed_kind, "Par terre"), 11,
 			MenuKit.C_OK if v.bed_kind == "lit" else (MenuKit.C_TEXT if v.bed_kind == "cabane" else MenuKit.C_BAD))

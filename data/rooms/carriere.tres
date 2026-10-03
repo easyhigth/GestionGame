@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="p_stone"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="p_iron_ore"]
+[ext_resource type="Resource" path="res://data/items/bloc_pierre_brute.tres" id="p_bloc_pierre_brute"]
+[ext_resource type="Resource" path="res://data/items/or_brut.tres" id="p_or_brut"]
+
+[resource]
+script = ExtResource("1")
+id = "carriere"
+display_name = "Carrière"
+description = "Outils de taille et chariots de pierres."
+color = Color(0.62, 0.6, 0.55, 1)
+required = {"meule": 1, "ratelier": 1, "coffre": 1}
+min_cells = 6
+job_id = "mineur"
+job_name = "Mineur"
+job_slots = 2
+production_pool = Array[ExtResource("2")]([ExtResource("p_stone"), ExtResource("p_stone"), ExtResource("p_iron_ore"), ExtResource("p_bloc_pierre_brute"), ExtResource("p_or_brut")])
+production_count = 3
+production_interval = 90.0
+hero_bonus = {}
+effect_text = "Les mineurs extraient pierre, fer et un peu d'or."

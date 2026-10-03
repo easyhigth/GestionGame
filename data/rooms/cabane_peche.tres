@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/truite.tres" id="p_truite"]
+[ext_resource type="Resource" path="res://data/items/carpe.tres" id="p_carpe"]
+[ext_resource type="Resource" path="res://data/items/gardon.tres" id="p_gardon"]
+[ext_resource type="Resource" path="res://data/items/saumon.tres" id="p_saumon"]
+
+[resource]
+script = ExtResource("1")
+id = "cabane_peche"
+display_name = "Cabane de pêche"
+description = "Filets qui sèchent et odeur de marée."
+color = Color(0.3, 0.55, 0.8, 1)
+required = {"tonneau": 1, "etal": 1, "barriere": 1}
+min_cells = 6
+job_id = "pecheur"
+job_name = "Pêcheur"
+job_slots = 2
+production_pool = Array[ExtResource("2")]([ExtResource("p_truite"), ExtResource("p_carpe"), ExtResource("p_gardon"), ExtResource("p_saumon")])
+production_count = 2
+production_interval = 80.0
+hero_bonus = {}
+effect_text = "Les pêcheurs ramènent du poisson frais."

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/war_hammer.tres" id="it_war_hammer"]
+[ext_resource type="Resource" path="res://data/items/iron_helmet.tres" id="it_iron_helmet"]
+[ext_resource type="Resource" path="res://data/items/mage_robe.tres" id="it_mage_robe"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Clerc"
+description = "Prêtre combattant : marteau béni et prières de soin. Il encaisse et se relève toujours."
+color = Color(1.0, 0.95, 0.7, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_war_hammer"), ExtResource("it_iron_helmet"), ExtResource("it_mage_robe")])
+bonus_health = 20
+bonus_attack = 2
+bonus_defense = 3
+bonus_magic = 4
+health_per_level = 13
+attack_per_level = 0.8
+defense_per_level = 0.5
+magic_per_level = 1.0

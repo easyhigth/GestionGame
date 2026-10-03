@@ -1998,6 +1998,11 @@ const OFFER_WISHES := {
 	"erudit": ["fiber", 5, "Il me faut de quoi fabriquer du papier. Je sais lire les vieilles ruines."],
 	"pretre": ["stone", 6, "Aide-moi à bâtir un autel et je bénirai ton village."],
 	"mage": ["iron_ore", 3, "Le fer brut canalise la magie. Apporte-m'en et je t'enseignerai."],
+	"chasseur": ["wood", 6, "Du bois pour tailler des pièges, et je ramènerai du gibier au village."],
+	"pecheur": ["fiber", 6, "Des fibres pour tresser mes filets, et le poisson ne manquera plus."],
+	"mineur": ["wood", 8, "Il me faut du bois pour étayer les galeries. Ensuite, la pierre est à toi."],
+	"cuisinier": ["baies", 5, "Quelques baies pour goûter ta région, et je cuisinerai pour tout le monde."],
+	"joaillier": ["iron_ore", 4, "Un peu de minerai pour mes outils : je saurai y trouver des éclats précieux."],
 }
 
 
@@ -2057,7 +2062,7 @@ func _add_travelers(holder: Node3D, cell: Vector2i, z: Dictionary, trng: RandomN
 		v.global_position = cell_center(cell) + Vector3(cos(a), 0, sin(a)) * 2.2
 		v.home = v.global_position
 		if trng.randf() < 0.7:
-			_give_kit(v, VILLAGER_KITS[trng.randi() % VILLAGER_KITS.size()])
+			_give_kit(v, Villager.class_kit(v.fight_class))
 
 
 ## Un voyageur a rejoint le village : il ne réapparaîtra plus dans son campement.
@@ -3530,7 +3535,8 @@ func _build_village() -> void:
 		var off := Vector2.from_angle(angle) * _rng.randf_range(2.5, 5.5)
 		var v := _spawn(villager_scene, off, {"race": race})
 		if v and not bare and _rng.randf() < villager_gear_chance:
-			_give_kit(v, kits[i % kits.size()])
+			var ck := Villager.class_kit(v.get("fight_class"))
+			_give_kit(v, ck if not ck.is_empty() else kits[i % kits.size()])
 
 
 ## Tenues de départ des habitants (identifiants d'objets de data/items/).

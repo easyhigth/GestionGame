@@ -104,9 +104,25 @@ var _in_hut := false
 const JOB_NAMES := {"forgeron": "Forgeron", "boulanger": "Boulanger", "garde": "Garde", "fermier": "Fermier",
 	"bucheron": "Bûcheron", "macon": "Maçon", "verrier": "Verrier", "aubergiste": "Aubergiste", "marchand": "Marchand",
 	"erudit": "Érudit", "pretre": "Prêtre", "mage": "Mage", "tisserand": "Tisserand",
-	"alchimiste": "Alchimiste", "enchanteur": "Enchanteur", "dresseur": "Dresseur", "architecte": "Architecte"}
+	"alchimiste": "Alchimiste", "enchanteur": "Enchanteur", "dresseur": "Dresseur", "architecte": "Architecte",
+	"chasseur": "Chasseur", "pecheur": "Pêcheur", "mineur": "Mineur", "cuisinier": "Cuisinier", "joaillier": "Joaillier"}
 const JOBS := ["forgeron", "boulanger", "garde", "fermier", "bucheron", "macon", "verrier", "aubergiste",
-	"marchand", "erudit", "pretre", "mage", "tisserand", "alchimiste", "enchanteur", "dresseur", "architecte"]
+	"marchand", "erudit", "pretre", "mage", "tisserand", "alchimiste", "enchanteur", "dresseur", "architecte",
+	"chasseur", "pecheur", "mineur", "cuisinier", "joaillier"]
+## Classes de combat possibles (fichiers de data/classes/), comme celles du héros : chaque habitant en a une,
+## qui décide de sa tenue de départ et lui donne un petit bonus.
+const CLASS_IDS := ["guerrier", "barbare", "paladin", "mage", "rodeur", "assassin", "moine", "necromancien",
+	"druide", "chevalier", "barde", "clerc", "cryomancien"]
+## Classes les plus probables selon le métier (sinon, au hasard).
+const JOB_CLASSES := {"garde": ["guerrier", "chevalier", "paladin", "barbare"], "mage": ["mage", "cryomancien", "necromancien"],
+	"pretre": ["clerc", "paladin", "moine"], "erudit": ["mage", "barde", "moine"], "enchanteur": ["mage", "necromancien", "cryomancien"],
+	"alchimiste": ["druide", "necromancien", "mage"], "fermier": ["druide", "moine", "guerrier"], "chasseur": ["rodeur", "assassin", "barbare"],
+	"pecheur": ["rodeur", "moine"], "bucheron": ["barbare", "rodeur"], "forgeron": ["guerrier", "barbare", "chevalier"],
+	"mineur": ["barbare", "guerrier"], "macon": ["guerrier", "barbare"], "marchand": ["barde", "assassin", "rodeur"],
+	"aubergiste": ["barde", "guerrier"], "dresseur": ["druide", "rodeur"], "tisserand": ["barde", "assassin"],
+	"joaillier": ["assassin", "barde"], "cuisinier": ["moine", "guerrier"], "architecte": ["chevalier", "clerc"], "verrier": ["mage", "barde"]}
+## Classe de combat de l'habitant (identifiant, voir CLASS_IDS).
+var fight_class := ""
 
 
 func _ready() -> void:
@@ -118,6 +134,8 @@ func _ready() -> void:
 		pool.shuffle()
 		talents[pool[0]] = randf_range(0.2, 0.4)
 		talents[pool[1]] = randf_range(0.1, 0.25)
+	if fight_class.is_empty():
+		fight_class = pick_class(best_job())
 	if villager_name.is_empty():
 		villager_name = NAMES.pick_random()
 	home = global_position
@@ -177,7 +195,18 @@ func _model_scene() -> PackedScene:
 func _apply_level(refill := false) -> void:
 	var hp := get_node_or_null("Health") as Health
 	if hp and race:
-		hp.set_max(roundi(race.max_health * _level_mult()), refill)
+		var c := _class()
+		hp.set_max(roundi(race.max_health * _level_mult()) + (c.bonus_health if c else 0), refill)
+
+
+## Classe de combat (chargée une fois), ou null.
+var _cls: ClassData
+var _cls_id := ""
+func _class() -> ClassData:
+	if _cls_id != fight_class:
+		_cls_id = fight_class
+		_cls = class_data(fight_class)
+	return _cls
 
 
 func _level_mult() -> float:
@@ -214,11 +243,48 @@ func set_level(lv: int) -> void:
 
 
 func base_attack() -> int:
-	return roundi((race.strength if race else 10) * _level_mult() * (1.0 + guard_bonus))
+	var c := _class()
+	return roundi((race.strength if race else 10) * _level_mult() * (1.0 + guard_bonus)) + (c.bonus_attack if c else 0)
 
 
 func base_magic() -> int:
-	return roundi((race.magic if race else 10) * _level_mult())
+	var c := _class()
+	return maxi(0, roundi((race.magic if race else 10) * _level_mult()) + (c.bonus_magic if c else 0))
+
+
+func base_defense() -> int:
+	var c := _class()
+	return c.bonus_defense if c else 0
+
+
+## Une classe pour un habitant doué pour `job` : souvent une classe qui va avec son métier, parfois n'importe laquelle.
+static func pick_class(job: String, rng: RandomNumberGenerator = null) -> String:
+	var r := rng.randf() if rng else randf()
+	var pool: Array = JOB_CLASSES.get(job, []) if r < 0.7 else []
+	if pool.is_empty():
+		pool = CLASS_IDS
+	return pool[(rng.randi() if rng else randi()) % pool.size()]
+
+
+static func class_data(id: String) -> ClassData:
+	var path := "res://data/classes/%s.tres" % id
+	return load(path) as ClassData if id != "" and ResourceLoader.exists(path) else null
+
+
+## Identifiants des objets de la tenue de départ d'une classe.
+static func class_kit(id: String) -> Array:
+	var out := []
+	var c := class_data(id)
+	if c:
+		for it in c.starting_equipment:
+			if it:
+				out.append(it.id)
+	return out
+
+
+func class_name_fr() -> String:
+	var c := class_data(fight_class)
+	return c.display_name if c else ""
 
 
 ## Métier où il est le plus doué (son talent le plus fort).
@@ -1122,8 +1188,8 @@ func _update_label() -> void:
 		elif stranger and has_meta("merchant"):
 			label.text = "%s (%s)\nMarchand ambulant%s" % [villager_name, race_title(), "\n[E] Commercer" if d < 3.0 else ""]
 		elif stranger:
-			label.text = "%s (%s) · Nv %d\nVoyageur · %s%s" % [villager_name, race_title(), level,
-				JOB_NAMES.get(best_job(), "?"), "\n[E] Parler" if d < 3.0 else ""]
+			label.text = "%s (%s) · Nv %d\nVoyageur · %s · %s%s" % [villager_name, race_title(), level,
+				class_name_fr(), JOB_NAMES.get(best_job(), "?"), "\n[E] Parler" if d < 3.0 else ""]
 		elif companion:
 			label.text = "%s (%s) · Nv %d\nCompagnon d'expédition\n[E] Équipement" % [villager_name, race_title(), level]
 		else:

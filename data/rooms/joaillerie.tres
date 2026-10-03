@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RoomTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_type_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/gemme_amethyste.tres" id="p_gemme_amethyste"]
+[ext_resource type="Resource" path="res://data/items/gemme_topaze.tres" id="p_gemme_topaze"]
+[ext_resource type="Resource" path="res://data/items/gemme_emeraude.tres" id="p_gemme_emeraude"]
+[ext_resource type="Resource" path="res://data/items/perle.tres" id="p_perle"]
+[ext_resource type="Resource" path="res://data/items/lingot_or.tres" id="p_lingot_or"]
+
+[resource]
+script = ExtResource("1")
+id = "joaillerie"
+display_name = "Joaillerie"
+description = "Loupes, pinces et éclats de gemmes."
+color = Color(0.45, 0.85, 0.95, 1)
+required = {"etabli": 1, "bougeoir": 1, "coffre": 1}
+min_cells = 6
+job_id = "joaillier"
+job_name = "Joaillier"
+job_slots = 1
+production_pool = Array[ExtResource("2")]([ExtResource("p_gemme_amethyste"), ExtResource("p_gemme_topaze"), ExtResource("p_gemme_emeraude"), ExtResource("p_perle"), ExtResource("p_lingot_or")])
+production_count = 1
+production_interval = 220.0
+hero_bonus = {}
+effect_text = "Les joailliers taillent des gemmes et de l'or."

@@ -20,12 +20,12 @@ const RANK_ROOMS := [0, 1, 3, 6, 10, 15, 22]
 const RANK_AGE := [0, 0, 0, 1, 2, 3, 4]
 ## Affinités des races pour les métiers (identifiant du modèle -> métiers préférés).
 const RACE_AFFINITY := {
-	"dwarf": ["forgeron", "macon", "architecte"], "human": ["marchand", "fermier", "boulanger", "architecte"], "elf": ["erudit", "mage", "tisserand", "alchimiste"],
-	"orc": ["garde", "bucheron"], "ogre": ["garde", "macon"], "goblin": ["marchand", "bucheron", "dresseur"],
-	"hobgoblin": ["forgeron", "garde"], "kijin": ["garde", "forgeron"], "lizard": ["fermier", "garde"],
-	"lycan": ["garde", "bucheron", "dresseur"], "beastfolk": ["fermier", "bucheron", "dresseur"], "dryad": ["fermier", "tisserand", "alchimiste"],
-	"fairy": ["tisserand", "mage", "alchimiste"], "slime": ["aubergiste", "verrier"], "vampire": ["erudit", "marchand", "alchimiste"],
-	"demon": ["mage", "forgeron", "enchanteur"], "dragonoid": ["forgeron", "garde"], "harpy": ["marchand", "tisserand"],
+	"dwarf": ["forgeron", "macon", "architecte", "mineur", "joaillier"], "human": ["marchand", "fermier", "boulanger", "architecte", "cuisinier"], "elf": ["erudit", "mage", "tisserand", "alchimiste"],
+	"orc": ["garde", "bucheron", "chasseur"], "ogre": ["garde", "macon"], "goblin": ["marchand", "bucheron", "dresseur", "joaillier"],
+	"hobgoblin": ["forgeron", "garde"], "kijin": ["garde", "forgeron"], "lizard": ["fermier", "garde", "pecheur"],
+	"lycan": ["garde", "bucheron", "dresseur", "chasseur"], "beastfolk": ["fermier", "bucheron", "dresseur"], "dryad": ["fermier", "tisserand", "alchimiste"],
+	"fairy": ["tisserand", "mage", "alchimiste"], "slime": ["aubergiste", "verrier", "cuisinier"], "vampire": ["erudit", "marchand", "alchimiste"],
+	"demon": ["mage", "forgeron", "enchanteur"], "dragonoid": ["forgeron", "garde"], "harpy": ["marchand", "tisserand", "pecheur"],
 	"spirit": ["mage", "pretre", "enchanteur"], "angel": ["pretre", "erudit", "enchanteur"], "insectoid": ["macon", "tisserand", "architecte"],
 	"undead": ["macon", "erudit"],
 }

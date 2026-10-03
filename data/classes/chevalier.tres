@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/spear.tres" id="it_spear"]
+[ext_resource type="Resource" path="res://data/items/shield_iron.tres" id="it_shield_iron"]
+[ext_resource type="Resource" path="res://data/items/iron_armor.tres" id="it_iron_armor"]
+[ext_resource type="Resource" path="res://data/items/iron_greaves.tres" id="it_iron_greaves"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Chevalier"
+description = "Lance au poing et bouclier de fer : il charge en première ligne et tient la position."
+color = Color(0.6, 0.7, 0.85, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_spear"), ExtResource("it_shield_iron"), ExtResource("it_iron_armor"), ExtResource("it_iron_greaves")])
+bonus_health = 25
+bonus_attack = 3
+bonus_defense = 5
+bonus_magic = 0
+health_per_level = 15
+attack_per_level = 1.0
+defense_per_level = 0.7
+magic_per_level = 0.3

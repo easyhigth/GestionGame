@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/dagger.tres" id="it_dagger"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="it_leather_armor"]
+[ext_resource type="Resource" path="res://data/items/cape_blue.tres" id="it_cape_blue"]
+[ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="it_leather_cap"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Barde"
+description = "Conteur et voyageur, il se bat à la dague et manie un peu de magie. Rapide et polyvalent."
+color = Color(0.9, 0.5, 0.75, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_dagger"), ExtResource("it_leather_armor"), ExtResource("it_cape_blue"), ExtResource("it_leather_cap")])
+bonus_health = 5
+bonus_attack = 2
+bonus_defense = 1
+bonus_magic = 4
+health_per_level = 10
+attack_per_level = 0.9
+defense_per_level = 0.3
+magic_per_level = 1.1

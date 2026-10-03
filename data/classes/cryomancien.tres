@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/staff.tres" id="it_staff"]
+[ext_resource type="Resource" path="res://data/items/mage_hat.tres" id="it_mage_hat"]
+[ext_resource type="Resource" path="res://data/items/cape_blue.tres" id="it_cape_blue"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Cryomancien"
+description = "Mage du givre : il gèle et ralentit tout ce qui l'approche. Une magie froide qui protège aussi."
+color = Color(0.55, 0.85, 1.0, 1)
+starting_equipment = Array[ExtResource("2")]([ExtResource("it_staff"), ExtResource("it_mage_hat"), ExtResource("it_cape_blue")])
+bonus_health = 5
+bonus_attack = 0
+bonus_defense = 2
+bonus_magic = 6
+health_per_level = 9
+attack_per_level = 0.3
+defense_per_level = 0.4
+magic_per_level = 1.8

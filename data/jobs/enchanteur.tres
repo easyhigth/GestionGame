@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="JobData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/job_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/items/rune_force.tres" id="it_rune_force"]
+[ext_resource type="Resource" path="res://data/items/rune_garde.tres" id="it_rune_garde"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Enchanteur"
+description = "Il grave des runes qui réveillent les armes. Commence avec deux runes, beaucoup de magie."
+starting_items = Array[ExtResource("2")]([ExtResource("it_rune_force"), ExtResource("it_rune_garde")])
+starting_counts = PackedInt32Array(1, 1)
+bonus_magic = 5

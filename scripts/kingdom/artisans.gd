@@ -8,7 +8,8 @@ extends RefCounted
 ## - enchanteur (sanctuaire des runes) : poussière arcanique, et rarement une pierre d'âme ;
 ## - maçon : minerais de cuivre et d'étain, charbon, pierres des régions ;
 ## - bûcheron (scierie) : bois des différentes essences ;
-## - tisserand : teintures ; verrier : verre teinté.
+## - tisserand : teintures ; verrier : verre teinté ;
+## - chasseur, pêcheur, mineur, cuisinier, joaillier : prises rares, minerais, plats fins, gemmes.
 
 const XP_PER_JOB := 30
 ## Ce que chaque métier peut produire en plus (identifiants), au hasard.
@@ -18,6 +19,11 @@ const EXTRA := {
 	"bucheron": ["bois_bouleau", "bois_sapin", "bois_acajou", "bois_ebene", "bois_cerisier", "bois_acacia", "bois_saule", "bois_palmier"],
 	"tisserand": ["teinture_rouge", "teinture_bleu", "teinture_jaune", "teinture_vert", "teinture_blanc", "teinture_noir"],
 	"verrier": ["bloc_verre_bleu", "bloc_verre_rouge", "bloc_verre_vert", "bloc_verre_jaune", "bloc_verre_violet", "bloc_verre_cyan"],
+	"chasseur": ["croc_meute", "laine", "viande_crue"],
+	"pecheur": ["anguille", "brochet", "omble", "perle", "poisson_lune"],
+	"mineur": ["minerai_cuivre", "minerai_etain", "charbon", "gemme_amethyste"],
+	"cuisinier": ["gateau", "fromage", "poisson_grille"],
+	"joaillier": ["gemme_rubis", "gemme_saphir", "gemme_diamant"],
 }
 
 
