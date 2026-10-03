@@ -26,7 +26,7 @@ static func level(v: Node) -> int:
 
 
 ## Après une production réussie d'un habitant : son expérience monte, et il fabrique parfois autre chose.
-## Renvoie [objet, nombre] à produire à la place, ou [] pour garder la production habituelle.
+## Renvoie [objet, nombre, étiquette] produit en plus de la production habituelle, ou [] si rien de plus.
 static func produce(v: Node, job_id: String, kingdom: Node) -> Array:
 	var before := level(v)
 	v.set_meta("artisan_xp", int(v.get_meta("artisan_xp", 0)) + XP_PER_JOB)

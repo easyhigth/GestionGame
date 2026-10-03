@@ -1331,8 +1331,11 @@ var _quality := 2
 
 
 func set_close_view(on: bool) -> void:
+	if on == close_view:
+		return
 	close_view = on
-	apply_quality(_quality)
+	# la qualité choisie dans les options (pas une valeur par défaut)
+	apply_quality(int(SaveGame.options.get("graphics", _quality)))
 
 
 ## Distance jusqu'à laquelle la caméra dessine en vue rapprochée.
