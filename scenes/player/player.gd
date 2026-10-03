@@ -330,6 +330,39 @@ func _give_class_talent() -> void:
 	if id != "" and not talents.has(id):
 		talents[id] = true
 		_apply_talents()
+	grant_class_skills(false)
+
+
+## Identifiant de la classe du héros (« guerrier »...), ou "".
+func class_id() -> String:
+	if profile == null or profile.hero_class == null:
+		return ""
+	return profile.hero_class.resource_path.get_file().get_basename()
+
+
+## Offre les compétences de classe atteintes (niveaux TalentTree.CLASS_LEVELS) ; elles se rangent dans la
+## barre en partant de la droite (touches 0, 9, 8) si la place est libre. `announce` : message et effets.
+func grant_class_skills(announce := true) -> void:
+	var cid := class_id()
+	var got := false
+	for n in TalentTree.class_skills(cid):
+		if talents.has(n.id) or level < int(n.level):
+			continue
+		talents[n.id] = true
+		got = true
+		if not ability_slots.has(n.id):
+			for i in range(ability_slots.size() - 1, -1, -1):
+				if ability_slots[i] == "":
+					ability_slots[i] = n.id
+					break
+		if announce:
+			var col: Color = n.get("color", Color("ffd27a"))
+			Sound.ui("talent")
+			feat.emit("Compétence de classe : %s !" % n.name, col.lightened(0.2))
+			notify.emit("%s : %s (barre de compétences, T : arbre, onglet Classe)." % [n.name, n.desc])
+			VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), col, 40, 3.5, 0.1, 1.0, "up", -1.5)
+	if got:
+		_apply_talents()
 
 
 ## Points gagnés : 2 par niveau jusqu'au niveau 50, puis 1 (voir TalentTree.points_until) + 1 par âme de boss.
@@ -357,6 +390,10 @@ func talent_block_reason(id: String) -> String:
 		return "?"
 	if talents.has(id):
 		return "Déjà appris"
+	if n.has("cls"):
+		if n.cls != class_id():
+			return "Compétence d'une autre classe"
+		return "Offerte par ta classe au niveau %d" % int(n.level)
 	if n.get("story", false):
 		return "Se débloque en avançant dans l'histoire principale"
 	var need := TalentTree.level_of(id)
@@ -616,6 +653,7 @@ func gain_xp(amount: int) -> void:
 		for id in abilities:
 			abilities[id].set_level(level)
 		feat.emit("Niveau %d !" % level, Color("ffd24a"))
+		grant_class_skills()
 		Sound.ui("levelup")
 		notify.emit("+%d point%s de compétence (T : arbre de compétences)." % [TalentTree.points_for_level(level), "s" if TalentTree.points_for_level(level) > 1 else ""])
 		talents_changed.emit()
@@ -634,6 +672,7 @@ func set_level_to(n: int) -> void:
 		skill.set_level(level)
 	for id in abilities:
 		abilities[id].set_level(level)
+	grant_class_skills(false)
 	feat.emit("Niveau %d !" % level, Color("ffd24a"))
 	talents_changed.emit()
 	xp_changed.emit(xp, xp_to_next(), level)
@@ -1194,7 +1233,7 @@ func drink_potion() -> ItemData:
 	inventory.remove(pick, 1)
 	potions_drunk += 1
 	if pick.potion_heal > 0.0:
-		health.heal(roundi(health.max_health * pick.potion_heal))
+		health.heal(roundi(health.max_health * pick.potion_heal * (1.5 if Crafts.hero_job(self) == "alchimiste" else 1.0)))
 	if skill:
 		for k in pick.potion_buff:
 			skill.buffs[k] = [float(pick.potion_buff[k]), pick.potion_time]
@@ -1229,9 +1268,10 @@ func eat(item: ItemData = null) -> ItemData:
 		return null
 	if not inventory.remove(item, 1):
 		return null
-	hunger = minf(HUNGER_MAX, hunger + item.food)
+	var cook := 1.4 if Crafts.hero_job(self) == "cuisinier" else 1.0
+	hunger = minf(HUNGER_MAX, hunger + item.food * cook)
 	if item.food_heal > 0:
-		health.heal(item.food_heal)
+		health.heal(roundi(item.food_heal * (1.5 if cook > 1.0 else 1.0)))
 	Sound.play("eat", Vector3.INF, -2.0)
 	VoxelBurst.spawn(self, global_position + Vector3(0, 1.4, 0) + facing * 0.3, Color(0.9, 0.6, 0.3), 8, 1.6, 0.05, 0.3, "up", 4.0, false)
 	notify.emit("Tu manges : %s." % item.display_name)

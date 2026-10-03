@@ -137,6 +137,8 @@ func cast() -> String:
 	_from = player.global_position
 	state = "attente"
 	var wait := randf_range(WAIT_MIN, WAIT_MAX)
+	if Crafts.hero_job(player) == "pecheur":
+		wait *= 0.6
 	var we := get_tree().get_first_node_in_group("weather") as Weather
 	if we and we.is_wet():
 		wait *= 0.7

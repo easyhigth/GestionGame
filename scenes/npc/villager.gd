@@ -244,7 +244,7 @@ func set_level(lv: int) -> void:
 
 func base_attack() -> int:
 	var c := _class()
-	return roundi((race.strength if race else 10) * _level_mult() * (1.0 + guard_bonus)) + (c.bonus_attack if c else 0)
+	return roundi((race.strength if race else 10) * _level_mult() * (1.0 + guard_bonus + (0.4 if _rage_left > 0.0 else 0.0))) + (c.bonus_attack if c else 0)
 
 
 func base_magic() -> int:
@@ -1087,7 +1087,119 @@ func _follow_step(delta: float) -> bool:
 	return true
 
 
+## Rôle de combat de chaque classe : soigneur, lanceur de sorts, archer, protecteur...
+const CLASS_ROLE := {"clerc": "soin", "paladin": "soin", "druide": "soin", "barde": "chant", "mage": "sort", "cryomancien": "givre",
+	"necromancien": "drain", "rodeur": "tir", "chevalier": "rempart", "guerrier": "rempart", "barbare": "rage", "assassin": "ombre", "moine": "paume"}
+## Recharge de l'action de classe (secondes).
+const ROLE_COOLDOWN := {"soin": 9.0, "chant": 14.0, "sort": 3.5, "givre": 5.0, "drain": 6.0, "tir": 3.0, "rempart": 8.0, "rage": 12.0, "ombre": 7.0, "paume": 6.0}
+var _class_cd := randf_range(1.0, 3.0)
+## Rage du barbare (secondes restantes) : +40 % d'attaque.
+var _rage_left := 0.0
+## Actions de classe réussies (pour les tests et les statistiques).
+var class_actions := 0
+
+
+func class_role() -> String:
+	return CLASS_ROLE.get(fight_class, "")
+
+
+## Au combat, chaque habitant agit selon sa classe en plus de ses coups (voir CLASS_ROLE).
+## Renvoie vrai si une action a eu lieu.
+func class_action(delta: float) -> bool:
+	_rage_left = maxf(0.0, _rage_left - delta)
+	_class_cd -= delta
+	if _class_cd > 0.0 or not is_alive() or not can_act():
+		return false
+	var role := class_role()
+	if role == "":
+		return false
+	var done := false
+	var col: Color = _class().color if _class() else Color.WHITE
+	var target := _threat as Combatant
+	var dist := target.global_position.distance_to(global_position) if target and is_instance_valid(target) and target.is_alive() else INF
+	match role:
+		"soin", "chant":
+			# soigne l'allié le plus blessé à portée (héros, habitants, familiers) ; le barde soigne tout le monde un peu
+			var best: Combatant = null
+			var worst := 0.85 if role == "soin" else 0.95
+			var hurt := []
+			for g in ["player", "villagers", "familiars"]:
+				for n in get_tree().get_nodes_in_group(g):
+					var c := n as Combatant
+					if c and c.is_alive() and c.global_position.distance_to(global_position) < 9.0:
+						var r := c.health.ratio()
+						if r < 0.95:
+							hurt.append(c)
+						if r < worst:
+							worst = r
+							best = c
+			if role == "soin" and best:
+				best.health.heal(maxi(2, roundi(best.health.max_health * 0.2 + magic_power() * 0.5)))
+				VoxelBurst.spawn(self, best.global_position + Vector3(0, 0.2, 0), col.lightened(0.3), 16, 2.0, 0.08, 0.9, "up", -2.0)
+				done = true
+			elif role == "chant" and not hurt.is_empty():
+				for c in hurt:
+					c.health.heal(maxi(1, roundi(c.health.max_health * 0.08)))
+				SkillFX.ring(self, global_position, 6.0, col, 0.6)
+				done = true
+			if done:
+				visual.play_move("cast_1", 1.0)
+		"sort", "givre", "tir":
+			if dist < 12.0:
+				facing = (target.global_position - global_position).normalized()
+				facing.y = 0.0
+				facing = facing.normalized()
+				var bolt := MagicBolt.new()
+				bolt.shooter = self
+				bolt.color = col.lightened(0.2)
+				bolt.direction = facing
+				bolt.damage = maxi(1, roundi((magic_power() if role != "tir" else attack_power()) * 0.8))
+				bolt.range_left = 13.0
+				bolt.arrow = role == "tir"
+				if role == "givre":
+					bolt.on_hit = func(t: Combatant): t.apply_slow(0.5, 2.0)
+				get_parent().add_child(bolt)
+				bolt.global_position = global_position + Vector3(0, 1.1, 0) + facing * 0.6
+				visual.play_move("cast_1" if role != "tir" else "punch_1", 1.2)
+				done = true
+		"drain":
+			if dist < 6.0:
+				var dmg := maxi(1, roundi(magic_power() * 0.9))
+				if target.receive_hit(dmg, self, 1.0, 0.5):
+					health.heal(maxi(1, dmg / 2))
+				VoxelBurst.spawn(self, target.global_position + Vector3(0, 0.8, 0), col, 14, 2.0, 0.08, 0.6, "up", 1.0)
+				done = true
+		"rempart", "paume":
+			if dist < 2.6:
+				target.receive_hit(maxi(1, roundi(attack_power() * (0.8 if role == "rempart" else 1.1))), self, 9.0 if role == "paume" else 4.0, 2.0)
+				if target.is_alive():
+					target.stagger(1.0 if role == "rempart" else 0.6, role == "rempart")
+				visual.play_move("heavy_1" if role == "rempart" else "punch_1", 1.0)
+				done = true
+		"rage":
+			if dist < 4.0 and health.ratio() < 0.75:
+				_rage_left = 6.0
+				VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), Color("ff5a3a"), 18, 2.5, 0.08, 0.7, "up", -1.0)
+				done = true
+		"ombre":
+			if dist < 8.0 and dist > 2.0:
+				var behind := target.global_position + (target.global_position - global_position).normalized() * 1.0
+				behind.y = global_position.y
+				global_position = behind
+				facing = (target.global_position - global_position).normalized()
+				target.receive_hit(maxi(1, roundi(attack_power() * 1.4)), self, 3.0, 1.0)
+				VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color("5a4a7a"), 14, 2.0, 0.08, 0.5, "up", 0.0)
+				done = true
+	if done:
+		class_actions += 1
+		_class_cd = ROLE_COOLDOWN.get(role, 8.0) * randf_range(0.9, 1.2)
+	else:
+		_class_cd = 0.5
+	return done
+
+
 func _fight_or_flee(delta: float) -> void:
+	class_action(delta)
 	var to := _threat.global_position - global_position
 	to.y = 0.0
 	var dist := to.length()

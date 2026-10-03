@@ -282,7 +282,7 @@ func run(text: String) -> bool:
 		"competences":
 			var n := 0
 			# du centre vers l'extérieur : chaque nœud trouve ses voisins déjà appris
-			var list := TalentTree.nodes().filter(func(x): return not x.get("story", false) and int(x.level) <= player.level)
+			var list := TalentTree.nodes().filter(func(x): return not x.get("story", false) and not x.has("cls") and int(x.level) <= player.level)
 			list.sort_custom(func(a, b): return int(a.ring) < int(b.ring))
 			for x in list:
 				if not player.talents.has(x.id):

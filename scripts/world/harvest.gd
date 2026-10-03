@@ -184,6 +184,8 @@ static func harvest_crop(p: Player, cell: Vector2i) -> void:
 		Crafts.gain(p, "fermier", 8.0)
 		if not got.is_empty() and randf() < Crafts.double_chance(p, "fermier"):
 			_drop(world, got[0][0], got[0][1], world.cell_center(cell) + Vector3(0, 0.2, 0))
+		if not got.is_empty() and Crafts.hero_job(p) == "fermier" and randf() < 0.3:
+			_drop(world, got[0][0], got[0][1], world.cell_center(cell) + Vector3(0, 0.2, 0))
 
 
 ## Bloc ou meuble posé juste devant le héros (aux pieds, puis au-dessus, puis le sol posé devant).
@@ -342,6 +344,20 @@ static func hit_decor(world: WorldGenerator, cell: Vector2i, dmg: float, fx_pare
 		Crafts.gain(p, craft, float(CRAFT_XP.get(kind, 1)), 1 + (30 if kind == WorldGenerator.D_GOLD else (12 if kind == WorldGenerator.D_IRON else 0)))
 		if not drops.is_empty() and randf() < Crafts.double_chance(p, craft):
 			_drop(world, drops[0][0], drops[0][1], world.cell_center(cell))
+		# savoir-faire du métier du héros (voir Crafts.JOB_SPECIALTY)
+		var job := Crafts.hero_job(p)
+		var extra := 0.0
+		if job == "mineur" and is_stone(kind) or job == "bucheron" and kind in [WorldGenerator.D_OAK, WorldGenerator.D_PINE]:
+			extra = 0.25
+		elif job == "herboriste" and kind == WorldGenerator.D_BUSH:
+			extra = 0.35
+		if not drops.is_empty() and randf() < extra:
+			_drop(world, drops[0][0], drops[0][1], world.cell_center(cell))
+		if job == "joaillier" and is_stone(kind) and randf() < 0.05:
+			var gem := Items.get_item(Crafts.GEMS.pick_random())
+			if gem:
+				_drop(world, gem, 1, world.cell_center(cell))
+				p.notify.emit("Ton œil de joaillier repère une gemme : %s !" % gem.display_name)
 	# chaque région a ses essences de bois et ses pierres (voir BlockCatalog)
 	var zone := world.zone_at(world.cell_center(cell))
 	var rid: String = zone.type.id if not zone.is_empty() and zone.get("type") else "prairie"

@@ -360,6 +360,51 @@ func _a_heal(prm: Dictionary) -> void:
 				VoxelBurst.spawn(owner, c.global_position + Vector3(0, 0.2, 0), data.color, 12, 2.0, 0.08, 0.8, "up", -2.0)
 
 
+## Chant, bénédiction : renfort du héros, et les alliés proches (habitants, familiers) sont soignés.
+func _a_rally(prm: Dictionary) -> void:
+	_a_buff(prm)
+	var pct := float(prm.get("heal", 0.1))
+	SkillFX.ring(owner, owner.global_position, 9.0, data.color, 0.7)
+	for g in ["villagers", "familiars"]:
+		for n in owner.get_tree().get_nodes_in_group(g):
+			var c := n as Combatant
+			if c and c.is_alive() and c.global_position.distance_to(owner.global_position) < 9.0:
+				c.health.heal(maxi(1, roundi(c.health.max_health * pct)))
+				VoxelBurst.spawn(owner, c.global_position + Vector3(0, 0.2, 0), data.color, 10, 2.0, 0.08, 0.8, "up", -2.0)
+
+
+## Nécromancien : des morts-vivants alliés sortent de terre et combattent pour le héros un moment.
+func _a_summon(prm: Dictionary) -> void:
+	var data_path := "res://data/enemies/%s.tres" % str(prm.get("monster", "squelette"))
+	if not ResourceLoader.exists(data_path):
+		return
+	var n := int(prm.get("count", 2)) + tier
+	var dur := _dur(prm, 30.0)
+	var holder := owner.get_tree().get_first_node_in_group("familiars_mgr") as Node
+	if holder == null:
+		holder = owner.get_parent()
+	# les anciens invoqués s'effacent
+	for old in owner.get_tree().get_nodes_in_group("summons"):
+		old.set_meta("summon_left", 0.0)
+	for i in n:
+		var e := (load("res://scenes/enemies/enemy.tscn") as PackedScene).instantiate() as Enemy
+		e.tamed = true
+		e.data = load(data_path) as EnemyData
+		e.level = maxi(1, owner.level)
+		e.power = 0.6 + 0.004 * owner.level + 0.002 * owner.magic_power()
+		e.familiar_name = "Serviteur"
+		e.familiar_title = "Mort-vivant invoqué"
+		e.familiar_slot = 5 + i
+		e.set_meta("summon_left", dur)
+		e.add_to_group("summons")
+		holder.add_child(e)
+		var a := TAU * i / n
+		var pos := owner.global_position + Vector3(cos(a), 0, sin(a)) * 1.8
+		e.global_position = pos
+		e.home = pos
+		VoxelBurst.spawn(owner, pos + Vector3(0, 0.1, 0), data.color, 24, 2.5, 0.1, 1.0, "up", -1.0)
+
+
 func _a_buff(prm: Dictionary) -> void:
 	var dur := _dur(prm, 6.0)
 	var s: float = SkillData.PASSIVE_SCALE[tier]

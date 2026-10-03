@@ -861,13 +861,24 @@ func _refresh_texts() -> void:
 		_class_info.text = "[font_size=13][color=#%s]%s[/color][/font_size]\n%s\n\n[color=#f2c86a]Équipement :[/color] %s\n[color=#f2c86a]Bonus :[/color] %s\n[color=#f2c86a]Par niveau :[/color] Vie +%d, Attaque +%.1f, Magie +%.1f" % [
 			c.color.lightened(0.2).to_html(false), c.display_name, c.description, gear, ", ".join(bon) if bon else "—",
 			c.health_per_level, c.attack_per_level, c.magic_per_level]
+		var cls_sk := TalentTree.class_skills(c.resource_path.get_file().get_basename())
+		if not cls_sk.is_empty():
+			_class_info.text += "\n\n[color=#f2c86a]Compétences de classe :[/color]"
+			for n in cls_sk:
+				_class_info.text += "\n%s [b]%s[/b] (niveau %d) : %s" % [n.glyph, n.name, int(n.level), n.desc]
 	var j := profile.job
 	if j:
 		var items := []
 		for i in j.starting_items.size():
 			items.append("%d %s" % [j.starting_counts[i] if i < j.starting_counts.size() else 1, j.starting_items[i].display_name])
 		_job_info.text = "[font_size=13][color=#f2c86a]%s[/color][/font_size]\n%s\n\n[color=#f2c86a]Au départ :[/color] %s\n[color=#f2c86a]Avantage :[/color] %s" % [
-			j.display_name, j.description, ", ".join(items), j.perks_text()]
+			j.display_name, j.description, ", ".join(items), j.perks_text() if j.perks_text() != "" else "—"]
+		var jid := j.resource_path.get_file().get_basename()
+		var crafts_txt: Array = Crafts.JOB_START.get(jid, []).map(func(x): return Crafts.CRAFTS[x].name)
+		if not crafts_txt.is_empty():
+			_job_info.text += "\n[color=#f2c86a]Artisanat :[/color] %s au niveau %d" % [" et ".join(PackedStringArray(crafts_txt)), Crafts.START_LEVEL]
+		if Crafts.JOB_SPECIALTY.has(jid):
+			_job_info.text += "\n[color=#f2c86a]Savoir-faire :[/color] %s" % Crafts.JOB_SPECIALTY[jid]
 	if _skill_info:
 		_skill_info.text = _skill_text()
 	_refresh_summary()
