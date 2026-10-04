@@ -863,9 +863,107 @@ func camera_forward() -> Vector3:
 	return Vector3(-sin(cam_yaw), 0.0, -cos(cam_yaw))
 
 
-## En 3e et 1re personne, on frappe et on lance ses sorts là où regarde la caméra.
+# ---------------------------------------------------------------- visée à la souris
+
+## Ce que vise la souris (voir Aim) : {kind, point, normal, dist, key / cell / node}. Vide sans souris.
+var aim := {}
+## Vrai dès que la souris a bougé une fois : à partir de là, c'est elle qui vise (sinon, à la manette ou
+## sans souris, le héros frappe et pose devant lui comme avant).
+var _mouse_seen := false
+var _aim_box: MeshInstance3D
+var _aim_label: Label
+
+
+func aim_active() -> bool:
+	return _mouse_seen and camera != null and camera.current and not building and not ui_open and is_alive() \
+		and not (cam_mode == CamMode.TOP and Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE))
+
+
+## Lance le rayon de visée : par le viseur (centre de l'écran) en 3e et 1re personne, par le curseur en
+## vue de dessus.
+func _update_aim() -> void:
+	if not aim_active():
+		aim = {}
+		_show_aim()
+		return
+	var vp := get_viewport()
+	var mp := vp.get_mouse_position() if cam_mode == CamMode.TOP else vp.get_visible_rect().size * 0.5
+	var origin := camera.project_ray_origin(mp)
+	var dir := camera.project_ray_normal(mp)
+	aim = Aim.cast(self, origin, dir, camera.global_position.distance_to(global_position) + 16.0)
+	_show_aim()
+
+
+## Ce qu'un coup toucherait d'après la visée (pour la récolte) : {"block"}, {"furniture"}, {"cell"},
+## {"prop"}, {"crop"} ou {} si rien n'est visé à portée.
+func aim_target() -> Dictionary:
+	if aim.is_empty() or float(aim.get("dist", INF)) > Aim.REACH_HIT:
+		return {}
+	match str(aim.kind):
+		"block":
+			return {"block": aim.key}
+		"furniture":
+			return {"furniture": aim.key}
+		"decor":
+			return {"cell": aim.cell}
+		"prop":
+			return {"prop": aim.node}
+		"crop":
+			return {"crop": aim.cell}
+	return {}
+
+
+## Contour de ce qui est visé (bloc, meuble, arbre, rocher, décor du village, culture) et couleur du viseur :
+## rouge sur un ennemi à portée, doré sur ce qui se récolte ou se casse, blanc sinon.
+func _show_aim() -> void:
+	var col := Color(1, 1, 1, 0.8)
+	var box := AABB()
+	var show := false
+	if not aim.is_empty():
+		var k := str(aim.kind)
+		var d := float(aim.get("dist", INF))
+		if k == "enemy" and d <= attack_reach() + 1.6:
+			col = Color(1.0, 0.35, 0.3, 0.95)
+		elif k in ["block", "furniture", "decor", "prop", "crop"] and d <= Aim.REACH_HIT and not holding_item():
+			col = Color(1.0, 0.85, 0.35, 0.95)
+			box = Aim.target_box(get_tree().get_first_node_in_group("world") as WorldGenerator, aim)
+			show = box.size != Vector3.ZERO
+	if _aim_label:
+		_aim_label.add_theme_color_override("font_color", col)
+	if show and _aim_box == null:
+		_aim_box = MeshInstance3D.new()
+		_aim_box.mesh = Aim.wire_box()
+		_aim_box.top_level = true
+		_aim_box.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = Color(0.05, 0.05, 0.05, 0.85)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.no_depth_test = false
+		_aim_box.material_override = m
+		add_child(_aim_box)
+	if _aim_box:
+		_aim_box.visible = show
+		if show:
+			_aim_box.global_transform = Transform3D(Basis().scaled(box.size + Vector3.ONE * 0.02), box.get_center())
+
+
+## En 3e et 1re personne (et en vue de dessus avec la souris), on frappe et on lance ses sorts là où
+## l'on vise : le héros se tourne vers le point visé (l'ennemi visé s'il y en a un).
 func _aim_with_camera() -> void:
-	if cam_mode == CamMode.TOP or (lock_target and is_instance_valid(lock_target)):
+	if lock_target and is_instance_valid(lock_target):
+		return
+	if aim_active() and not aim.is_empty():
+		var pt: Vector3 = aim.point
+		if str(aim.kind) == "enemy" and is_instance_valid(aim.node):
+			pt = (aim.node as Node3D).global_position
+		var flat := pt - global_position
+		flat.y = 0.0
+		if flat.length() > 0.15:
+			facing = flat.normalized()
+			visual.rotation.y = atan2(facing.x, facing.z)
+		return
+	if cam_mode == CamMode.TOP:
 		return
 	facing = camera_forward()
 	# aide à la visée : l'ennemi le plus proche du viseur (moins de 10°), à portée de tir
@@ -917,6 +1015,7 @@ func _make_crosshair() -> void:
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_crosshair.add_child(l)
+	_aim_label = l
 	_crosshair.visible = false
 	add_child(_crosshair)
 
@@ -924,6 +1023,7 @@ func _make_crosshair() -> void:
 # ---------------------------------------------------------------- boucle
 
 func _physics_process(delta: float) -> void:
+	_update_aim()
 	_combat_step(delta)
 	_footsteps(delta)
 	_update_hunger(delta)
@@ -1742,6 +1842,8 @@ func _start_dash(direction: Vector3) -> void:
 
 ## Manette : LB (garde) maintenu + croix gauche / droite = objet précédent / suivant à poser.
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_mouse_seen = true
 	if ui_open or building or not is_alive():
 		return
 	# Ctrl + chiffre : barre de construction (le chiffre seul reste aux compétences)

@@ -205,6 +205,9 @@ func find_spot(it: ItemData) -> Dictionary:
 	if world == null:
 		return {}
 	var grid := world.build
+	# à la souris : là où vise le viseur (ou le curseur), comme dans Minecraft
+	if player.aim_active():
+		return _aim_spot(world, it)
 	var fwd := Vector3(player.facing.x, 0, player.facing.z).normalized()
 	var here := world.cell_at(player.global_position)
 	var col := world.cell_at(player.global_position + fwd * 1.1)
@@ -235,6 +238,44 @@ func find_spot(it: ItemData) -> Dictionary:
 		var ok := grid.can_place_block(key, it) and _supported(world, key) and world.village_prop_at(col, float(y)) == null
 		return {"key": key, "ok": ok, "why": "" if ok else "Il faut un appui (le sol ou un bloc à côté)"}
 	return {"key": Vector3i(col.x, fy + 2, col.y), "ok": false, "why": "Trop haut"}
+
+
+## Case visée : contre la face visée d'un bloc, sur le sol visé, ou à côté d'un meuble.
+## Trop loin (plus de Aim.REACH_PLACE) ou rien de visé : rien à poser.
+func _aim_spot(world: WorldGenerator, it: ItemData) -> Dictionary:
+	var a: Dictionary = player.aim
+	if a.is_empty() or float(a.get("dist", INF)) > Aim.REACH_PLACE:
+		return {}
+	var grid := world.build
+	if _is_farm_item(it):
+		# graines et houe : la case du sol visée (ou celle de la plante visée)
+		if str(a.kind) in ["terrain", "decor", "crop"] and a.has("cell"):
+			return _farm_spot(world, a.cell, it)
+		return {}
+	var key: Vector3i = Aim.place_key(a)
+	if key == Vector3i.MAX:
+		return {}
+	var col := Vector2i(key.x, key.z)
+	# jamais dans le corps du héros
+	var feet := player.global_position.y
+	var in_body := col == world.cell_at(player.global_position) and float(key.y) < feet + 1.8 and float(key.y) + 1.0 > feet + 0.05
+	if it.is_furniture():
+		var base := world.support_height(Vector3(col.x + 0.5, 0, col.y + 0.5), float(key.y) + 0.6)
+		var okf := not in_body and grid.can_place_furniture(col, base) and world.village_prop_at(col, base) == null \
+			and grid.block_at(Vector3i(col.x, floori(base + 0.01), col.y)) == null
+		return {"key": Vector3i(col.x, floori(base), col.y), "base": base, "ok": okf, "why": "" if okf else "Place occupée"}
+	if grid.block_at(key) != null:
+		return {"key": key, "ok": false, "why": "Place occupée"}
+	var g := world.terrain_height(col)
+	if g > float(key.y) + 0.55:
+		return {"key": key, "ok": false, "why": "Dans le sol"}
+	var ok := not in_body and grid.can_place_block(key, it) and _supported(world, key) and world.village_prop_at(col, float(key.y)) == null
+	var why := ""
+	if in_body:
+		why = "Tu es dans le chemin"
+	elif not ok:
+		why = "Il faut un appui (le sol ou un bloc à côté)"
+	return {"key": key, "ok": ok, "why": why}
 
 
 ## Case à labourer ou à semer devant le héros.
@@ -310,10 +351,11 @@ func place() -> bool:
 	if not it.is_placeable() and not _is_farm_item(it):
 		player.notify.emit("Garde-le en main : les bêtes qui l'aiment te suivent. Mène-les à une mangeoire.")
 		return false
-	if _target.is_empty():
+	if _target.is_empty() or player.aim_active():
 		_target = find_spot(it)
 	if _target.is_empty() or not _target.ok:
-		player.notify.emit(_target.get("why", "Impossible de poser ici.") if not _target.is_empty() else "Impossible de poser ici.")
+		var nothing := "Vise le sol ou un bloc, à moins de %d m." % int(Aim.REACH_PLACE) if player.aim_active() else "Impossible de poser ici."
+		player.notify.emit(_target.get("why", "Impossible de poser ici.") if not _target.is_empty() else nothing)
 		return false
 	var world := player.get_tree().get_first_node_in_group("world") as WorldGenerator
 	var k: Vector3i = _target.key
