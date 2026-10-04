@@ -1271,7 +1271,22 @@ func _next_combo() -> void:
 	_aim_assist()
 	_ready_tool_for_swing()
 	spend_hunger(0.2)
+	# on vise un arbre, un rocher, un bloc... (et pas d'ennemi tout près) : un vrai geste d'outil
+	if _aiming_at_harvest():
+		name = "harvest_chop"
 	_do_move(name, attack_speed(), 1.0)
+
+
+## Réception d'un saut : un petit nuage de poussière sous les pieds.
+func _on_landed() -> void:
+	VoxelBurst.emit(self, global_position + Vector3(0, 0.08, 0), {"color": Color(0.72, 0.65, 0.52), "count": 8, "speed": 1.6,
+		"size": 0.1, "life": 0.45, "glow": false, "grow": true, "alpha": 0.55, "mode": "ring", "gravity": -0.3})
+
+
+func _aiming_at_harvest() -> bool:
+	if not aim_active() or _enemy_close(4.0):
+		return false
+	return str(aim.get("kind", "")) in ["decor", "block", "prop", "furniture", "crop"] and float(aim.get("dist", INF)) <= Aim.REACH_HIT
 
 
 func _do_move(name: String, speed: float, dmg: float) -> void:

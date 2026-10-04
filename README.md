@@ -1012,3 +1012,23 @@ Tous les bruitages sont générés par `tools/audio_generator.py` (synthèse, sa
   couleur, et un léger halo autour d'eux. On les repère dans l'obscurité. Au lever du jour, ça s'éteint
   (sauf pour les monstres sortis avec la nuit).
 - Les panneaux des grottes (« Sortie », « Descendre »...) s'effacent quand on est collé contre eux.
+
+## Animations du héros
+
+- **Chaque classe incante à sa manière** quand elle lance une compétence :
+  - mage, cryomancien et nécromancien lèvent les mains au ciel puis les projettent en avant ;
+  - guerrier, barbare et chevalier brandissent leur arme vers le ciel puis l'abattent en fléchissant les
+    jambes ;
+  - clerc, paladin et barde ouvrent les bras vers le ciel, le regard levé ;
+  - le rôdeur tend un bras et tire la corde jusqu'à la joue ;
+  - l'assassin s'accroupit, bras croisés, puis écarte ses lames d'un geste sec ;
+  - le druide pose les mains vers la terre puis les remonte lentement ;
+  - le moine se met en garde basse puis projette ses deux paumes.
+
+  Les compétences de déplacement (ruée, clignement...) gardent leur propre mouvement.
+- **Roulade** : le héros se met en boule (bras et jambes repliés) pendant le tour complet.
+- **Saut** : le corps s'étire à l'envol et s'écrase à la réception, puis revient en souplesse ; un petit
+  nuage de poussière se soulève à l'atterrissage.
+- **Récolte** : quand on vise un arbre, un rocher, un bloc ou une culture (sans ennemi tout près), le héros
+  lève son outil au-dessus de l'épaule et l'abat, comme un bûcheron ou un mineur, au lieu de donner un coup
+  d'épée.

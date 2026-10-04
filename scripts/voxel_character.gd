@@ -52,6 +52,11 @@ var _downed := false
 ## En l'air (saut, chute) : bras et jambes repliés.
 var airborne := false
 var _air := 0.0
+## Écrasement / étirement du corps (saut, atterrissage) : > 0 étiré, < 0 écrasé ; revient à 0 en ressort.
+var _squash := 0.0
+var _squash_v := 0.0
+var _was_air := false
+var _base_scale := Vector3.ONE
 var _down := 0.0
 
 # coup en cours (poses clés)
@@ -114,6 +119,9 @@ func set_model(scene: PackedScene) -> void:
 	if scene == null:
 		return
 	_instance = scene.instantiate() as Node3D
+	_base_scale = _instance.scale
+	_squash = 0.0
+	_squash_v = 0.0
 	_instance.position.y = -roll_pivot_height
 	_pivot.add_child(_instance)
 	for n in _instance.find_children("*", "Node3D", true, false):
@@ -381,6 +389,26 @@ func animate(delta: float, velocity: Vector3, facing: Vector3) -> void:
 		var air_pose := {"LegL": -0.9, "LegR": 0.45, "ArmL": -1.1, "ArmR": -0.7}
 		for b in loco:
 			loco[b] = lerpf(loco[b], air_pose[b], _air)
+	# roulade : le corps se met en boule (jambes et bras repliés)
+	if _roll_left > 0.0:
+		var tuck := {"LegL": -1.6, "LegR": -1.5, "ArmL": -1.3, "ArmR": -1.3}
+		var kr := sin(PI * (1.0 - _roll_left / _roll_duration))
+		for b in loco:
+			loco[b] = lerpf(loco[b], tuck[b], clampf(kr * 1.6, 0.0, 1.0))
+	# saut et atterrissage : étirement à l'envol, écrasement à la réception, puis ressort amorti
+	if airborne and not _was_air:
+		_squash_v += 5.0
+	elif not airborne and _was_air:
+		_squash_v -= 7.0
+	_was_air = airborne
+	if _squash != 0.0 or _squash_v != 0.0:
+		_squash_v += (-_squash * 260.0 - _squash_v * 18.0) * minf(delta, 0.05)
+		_squash = clampf(_squash + _squash_v * minf(delta, 0.05), -0.28, 0.25)
+		if absf(_squash) < 0.001 and absf(_squash_v) < 0.01:
+			_squash = 0.0
+			_squash_v = 0.0
+		var sq := 1.0 + _squash
+		_instance.scale = Vector3(1.0 / sqrt(sq), sq, 1.0 / sqrt(sq)) * _base_scale
 
 	# avancement du coup
 	if not _move.is_empty():

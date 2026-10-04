@@ -225,6 +225,7 @@ func activate() -> bool:
 		kind = pick[0]
 		prm = pick[1]
 	_cast_flourish(kind)
+	_cast_pose(kind)
 	if data.category == "mystique":
 		_mythic_intro(prm)
 	call("_a_" + kind, prm)
@@ -266,6 +267,17 @@ static func genre_of(kind: String, prm: Dictionary, col: Color) -> String:
 	if h < 0.66:
 		return "ice"
 	return "arcane"
+
+
+## Le héros incante à la manière de sa classe (mage : mains levées puis projetées ; guerrier : arme
+## brandie puis abattue ; clerc : bras ouverts vers le ciel ; rôdeur : arc bandé...). Les déplacements
+## (ruée, clignement...) gardent leur propre mouvement.
+func _cast_pose(kind: String) -> void:
+	if kind in ["dash", "blink", "move", "execute"] or owner.visual == null or owner.in_move():
+		return
+	var cls: ClassData = owner.profile.hero_class if owner.profile else null
+	var id := cls.resource_path.get_file().get_basename() if cls else ""
+	owner.visual.play_move(MoveLibrary.cast_pose(id), 1.0)
 
 
 ## Le son du lancer : celui du genre ; les compétences légendaires et mystiques (les « ultimes »)

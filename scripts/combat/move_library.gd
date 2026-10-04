@@ -37,6 +37,26 @@ static func has_move(name: String) -> bool:
 
 
 ## Suite de combo selon le style d'arme.
+## Pose de sort d'une classe (identifiant de la classe : mage, guerrier, clerc...).
+static func cast_pose(class_id: String) -> String:
+	match class_id:
+		"mage", "cryomancien", "necromancien":
+			return "pose_arcane"
+		"guerrier", "barbare", "chevalier":
+			return "pose_martial"
+		"clerc", "paladin", "barde":
+			return "pose_divine"
+		"rodeur":
+			return "pose_bow"
+		"assassin":
+			return "pose_shadow"
+		"druide":
+			return "pose_nature"
+		"moine":
+			return "pose_monk"
+	return "pose_arcane"
+
+
 static func combo_for(style: int) -> Array[String]:
 	match style:
 		ItemData.WeaponStyle.SPEAR:
@@ -211,6 +231,82 @@ static func _build() -> void:
 	_moves["cast_3"] = _moves["cast_1"].duplicate(true)
 	_moves["cast_3"]["duration"] = 0.62
 	_moves["cast_3"]["hits"] = [{"t": 0.18, "cast": true, "spread": 3, "dmg": 0.8}]
+
+	# ---------------------------------------------------------------- récolte (geste d'outil)
+	_moves["harvest_chop"] = {  # outil levé au-dessus de l'épaule, puis abattu (bûcheron, mineur)
+		"duration": 0.5, "combo": 0.3, "cancel": 0.26,
+		"keys": [
+			_k(0.0, GUARD),
+			_k(0.12, {"ArmL": Vector3(-165, 0, 25), "HandL": Vector3(150, 0, 0), "Torso": Vector3(-14, 22, 0), "Head": Vector3(-8, -10, 0), "ArmR": Vector3(-120, 0, -15)}, Vector3(0, 0.02, -0.05)),
+			_k(0.24, {"ArmL": Vector3(-40, 0, 0), "HandL": Vector3(170, 0, 0), "Torso": Vector3(24, -6, 0), "Head": Vector3(12, 0, 0), "ArmR": Vector3(-45, 0, -10)}, Vector3(0, -0.06, 0.12)),
+			_k(0.38, {"ArmL": Vector3(-35, 0, 5), "HandL": Vector3(160, 0, 0), "Torso": Vector3(16, -4, 0), "ArmR": Vector3(-35, 0, -12)}, Vector3(0, -0.03, 0.08)),
+		],
+		"hits": [{"t": 0.24, "arc": 120}], "trail": [0.14, 0.26],
+	}
+
+	# ---------------------------------------------------------------- poses de sort, selon la classe
+	# (jouées par-dessus l'effet de la compétence : le héros incante à la manière de sa classe)
+	_moves["pose_arcane"] = {  # mage, cryomancien, nécromancien : mains levées, puis projetées en avant
+		"duration": 0.62,
+		"keys": [
+			_k(0.0, {}),
+			_k(0.16, {"ArmL": Vector3(-165, 0, 30), "ArmR": Vector3(-165, 0, -30), "Torso": Vector3(-14, 0, 0), "Head": Vector3(-18, 0, 0)}, Vector3(0, 0.05, -0.06)),
+			_k(0.32, {"ArmL": Vector3(-95, 0, -8), "ArmR": Vector3(-95, 0, 8), "Torso": Vector3(14, 0, 0), "Head": Vector3(6, 0, 0)}, Vector3(0, 0, 0.14)),
+			_k(0.5, {"ArmL": Vector3(-85, 0, -5), "ArmR": Vector3(-85, 0, 5), "Torso": Vector3(8, 0, 0)}, Vector3(0, 0, 0.1)),
+		],
+	}
+	_moves["pose_martial"] = {  # guerrier, barbare, chevalier : arme brandie au ciel, puis abattue
+		"duration": 0.6,
+		"keys": [
+			_k(0.0, GUARD),
+			_k(0.18, {"ArmL": Vector3(-178, 0, 8), "HandL": Vector3(175, 0, 0), "ArmR": Vector3(-30, 0, -40), "Torso": Vector3(-12, 18, 0), "Head": Vector3(-20, 0, 0)}, Vector3(0, 0.08, 0)),
+			_k(0.34, {"ArmL": Vector3(-50, 0, 0), "HandL": Vector3(175, 0, 0), "ArmR": Vector3(-20, 0, -30), "Torso": Vector3(26, -8, 0), "Head": Vector3(10, 0, 0), "LegL": Vector3(-30, 0, 0), "LegR": Vector3(20, 0, 0)}, Vector3(0, -0.14, 0.15)),
+			_k(0.5, {"ArmL": Vector3(-45, 0, 0), "HandL": Vector3(170, 0, 0), "Torso": Vector3(18, -6, 0)}, Vector3(0, -0.08, 0.1)),
+		],
+	}
+	_moves["pose_divine"] = {  # clerc, paladin, barde : bras ouverts vers le ciel, regard levé
+		"duration": 0.7,
+		"keys": [
+			_k(0.0, {}),
+			_k(0.22, {"ArmL": Vector3(-130, 0, 55), "ArmR": Vector3(-130, 0, -55), "Torso": Vector3(-12, 0, 0), "Head": Vector3(-30, 0, 0)}, Vector3(0, 0.1, 0)),
+			_k(0.5, {"ArmL": Vector3(-120, 0, 60), "ArmR": Vector3(-120, 0, -60), "Torso": Vector3(-10, 0, 0), "Head": Vector3(-25, 0, 0)}, Vector3(0, 0.12, 0)),
+		],
+	}
+	_moves["pose_bow"] = {  # rôdeur : un bras tendu, l'autre qui tire la corde jusqu'à la joue
+		"duration": 0.6,
+		"keys": [
+			_k(0.0, {}),
+			_k(0.16, {"ArmR": Vector3(-90, 0, -10), "ArmL": Vector3(-95, 0, 70), "HandL": Vector3(0, 0, -60), "Torso": Vector3(0, 40, 0), "Head": Vector3(0, -38, 0)}, Vector3(0, 0, -0.04)),
+			_k(0.34, {"ArmR": Vector3(-90, 0, -10), "ArmL": Vector3(-90, 0, 95), "HandL": Vector3(0, 0, -80), "Torso": Vector3(0, 45, 0), "Head": Vector3(0, -42, 0)}, Vector3(0, 0, -0.06)),
+			_k(0.42, {"ArmR": Vector3(-85, 0, -10), "ArmL": Vector3(-70, 0, 40), "Torso": Vector3(0, 30, 0), "Head": Vector3(0, -30, 0)}, Vector3(0, 0, -0.02)),
+		],
+	}
+	_moves["pose_shadow"] = {  # assassin : accroupi, bras croisés, puis lames écartées d'un geste sec
+		"duration": 0.52,
+		"keys": [
+			_k(0.0, {}),
+			_k(0.14, {"ArmL": Vector3(-70, 0, -60), "ArmR": Vector3(-70, 0, 60), "Torso": Vector3(28, 0, 0), "Head": Vector3(10, 0, 0), "LegL": Vector3(-50, 0, 0), "LegR": Vector3(-20, 0, 0)}, Vector3(0, -0.2, 0)),
+			_k(0.28, {"ArmL": Vector3(-60, 0, 80), "ArmR": Vector3(-60, 0, -80), "Torso": Vector3(18, 0, 0), "LegL": Vector3(-40, 0, 0), "LegR": Vector3(-15, 0, 0)}, Vector3(0, -0.16, 0.1)),
+			_k(0.42, {"ArmL": Vector3(-40, 0, 50), "ArmR": Vector3(-40, 0, -50), "Torso": Vector3(10, 0, 0)}, Vector3(0, -0.06, 0.05)),
+		],
+	}
+	_moves["pose_nature"] = {  # druide : mains vers la terre, puis qui remontent lentement en appelant la sève
+		"duration": 0.72,
+		"keys": [
+			_k(0.0, {}),
+			_k(0.2, {"ArmL": Vector3(-20, 0, 35), "ArmR": Vector3(-20, 0, -35), "Torso": Vector3(30, 0, 0), "Head": Vector3(20, 0, 0)}, Vector3(0, -0.14, 0)),
+			_k(0.5, {"ArmL": Vector3(-150, 0, 25), "ArmR": Vector3(-150, 0, -25), "Torso": Vector3(-10, 0, 0), "Head": Vector3(-20, 0, 0)}, Vector3(0, 0.08, 0)),
+		],
+	}
+	_moves["pose_monk"] = {  # moine : garde basse, puis double paume projetée
+		"duration": 0.5,
+		"keys": [
+			_k(0.0, {}),
+			_k(0.14, {"ArmL": Vector3(-40, 0, -30), "ArmR": Vector3(-40, 0, 30), "Torso": Vector3(0, 30, 0), "LegL": Vector3(-35, 0, 0), "LegR": Vector3(15, 0, 0)}, Vector3(0, -0.12, -0.06)),
+			_k(0.26, {"ArmL": Vector3(-95, 0, 0), "ArmR": Vector3(-95, 0, 0), "Torso": Vector3(10, -10, 0), "LegL": Vector3(-30, 0, 0), "LegR": Vector3(20, 0, 0)}, Vector3(0, -0.1, 0.22)),
+			_k(0.4, {"ArmL": Vector3(-88, 0, 0), "ArmR": Vector3(-88, 0, 0), "Torso": Vector3(6, -6, 0)}, Vector3(0, -0.06, 0.18)),
+		],
+	}
 
 	# ---------------------------------------------------------------- mains nues
 	_moves["punch_1"] = {
