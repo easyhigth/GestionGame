@@ -1053,7 +1053,7 @@ L'ancien menu unique (13 onglets, plus de 1 400 recettes mélangées) est rempla
 
 - **Sur soi (I) : l'essentiel.** Outils en bois, établi, feu de camp, torches, portes, planches, armures de
   cuir... De quoi démarrer, sans rien chercher.
-- **Chaque atelier a son menu** : **E devant le meuble** l'ouvre (l'invite « Utiliser : Enclume » s'affiche).
+- **Chaque atelier a son menu** : **F devant le meuble** l'ouvre (l'invite « Utiliser : Enclume » s'affiche).
   - **Établi** : outils de pierre, meubles, armes en bois, en os et en pierre, bateaux.
   - **Enclume** : armes et armures de métal, outils en fer, **Forge** (renforcement, gemmes, runes).
   - **Four** et **foyer de forge** : lingots, verre, terre cuite... et ils cuisent aussi les repas.
@@ -1100,3 +1100,17 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
 - **Bug corrigé : le jeu s'arrêtait juste après une sauvegarde depuis le menu pause.** Une erreur de script
   dans le message de confirmation faisait arrêter le jeu (lancé depuis l'éditeur). La sauvegarde, elle, était
   bien écrite.
+
+## Touche F pour interagir, et creuser la terre
+
+- **F** sert maintenant à **toutes les interactions** : ateliers (établi, four, enclume...), coffres de
+  rangement, portes, montures, entrées de grottes, et **parler aux habitants et aux PNJ**. Les invites à
+  l'écran disent « F : ... ».
+- **Verrouiller un ennemi** passe sur **E** (le clic molette verrouille toujours aussi).
+- **Creuser** : vise le sol (le contour s'affiche) et **clic gauche**, comme pour un bloc. La terre vient
+  d'abord (à mains nues ou à la pelle), et tombe en blocs de terre ou de sable à ramasser.
+- Vers **2 m** de profondeur, on atteint la **roche** : il faut une **pioche**. Plus bas, la roche donne parfois
+  du **minerai de fer** et du **charbon**.
+- Vers **5 m**, la pioche **perce la voûte d'une galerie souterraine** : le héros descend dans une grotte à
+  explorer (monstres, minerais, coffres), avec une sortie vers la surface.
+- La touche G (creuser sous ses pieds) marche toujours.

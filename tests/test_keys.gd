@@ -182,7 +182,7 @@ func _process(_d) -> bool:
 	if later("d", 500):
 		var hint: String = p.interact_hint()
 		check("invite : %s" % hint, hint != "")
-		check("invite affichée à l'écran : [%s] %s" % [hud._prompt_key.text, hud._prompt_text.text], hud._prompt.visible and hud._prompt_key.text == "E")
+		check("invite affichée à l'écran : [%s] %s" % [hud._prompt_key.text, hud._prompt_text.text], hud._prompt.visible and hud._prompt_key.text == "F")
 		hud.keys_help.toggle()
 		start("e")
 	if later("e", 400):

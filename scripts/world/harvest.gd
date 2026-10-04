@@ -56,7 +56,13 @@ const TOOLS := {
 }
 ## Profondeur retirée à chaque coup de pelle, et profondeur minimale du sol.
 const DIG_STEP := 0.5
-const DIG_FLOOR := -2.5
+const DIG_FLOOR := -40.0
+## Profondeur d'un trou à partir de laquelle on tombe sur la roche (il faut une pioche).
+const DIG_ROCK_DEPTH := 2.0
+## Profondeur à laquelle on perce la voûte d'une galerie souterraine.
+const DIG_CAVE_DEPTH := 5.0
+## Hauteur d'origine des cases creusées (pour mesurer la profondeur d'un trou).
+static var _dug_from := {}
 
 static var _hint_at := -100000
 
@@ -95,6 +101,10 @@ static func strike(p: Player, reach: float, power: float, with_blocks := false) 
 		return true
 	# 2) décors naturels
 	if not t.has("cell"):
+		# rien à frapper, mais on vise le sol tout près : on creuse (comme dans Minecraft)
+		if p.aim_active() and str(p.aim.get("kind", "")) == "terrain" and float(p.aim.get("dist", INF)) <= Aim.REACH_HIT + 0.8 \
+				and not p._enemy_close(4.0):
+			return dig(p) != null
 		return false
 	var target: Vector2i = t.cell
 	var tk := world.decor_at(target)
@@ -457,9 +467,14 @@ static func dig(p: Player) -> ItemData:
 		hit_decor(world, cell, 1.0, p)
 		return null
 	var id := "bloc_terre"
-	if t == WorldGenerator.SAND:
+	var from_h: float = _dug_from.get(cell, h)
+	_dug_from[cell] = from_h
+	var depth := from_h - (h - DIG_STEP)
+	if t == WorldGenerator.SAND and depth < DIG_ROCK_DEPTH:
 		id = "bloc_sable"
-	elif t == WorldGenerator.STONE:
+	elif t == WorldGenerator.STONE or depth > DIG_ROCK_DEPTH:
+		# sous la terre, la roche : il faut une pioche
+		t = WorldGenerator.STONE
 		id = "stone"
 		if tool_mult(p, "pioche") <= 1.0:
 			p.notify.emit("Il te faut une pioche pour creuser la roche.")
@@ -472,8 +487,13 @@ static func dig(p: Player) -> ItemData:
 	var it := Items.get_item(id) as ItemData
 	if it:
 		_drop(world, it, 1, at)
-	if t == WorldGenerator.STONE and randf() < 0.08:
+	if t == WorldGenerator.STONE and randf() < (0.08 if depth < DIG_CAVE_DEPTH else 0.14):
 		_drop(world, Items.get_item("iron_ore"), 1, at)
+	if t == WorldGenerator.STONE and depth >= 3.0 and randf() < 0.1:
+		_drop(world, Items.get_item("charbon"), 1, at)
+	# assez profond : on perce la voûte d'une galerie souterraine
+	if depth >= DIG_CAVE_DEPTH:
+		_break_into_cave(p, world, cell)
 	# gravier et argile en creusant (l'argile surtout près de l'eau, dans le sable)
 	if t != WorldGenerator.STONE and randf() < 0.18:
 		_drop(world, Items.get_item("gravier"), 1, at)
@@ -492,3 +512,22 @@ static func _drop(world: WorldGenerator, it: ItemData, n: int, at: Vector3, pare
 		world.spawn_pickup(it, pos, n, parent)
 	else:
 		world.spawn_pickup(it, pos, n)
+
+
+## Le trou atteint une galerie souterraine : on y descend (et on remonte au bord du trou).
+static func _break_into_cave(p: Player, world: WorldGenerator, cell: Vector2i) -> void:
+	var mc := p.get_tree().get_first_node_in_group("mountain_caves") as MountainCaves
+	if mc == null or mc.active:
+		return
+	# on ressort sur le bord du trou, du côté le plus haut
+	var best := Vector2i(0, 1)
+	var best_h := -INF
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var hh := world.terrain_height(cell + d)
+		if hh > best_h:
+			best_h = hh
+			best = d
+	p.notify.emit("La roche cède sous ta pioche : une galerie souterraine s'ouvre !")
+	Sound.play("break_stone", p.global_position, 2.0)
+	mc.enter({"id": "creuse_%d_%d" % [cell.x, cell.y], "cell": cell, "dir": -best, "pos": world.cell_center(cell)})
+

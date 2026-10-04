@@ -226,7 +226,7 @@ func _make_entrance(e: Dictionary) -> Node3D:
 	l.position = Vector3(0.9, 1.6, 0.3)
 	n.add_child(l)
 	var lab := Label3D.new()
-	lab.text = "Grotte\nE : entrer"
+	lab.text = "Grotte\nF : entrer"
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 34
 	lab.pixel_size = 0.007
@@ -286,7 +286,7 @@ func _make_stairs(e: Dictionary) -> Node3D:
 	l.position = Vector3(0, 2.2, 0.6)
 	n.add_child(l)
 	var lab := Label3D.new()
-	lab.text = "%s\nE : descendre" % e.name
+	lab.text = "%s\nF : descendre" % e.name
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 34
 	lab.pixel_size = 0.007
@@ -492,7 +492,7 @@ func _build(e: Dictionary, lv: int) -> void:
 		(_content.get_child(_content.get_child_count() - 1) as Node3D).global_position = floor_pos(c)
 	# entrée / sortie, passage vers le bas, coffres, monstres
 	var start := _origin + Vector2i(SIZE / 2, SIZE - 6)
-	_add_marker(start + Vector2i(0, 2), "exit", ("Sortie\nE : remonter dans la ville" if themed else "Sortie\nE : remonter") if lv == 1 else "Remonter\nE : niveau %d" % (lv - 1), Color("ffe0a0"))
+	_add_marker(start + Vector2i(0, 2), "exit", ("Sortie\nF : remonter dans la ville" if themed else "Sortie\nF : remonter") if lv == 1 else "Remonter\nF : niveau %d" % (lv - 1), Color("ffe0a0"))
 	var far := start
 	var far_d := 0.0
 	for c in cells:
@@ -501,7 +501,7 @@ func _build(e: Dictionary, lv: int) -> void:
 			far_d = dd
 			far = c
 	if lv < LEVELS:
-		_add_marker(far, "down", ("Escalier\nE : descendre (niveau %d)" if themed else "Galerie profonde\nE : descendre (niveau %d)") % (lv + 1), Color("ff9a6a"))
+		_add_marker(far, "down", ("Escalier\nF : descendre (niveau %d)" if themed else "Galerie profonde\nF : descendre (niveau %d)") % (lv + 1), Color("ff9a6a"))
 	elif themed:
 		_spawn_guard(far)
 	var done: Array = opened.get(_key(), [])
@@ -692,7 +692,7 @@ func _add_chest(c: Vector2i, index: int, used: bool) -> void:
 	var n := CHEST_MODEL.instantiate() as Node3D
 	_content.add_child(n)
 	n.global_position = floor_pos(c)
-	var lab := _label(n, "Vide" if used else "Coffre oublié\nE : ouvrir", 1.6, Color(0.7, 0.7, 0.7) if used else Color("ffd24a"))
+	var lab := _label(n, "Vide" if used else "Coffre oublié\nF : ouvrir", 1.6, Color(0.7, 0.7, 0.7) if used else Color("ffd24a"))
 	_interactables.append({"node": n, "pos": n.global_position, "kind": "chest", "used": used, "label": lab, "index": index})
 
 

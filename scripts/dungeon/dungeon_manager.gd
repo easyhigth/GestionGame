@@ -159,10 +159,10 @@ static func is_lord_tier(t: int) -> bool:
 ## Texte et couleur de l'étiquette au-dessus de l'entrée.
 func gate_text(z: Dictionary) -> Array:
 	if not z.get("cleared", false):
-		return ["Donjon de %s\nE : entrer" % z.name, Color("ffb0a0")]
+		return ["Donjon de %s\nF : entrer" % z.name, Color("ffb0a0")]
 	var t := next_tier(z)
 	if t > 0:
-		return ["Donjon de %s\nBrume : palier %d%s\nE : entrer" % [z.name, t, "  ★ Seigneur" if is_lord_tier(t) else ""], BRUME_COLOR]
+		return ["Donjon de %s\nBrume : palier %d%s\nF : entrer" % [z.name, t, "  ★ Seigneur" if is_lord_tier(t) else ""], BRUME_COLOR]
 	return ["Donjon de %s\nVaincu ✔" % z.name, Color("b0ffb0")]
 
 
@@ -513,7 +513,7 @@ func _decorate(rng: RandomNumberGenerator, r: RegionData) -> void:
 	_add_portal(entrance_room.get_center() + Vector2i(0, -2))
 
 
-func _add_portal(c: Vector2i, text := "Sortie\nE : remonter") -> void:
+func _add_portal(c: Vector2i, text := "Sortie\nF : remonter") -> void:
 	var n := _add_model(PORTAL_MODEL, c, 0.0, 0.8)
 	var l := OmniLight3D.new()
 	l.light_color = Color("8af0ff")
@@ -527,7 +527,7 @@ func _add_portal(c: Vector2i, text := "Sortie\nE : remonter") -> void:
 
 func _add_chest(c: Vector2i, boss_chest := false) -> void:
 	var n := _add_model(CHEST_MODEL, c, PI, 1.6 if boss_chest else 1.0)
-	var lab := _label(n, ("Trésor du boss" if boss_chest else "Coffre") + "\nE : ouvrir", 1.6, Color("ffd24a"))
+	var lab := _label(n, ("Trésor du boss" if boss_chest else "Coffre") + "\nF : ouvrir", 1.6, Color("ffd24a"))
 	_interactables.append({"node": n, "pos": n.global_position, "kind": "boss_chest" if boss_chest else "chest", "used": false, "label": lab})
 
 
@@ -887,7 +887,7 @@ func _build_siege(id: String) -> void:
 		l.omni_range = 10.0
 		l.position.y = 1.3
 		t.add_child(l)
-	_add_portal(_siege_spawn + Vector2i(0, 2), "Retraite\nE : lever le siège")
+	_add_portal(_siege_spawn + Vector2i(0, 2), "Retraite\nF : lever le siège")
 	# lumière de plein jour
 	_set_lighting(true, null)
 	Sound.ui("war_drums")
@@ -991,9 +991,9 @@ func _on_champion_died(_pos: Vector3) -> void:
 			VoxelBurst.spawn(e, e.global_position + Vector3(0, 0.8, 0), Color(0.9, 0.9, 0.8), 16, 3.0, 0.1, 0.5)
 			e.queue_free()
 	var n := _add_model(CHEST_MODEL, _siege_throne, PI, 1.6)
-	var lab := _label(n, "Trésor de la capitale\nE : ouvrir", 1.6, Color("ffd24a"))
+	var lab := _label(n, "Trésor de la capitale\nF : ouvrir", 1.6, Color("ffd24a"))
 	_interactables.append({"node": n, "pos": n.global_position, "kind": "siege_chest", "used": false, "label": lab})
-	_add_portal(_siege_throne + Vector2i(0, -2) + Vector2i(4, 0), "Retour au royaume\nE : remonter")
+	_add_portal(_siege_throne + Vector2i(0, -2) + Vector2i(4, 0), "Retour au royaume\nF : remonter")
 	if player:
 		player.gain_xp(400 + 30 * _siege_level())
 	Sound.ui("fanfare")
@@ -1089,7 +1089,7 @@ func _build_vault(rng: RandomNumberGenerator, plan: Dictionary, accent: ItemData
 	_add_model(TORCH_MODEL, vault.position + Vector2i(1, 1))
 	for c in [vault.get_center() + Vector2i(-1, 0), vault.get_center() + Vector2i(1, 0)]:
 		var n := _add_model(CHEST_MODEL, c, PI, 1.2)
-		var lab := _label(n, "Trésor secret\nE : ouvrir", 1.6, Color("c8a8ff"))
+		var lab := _label(n, "Trésor secret\nF : ouvrir", 1.6, Color("c8a8ff"))
 		_interactables.append({"node": n, "pos": n.global_position, "kind": "vault_chest", "used": false, "label": lab})
 	# l'énigme : trois leviers et une stèle qui donne l'ordre
 	var symbols := LEVER_SYMBOLS.duplicate()
@@ -1148,7 +1148,7 @@ func _add_lever(c: Vector2i, symbol: String) -> void:
 	kmat.emission = Color(0.9, 0.3, 0.25)
 	knob.material_override = kmat
 	pivot.add_child(knob)
-	var lab := _label(n, "Levier %s\nE : tirer" % symbol, 1.9, Color("e8d8b0"))
+	var lab := _label(n, "Levier %s\nF : tirer" % symbol, 1.9, Color("e8d8b0"))
 	_interactables.append({"node": n, "pos": n.global_position, "kind": "lever", "used": false, "symbol": symbol, "pivot": pivot, "label": lab})
 
 
