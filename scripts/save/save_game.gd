@@ -38,6 +38,8 @@ var options := {
 	"sfx_volume": 0.9,
 	"graphics": 2,
 	"show_fps": false,
+	## taille de l'interface (1 : normale ; 0,8 : plus petite, on voit plus le monde)
+	"ui_scale": 1.0,
 	## touches du clavier changées par le joueur : action -> code physique (voir KeyBindings)
 	"keys": {},
 }
@@ -132,6 +134,7 @@ func apply_options() -> void:
 		KeyBindings.apply(options.keys)
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
+	get_tree().root.content_scale_factor = clampf(float(options.get("ui_scale", 1.0)), 0.6, 1.6)
 	var bus := AudioServer.get_bus_index("Master")
 	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(0.001, float(options.volume))))
 	Sound.set_volume("Music", float(options.get("music_volume", 0.6)))

@@ -62,6 +62,19 @@ func _build() -> void:
 	cam.value = float(o.camera_distance)
 	cam.value_changed.connect(func(v): o.camera_distance = v; _save())
 	_row("Distance de la caméra", cam)
+	# taille de toute l'interface (barres, menus, textes) : plus petite = on voit plus le monde
+	var ui := OptionButton.new()
+	var sizes := [0.8, 0.9, 1.0, 1.15, 1.3]
+	for v in sizes:
+		ui.add_item("%d %%" % roundi(v * 100.0))
+	var cur := float(o.get("ui_scale", 1.0))
+	var best := 2
+	for i in sizes.size():
+		if absf(sizes[i] - cur) < absf(sizes[best] - cur):
+			best = i
+	ui.select(best)
+	ui.item_selected.connect(func(i): o.ui_scale = sizes[i]; _save())
+	_row("Taille de l'interface", ui)
 	var vol := HSlider.new()
 	vol.min_value = 0.0
 	vol.max_value = 1.0

@@ -924,3 +924,14 @@ C'est la souris qui décide **où l'on frappe, ce que l'on récolte ou casse, et
 Test : `tests/run_tests.sh aim`. Il vérifie :
 - en 1re personne : le bloc visé et sa face, la pose contre cette face au clic droit, l'arbre visé récolté, rien de touché en visant le ciel, et le héros qui se tourne vers un ennemi visé sur le côté ;
 - en vue de dessus : le curseur posé sur un ennemi qui le vise.
+
+## Interface épurée : on voit le monde
+L'interface prenait trop de place : la double barre du bas occupait **30 % de la hauteur de l'écran** et restait affichée par-dessus les menus. Elle est maintenant **compacte et discrète**.
+- **Tout est plus petit** : le jeu est conçu pour 1280×720 (et non plus 960×540, agrandi). Toute l'interface s'affiche aux trois quarts de son ancienne taille, à résolution égale.
+- **Option « Taille de l'interface »** (Options) : de 80 % à 130 %, pour plus de monde ou plus de lisibilité. C'est `content_scale_factor` de la fenêtre.
+- **Barre du bas compacte** : une seule rangée de cases plus petites (sorts 1 … 0 et compétence unique), sans étiquettes. Elle fait **5 % de la hauteur de l'écran**. Le nom de la compétence unique s'affiche au survol.
+- **La rangée de construction** n'apparaît qu'**avec un objet en main** (`C`, Ctrl + chiffre ou la molette), ou un court instant après avoir ramassé quelque chose.
+- **Sous les menus, plus rien d'autre** : barres, mini-carte, guide, horloge, quêtes suivies, aide et invites s'effacent dès qu'un menu s'ouvre (carte, journal, inventaire, royaume, talents, succès, boutique, dialogues...), y compris quand le menu met le jeu en pause.
+  - Tout ce qui s'affiche en jeu est rangé dans un seul conteneur (`Hud._chrome`).
+  - Le héros émet `ui_changed` quand un menu s'ouvre ou se ferme.
+- Test : `tests/run_tests.sh hud`. Il mesure la barre du bas et vérifie que rien ne reste affiché sous la carte, le journal, l'inventaire, le royaume et les talents. Captures : `hud_XX_*.png`.
