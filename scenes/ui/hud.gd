@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Interface de base : aide aux commandes, graine du monde, race jouée, messages.
-## Touche R : changer de race pour tester les personnages.
+## F10 : changer de race pour tester les personnages (F9 : nouveau monde ; depuis l'éditeur seulement).
 
 @export var world: WorldGenerator
 @export var player: Player
@@ -265,7 +265,7 @@ func _update_hunger() -> void:
 	_hunger_fill.size.x = HP_WIDTH * 0.6 * r
 	var st: int = player.hunger_state()
 	_hunger_fill.color = [Color(0.85, 0.2, 0.15), Color(0.95, 0.45, 0.2), Color(0.9, 0.6, 0.25), Color(0.55, 0.85, 0.35)][st + 1]
-	_hunger_text.text = ["Meurt de faim ! (H : manger)", "Affamé (H : manger)", "Faim %d %%" % roundi(player.hunger), "Rassasié · vie +1,5/s"][st + 1]
+	_hunger_text.text = KeyBindings.fmt(["Meurt de faim ! ({eat} : manger)", "Affamé ({eat} : manger)", "Faim %d %%" % roundi(player.hunger), "Rassasié · vie +1,5/s"][st + 1])
 	_hunger_text.add_theme_color_override("font_color", _hunger_fill.color.lightened(0.3))
 
 
@@ -419,7 +419,7 @@ func _update_skill() -> void:
 	_skill_icon.color = s.data.color.darkened(0.15)
 	_skill_name.text = s.current_name()
 	_skill_name.add_theme_color_override("font_color", s.data.color.lightened(0.35))
-	_skill_rank.text = "%s  ·  Q / RB" % SkillData.TIER_LABELS[s.tier]
+	_skill_rank.text = KeyBindings.fmt("%s  ·  {skill}" % SkillData.TIER_LABELS[s.tier])
 
 
 ## Barre de compétences, façon MMORPG (touches 1 à 9 et 0, R3 / croix droite) : les compétences apprises dans
@@ -499,7 +499,7 @@ func _update_abilities() -> void:
 		c.cell.add_theme_stylebox_override("panel", st)
 		c.glyph.text = n.get("glyph", "")
 		c.glyph.add_theme_color_override("font_color", col.lightened(0.45))
-		c.cell.tooltip_text = "%s (%s)" % [n.name, TalentTree.rarity(id).name] if not n.is_empty() else "Emplacement libre : apprends une compétence (T)"
+		c.cell.tooltip_text = "%s (%s)" % [n.name, TalentTree.rarity(id).name] if not n.is_empty() else KeyBindings.fmt("Emplacement libre : apprends une compétence ({talents})")
 
 
 func _build_maps() -> void:
@@ -592,7 +592,7 @@ func _build_maps() -> void:
 			show_message("Ton héros absorbe l'âme du boss : " + soul))
 	if world:
 		world.zone_entered.connect(_on_zone_entered)
-		world.obelisk_activated.connect(func(z): show_feat("Obélisque activé !", Color("8af0ff")); show_message("Obélisque de %s activé : voyage rapide depuis la carte (M)." % z.name))
+		world.obelisk_activated.connect(func(z): show_feat("Obélisque activé !", Color("8af0ff")); show_message("Obélisque de %s activé : voyage rapide depuis la carte ({world_map})." % z.name))
 
 
 ## Bandeau quand on entre dans une zone : son nom, sa région et son niveau.
@@ -613,7 +613,7 @@ func open_city_shop(t: Node) -> void:
 func show_banner(title: String, sub: String, color: Color) -> void:
 	_zone_title.text = title
 	_zone_title.add_theme_color_override("font_color", color)
-	_zone_sub.text = sub
+	_zone_sub.text = KeyBindings.fmt(sub)
 	if _zone_tween:
 		_zone_tween.kill()
 	_zone_tween = create_tween()
@@ -678,9 +678,9 @@ func _update_kingdom() -> void:
 	var n := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
 	if n:
 		var m := n.members().size()
-		_kingdom_text.text = "%s · %d hab. · bonheur %d %% · %d repas   (U : royaume · B : construire)" % [k.title(), m, roundi(n.average_happiness()), n.meals()]
+		_kingdom_text.text = KeyBindings.fmt("%s · %d hab. · bonheur %d %% · %d repas   ({kingdom} : royaume · {build_mode} : construire)" % [k.title(), m, roundi(n.average_happiness()), n.meals()])
 	else:
-		_kingdom_text.text = "%s   (B : construire)" % k.title()
+		_kingdom_text.text = KeyBindings.fmt("%s   ({build_mode} : construire)" % k.title())
 	_kingdom_text.add_theme_color_override("font_color", Kingdom.AGE_COLORS[k.age].lightened(0.2))
 
 
@@ -721,7 +721,7 @@ func _bar_frame(pos: Vector2, size: Vector2) -> NinePatchRect:
 
 func _outlined(text: String, size: int) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = KeyBindings.fmt(text)
 	l.add_theme_font_size_override("font_size", size + 1)
 	l.add_theme_color_override("font_color", Color("fff2dc"))
 	l.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.06))
@@ -771,6 +771,16 @@ func _process(delta: float) -> void:
 		if _ability_bar:
 			_process_abilities()
 		_messages.offset_bottom = -210.0 if b else -140.0
+		_prompt_t -= delta
+		if _prompt and _prompt_t <= 0.0:
+			_prompt_t = 0.15
+			var hint := player.interact_hint() if not b and not player.ui_open and player.is_alive() else ""
+			_prompt.visible = hint != ""
+			if _prompt.get_index() != 0:
+				_dock.move_child(_prompt, 0)
+			if hint != "":
+				_prompt_key.text = KeyBindings.key_text("interact")
+				_prompt_text.text = hint
 	_quest_refresh -= delta
 	if _quest_refresh <= 0.0:
 		_quest_refresh = 1.0
@@ -1074,6 +1084,10 @@ func _build_day_and_guide() -> void:
 ## Double barre du bas, toujours affichée : en haut la construction façon Minecraft (Ctrl+1 à Ctrl+0),
 ## en bas les compétences façon MMORPG (1 à 0).
 var _dock: VBoxContainer
+var _prompt: HBoxContainer
+var _prompt_key: Label
+var _prompt_text: Label
+var _prompt_t := 0.0
 
 
 func _make_dock() -> void:
@@ -1090,6 +1104,24 @@ func _make_dock() -> void:
 	_dock.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_dock.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(_dock)
+	# invite contextuelle au-dessus des barres : « [E] Parler à Magnus »
+	_prompt = HBoxContainer.new()
+	_prompt.alignment = BoxContainer.ALIGNMENT_CENTER
+	_prompt.add_theme_constant_override("separation", 6)
+	_prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cap := PanelContainer.new()
+	var st := MenuKit.style(Color("e0b040"), Color("fff0b0"), 1, 4, 0)
+	st.content_margin_left = 7
+	st.content_margin_right = 7
+	st.border_width_bottom = 3
+	cap.add_theme_stylebox_override("panel", st)
+	_prompt_key = MenuKit.bold("E", 13, Color("1a1410"))
+	cap.add_child(_prompt_key)
+	_prompt.add_child(cap)
+	_prompt_text = _outlined("", 14)
+	_prompt.add_child(_prompt_text)
+	_prompt.visible = false
+	_dock.add_child(_prompt)
 
 
 ## Étiquette au début d'une rangée de la double barre.
@@ -1182,7 +1214,7 @@ func _update_hotbar() -> void:
 		(cell.get_child(2) as Label).text = str(player.inventory.count(it)) if it else ""
 		cell.tooltip_text = ("%s · Ctrl+%d" % [it.display_name, (i + 1) % 10]) if it else "Case vide : les blocs, meubles et graines ramassés s'y rangent tout seuls"
 	if sel == "":
-		_hotbar_name.text = "Mains nues  ·  Ctrl+1…0 : prendre un bloc   ·   1…0 : compétences"
+		_hotbar_name.text = KeyBindings.fmt("Mains nues  ·  {hand_toggle} ou Ctrl+1…0 : prendre un objet   ·   1…0 : compétences")
 		_hotbar_name.add_theme_color_override("font_color", Color(0.85, 0.8, 0.7, 0.75))
 		return
 	_hotbar_name.add_theme_color_override("font_color", Color("fff2c8"))
@@ -1200,7 +1232,7 @@ func _update_hotbar() -> void:
 		verb = "pêcher (face à l'eau)"
 	elif cur and HandBuild.is_lure(cur):
 		verb = "rien (les bêtes te suivent)"
-	_hotbar_name.text = "%s  ·  %s : %s   ·   Échap ou même Ctrl+chiffre : ranger" % [cur.display_name if cur else "", KeyBindings.key_text("place_block"), verb]
+	_hotbar_name.text = KeyBindings.fmt("%s  ·  {place_click} : %s   ·   Molette : changer   ·   {hand_toggle} : ranger" % [cur.display_name if cur else "", verb])
 
 
 ## Suivi des quêtes en cours (en haut à droite) : titre et avancement.
@@ -1218,7 +1250,7 @@ func _update_quests() -> void:
 		h.custom_minimum_size.x = 288
 		h.add_theme_color_override("font_color", Color("ffe08a"))
 		_quest_box.add_child(h)
-		var sl := _outlined(st.tracker_text() + "  (O : journal)", 9)
+		var sl := _outlined(st.tracker_text() + "  ({journal} : journal)", 9)
 		sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		sl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		sl.custom_minimum_size.x = 288
@@ -1255,7 +1287,7 @@ func _place_help() -> void:
 
 func show_message(text: String) -> void:
 	var l := Label.new()
-	l.text = text
+	l.text = KeyBindings.fmt(text)
 	l.add_theme_font_size_override("font_size", 13)
 	l.add_theme_color_override("font_color", Color("fff2c8"))
 	l.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.1))
@@ -1274,4 +1306,4 @@ func show_message(text: String) -> void:
 
 func _refresh() -> void:
 	_update_health()
-	info.text = "Échap / Start : menu et commandes  ·  F2 : aide-mémoire des touches"
+	info.text = KeyBindings.fmt("Échap : menu et commandes (plan du clavier)  ·  {keys_help} : aide-mémoire")

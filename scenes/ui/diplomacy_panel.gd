@@ -99,7 +99,7 @@ func _refresh() -> void:
 		list.add_child(_row(dip, id))
 	_box.add_child(scroll)
 	_box.add_child(_world_news())
-	var close_b := MenuKit.button("Fermer (Y)", 200, 13)
+	var close_b := MenuKit.button("Fermer ({diplomacy})", 200, 13)
 	close_b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close_b.pressed.connect(close)
 	_box.add_child(close_b)

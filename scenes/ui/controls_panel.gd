@@ -8,74 +8,71 @@ signal closed
 const C_KEY := Color("3a2e28")
 const C_PAD := Color("24303a")
 
-## Onglets : [nom, [[action, touches clavier, touches manette], ...]].
-## Dans les touches, « + » sépare des touches à presser ensemble, « / » des touches au choix.
+## Onglets : [nom, [[action, touches], ...]] ; le 1er onglet est le plan illustré du clavier (voir KeyboardMap).
+## Dans les touches, {action} devient la touche choisie par le joueur, « / » sépare des touches au choix.
+## Le jeu se joue au clavier et à la souris (la manette marche aussi, avec ses boutons habituels).
 const PAGES := [
-	["Déplacement et combat", [
-		["Se déplacer (dans le sens de la caméra)", "Z Q S D / Flèches", "Joystick gauche"],
-		["Sauter (double saut avec le talent)", "Espace", "A"],
-		["Roulade (invulnérable)", "Maj", "B"],
-		["Frapper · maintenir pour charger", "Clic gauche / J", "X"],
-		["Garde · parade au bon moment", "Clic droit / K", "LB"],
-		["Viser la cible la plus proche", "F / L / Clic molette", "LT"],
-		["Tourner la caméra (3e et 1re personne : la souris suffit)", "Souris / Molette maintenue + glisser", "Joystick droit"],
-		["Zoom de la caméra", "Molette", "—"],
-		["Changer de vue : 3e personne · vue de dessus · 1re personne", "F5", "—"],
-		["Libérer la souris (pour cliquer à l'écran)", "Alt maintenu", "—"],
+	["Plan du clavier", []],
+	["Se déplacer", [
+		["Se déplacer (dans le sens de la caméra)", "{move_up} {move_left} {move_down} {move_right} / Flèches"],
+		["Sauter (double saut avec le talent) · dans l'eau : remonter", "{jump}"],
+		["Roulade : un bref instant invulnérable", "{dash} / Souris côté avant"],
+		["Tourner la caméra", "Souris"],
+		["Zoom de la caméra (objet en main : Ctrl + molette)", "Molette"],
+		["Changer de vue : 3e personne · vue de dessus · 1re personne", "{camera_view}"],
+		["Tourner la caméra en vue de dessus", "Clic molette maintenu"],
+		["Libérer la souris pour cliquer à l'écran", "Alt maintenu"],
+		["Menu pause · fermer la fenêtre ouverte", "Échap"],
 	]],
-	["Compétences et talents", [
-		["Compétence unique", "Q", "RB"],
-		["Barre de compétences (rangée du bas)", "1 … 9, 0", "R3"],
-		["Changer d'emplacement choisi", "—", "Croix droite"],
-		["Arbre de talents", "T", "Croix gauche"],
-		["Apprendre un talent", "Clic deux fois", "A deux fois"],
-		["Ranger un sort dans un emplacement", "1 / 2 / 3 / 4", "Boutons 1-4"],
+	["Combattre", [
+		["Frapper · maintenir pour une attaque chargée", "Clic gauche"],
+		["Garde · parade si le coup arrive juste après", "Clic droit"],
+		["Viser la cible la plus proche (encore : la suivante)", "{lock_on} / Clic molette"],
+		["Compétences de la barre du bas", "1 … 0"],
+		["Compétence unique (celle de l'histoire)", "{skill}"],
+		["Boire une potion : soin si blessé, sinon renfort", "{potion} / Souris côté arrière"],
+		["Manger (la meilleure nourriture du sac)", "{eat}"],
+		["Estoc : frapper juste à la fin d'une roulade", "{dash} puis Clic gauche"],
+		["Ordre aux familiers : suivre · attendre · attaquer", "{familiar_order}"],
 	]],
-	["Monde et royaume", [
-		["Récolter : frapper arbres, rochers, buissons, décors", "Clic gauche / J", "X"],
-		["Creuser le sol devant soi (maintenir) · dans l'eau : plonger", "G", "RT"],
-		["Barre de construction : prendre l'objet d'une case (la même touche : le ranger)", "Ctrl + 1 … 0", "LB + croix gauche/droite"],
-		["Objet suivant / précédent de la barre", "C / X", "LB + croix gauche/droite"],
-		["Ranger l'objet tenu (mains nues)", "Échap", "—"],
-		["Poser, semer ou labourer devant soi · frapper un bloc le casse", "V", "L3"],
-		["Parler · équiper un habitant · recruter", "E", "Y"],
-		["Dormir dans un lit (la nuit)", "E", "Y"],
-		["Manger (la meilleure nourriture du sac)", "H", "LB + croix haut"],
-		["Entrer dans un donjon · ouvrir un coffre", "E", "Y"],
-		["Inventaire, équipement, artisanat", "I / Tab", "Back"],
-		["Carte du monde · voyage rapide", "M", "Croix haut"],
-		["Mode construction", "B", "Croix bas"],
-		["Royaume : habitants, lits, réserve de nourriture, bonheur", "U", "Start → Royaume"],
-		["Journal de l'histoire (objectif, éclats, personnages)", "O", "—"],
-		["Familiers : ordre suivant (suivre, attendre, attaquer)", "P", "—"],
-		["Diplomatie : nations voisines, traités, guerre", "Y", "—"],
-		["Boire une potion (soin si blessé, sinon renfort)", "Z", "—"],
-		["Succès et bestiaire", "F1", "—"],
-		["Aide-mémoire des touches à l'écran", "F2", "—"],
-		["Menu pause (sauvegarde, options)", "Échap", "Start"],
+	["Récolter et bâtir", [
+		["Récolter (arbres, rochers, buissons) · casser un bloc", "Clic gauche"],
+		["Creuser le sol devant soi (maintenir) · dans l'eau : plonger", "{dig}"],
+		["Prendre l'objet d'une case de la barre de construction", "Ctrl + 1 … 0"],
+		["Reprendre le dernier objet / revenir aux mains nues", "{hand_toggle}"],
+		["Changer d'objet en main", "Molette"],
+		["Poser, semer, labourer, pêcher (maintenu : en continu)", "Clic droit / {place_block}"],
+		["Parler · recruter · quête · fiche d'un habitant", "{interact}"],
+		["Ouvrir un coffre ou une barrière · monter · dormir la nuit", "{interact}"],
+		["Mode construction : plans, murs, pièces prêtes", "{build_mode}"],
+	]],
+	["Menus", [
+		["Inventaire : sac, équipement, artisanat", "{inventory} / Tab"],
+		["Métiers d'artisanat", "{crafts}"],
+		["Carte du monde · voyage rapide par les obélisques", "{world_map}"],
+		["Journal : histoire et quêtes", "{journal}"],
+		["Arbre de talents et compétences", "{talents}"],
+		["Royaume : habitants, carte, production, expéditions", "{kingdom}"],
+		["Diplomatie : nations voisines, traités, guerre", "{diplomacy}"],
+		["Succès et bestiaire", "{achievements}"],
+		["Aide-mémoire des touches à l'écran", "{keys_help}"],
+		["Terminal de commandes (/aide)", "Entrée"],
+		["Menu pause : sauvegarde, options, commandes", "Échap"],
 	]],
 	["Construction", [
-		["Déplacer la caméra libre (plus vite)", "Z Q S D + Maj", "Joystick gauche"],
-		["Tourner la caméra", "A / E / Molette maintenue", "Joystick droit"],
-		["Zoom", "Molette", "Joystick droit"],
-		["Tracer un plan (glisser)", "Clic gauche", "A"],
-		["Annuler le tracé ou le plan visé", "Clic droit", "B"],
-		["Tourner le meuble", "R", "Y"],
-		["Catégorie (8 : plans prêts)", "1 à 8", "LB / RB"],
-		["Outil · matériau", "Clic dans la barre", "Croix gauche/droite · haut"],
-		["Niveau de travail", "Page ↑ / Page ↓", "Gâchettes"],
-		["Hauteur des murs", "[ / ]", "—"],
-		["Couper au-dessus du niveau", "C", "—"],
-		["Quitter la construction", "B / Échap", "Croix bas"],
+		["Déplacer la caméra libre (Maj : plus vite)", "{move_up} {move_left} {move_down} {move_right}"],
+		["Tourner la caméra", "A / E / Clic molette"],
+		["Zoom", "Molette"],
+		["Tracer un plan (glisser)", "Clic gauche"],
+		["Annuler le tracé ou le plan visé", "Clic droit"],
+		["Tourner le meuble", "R"],
+		["Catégorie (8 : plans prêts)", "1 … 8"],
+		["Niveau de travail", "Page ↑ / Page ↓"],
+		["Hauteur des murs", "[ / ]"],
+		["Couper au-dessus du niveau", "C"],
+		["Quitter la construction", "{build_mode} / Échap"],
 	]],
 ]
-
-## Lignes des onglets dont la touche suit la personnalisation : début du texte -> action.
-const ROW_ACTIONS := {"Sauter": "jump", "Roulade": "dash", "Compétence unique": "skill", "Arbre de talents": "talents",
-	"Creuser": "dig", "Poser, semer": "place_block", "Parler": "interact", "Dormir": "interact", "Entrer dans un donjon": "interact",
-	"Manger": "eat", "Inventaire": "inventory", "Carte du monde": "world_map", "Mode construction": "build_mode",
-	"Royaume": "kingdom", "Journal": "journal", "Familiers": "familiar_order", "Diplomatie": "diplomacy",
-	"Boire une potion": "potion", "Succès et bestiaire": "achievements", "Métiers": "crafts", "Changer de vue": "camera_view"}
 
 var _page := 0
 var _tabs: HBoxContainer
@@ -93,37 +90,32 @@ func _ready() -> void:
 	dim.color = Color(0, 0, 0, 0.6)
 	add_child(dim)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var box := MenuKit.panel(self, 760)
+	var box := MenuKit.panel(self, 880)
 	box.add_child(MenuKit.title("Commandes", 22))
 	_tabs = HBoxContainer.new()
 	_tabs.add_theme_constant_override("separation", 6)
 	_tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(_tabs)
 	for i in PAGES.size() + 1:
-		var b := MenuKit.button(PAGES[i][0] if i < PAGES.size() else "Personnaliser", 170 if i < PAGES.size() else 130, 12)
+		var b := MenuKit.button(PAGES[i][0] if i < PAGES.size() else "Personnaliser", 116, 11)
 		b.custom_minimum_size.y = 30
 		b.pressed.connect(_show_page.bind(i))
 		b.focus_entered.connect(func(): if _page != i: _show_page(i))
 		_tabs.add_child(b)
 	# en-tête des colonnes
-	var head := _row_box()
-	head.add_child(_cell(MenuKit.label("Action", 11, MenuKit.C_DIM), 300))
-	head.add_child(_cell(MenuKit.label("Clavier et souris", 11, MenuKit.C_DIM), 200))
-	head.add_child(_cell(MenuKit.label("Manette", 11, MenuKit.C_DIM), 200))
-	box.add_child(head)
 	var sep := ColorRect.new()
 	sep.color = Color(MenuKit.C_FRAME, 0.6)
 	sep.custom_minimum_size = Vector2(0, 1)
 	box.add_child(sep)
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", 3)
-	_list.custom_minimum_size = Vector2(0, 330)
+	_list.custom_minimum_size = Vector2(0, 340)
 	box.add_child(_list)
 	var foot := HBoxContainer.new()
 	foot.alignment = BoxContainer.ALIGNMENT_CENTER
 	foot.add_theme_constant_override("separation", 16)
 	box.add_child(foot)
-	foot.add_child(MenuKit.label("Manette : LB / RB pour changer d'onglet", 10, MenuKit.C_DIM))
+	foot.add_child(MenuKit.label("Chaque touche de menu referme aussi son menu · « Personnaliser » pour changer une touche", 10, MenuKit.C_DIM))
 	var back := MenuKit.button("Retour", 160, 13)
 	back.pressed.connect(close)
 	foot.add_child(back)
@@ -146,7 +138,7 @@ func _cell(c: Control, width: float) -> Control:
 func _keys(text: String, bg: Color) -> HBoxContainer:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 3)
-	h.custom_minimum_size.x = 200
+	h.custom_minimum_size.x = 300
 	if text == "—":
 		h.add_child(MenuKit.label("—", 12, Color(MenuKit.C_DIM, 0.6)))
 		return h
@@ -185,7 +177,9 @@ func _show_page(i: int) -> void:
 	if i >= PAGES.size():
 		_show_custom()
 		return
-	var custom: Dictionary = SaveGame.options.get("keys", {})
+	if i == 0:
+		_show_keyboard()
+		return
 	var rows: Array = PAGES[i][1]
 	for r in rows.size():
 		var row: Array = rows[r]
@@ -193,21 +187,35 @@ func _show_page(i: int) -> void:
 		line.add_theme_stylebox_override("panel", MenuKit.style(Color(1, 1, 1, 0.04 if r % 2 == 0 else 0.0), Color(0, 0, 0, 0), 0, 3, 3))
 		var h := _row_box()
 		line.add_child(h)
-		var l := MenuKit.label(row[0], 12)
-		h.add_child(_cell(l, 300))
-		var keys_text: String = row[1]
-		for start in ROW_ACTIONS:
-			if String(row[0]).begins_with(start) and custom.has(ROW_ACTIONS[start]):
-				keys_text = KeyBindings.key_text(ROW_ACTIONS[start])
-		h.add_child(_keys(keys_text, C_KEY))
-		h.add_child(_keys(row[2], C_PAD))
+		h.add_child(_cell(MenuKit.label(row[0], 12), 500))
+		h.add_child(_keys(KeyBindings.fmt(row[1]), C_KEY))
 		_list.add_child(line)
+
+
+## 1er onglet : le clavier et la souris dessinés, chaque touche dans la couleur de sa famille.
+func _show_keyboard() -> void:
+	var km := KeyboardMap.new()
+	_list.add_child(km)
+	var legend := HBoxContainer.new()
+	legend.add_theme_constant_override("separation", 14)
+	legend.alignment = BoxContainer.ALIGNMENT_CENTER
+	for f in KeyboardMap.FAMILIES:
+		var sw := ColorRect.new()
+		sw.color = f[1]
+		sw.custom_minimum_size = Vector2(12, 12)
+		sw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		legend.add_child(sw)
+		legend.add_child(MenuKit.label(f[0], 11, MenuKit.C_TEXT))
+	_list.add_child(legend)
+	var tip := MenuKit.label("La main gauche reste sur {move_up} {move_left} {move_down} {move_right} : tout ce qui sert en combat est autour. Les menus sont à droite, sous leur initiale (Carte, Journal, Talents...).", 10, MenuKit.C_DIM)
+	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_list.add_child(tip)
 
 
 ## Onglet « Personnaliser » : une touche du clavier par action, à changer d'un clic.
 func _show_custom() -> void:
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(740, 300)
+	scroll.custom_minimum_size = Vector2(840, 300)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -231,8 +239,8 @@ func _show_custom() -> void:
 	_list.add_child(scroll)
 	var foot := HBoxContainer.new()
 	foot.add_theme_constant_override("separation", 12)
-	_note = MenuKit.label("Clique sur une touche pour la changer. La souris et la manette ne changent pas.", 11, MenuKit.C_DIM)
-	_note.custom_minimum_size.x = 560
+	_note = MenuKit.label("Clique sur une touche pour la changer. La souris garde ses boutons.", 11, MenuKit.C_DIM)
+	_note.custom_minimum_size.x = 660
 	_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	foot.add_child(_note)
 	var reset := MenuKit.button("Touches par défaut", 170, 12)

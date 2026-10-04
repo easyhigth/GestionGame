@@ -12,12 +12,45 @@ const REBINDABLE := [
 	["ability_3", "Emplacement 3"], ["ability_4", "Emplacement 4"], ["ability_5", "Emplacement 5"], ["ability_6", "Emplacement 6"],
 	["ability_7", "Emplacement 7"], ["ability_8", "Emplacement 8"], ["ability_9", "Emplacement 9"], ["ability_10", "Emplacement 10"],
 	["interact", "Parler / utiliser"], ["dig", "Creuser · plonger"], ["place_block", "Poser · semer"],
-	["hotbar_next", "Objet en main suivant"], ["eat", "Manger"], ["potion", "Boire une potion"],
+	["hand_toggle", "Prendre / ranger l'objet en main"], ["eat", "Manger"], ["potion", "Boire une potion"],
 	["inventory", "Inventaire"], ["world_map", "Carte"], ["build_mode", "Construction"], ["kingdom", "Royaume"],
-	["talents", "Talents"], ["journal", "Journal"], ["familiar_order", "Ordre aux familiers"],
+	["talents", "Talents"], ["journal", "Journal"], ["crafts", "Métiers"], ["familiar_order", "Ordre aux familiers"],
 	["diplomacy", "Diplomatie"], ["achievements", "Succès et bestiaire"], ["keys_help", "Aide-mémoire des touches"],
 	["camera_view", "Changer de vue (caméra)"],
 ]
+
+
+## Remplace les {action} d'un texte par la touche choisie par le joueur : « Se mange ({eat}) » → « Se mange (X) ».
+## Tous les textes du jeu qui citent une touche passent par là : ils suivent la personnalisation et le clavier.
+static func fmt(text: String) -> String:
+	if not text.contains("{"):
+		return text
+	if _re == null:
+		_re = RegEx.create_from_string("\\{([a-z_0-9]+)\\}")
+	var out := ""
+	var last := 0
+	for m in _re.search_all(text):
+		var a := m.get_string(1)
+		out += text.substr(last, m.get_start() - last)
+		last = m.get_end()
+		if not (InputMap.has_action(a) or a in EXTRA):
+			out += m.get_string(0)
+			continue
+		var k := key_text(a)
+		# « clic droit » en minuscules au milieu d'une phrase, « Clic droit » en début de phrase
+		var before := out.strip_edges(false, true)
+		if (k.begins_with("Clic") or k.begins_with("Molette") or k.begins_with("Souris")) and before != "" \
+				and not before[before.length() - 1] in [".", "!", "?", "\n", "·"]:
+			k = k[0].to_lower() + k.substr(1)
+		out += k
+	return out + text.substr(last)
+
+
+static var _re: RegEx
+
+## Touches qui ne sont pas des actions de l'InputMap (souris, combinaisons).
+const EXTRA := {"place_click": "Clic droit", "wheel": "Molette", "build_bar": "Ctrl + 1…0", "free_mouse": "Alt", "console": "Entrée",
+	"hotbar_wheel": "Molette"}
 
 
 static func label_of(action: String) -> String:
@@ -29,6 +62,8 @@ static func label_of(action: String) -> String:
 
 ## Nom de la première touche du clavier de l'action (ou du bouton de souris s'il n'y en a pas).
 static func key_text(action: String) -> String:
+	if EXTRA.has(action):
+		return EXTRA[action]
 	if not InputMap.has_action(action):
 		return "—"
 	var mouse := ""
@@ -36,7 +71,8 @@ static func key_text(action: String) -> String:
 		if e is InputEventKey:
 			return key_name(e)
 		if e is InputEventMouseButton and mouse == "":
-			mouse = {MOUSE_BUTTON_LEFT: "Clic gauche", MOUSE_BUTTON_RIGHT: "Clic droit", MOUSE_BUTTON_MIDDLE: "Clic molette"}.get(e.button_index, "Souris")
+			mouse = {MOUSE_BUTTON_LEFT: "Clic gauche", MOUSE_BUTTON_RIGHT: "Clic droit", MOUSE_BUTTON_MIDDLE: "Clic molette",
+				MOUSE_BUTTON_XBUTTON1: "Souris côté avant", MOUSE_BUTTON_XBUTTON2: "Souris côté arrière"}.get(e.button_index, "Souris")
 	return mouse if mouse != "" else "—"
 
 

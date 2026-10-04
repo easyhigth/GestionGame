@@ -180,7 +180,7 @@ func _update_label(d: float, p: Player, delta: float) -> void:
 		if following:
 			t += "\n♥ te suit : mène-le à une mangeoire"
 		elif food_it:
-			t += "\nChoisis %s (C) pour l'attirer" % food_it.display_name.to_lower()
+			t += "\n%s en main pour l'attirer" % food_it.display_name.to_lower()
 	label.text = t
 
 

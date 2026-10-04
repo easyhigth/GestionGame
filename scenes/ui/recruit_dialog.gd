@@ -1,6 +1,6 @@
 class_name RecruitDialog
 extends Control
-## Fenêtre de dialogue avec un voyageur (E près de lui) : qui il est, ce qu'il sait faire,
+## Fenêtre de dialogue avec un voyageur ({interact} près de lui) : qui il est, ce qu'il sait faire,
 ## ce qu'il demande pour rejoindre le village. Il faut aussi un lit libre au village
 ## (population max = 8 + lits des maisons et dortoirs).
 
@@ -193,5 +193,5 @@ func _recruit() -> void:
 		v.join_village(world.cell_center(world.spawn_cell))
 	VoxelBurst.spawn(player, player.global_position + Vector3(0, 1, 0), C_GOLD, 30, 4.0, 0.08, 0.8, "up", 4.0)
 	player.feat.emit("%s te rejoint !" % v.villager_name, C_GOLD)
-	player.notify.emit("%s part pour ton village. Donne-lui un poste (E près de lui) ou emmène-le en expédition." % v.villager_name)
+	player.notify.emit("%s part pour ton village. Donne-lui un poste ({interact} près de lui) ou emmène-le en expédition." % v.villager_name)
 	close()

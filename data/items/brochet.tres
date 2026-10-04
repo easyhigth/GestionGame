@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "brochet"
 display_name = "Brochet"
-description = "Un grand prédateur des eaux profondes. Il se débat ! Se mange cru (H) ou grillé près du feu."
+description = "Un grand prédateur des eaux profondes. Il se débat ! Se mange cru ({eat}) ou grillé près du feu."
 max_stack = 20
 food = 6.0
 food_heal = 1

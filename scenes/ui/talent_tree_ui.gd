@@ -323,7 +323,7 @@ func _ready() -> void:
 		_selected = ""
 		_refresh())
 	foot.add_child(reset)
-	var close := MenuKit.button("Fermer (T)", 100, 11)
+	var close := MenuKit.button("Fermer ({talents})", 100, 11)
 	close.pressed.connect(close_ui)
 	foot.add_child(close)
 
@@ -469,7 +469,7 @@ func _show(id: String) -> void:
 		_info_kind.text = "%s  ·  %s\nNiveau %d  ·  coût %d point%s" % [b.name if not n.has("bridge") else "Pont", kind, int(n.level),
 			TalentTree.cost(id), "s" if TalentTree.cost(id) > 1 else ""]
 	_info_rar.add_theme_color_override("font_color", rar.color)
-	_info_desc.text = n.desc if not hidden else "Une compétence unique t'attend quelque part dans l'histoire principale. Avance dans ta quête (O : journal) pour la découvrir."
+	_info_desc.text = n.desc if not hidden else KeyBindings.fmt("Une compétence unique t'attend quelque part dans l'histoire principale. Avance dans ta quête ({journal} : journal) pour la découvrir.")
 	var reason := player.talent_block_reason(id)
 	if player.talents.has(id):
 		_info_state.text = "Appris" + ("  ·  offert par ta classe" if id == player.class_talent() or n.has("cls") else "")

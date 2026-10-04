@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "potion_soin"
 display_name = "Potion de soin"
-description = "Un breuvage rouge de l'alchimiste. Z : la boire (rend la moitié de la vie). Soigne aussi les malades."
+description = "Un breuvage rouge de l'alchimiste. {potion} : la boire (rend la moitié de la vie). Soigne aussi les malades."
 rarity = 1
 max_stack = 20
 potion_heal = 0.5

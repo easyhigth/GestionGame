@@ -327,7 +327,7 @@ func _bring_traveler(members: Array) -> void:
 	v.home = pos
 	var p := get_tree().get_first_node_in_group("player")
 	if p:
-		p.notify.emit("%s, le voyageur sauvé par l'expédition, attend au feu de camp : parle-lui (E) pour qu'il s'installe." % v.villager_name)
+		p.notify.emit("%s, le voyageur sauvé par l'expédition, attend au feu de camp : parle-lui ({interact}) pour qu'il s'installe." % v.villager_name)
 
 
 func export_state() -> Dictionary:

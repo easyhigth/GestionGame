@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "poisson_lune"
 display_name = "Poisson-lune"
-description = "Il luit doucement dans les eaux du bois enchanté. Très rare. Se mange cru (H) ou grillé près du feu."
+description = "Il luit doucement dans les eaux du bois enchanté. Très rare. Se mange cru ({eat}) ou grillé près du feu."
 max_stack = 20
 food = 10.0
 food_heal = 6

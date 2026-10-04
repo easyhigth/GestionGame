@@ -79,12 +79,12 @@ func _update_label(d: float, p: Player, delta: float) -> void:
 	if not label.visible or _heart > 0.0 and d >= 6.0:
 		return
 	if tamed:
-		label.text = "Cheval · à toi\n[E] Monter"
+		label.text = KeyBindings.fmt("Cheval · à toi\n[{interact}] Monter")
 		label.modulate = Color("ffe8b0")
 	elif following:
-		label.text = "Cheval sauvage · confiance %d / %d\n[E] Donner une carotte" % [trust, TAME_CARROTS]
+		label.text = KeyBindings.fmt("Cheval sauvage · confiance %d / %d\n[{interact}] Donner une carotte" % [trust, TAME_CARROTS])
 	else:
-		label.text = "Cheval sauvage\nChoisis des carottes (C) pour l'approcher"
+		label.text = "Cheval sauvage\nDes carottes en main pour l'approcher"
 
 
 func export_state() -> Dictionary:

@@ -14,13 +14,13 @@ const STEPS := [
 	["sac", "Ouvre ton sac", "{inventory} : ton sac, ton équipement et l'Artisanat (tout ce qui se fabrique). Tu commences les mains vides : tout est à trouver. {inventory} ou Échap pour refermer.", 1],
 	# chapitre 1 : les premiers pas
 	["arbre", "Récolte du bois à mains nues", "Face à un arbre, frappe-le ({attack}). Le bois tombe au sol : marche dessus pour le ramasser.", 3],
-	["etabli", "Fabrique et pose un établi", "{inventory} → Artisanat → Mobilier : 4 bois. Il se range dans ta barre de construction (en bas) : Ctrl+chiffre de sa case pour le prendre en main, {place_block} pour le poser, Échap pour ranger. Près de lui, on fabrique bien plus de choses.", 1],
+	["etabli", "Fabrique et pose un établi", "{inventory} → Artisanat → Mobilier : 4 bois. Il se range dans ta barre de construction (en bas) : Ctrl+chiffre de sa case (ou {hand_toggle}) pour le prendre en main, {place_click} pour le poser, {hand_toggle} pour revenir aux mains nues. Près de lui, on fabrique bien plus de choses.", 1],
 	["rocher", "Casse 2 rochers", "Les rochers donnent des cailloux, même à mains nues. Avec une pioche, ça va plus vite et donne du minerai.", 2],
 	["outil", "Fabrique une hache ou une pioche", "Près de l'établi : {inventory} → Artisanat → Outils (bois, puis pierre). Il suffit de l'avoir dans ton sac.", 1],
 	["arme", "Fabrique une arme et équipe-la", "Près de l'établi : Artisanat → Armurerie → une épée en bois ou en pierre. Clique-la dans le sac pour l'équiper : les monstres sortent la nuit !", 1],
 	["planches", "Fabrique des planches", "{inventory} → Artisanat → Construction : 1 bois donne 4 planches.", 1],
-	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit. Le plus simple : le mode construction ({build_mode}), catégorie ★ Plans prêts → Maison : un clic pose le plan, puis tiens-toi à côté pour le bâtir (seul, c'est toi qui construis). Ou à la main, comme dans Minecraft : Ctrl+1…0 prend un bloc de ta barre de construction, {place_block} le pose.", 1],
-	["torche", "Pose une torche", "Fabrique-la (bois et charbon ou fibres), prends-la avec Ctrl+chiffre de sa case et pose-la avec {place_block}. Les monstres n'apparaissent pas près des lumières.", 1],
+	["abri", "Construis un abri", "Une pièce fermée avec une porte et un lit. Le plus simple : le mode construction ({build_mode}), catégorie ★ Plans prêts → Maison : un clic pose le plan, puis tiens-toi à côté pour le bâtir (seul, c'est toi qui construis). Ou à la main, comme dans Minecraft : prends un bloc en main ({hand_toggle} ou Ctrl+1…0) et {place_click} le pose.", 1],
+	["torche", "Pose une torche", "Fabrique-la (bois et charbon ou fibres), prends-la en main ({hand_toggle} ou Ctrl+chiffre de sa case) et pose-la avec {place_click}. Les monstres n'apparaissent pas près des lumières.", 1],
 	["repas", "Mange un repas cuit", "Fabrique un feu de camp (3 bois et 3 cailloux, Artisanat → Mobilier) et pose-le. Baies (buissons) ou viande (animaux) : cuis-les près de lui (Artisanat → Cuisine), puis mange avec {eat}.", 1],
 	["nuit", "Survis à ta première nuit", "Quand la nuit tombe, dors dans ton lit ({interact}) ou tiens jusqu'au matin près de ton feu et de tes torches.", 1],
 	# chapitre 2 : l'âge du fer
@@ -30,33 +30,33 @@ const STEPS := [
 	["enclume", "Fabrique et pose une enclume", "4 lingots de fer, près d'un établi. Toutes les pièces en fer se forgent à côté d'elle.", 1],
 	["pioche_fer", "Forge une pioche en fer", "À l'enclume : 2 lingots et 2 bois (Artisanat → Outils). Elle mine l'or et le marbre.", 1],
 	# chapitre 3 : le village
-	["reserve", "Remplis la réserve du village", "Ouvre le royaume (U) et dépose de la nourriture. Une boulangerie ou une grange la remplissent aussi.", 1],
+	["reserve", "Remplis la réserve du village", "Ouvre le royaume ({kingdom}) et dépose de la nourriture. Une boulangerie ou une grange la remplissent aussi.", 1],
 	["lits", "Recrute un habitant et loge-le", "Seul au début, tu attires des voyageurs dès que tu as bâti un abri : parle-leur ({interact}) pour les recruter. Une maison (porte, un lit, un coffre) donne 2 lits ; un dortoir (4 lits, un coffre) en donne 6.", 1],
-	["bonheur", "Rends ton village heureux", "Bonheur moyen de 70 % : nourriture, lits, taverne, temple... Le royaume (U) dit ce qui manque.", 1],
+	["bonheur", "Rends ton village heureux", "Bonheur moyen de 70 % : nourriture, lits, taverne, temple... Le royaume ({kingdom}) dit ce qui manque.", 1],
 	# chapitre 4 : les champs
-	["houe", "Fabrique une houe", "Inventaire (I) → Artisanat → Outils : 2 bois et 2 cailloux. Elle laboure l'herbe et la terre.", 1],
-	["semer", "Sème 6 graines", "Coupe les hautes herbes pour trouver des graines de blé. Choisis-les (C) et sème devant toi (V).", 6],
+	["houe", "Fabrique une houe", "Inventaire ({inventory}) → Artisanat → Outils : 2 bois et 2 cailloux. Elle laboure l'herbe et la terre.", 1],
+	["semer", "Sème 6 graines", "Coupe les hautes herbes pour trouver des graines de blé. Prends-les en main ({hand_toggle} ou {build_bar}) et sème devant toi ({place_click}).", 6],
 	["recolte", "Récolte 3 cultures mûres", "Frappe une culture mûre (épis dorés, carottes sorties) pour la récolter. Près de l'eau, ça pousse plus vite.", 3],
-	["fermier", "Nomme un fermier", "E près d'un habitant → Poste de travail → Champs (4 cases labourées au moins). Confie-lui des graines dans le royaume (U).", 1],
+	["fermier", "Nomme un fermier", "{interact} près d'un habitant → Poste de travail → Champs (4 cases labourées au moins). Confie-lui des graines dans le royaume ({kingdom}).", 1],
 	# chapitre 5 : le commerce
-	["vendre", "Vends 10 objets au marchand", "Un marchand ambulant passe au village tous les 3 jours (le royaume, U, dit quand). E près de lui : vends tes surplus.", 10],
+	["vendre", "Vends 10 objets au marchand", "Un marchand ambulant passe au village tous les 3 jours (le royaume, {kingdom}, dit quand). {interact} près de lui : vends tes surplus.", 10],
 	["acheter", "Achète quelque chose au marchand", "Graines, outils, lingots, meubles, équipement : son stock change à chaque visite.", 1],
 	["marche", "Construis un marché", "Pièce fermée avec 2 étals et un comptoir (9 cases). Le marchand vient tous les 2 jours et paie mieux ; un marchand du village y gagne de l'or.", 1],
 	# chapitre 6 : l'élevage
 	["mangeoire", "Fabrique et pose une mangeoire", "Près d'un établi : 2 bois et 2 fibres (Artisanat → Mobilier). Pose-la avec V là où sera l'enclos ; des barrières le fermeront.", 1],
-	["apprivoiser", "Mène une bête à la mangeoire", "Poules : graines de blé en main (C). Moutons et vaches : du blé. Elles te suivent : amène-les près de la mangeoire.", 1],
+	["apprivoiser", "Mène une bête à la mangeoire", "Poules : graines de blé en main ({build_bar}). Moutons et vaches : du blé. Elles te suivent : amène-les près de la mangeoire.", 1],
 	["produits", "Obtiens 3 produits de tes bêtes", "Œufs, laine, lait apparaissent près des bêtes nourries par la réserve du village. Un fermier à la grange les ramasse.", 3],
 	# chapitre 7 : l'eau
-	["canne", "Fabrique une canne à pêche", "Inventaire (I) → Artisanat → Outils : 3 bois et 2 fibres.", 1],
-	["pecher", "Pêche 3 poissons", "Canne en main (C), V face à l'eau pour lancer. Quand ça mord : V, puis V quand le curseur est dans le vert.", 3],
-	["grotte", "Ouvre un coffre englouti", "Nage (entre dans l'eau), plonge avec G et remonte avec Espace. Au fond des eaux profondes, des cristaux bleus marquent l'entrée d'une grotte (E).", 1],
+	["canne", "Fabrique une canne à pêche", "Inventaire ({inventory}) → Artisanat → Outils : 3 bois et 2 fibres.", 1],
+	["pecher", "Pêche 3 poissons", "Canne en main ({build_bar}), {place_click} face à l'eau pour lancer. Quand ça mord : {place_click}, puis encore quand le curseur est dans le vert.", 3],
+	["grotte", "Ouvre un coffre englouti", "Nage (entre dans l'eau), plonge avec {dig} et remonte avec {jump}. Au fond des eaux profondes, des cristaux bleus marquent l'entrée d'une grotte ({interact}).", 1],
 	# chapitre 8 : l'aventure
 	["donjon", "Vaincs le boss d'un donjon", "E devant une entrée de donjon. Attention aux dalles qui rougissent (piques) ; le Gardien et la salle secrète valent le détour.", 1],
-	["forge", "Renforce un objet à +1", "Près d'une enclume : Inventaire (I) → Artisanat → Forge. Les gemmes et les runes s'y posent aussi.", 1],
-	["potion", "Bois une potion (Z)", "Une potion de soin se prépare au chaudron avec 8 baies ; un Laboratoire d'alchimie en fabrique d'autres.", 1],
-	["succes", "Ouvre les succès et le bestiaire (F1)", "Chaque succès rapporte des points : titres et auras pour ton héros. Le bestiaire décrit les monstres vaincus.", 1],
+	["forge", "Renforce un objet à +1", "Près d'une enclume : Inventaire ({inventory}) → Artisanat → Forge. Les gemmes et les runes s'y posent aussi.", 1],
+	["potion", "Bois une potion ({potion})", "Une potion de soin se prépare au chaudron avec 8 baies ; un Laboratoire d'alchimie en fabrique d'autres.", 1],
+	["succes", "Ouvre les succès et le bestiaire ({achievements})", "Chaque succès rapporte des points : titres et auras pour ton héros. Le bestiaire décrit les monstres vaincus.", 1],
 	# chapitre 9 : le royaume et ses voisins
-	["diplomatie", "Ouvre la diplomatie (Y)", "Cinq nations entourent ton royaume. Leur humeur change selon tes présents, tes traités... et tes guerres.", 1],
+	["diplomatie", "Ouvre la diplomatie ({diplomacy})", "Cinq nations entourent ton royaume. Leur humeur change selon tes présents, tes traités... et tes guerres.", 1],
 	["cadeau", "Offre un présent à une nation", "50 pièces d'or, ou ce qu'elle aime, une fois par jour. Ses demandes rapportent de l'or.", 1],
 	["traite", "Signe un traité", "Paix dès que la relation est positive, commerce à 20 (caravanes, meilleurs prix), alliance à 60.", 1],
 	["metier", "Ouvre une pièce de métier avancé", "Laboratoire d'alchimie (chaudron, table, tonneau), Sanctuaire des runes, Ménagerie ou Bureau d'architecte.", 1],
@@ -69,7 +69,7 @@ const STEPS := [
 	# chapitre 11 : la fin de partie
 	["palier", "Monte le palier du monde", "Au niveau 60, au Portail des Failles (près du village, E) : des monstres plus forts, plus d'expérience et du butin de niveau.", 1],
 	["faille", "Vaincs le gardien d'une faille", "Au Portail des Failles : trois vagues puis le gardien. Dès le rang 3, des modificateurs pimentent l'arène.", 1],
-	["titan", "Abats un titan", "Dès le niveau 30, un titan s'éveille tous les 2 ou 3 jours : il est marqué sur la carte (M).", 1],
+	["titan", "Abats un titan", "Dès le niveau 30, un titan s'éveille tous les 2 ou 3 jours : il est marqué sur la carte ({world_map}).", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
 const CHAPTERS := [["LES BASES", 0, 4], ["PREMIERS PAS", 4, 14], ["L'ÂGE DU FER", 14, 19], ["LE VILLAGE", 19, 22], ["LES CHAMPS", 22, 26],
@@ -83,18 +83,18 @@ var _icon: TextureRect
 const TIPS := [
 	["gemme", "Une gemme ! Sertis-la à l'enclume (I → Artisanat → Forge) sur une arme ou une armure."],
 	["rune", "Une rune ! Grave-la sur une arme ou une armure à l'enclume (onglet Forge)."],
-	["potion", "Une potion ! Touche Z pour la boire : soin si tu es blessé, sinon un renfort de 90 secondes."],
+	["potion", "Une potion ! Touche {potion} pour la boire : soin si tu es blessé, sinon un renfort de 90 secondes."],
 	["orichalque", "De l'orichalque ! Le métal du renforcement +10 à la forge et des armes légendaires."],
 	["piege", "Ce donjon est piégé : quand une dalle rougit, des piques vont en sortir."],
-	["levier", "Une stèle et des leviers : tire-les (E) dans l'ordre gravé sur la stèle pour ouvrir le mur fissuré."],
+	["levier", "Une stèle et des leviers : tire-les ({interact}) dans l'ordre gravé sur la stèle pour ouvrir le mur fissuré."],
 	["guerre", "Tu es en guerre ! Repousse 3 armées pour faire capituler la nation, ou assiège sa capitale (Y, à partir du niveau 6)."],
-	["malade", "Des habitants sont malades : soigne-les dans le panneau du royaume (U) avec une soupe ou une potion."],
+	["malade", "Des habitants sont malades : soigne-les dans le panneau du royaume ({kingdom}) avec une soupe ou une potion."],
 	["succes", "Premier succès ! F1 : succès, titres, auras et bestiaire."],
 	["poussiere", "De la poussière arcanique ! Elle sert à enchanter à l'autel (I → Artisanat → Enchantement)."],
 	["metier", "Ton premier niveau de métier ! F3 pour voir tes 12 métiers et ce qu'ils débloquent."],
 	["failles", "Niveau 60 : le Portail des Failles s'ouvre (près du village) ; tu peux y monter le palier du monde."],
 	["recherche", "Dans l'artisanat, la barre de recherche trouve une recette parmi des centaines ; ★ pour les favoris."],
-	["en_main", "Barre de construction (en bas, au-dessus des compétences) : Ctrl+1…0 prend un objet, {place_block} le pose devant toi, Échap ou le même Ctrl+chiffre le range. Les chiffres seuls restent aux compétences."],
+	["en_main", "Barre de construction (en bas, au-dessus des compétences) : Ctrl+1…0 (ou {hand_toggle}) prend un objet, {place_click} le pose (maintenu : en continu), la molette change d'objet, {hand_toggle} le range. Les chiffres seuls restent aux compétences."],
 	["soir", "Le soleil se couche : les monstres sortent la nuit. Reste près du feu ou d'une torche, ou dors dans un lit ({interact})."],
 	["construire", "Mode construction : choisis un outil en bas, glisse sur le sol pour tracer, et tes habitants (ou toi, en te tenant à côté) bâtissent avec ce qu'il y a dans ton sac. {build_mode}, Échap ou ✕ pour en sortir."],
 	["royaume", "Ton royaume ({kingdom}) : ce qu'il manque à tes habitants (lits, nourriture, bonheur) et ce qu'il faut pour passer au rang suivant."],
@@ -565,21 +565,7 @@ func _refresh() -> void:
 
 ## Remplace {action} par la touche du joueur.
 static func with_keys(text: String) -> String:
-	var out := text
-	while out.contains("{"):
-		var a := out.find("{")
-		var b := out.find("}", a)
-		if b < 0:
-			break
-		var action := out.substr(a + 1, b - a - 1)
-		var k := KeyBindings.key_text(action)
-		# frapper et parer : la souris d'abord
-		if action == "attack":
-			k = "clic gauche"
-		elif action == "block":
-			k = "clic droit"
-		out = out.substr(0, a) + k + out.substr(b + 1)
-	return out
+	return KeyBindings.fmt(text)
 
 
 func export_state() -> Dictionary:

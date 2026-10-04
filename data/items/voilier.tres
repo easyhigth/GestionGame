@@ -6,6 +6,6 @@
 script = ExtResource("1")
 id = "voilier"
 display_name = "Voilier"
-description = "Un vrai bateau à voile, deux fois plus rapide que la barque : de quoi traverser la mer jusqu'aux îles, aux épaves et aux cités englouties. Choisis-le (C) et appuie sur V face à l'eau. E pour monter, E près d'une berge pour débarquer."
+description = "Un vrai bateau à voile, deux fois plus rapide que la barque : de quoi traverser la mer jusqu'aux îles, aux épaves et aux cités englouties. Prends-le en main ({hand_toggle} ou {build_bar}), puis {place_click} face à l'eau. {interact} pour monter, {interact} près d'une berge pour débarquer."
 rarity = 2
 max_stack = 1

@@ -1,8 +1,8 @@
 class_name HandBuild
 extends Node3D
 ## Poser des blocs et des meubles à la main, sans le mode construction (façon Minecraft).
-## C / X : objet suivant / précédent du sac (blocs et meubles), « mains nues » en plus.
-## V (L3 à la manette) : poser devant soi. Une case fantôme montre où (verte : possible, rouge : impossible).
+## Molette (avec un objet en main) : objet suivant / précédent ; C : ranger / reprendre l'objet ; Ctrl + 1…0 : case de la barre.
+## Clic droit ou V (L3 à la manette) : poser devant soi. Une case fantôme montre où (verte : possible, rouge : impossible).
 ## Les blocs se posent au niveau des pieds, puis au-dessus s'il y a déjà un bloc (jusqu'à 2 de haut),
 ## ou un cran plus bas devant un trou (pour faire un pont). Casser : frapper le bloc (voir Harvest).
 ## Graines (et légumes à planter) : V sème devant soi, sur de la terre labourée (ou sur l'herbe avec une houe
@@ -101,6 +101,33 @@ func select_slot(i: int) -> void:
 		selected = ""
 	else:
 		selected = id
+	selection_changed.emit()
+
+
+## Touche C : range l'objet tenu (mains nues), ou reprend le dernier objet tenu (sinon la 1re case de la barre).
+var _last := ""
+
+
+func toggle() -> void:
+	sync_slots()
+	if selected != "":
+		_last = selected
+		selected = ""
+		player.notify.emit("Mains nues.")
+	else:
+		var id := _last
+		if id == "" or player.inventory.count(Items.get_item(id)) <= 0:
+			id = ""
+			for sid in slots:
+				if sid != "":
+					id = sid
+					break
+		if id == "":
+			player.notify.emit("Rien à prendre en main : ramasse ou fabrique des blocs, des meubles ou des graines.")
+			return
+		selected = id
+		var it := Items.get_item(id)
+		player.notify.emit("En main : %s" % (it.display_name if it else id))
 	selection_changed.emit()
 
 
@@ -264,7 +291,7 @@ func place() -> bool:
 				player.notify.emit(err)
 			else:
 				player.inventory.remove(it, 1)
-				player.notify.emit("%s est à l'eau : E pour monter, E près d'une berge pour débarquer." % ("La barque" if it.id == "barque" else "Le voilier"))
+				player.notify.emit("%s est à l'eau : {interact} pour monter, {interact} près d'une berge pour débarquer." % ("La barque" if it.id == "barque" else "Le voilier"))
 		return false
 	if it.id == "sifflet_griffon":
 		var mo := player.get_tree().get_first_node_in_group("mounts") as Mounts

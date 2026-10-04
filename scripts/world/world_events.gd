@@ -18,7 +18,7 @@ const EVENTS := {
 	"invasion": {"name": "Invasion de la Brume", "color": Color("b48cff"), "text": "Une horde brumeuse marche sur le village !"},
 	"tournoi": {"name": "Grand tournoi", "color": Color("ffb04a"), "text": "Trois champions te défient au feu de camp : approche-toi pour combattre."},
 	"fete": {"name": "Fête du royaume", "color": Color("ffe08a"), "text": "Tout le royaume fait la fête : habitants plus heureux, et le marchand arrive."},
-	"epidemie": {"name": "Épidémie", "color": Color("9ad06a"), "text": "Des habitants sont malades : soigne-les depuis le panneau du royaume (U) avec une soupe ou une potion."},
+	"epidemie": {"name": "Épidémie", "color": Color("9ad06a"), "text": "Des habitants sont malades : soigne-les depuis le panneau du royaume ({kingdom}) avec une soupe ou une potion."},
 }
 const STAR_LOOT := [["mithril_brut", 2], ["cristal_aube", 1], ["gemme_saphir", 1], ["gemme_topaze", 1], ["lingot_or", 2], ["orichalque", 1]]
 const CHAMPIONS := [["orc_brute", "Borgak l'Invaincu"], ["homme_lezard", "Ixtli aux Mille Lames"], ["ogre", "Mâchefer le Colosse"]]

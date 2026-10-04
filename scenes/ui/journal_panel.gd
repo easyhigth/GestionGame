@@ -89,7 +89,7 @@ func _refresh() -> void:
 	_head.append(tabs)
 	if _tab == "personnages":
 		_fill_people(st)
-		var cb := MenuKit.button("Fermer (O)", 200, 13)
+		var cb := MenuKit.button("Fermer ({journal})", 200, 13)
 		cb.pressed.connect(close)
 		_add_foot(cb)
 		return
@@ -157,7 +157,7 @@ func _refresh() -> void:
 		if hud:
 			hud.play_intro())
 	row.add_child(intro)
-	var b := MenuKit.button("Fermer (O)", 200, 13)
+	var b := MenuKit.button("Fermer ({journal})", 200, 13)
 	b.pressed.connect(close)
 	row.add_child(b)
 	_add_foot(row)

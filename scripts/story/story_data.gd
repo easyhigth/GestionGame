@@ -30,7 +30,7 @@ const STEPS := [
 	["loups", 2, "Chasse la meute qui traque les gobelins", "Les loups rôdent autour du camp de Grik.", "pack", "grik", {"types": ["loup", "loup", "loup_alpha"], "n": 6}],
 	["ulric", 2, "Affronte le regard du seigneur loup", "Une silhouette immense t'attend à l'orée du bois.", "talk", "ulric", {"reward": {"skill": "pac_hurlement", "items": [["croc_meute", 1]]}}],
 	["grik_2", 2, "Retourne voir l'ancien Grik", "À son camp, dans les bois.", "talk", "grik"],
-	["maisons", 2, "Construis 2 maisons", "Pièce fermée avec un lit et un coffre (B pour construire) : ton village doit pouvoir accueillir du monde.", "room", "maison:2"],
+	["maisons", 2, "Construis 2 maisons", "Pièce fermée avec un lit et un coffre ({build_mode} pour construire) : ton village doit pouvoir accueillir du monde.", "room", "maison:2"],
 	# ---------------------------------------------------------------- III
 	["maelle", 3, "Accueille la voyageuse elfe", "Une elfe est arrivée au feu de camp du village.", "talk", "maelle"],
 	["obelisques_5", 3, "Éveille 5 obélisques", "Maëlle veut étudier leur lumière. Explore de nouvelles contrées.", "obelisks", 5],
@@ -69,7 +69,7 @@ const STEPS := [
 	["gorvak_ble", 8, "Apporte 15 bottes de blé à Gorvak", "Cultive du blé dans les champs (houe et graines) : son peuple meurt de faim.", "talk", "gorvak", {"item": "ble", "n": 15}],
 	["gor_karath", 8, "Demande asile pour la Horde à Gor-Karath", "Gorvak espère que les orcs de Gor-Karath accueilleront son peuple. Va plaider sa cause dans leur capitale.", "visit", "karg",
 		{"v2": true, "rel": -10, "msg": "Le Chef de guerre ricane : « Les faibles n'entrent pas à Gor-Karath. » Les portes se referment : la Horde n'a plus que ton village."}],
-	["peuple", 8, "Rassemble 10 habitants", "Recrute des voyageurs (E près d'eux) et offre-leur un toit.", "pop", 10],
+	["peuple", 8, "Rassemble 10 habitants", "Recrute des voyageurs ({interact} près d'eux) et offre-leur un toit.", "pop", 10],
 	["pip_eveil", 8, "Quelque chose arrive à Pip", "Grik t'appelle : le petit Pip est tout lumineux !", "talk", "pip", {"reward": {"skill": "pac_evolution"}}],
 	["grik_festin", 8, "Apporte 10 pains pour le festin des peuples", "Grik veut sceller l'amitié des peuples autour d'un grand repas.", "talk", "grik", {"item": "pain", "n": 10}],
 	["sylve", 8, "Accueille la dryade", "Attirée par le festin, une dryade est venue au village.", "talk", "sylve", {"reward": {"skill": "pac_racines", "items": [["larme_esprit", 2]]}}],

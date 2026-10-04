@@ -394,7 +394,7 @@ func run(text: String) -> bool:
 				if (z.obelisk as Vector2i).x >= 0 and not z.obelisk_on:
 					z.obelisk_on = true
 					n += 1
-			_ok("%d obélisques activés : ouvre la carte (M) pour voyager." % n)
+			_ok("%d obélisques activés : ouvre la carte ({world_map}) pour voyager." % n)
 			return true
 		"tuer":
 			var n := 0

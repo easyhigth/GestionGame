@@ -249,7 +249,7 @@ func _process(delta: float) -> void:
 			_timer -= delta
 			if _timer <= 0.0:
 				reel_in()
-				player.notify.emit("Le poisson s'est décroché... (appuie sur V dès qu'il mord)")
+				player.notify.emit("Le poisson s'est décroché... ({place_click} dès qu'il mord)")
 		"combat":
 			_bobber.global_position.y = _at.y - 0.05 + sin(Time.get_ticks_msec() * 0.02) * 0.06
 			cursor += _dir * cursor_speed * delta

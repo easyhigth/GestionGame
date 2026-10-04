@@ -165,7 +165,7 @@ func _draw() -> void:
 	if not z.is_empty() and z.type:
 		var t: RegionData = z.type
 		_text(z.name, Vector2(SIZE / 2.0, SIZE + 14), 12, t.map_color.lightened(0.5))
-		_text("Nv %d-%d  ·  M : carte" % [z.level.x, z.level.y], Vector2(SIZE / 2.0, SIZE + 28), 10, Color("b8a890"))
+		_text("Nv %d-%d  ·  {world_map} : carte" % [z.level.x, z.level.y], Vector2(SIZE / 2.0, SIZE + 28), 10, Color("b8a890"))
 
 
 func _star(p: Vector2, r: float, col: Color) -> void:
@@ -179,6 +179,7 @@ func _star(p: Vector2, r: float, col: Color) -> void:
 
 
 func _text(text: String, pos: Vector2, fs: int, col: Color) -> void:
+	text = KeyBindings.fmt(text)
 	var w := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var p := pos - Vector2(w / 2.0, 0)
 	for off in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:

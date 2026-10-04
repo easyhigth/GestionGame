@@ -711,7 +711,7 @@ func _show_info(item: ItemData) -> void:
 	_info_name.text = "%s  ·  %s" % [item.display_name, item.slot_name()]
 	_info_name.add_theme_color_override("font_color", item.rarity_color())
 	var st := item.stats_text()
-	_info_text.text = (st + "\n" if st != "" else "") + item.description + ("\nDeux mains." if item.two_handed else "") + _compare_text(item)
+	_info_text.text = (st + "\n" if st != "" else "") + KeyBindings.fmt(item.description) + ("\nDeux mains." if item.two_handed else "") + _compare_text(item)
 	_show_bar_choice(item)
 
 

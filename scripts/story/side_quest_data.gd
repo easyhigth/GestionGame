@@ -75,7 +75,7 @@ const QUESTS := [
 	{"id": "maelle_b", "npc": "maelle", "after": "fin", "title": "L'encyclopédie de l'Éveil", "text": "Maëlle écrit l'histoire des obélisques : éveille tous les obélisques du monde.",
 		"type": "obelisks", "n": -1, "reward": {"items": [["cristal_aube", 1], ["lingot_mithril", 2]], "xp": 500},
 		"start": [["maelle", "J'écris une encyclopédie. Mais il me manque des obélisques, ceux des contrées les plus lointaines. Tu veux bien les éveiller tous ?"]],
-		"wait": [["maelle", "Il reste des pierres endormies. La carte (M) te les montre."]],
+		"wait": [["maelle", "Il reste des pierres endormies. La carte ({world_map}) te les montre."]],
 		"end": [["maelle", "Tous ! L'encyclopédie est complète. Tiens, un cristal d'aube : le réseau en a fait naître un quand le dernier obélisque s'est allumé."]]},
 	# ---------------------------------------------------------------- Liora
 	{"id": "liora_a", "npc": "liora", "after": "liora_pain", "title": "Des gâteaux pour les fées", "text": "Liora veut goûter aux gâteaux : apporte-lui 3 gâteaux.",

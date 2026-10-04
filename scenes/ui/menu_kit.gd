@@ -34,7 +34,7 @@ static func style(bg: Color, border: Color = C_FRAME, width := 2, radius := 4, m
 
 static func label(text: String, size := 13, color := C_TEXT) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = KeyBindings.fmt(text)
 	l.add_theme_font_size_override("font_size", size + 1)
 	l.add_theme_color_override("font_color", color)
 	return l
@@ -68,7 +68,7 @@ static func title(text: String, size := 24) -> Label:
 ## Sous-titre de section : calligraphié, sans ruban.
 static func heading(text: String, size := 16, color := C_GOLD) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = KeyBindings.fmt(text)
 	l.add_theme_font_override("font", UiTheme.font("title"))
 	l.add_theme_font_size_override("font_size", size + 2)
 	l.add_theme_color_override("font_color", color)
@@ -79,7 +79,7 @@ static func heading(text: String, size := 16, color := C_GOLD) -> Label:
 
 static func button(text: String, width := 260.0, size := 15, sfx := "ui_click") -> Button:
 	var b := Button.new()
-	b.text = text
+	b.text = KeyBindings.fmt(text)
 	b.custom_minimum_size = Vector2(width, 34)
 	b.add_theme_font_size_override("font_size", size + 2)
 	b.focus_mode = Control.FOCUS_ALL

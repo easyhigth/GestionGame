@@ -1295,15 +1295,15 @@ func _update_label() -> void:
 		label.modulate = Color.WHITE
 		if has_meta("story") and stranger:
 			var info: Dictionary = Story.NPCS.get(get_meta("story"), {})
-			label.text = "%s %s%s" % [villager_name, info.get("title", ""), "\n[E] Parler" if d < 3.0 else ""]
+			label.text = KeyBindings.fmt("%s %s%s" % [villager_name, info.get("title", ""), "\n[{interact}] Parler" if d < 3.0 else ""])
 			label.modulate = info.get("color", Color.WHITE)
 		elif stranger and has_meta("merchant"):
-			label.text = "%s (%s)\nMarchand ambulant%s" % [villager_name, race_title(), "\n[E] Commercer" if d < 3.0 else ""]
+			label.text = KeyBindings.fmt("%s (%s)\nMarchand ambulant%s" % [villager_name, race_title(), "\n[{interact}] Commercer" if d < 3.0 else ""])
 		elif stranger:
-			label.text = "%s (%s) · Nv %d\nVoyageur · %s · %s%s" % [villager_name, race_title(), level,
-				class_name_fr(), JOB_NAMES.get(best_job(), "?"), "\n[E] Parler" if d < 3.0 else ""]
+			label.text = KeyBindings.fmt("%s (%s) · Nv %d\nVoyageur · %s · %s%s" % [villager_name, race_title(), level,
+				class_name_fr(), JOB_NAMES.get(best_job(), "?"), "\n[{interact}] Parler" if d < 3.0 else ""])
 		elif companion:
-			label.text = "%s (%s) · Nv %d\nCompagnon d'expédition\n[E] Équipement" % [villager_name, race_title(), level]
+			label.text = KeyBindings.fmt("%s (%s) · Nv %d\nCompagnon d'expédition\n[{interact}] Équipement" % [villager_name, race_title(), level])
 		else:
 			var mood := VillageNeeds.mood_name(happiness)
 			if not mood_reasons.is_empty():
@@ -1312,7 +1312,7 @@ func _update_label() -> void:
 			if doing != "":
 				mood += " · " + doing
 			var friend := " · Ami" if friendship >= QuestBoard.FRIEND_AT else ""
-			var talk := "[E] Parler (quête)" if _mark and _mark.visible else "[E] Équipement et poste"
+			var talk := KeyBindings.fmt("[{interact}] Parler (quête)" if _mark and _mark.visible else "[{interact}] Équipement et poste")
 			label.text = "%s (%s)%s%s\n%s\n%s" % [villager_name, race_title(), friend, job, mood, talk]
 			label.modulate = VillageNeeds.mood_color(happiness).lerp(Color.WHITE, 0.35)
 

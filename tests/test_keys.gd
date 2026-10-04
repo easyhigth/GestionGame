@@ -58,11 +58,43 @@ func _process(_d) -> bool:
 		get_first_node_in_group("raids").enabled = false
 		var sg = root.get_node("SaveGame")
 		print("== touches")
-		check("potion : Z par défaut (%s)" % root.get_node("SaveGame").options.keys, KeyBindings.key_text("potion") == "Z" or KeyBindings.key_text("potion") == "W")
+		check("potion : R par défaut (%s)" % root.get_node("SaveGame").options.keys, KeyBindings.key_text("potion") == "R")
+		check("manger : X, carte : M, journal : J, diplomatie : N", KeyBindings.key_text("eat") == "X" and KeyBindings.key_text("world_map") == "M"
+			and KeyBindings.key_text("journal") == "J" and KeyBindings.key_text("diplomacy") == "N")
+		check("texte avec touches : %s" % KeyBindings.fmt("Se mange ({eat}) · {place_click} : poser, puis {place_click}"),
+			KeyBindings.fmt("Se mange ({eat}) · {place_click} : poser, puis {place_click}") == "Se mange (X) · Clic droit : poser, puis clic droit")
+		# aucune touche du clavier en double (hors déplacements et chiffres)
+		var seen := {}
+		var dup := []
+		for r in KeyBindings.REBINDABLE:
+			for e in InputMap.action_get_events(r[0]):
+				if e is InputEventKey:
+					var code: int = e.physical_keycode if e.physical_keycode != KEY_NONE else e.keycode
+					if seen.has(code):
+						dup.append("%s/%s" % [seen[code], r[0]])
+					seen[code] = r[0]
+		check("aucune touche en double %s" % str(dup), dup.is_empty())
 		cp = load("res://scenes/ui/controls_panel.gd").new()
 		hud.add_child(cp)
 		start("a0")
 	if later("a0", 300):
+		cp._show_page(0)
+		start("a1")
+	if later("a1", 500):
+		shot("00_plan_clavier.png")
+		check("plan du clavier affiché", not cp._list.find_children("*", "KeyboardMap", true, false).is_empty())
+		cp._show_page(2)
+		start("a2")
+	if later("a2", 400):
+		shot("00b_combat.png")
+		cp._show_page(3)
+		start("a3")
+	if later("a3", 400):
+		shot("00c_recolter.png")
+		cp._show_page(4)
+		start("a4")
+	if later("a4", 400):
+		shot("00d_menus.png")
 		cp._show_page(cp.PAGES.size())
 		start("a")
 	if later("a", 600):
@@ -71,11 +103,11 @@ func _process(_d) -> bool:
 		cp._input(key_event(KEY_N))
 		var sg = root.get_node("SaveGame")
 		check("potion -> N (gardé dans les options : %s)" % sg.options.keys, int(sg.options.keys.get("potion", 0)) == KEY_N)
-		check("la touche N déclenche « potion »", key_event(KEY_N).is_action("potion") and not key_event(KEY_Z).is_action("potion"))
-		check("conflit signalé (N sert aussi aux cartes ? %s)" % cp._note.text, cp._note.text.contains("N"))
+		check("la touche N déclenche « potion »", key_event(KEY_N).is_action("potion") and not key_event(KEY_R).is_action("potion"))
+		check("conflit signalé (N sert aussi à la diplomatie : %s)" % cp._note.text, cp._note.text.contains("Diplomatie"))
 		cp._listening = "eat"
 		cp._input(key_event(KEY_ESCAPE))
-		check("Échap annule", not sg.options.keys.has("eat") and KeyBindings.key_text("eat") == "H")
+		check("Échap annule", not sg.options.keys.has("eat") and KeyBindings.key_text("eat") == "X")
 		cp._listening = "journal"
 		cp._input(key_event(KEY_I))
 		check("conflit : I est aussi l'inventaire (%s)" % cp._note.text, cp._note.text.contains("Inventaire"))
@@ -91,9 +123,9 @@ func _process(_d) -> bool:
 			for c in line.find_children("*", "Label", true, false):
 				if c.text == "N":
 					found = true
-		check("l'onglet « Monde et royaume » montre la touche choisie (N)", found)
+		check("l'onglet « Combattre » montre la touche choisie (N)", found)
 		cp.close()
-		print("== aide-mémoire F2")
+		print("== aide-mémoire F1")
 		hud.keys_help.toggle()
 		start("b")
 	if later("b", 500):
@@ -117,6 +149,45 @@ func _process(_d) -> bool:
 		sg.save_options()
 		sg.apply_options()
 		check("touches par défaut remises", KeyBindings.key_text("potion") != "N")
+		print("== objet en main : C, clic droit, molette")
+		w = get_first_node_in_group("world"); items = root.get_node("Items")
+		p.inventory.add(items.get_item("bloc_planches"), 6)
+		p.inventory.add(items.get_item("bloc_rondins"), 3)
+		p.hand.selected = ""
+		p.hand.toggle()
+		check("C : un objet en main (%s)" % p.hand.selected, p.hand.selected != "")
+		p.hand.selected = "bloc_planches"
+		var n0: int = p.inventory.count(items.get_item("bloc_planches"))
+		var mb := InputEventMouseButton.new()
+		mb.button_index = MOUSE_BUTTON_RIGHT
+		mb.pressed = true
+		p._input(mb)
+		check("clic droit avec un bloc en main : posé (%d -> %d)" % [n0, p.inventory.count(items.get_item("bloc_planches"))], p.inventory.count(items.get_item("bloc_planches")) == n0 - 1)
+		check("pas de garde pendant ce temps", not p.blocking)
+		var before: String = p.hand.selected
+		var wh := InputEventMouseButton.new()
+		wh.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		wh.pressed = true
+		var z0: float = p.camera_zoom
+		p._camera_input(wh)
+		check("molette avec un objet en main : objet suivant (%s -> %s), pas de zoom" % [before, p.hand.selected], p.hand.selected != before and is_equal_approx(z0, p.camera_zoom))
+		p.hand.toggle()
+		check("C encore : mains nues", p.hand.selected == "")
+		p._camera_input(wh)
+		check("molette à mains nues : zoom (%.2f -> %.2f)" % [z0, p.camera_zoom], not is_equal_approx(z0, p.camera_zoom))
+		print("== invite à l'écran près d'un habitant")
+		var v = get_first_node_in_group("villagers")
+		p.global_position = v.global_position + Vector3(1.0, 0, 0)
+		start("d")
+	if later("d", 500):
+		var hint: String = p.interact_hint()
+		check("invite : %s" % hint, hint != "")
+		check("invite affichée à l'écran : [%s] %s" % [hud._prompt_key.text, hud._prompt_text.text], hud._prompt.visible and hud._prompt_key.text == "E")
+		hud.keys_help.toggle()
+		start("e")
+	if later("e", 400):
+		shot("03_invite.png")
+		hud.keys_help.toggle()
 		print("RÉSULTAT : " + ("tout est bon" if ok else "ÉCHECS"))
 		return true
 	return f > 30000

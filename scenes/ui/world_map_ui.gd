@@ -306,7 +306,7 @@ func _draw() -> void:
 	var found := world.zones.filter(func(z): return z.discovered).size()
 	var obs := world.zones.filter(func(z): return z.obelisk_on).size()
 	_text_center("Zones découvertes : %d / %d     Obélisques activés : %d / %d" % [found, world.zones.size(), obs, world.zones.size()], Vector2(size.x / 2.0, 52), 12, C_DIM)
-	_text_center("Clic sur un obélisque (◆) : voyage rapide   Molette : zoom   Glisser : déplacer   M / Échap : fermer      Manette : LB/RB choisir · A voyager · gâchettes zoom", Vector2(size.x / 2.0, size.y - 18), 11, C_DIM)
+	_text_center("Clic sur un obélisque (◆) : voyage rapide   Molette : zoom   Glisser : déplacer   {world_map} / Échap : fermer      Manette : LB/RB choisir · A voyager · gâchettes zoom", Vector2(size.x / 2.0, size.y - 18), 11, C_DIM)
 	# légende
 	var lx := 20.0
 	var ly := size.y - 120.0
@@ -415,6 +415,7 @@ func _wreck_icon(q: Vector2) -> void:
 
 
 func _text_center(text: String, pos: Vector2, fs: int, col: Color, fnt: Font = null) -> void:
+	text = KeyBindings.fmt(text)
 	var ft := fnt if fnt else _font
 	var w := ft.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var p := pos - Vector2(w / 2.0, -fs / 3.0)

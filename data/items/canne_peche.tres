@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "canne_peche"
 display_name = "Canne à pêche"
-description = "Choisis-la (C) et appuie sur V face à l'eau pour lancer. Quand ça mord, V ; puis V quand le curseur est dans le vert."
+description = "Prends-la en main ({hand_toggle} ou {build_bar}), puis {place_click} face à l'eau pour lancer. Quand ça mord, {place_click} ; puis encore quand le curseur est dans le vert."
 max_stack = 1

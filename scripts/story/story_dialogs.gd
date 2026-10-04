@@ -31,7 +31,7 @@ const DIALOGS := {
 		["orvane", "Quand un peuple te confie son destin et que tu lui confies le tien, vous grandissez ensemble. Vous changez, même. Les anciens rois n'avaient pas d'autre pouvoir."],
 		["orvane", "Faisons un pacte, toi et moi : tu briseras mes chaînes, et je t'apprendrai tout ce que je sais de ce monde. Marché conclu ?"],
 		["hero", "Marché conclu."],
-		["orvane", "Ahh... Tu sens ? Ta Voix d'Outre-Monde s'éveille. Tu apprendras plus vite que n'importe qui ici. Ouvre ton arbre de talents (T) : la branche du Pacte t'appartient désormais."],
+		["orvane", "Ahh... Tu sens ? Ta Voix d'Outre-Monde s'éveille. Tu apprendras plus vite que n'importe qui ici. Ouvre ton arbre de talents ({talents}) : la branche du Pacte t'appartient désormais."],
 		["orvane", "Oh, et Glou a faim. Glou a toujours faim. Apporte-lui quelques baies, tu verras."],
 	]},
 	"glou_2": {"pages": [
@@ -462,12 +462,12 @@ const DIALOGS := {
 		["grik", "Bien dit ! Alors levez vos chopes ! À l'Éveillé ! Aux pactes ! Et à tout ce qu'il nous reste à construire !"],
 	]},
 	# ================================================================ phrases du quotidien
-	"orvane_idle": {"pages": [["orvane", "Ton journal (O) garde la trace de notre histoire. Et ton arbre de talents (T), celle de nos pactes."]]},
+	"orvane_idle": {"pages": [["orvane", "Ton journal ({journal}) garde la trace de notre histoire. Et ton arbre de talents ({talents}), celle de nos pactes."]]},
 	"glou_idle": {"pages": [["glou", "Blup ! Glou garde la cuisine. Glou mange PAS la cuisine. ... Un peu."]]},
 	"grik_idle": {"pages": [["grik", "Les gobelins n'oublient jamais une dette ! Tu veux des baies ? Il nous en reste plein, maintenant."]]},
 	"pip_idle": {"pages": [["pip", "Je surveille les pistes ! Si un monstre approche, je le saurai avant lui."]]},
 	"ulric_idle": {"pages": [["ulric", "La meute chasse avec les gobelins, maintenant. Les cerfs reviennent dans les bois. Hurle, et nous viendrons."]]},
-	"maelle_idle": {"pages": [["maelle", "Les textes anciens ne disent pas tout... mais je te suis. Ton journal (O) garde la trace de ta quête."]]},
+	"maelle_idle": {"pages": [["maelle", "Les textes anciens ne disent pas tout... mais je te suis. Ton journal ({journal}) garde la trace de ta quête."]]},
 	"liora_idle": {"pages": [["liora", "Hi hi ! Tu n'aurais pas un petit pain, par hasard ? Non ? Dommage."]]},
 	"kaede_idle": {"pages": [["kaede", "Ma lame est affûtée. Montre-moi qui trancher."]]},
 	"kaia_idle": {"pages": [["kaia", "Pas de nouvelles, bonnes nouvelles ! Enfin, en général."]]},

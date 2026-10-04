@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "barque"
 display_name = "Barque"
-description = "Choisis-la (C) et appuie sur V face à l'eau pour la mettre à l'eau. E pour monter, E près d'une berge pour débarquer."
+description = "Prends-la en main ({hand_toggle} ou {build_bar}), puis {place_click} face à l'eau pour la mettre à l'eau. {interact} pour monter, {interact} près d'une berge pour débarquer."
 max_stack = 3

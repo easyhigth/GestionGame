@@ -193,11 +193,11 @@ func _tips(k: Kingdom, n: VillageNeeds) -> Array:
 		tips.append(["food", "La réserve est presque vide : dépose de la nourriture, ou fais travailler fermiers et boulangers.", "", n.meals() == 0])
 	var idle := members.filter(func(v): return v.work_room == null).size()
 	if idle > 0 and k and not k.rooms.is_empty():
-		tips.append(["people", "%d habitant(s) sans poste : parle-leur (E) → Poste de travail." % idle, "", false])
+		tips.append(["people", "%d habitant(s) sans poste : parle-leur ({interact}) → Poste de travail." % idle, "", false])
 	if fm and not fm.has_fields():
 		tips.append(["sun", "Laboure au moins %d cases avec une houe : des fermiers rempliront la réserve." % Farming.MIN_PLOTS, "", false])
 	elif fm and fm.farmers().is_empty():
-		tips.append(["sun", "Nomme un fermier (E près d'un habitant → Poste de travail → Champs).", "", false])
+		tips.append(["sun", "Nomme un fermier ({interact} près d'un habitant → Poste de travail → Champs).", "", false])
 	if ls and ls.domestic().is_empty() and members.size() >= 3:
 		tips.append(["food", "Élevage : pose une mangeoire, puis attire des poules (graines) ou des moutons et vaches (blé).", "", false])
 	if tr and not have.has("marche") and members.size() >= 4:
@@ -336,7 +336,7 @@ func _fill_map_side(r: Dictionary) -> void:
 				h.add_child(MenuKit.label(str(v.get("villager_name")), 10, MenuKit.C_TEXT))
 				_map_side.add_child(h)
 			if ws.size() < t.job_slots:
-				var l2 := MenuKit.label("Place libre : parle à un habitant (E) → Poste de travail.", 9, MenuKit.C_DIM)
+				var l2 := MenuKit.label("Place libre : parle à un habitant ({interact}) → Poste de travail.", 9, MenuKit.C_DIM)
 				l2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 				l2.custom_minimum_size.x = 190
 				_map_side.add_child(l2)
@@ -377,7 +377,7 @@ func _page_people(page: VBoxContainer, n: VillageNeeds) -> void:
 	var away := get_tree().get_nodes_in_group("away_villagers").size()
 	if away > 0:
 		sum.add_child(MenuKit.chip("%d en expédition" % away, Color("8ac8ff")))
-	sum.add_child(MenuKit.label("  E près d'un habitant : équipement et poste", 10, MenuKit.C_DIM))
+	sum.add_child(MenuKit.label("  {interact} près d'un habitant : équipement et poste", 10, MenuKit.C_DIM))
 	page.add_child(sum)
 	if members.is_empty():
 		page.add_child(MenuKit.empty_state("people", "Personne pour l'instant : recrute des voyageurs dans le monde."))
@@ -453,7 +453,7 @@ func _page_production(page: VBoxContainer) -> void:
 	# ateliers
 	page.add_child(MenuKit.section("Ateliers et pièces", "house", 14))
 	if k == null or k.typed_rooms().is_empty():
-		page.add_child(MenuKit.empty_state("house", "Aucune pièce reconnue : construis une pièce fermée avec son mobilier (B)."))
+		page.add_child(MenuKit.empty_state("house", "Aucune pièce reconnue : construis une pièce fermée avec son mobilier ({build_mode})."))
 	else:
 		var grid := GridContainer.new()
 		grid.columns = 3
@@ -562,13 +562,13 @@ func _info_card(icon_name: String, title_text: String, body: String) -> PanelCon
 func _page_familiars(page: VBoxContainer) -> void:
 	var fam := get_tree().get_first_node_in_group("familiars_mgr") as Familiars
 	if fam == null or fam.list.is_empty():
-		page.add_child(MenuKit.empty_state("star", "Aucun familier : affaiblis un monstre (moins de 30 % de vie) puis E pour l'apprivoiser."))
+		page.add_child(MenuKit.empty_state("star", "Aucun familier : affaiblis un monstre (moins de 30 % de vie) puis {interact} pour l'apprivoiser."))
 		return
 	var sum := HBoxContainer.new()
 	sum.add_theme_constant_override("separation", 6)
 	sum.add_child(MenuKit.chip("Avec toi %d / %d" % [fam.team().size(), Familiars.max_team(get_tree())], Color("b8f0a0")))
 	sum.add_child(MenuKit.chip("En tout %d / %d" % [fam.list.size(), Familiars.max_total(get_tree())], MenuKit.C_TEXT))
-	sum.add_child(MenuKit.chip("Ordre : " + Familiars.ORDER_TEXT[fam.order] + " (P)", MenuKit.C_GOLD))
+	sum.add_child(MenuKit.chip("Ordre : " + Familiars.ORDER_TEXT[fam.order] + " ({familiar_order})", MenuKit.C_GOLD))
 	page.add_child(sum)
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -645,7 +645,7 @@ func _nav_row() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 10)
 	var hud := get_parent()
-	for d in [["Expéditions", "compass", "expedition_panel"], ["Diplomatie (Y)", "sword", "diplomacy_panel"], ["Bannière", "shield", "heraldry_panel"]]:
+	for d in [["Expéditions", "compass", "expedition_panel"], ["Diplomatie ({diplomacy})", "sword", "diplomacy_panel"], ["Bannière", "shield", "heraldry_panel"]]:
 		var b := MenuKit.nav_button(d[0], d[1], 170)
 		var key: String = d[2]
 		b.pressed.connect(func():
@@ -653,7 +653,7 @@ func _nav_row() -> void:
 			if hud and hud.get(key):
 				hud.get(key).open())
 		row.add_child(b)
-	var close_b := MenuKit.button("Fermer (U)", 140, 12)
+	var close_b := MenuKit.button("Fermer ({kingdom})", 140, 12)
 	close_b.pressed.connect(close)
 	row.add_child(close_b)
 	_box.add_child(row)

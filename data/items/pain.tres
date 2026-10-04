@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "pain"
 display_name = "Pain"
-description = "Du bon pain frais, cuit à la boulangerie. Se mange (H)."
+description = "Du bon pain frais, cuit à la boulangerie. Se mange ({eat})."
 max_stack = 50
 food = 26.0
 food_heal = 8

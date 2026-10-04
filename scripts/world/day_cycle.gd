@@ -97,7 +97,7 @@ func _check_transition() -> void:
 		night_started.emit()
 		Sound.ui("night")
 		if player:
-			player.notify.emit("La nuit tombe ! Reste près d'une lumière ou dors dans un lit (E).")
+			player.notify.emit("La nuit tombe ! Reste près d'une lumière ou dors dans un lit ({interact}).")
 	else:
 		day += 1
 		_dawn()
