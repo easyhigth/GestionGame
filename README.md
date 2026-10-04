@@ -1144,3 +1144,22 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
   qu'on veut sous les terres : le trou reste **sec**, comme dans Minecraft. Les lacs, la mer et le large
   autour de l'île gardent leur eau.
 - Le masque suit les changements du terrain (un lac comblé devient sec, un trou creusé reste sec).
+
+## Grille d'artisanat façon Minecraft
+
+- **Sur soi : une grille 2×2** (dans le sac, colonne Artisanat). **À un atelier** (établi, enclume, meule, four,
+  table du tailleur, autel...) : **une grille 3×3** (F devant le meuble).
+- **Poser des objets** : glisser une pile du sac dans une case (Ctrl : un seul objet), ou **Maj+clic** sur un objet
+  du sac (la pile va dans la grille). Glisser une case sur une autre échange leur contenu ; la glisser sur le sac
+  la range. **Clic droit** sur une case : en retirer un ; **Maj+clic** : tout retirer.
+- **Le résultat** apparaît à droite de la flèche. **Clic** : fabriquer une fois. **Maj+clic : tout fabriquer** :
+  4 bûches dans une case → **16 planches** d'un coup.
+- **Le livre de recettes** (la liste en dessous) : **Placer** pose la recette dans la grille avec les objets du
+  sac ; **Maj+Placer** en met de quoi la fabriquer le plus de fois possible. Grille vide : la dernière recette
+  posée s'y dessine en transparence.
+- Les recettes se reconnaissent au **nombre de cases qu'occupe chaque objet** (pas à leur place exacte : avec des
+  centaines de recettes, ce serait illisible). Les grosses recettes (plus d'objets que de cases) demandent
+  plusieurs objets par case : le chiffre est affiché. Quand plusieurs recettes ont les mêmes ingrédients
+  (bois → planches, dalles, rondins...), **◀ ▶** à côté du résultat change de recette.
+- Fermer le sac (ou changer d'atelier) **rend au sac** tout ce qui est dans la grille ; la sauvegarde le compte
+  avec le sac.

@@ -445,6 +445,11 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 	var inv := []
 	for e in p.inventory.entries:
 		inv.append([e.item.id, e.count])
+	# ce qui est posé dans la grille d'artisanat compte avec le sac
+	var iu := get_tree().get_first_node_in_group("inventory_ui")
+	if iu and iu.has_method("grid_items"):
+		for g in iu.grid_items():
+			inv.append([g.item.id, g.count])
 	return {
 		"name": h.hero_name, "race": _res(h.race), "style": h.style, "beard": h.beard,
 		"skin": h.skin_color.to_html(), "hair": h.hair_color.to_html(), "eye": h.eye_color.to_html(),
