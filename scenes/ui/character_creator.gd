@@ -762,12 +762,13 @@ func _start() -> void:
 	GameState.play_intro = true
 	SaveGame.pending = {}
 	SaveGame.play_time = 0.0
-	# la nouvelle partie prend le premier emplacement libre
-	SaveGame.current_slot = "1"
-	for sl in SaveGame.SLOTS:
-		if not SaveGame.has_save(sl):
-			SaveGame.current_slot = sl
-			break
+	# la nouvelle partie prend l'emplacement du monde créé (ou le premier libre)
+	if SaveGame.current_slot == "" or SaveGame.has_save(SaveGame.current_slot):
+		var free := SaveGame.free_slot()
+		SaveGame.current_slot = free if free != "" else "1"
+	if SaveGame.world_opts.is_empty():
+		SaveGame.world_opts = SaveGame.WORLD_DEFAULTS.duplicate()
+		SaveGame.world_opts.name = "Monde %s" % SaveGame.current_slot
 	LoadingScreen.go(get_tree(), GAME_SCENE, "Création du monde...")
 
 

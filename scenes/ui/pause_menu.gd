@@ -34,7 +34,7 @@ func open() -> void:
 		k.title() if k else "", MenuKit.format_time(int(SaveGame.play_time)), SaveGame.DIFFICULTY_NAMES[int(SaveGame.options.difficulty)],
 		w.world_seed if w else 0]
 	_box.add_child(_info)
-	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Charger", _load], ["Royaume", _kingdom], ["Succès et bestiaire", _achievements], ["Commandes", _controls], ["Options", _options],
+	var items := [["Reprendre", close], ["Sauvegarder", _save], ["Changer de monde", _load], ["Royaume", _kingdom], ["Succès et bestiaire", _achievements], ["Commandes", _controls], ["Options", _options],
 		["Menu principal", _to_title], ["Quitter le jeu", _quit]]
 	var first: Button = null
 	for it in items:
@@ -66,7 +66,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
 		# un sous-menu ouvert se ferme lui-même
-		if get_children().any(func(c): return c is SaveSlotsPanel or c is OptionsPanel or c is ControlsPanel):
+		if get_children().any(func(c): return c is SaveSlotsPanel or c is WorldsPanel or c is OptionsPanel or c is ControlsPanel):
 			return
 		close()
 		get_viewport().set_input_as_handled()
@@ -75,19 +75,19 @@ func _unhandled_input(event: InputEvent) -> void:
 func _save() -> void:
 	if player.global_position.y < WorldGenerator.UNDERGROUND:
 		player.notify.emit("Tu reprendras devant l'entrée du donjon.")
-	var panel := SaveSlotsPanel.new("save")
-	panel.chosen.connect(func(s):
-		var ok := SaveGame.save_game(s)
-		panel.queue_free()
-		close()
-		player.notify.emit("Partie sauvegardée (emplacement %s)." % s if ok else "Échec de la sauvegarde.")
-		player.feat.emit("Partie sauvegardée", MenuKit.C_GOLD) if ok else null)
-	add_child(panel)
+	# le monde en cours se sauvegarde à sa place (comme dans Minecraft)
+	if SaveGame.current_slot == "":
+		SaveGame.current_slot = SaveGame.free_slot() if SaveGame.free_slot() != "" else "1"
+	var ok := SaveGame.save_game(SaveGame.current_slot)
+	close()
+	player.notify.emit(("Monde sauvegardé : %s." % str(SaveGame.world_opts.get("name", "Monde %s" % SaveGame.current_slot))) if ok else "Échec de la sauvegarde.")
+	if ok:
+		player.feat.emit("Monde sauvegardé", MenuKit.C_GOLD)
 
 
 func _load() -> void:
-	var panel := SaveSlotsPanel.new("load")
-	panel.chosen.connect(func(s): SaveGame.load_game(s))
+	var panel := WorldsPanel.new()
+	panel.from_game = true
 	add_child(panel)
 
 

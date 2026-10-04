@@ -167,6 +167,9 @@ func daylight() -> float:
 # ---------------------------------------------------------------- monstres de la nuit
 
 func _night_spawns(delta: float) -> void:
+	# option du monde : pas de monstres la nuit
+	if not SaveGame.world_flag("night_monsters"):
+		return
 	_spawn_timer -= delta
 	if _spawn_timer > 0.0:
 		return
