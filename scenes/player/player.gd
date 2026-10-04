@@ -75,7 +75,13 @@ signal crop_harvested(crop: String)
 ## Le sac du joueur.
 var inventory := Inventory.new()
 ## Vrai quand une fenêtre est ouverte (le joueur ne bouge plus).
-var ui_open := false
+## Un menu est ouvert (inventaire, carte, journal, royaume...) : l'interface de jeu s'efface (voir Hud).
+var ui_open := false:
+	set(v):
+		if v != ui_open:
+			ui_open = v
+			ui_changed.emit(v)
+signal ui_changed(open: bool)
 ## Cible verrouillée.
 var lock_target: Combatant
 ## Le héros (race, apparence, classe, métier).

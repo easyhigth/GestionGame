@@ -88,6 +88,8 @@ var _quest_refresh := 0.0
 var _hotbar: VBoxContainer
 var _hotbar_row: HBoxContainer
 var _hotbar_name: Label
+## La rangée de construction ne s'affiche qu'avec un objet en main (ou un instant après en avoir ramassé un).
+var _hotbar_peek := 0.0
 const HP_WIDTH := 220.0
 const BAR_X := 22.0
 
@@ -123,6 +125,7 @@ func _ready() -> void:
 		player.equipment.changed.connect(_update_health)
 		player.xp_changed.connect(func(_x, _n, _l): _update_health())
 		player.skill_changed.connect(func(_s): _update_skill())
+		player.ui_changed.connect(_on_ui_changed)
 	_refresh()
 	_update_health()
 	var pause := PauseMenu.new()
@@ -133,6 +136,46 @@ func _ready() -> void:
 	if GameState.play_intro:
 		GameState.play_intro = false
 		play_intro.call_deferred()
+	_gather_chrome.call_deferred()
+
+
+# ---------------------------------------------------------------- interface de jeu sous les menus
+
+## Tout ce qui s'affiche pendant le jeu (barres, mini-carte, guide, horloge, quêtes suivies, aide...)
+## est rangé dans un seul conteneur : dès qu'un menu s'ouvre (carte, journal, inventaire, royaume,
+## talents...), il disparaît d'un coup, même quand le menu met le jeu en pause.
+var _chrome: Control
+
+
+func _gather_chrome() -> void:
+	if _chrome == null:
+		_chrome = Control.new()
+		_chrome.name = "InterfaceDeJeu"
+		_chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_chrome)
+		_chrome.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		move_child(_chrome, 0)
+	for c in get_children():
+		if c == _chrome or c == _messages or not (c is Control):
+			continue
+		# les menus et les dialogues restent à part (ils s'ouvrent et se ferment eux-mêmes)
+		if c.has_method("open") or c.has_method("close") or c.has_method("toggle") and not c is KeysHelp:
+			continue
+		c.reparent(_chrome, false)
+
+
+func _on_ui_changed(open: bool) -> void:
+	_gather_chrome()
+	_chrome.visible = not open
+	# les messages restent seulement dans l'inventaire (ce qu'on vient de fabriquer)
+	_messages.visible = true
+	if open:
+		_refresh_messages_visibility.call_deferred()
+
+
+func _refresh_messages_visibility() -> void:
+	var inv := get_tree().get_first_node_in_group("inventory_ui") as CanvasItem
+	_messages.visible = not player.ui_open or (inv != null and inv.is_visible_in_tree())
 
 
 ## Lance l'introduction : le reste de l'interface se cache le temps de la cinématique.
@@ -371,7 +414,7 @@ func _build_combat_ui() -> void:
 
 func _build_skill_slot() -> void:
 	_skill_box = PanelContainer.new()
-	_skill_box.add_theme_stylebox_override("panel", UiTheme.small_frame(6))
+	_skill_box.add_theme_stylebox_override("panel", UiTheme.small_frame(3))
 	_skill_box.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_skill_box.position = Vector2(-630, -60)
 	_skill_box.custom_minimum_size = Vector2(248, 46)
@@ -380,26 +423,27 @@ func _build_skill_slot() -> void:
 	row.add_theme_constant_override("separation", 8)
 	_skill_box.add_child(row)
 	var icon_holder := Control.new()
-	icon_holder.custom_minimum_size = Vector2(36, 36)
+	icon_holder.custom_minimum_size = Vector2(28, 28)
 	row.add_child(icon_holder)
 	_skill_icon = ColorRect.new()
-	_skill_icon.size = Vector2(36, 36)
+	_skill_icon.size = Vector2(28, 28)
 	icon_holder.add_child(_skill_icon)
 	var inner := ColorRect.new()
 	inner.color = Color(1, 1, 1, 0.35)
-	inner.position = Vector2(10, 10)
-	inner.size = Vector2(16, 16)
+	inner.position = Vector2(8, 8)
+	inner.size = Vector2(12, 12)
 	inner.rotation = 0.0
 	icon_holder.add_child(inner)
 	_skill_cd = ColorRect.new()
 	_skill_cd.color = Color(0, 0, 0, 0.7)
-	_skill_cd.size = Vector2(36, 0)
+	_skill_cd.size = Vector2(28, 0)
 	icon_holder.add_child(_skill_cd)
-	_skill_key = _outlined("Q", 10)
-	_skill_key.position = Vector2(2, 20)
+	_skill_key = _outlined("Q", 9)
+	_skill_key.position = Vector2(2, 14)
 	icon_holder.add_child(_skill_key)
 	var txt := VBoxContainer.new()
 	txt.add_theme_constant_override("separation", -2)
+	txt.visible = false   # le nom et le rang passent en info-bulle : la barre reste compacte
 	row.add_child(txt)
 	_skill_name = _outlined("", 14)
 	txt.add_child(_skill_name)
@@ -420,22 +464,22 @@ func _update_skill() -> void:
 	_skill_name.text = s.current_name()
 	_skill_name.add_theme_color_override("font_color", s.data.color.lightened(0.35))
 	_skill_rank.text = KeyBindings.fmt("%s  ·  {skill}" % SkillData.TIER_LABELS[s.tier])
+	_skill_box.tooltip_text = "%s\n%s" % [_skill_name.text, _skill_rank.text]
 
 
 ## Barre de compétences, façon MMORPG (touches 1 à 9 et 0, R3 / croix droite) : les compétences apprises dans
 ## l'arbre, avec la couleur de leur rareté et leur recharge.
-const AB_CELL := 44.0
+const AB_CELL := 34.0
 
 func _build_ability_bar() -> void:
 	_make_dock()
 	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", UiTheme.small_frame(5))
+	frame.add_theme_stylebox_override("panel", UiTheme.small_frame(3))
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dock.add_child(frame)
 	var arow := HBoxContainer.new()
 	arow.add_theme_constant_override("separation", 6)
 	frame.add_child(arow)
-	arow.add_child(_row_tag("✦", "Compétences\n1 … 0", Color("c8a0ff")))
 	_ability_bar = HBoxContainer.new()
 	_ability_bar.add_theme_constant_override("separation", 4)
 	arow.add_child(_ability_bar)
@@ -444,7 +488,7 @@ func _build_ability_bar() -> void:
 		remove_child(_skill_box)
 		_skill_box.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		_skill_box.position = Vector2.ZERO
-		_skill_box.custom_minimum_size = Vector2(200, AB_CELL)
+		_skill_box.custom_minimum_size = Vector2(AB_CELL, AB_CELL)
 		_skill_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		arow.add_child(_skill_box)
 	_ability_frame = frame
@@ -453,7 +497,7 @@ func _build_ability_bar() -> void:
 		cell.custom_minimum_size = Vector2(AB_CELL, AB_CELL)
 		cell.clip_contents = true
 		_ability_bar.add_child(cell)
-		var glyph := _outlined("", 22)
+		var glyph := _outlined("", 17)
 		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		glyph.size = Vector2(AB_CELL, AB_CELL)
@@ -462,10 +506,10 @@ func _build_ability_bar() -> void:
 		cd.color = Color(0, 0, 0, 0.7)
 		cd.size = Vector2(AB_CELL, 0)
 		cell.add_child(cd)
-		var key := _outlined("%d" % ((i + 1) % 10), 10)
-		key.position = Vector2(3, AB_CELL - 16)
+		var key := _outlined("%d" % ((i + 1) % 10), 9)
+		key.position = Vector2(2, AB_CELL - 14)
 		cell.add_child(key)
-		var timer := _outlined("", 14)
+		var timer := _outlined("", 12)
 		timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		timer.size = Vector2(AB_CELL, AB_CELL)
 		timer.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -771,6 +815,9 @@ func _process(delta: float) -> void:
 		if _ability_bar:
 			_process_abilities()
 		_messages.offset_bottom = -210.0 if b else -140.0
+		if _hotbar:
+			_hotbar_peek = maxf(0.0, _hotbar_peek - delta)
+			_hotbar.visible = player.hand != null and (player.hand.selected != "" or _hotbar_peek > 0.0)
 		_prompt_t -= delta
 		if _prompt and _prompt_t <= 0.0:
 			_prompt_t = 0.15
@@ -803,8 +850,8 @@ func _process(delta: float) -> void:
 	_update_breath()
 	if player and player.skill and _skill_cd:
 		var r := player.skill.cooldown_ratio()
-		_skill_cd.size.y = 36.0 * r
-		_skill_cd.position.y = 36.0 * (1.0 - r)
+		_skill_cd.size.y = 28.0 * r
+		_skill_cd.position.y = 28.0 * (1.0 - r)
 		_skill_key.text = "%d" % ceili(player.skill.cooldown_left) if r > 0.0 else "Q"
 	_slow_tint.color.a = move_toward(_slow_tint.color.a, 0.14 if TimeFX.is_slowed() else 0.0, 0.02)
 	if _target and is_instance_valid(_target) and _target.is_alive():
@@ -1151,16 +1198,15 @@ func _build_hotbar() -> void:
 	_hotbar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dock.add_child(_hotbar)
 	_dock.move_child(_hotbar, 0)
-	_hotbar_name = _outlined("", 11)
+	_hotbar_name = _outlined("", 10)
 	_hotbar_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hotbar.add_child(_hotbar_name)
 	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", UiTheme.small_frame(5))
+	frame.add_theme_stylebox_override("panel", UiTheme.small_frame(3))
 	_hotbar.add_child(frame)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	frame.add_child(row)
-	row.add_child(_row_tag("⛏", "Construire\nCtrl+1 … 0", Color("f2c86a")))
 	_hotbar_row = HBoxContainer.new()
 	_hotbar_row.add_theme_constant_override("separation", 4)
 	row.add_child(_hotbar_row)
@@ -1174,21 +1220,23 @@ func _build_hotbar() -> void:
 		var icon := TextureRect.new()
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.position = Vector2(5, 4)
-		icon.size = Vector2(AB_CELL - 10, AB_CELL - 10)
+		icon.position = Vector2(4, 3)
+		icon.size = Vector2(AB_CELL - 8, AB_CELL - 8)
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cell.add_child(icon)
-		var key := _outlined("%d" % ((i + 1) % 10), 10)
-		key.position = Vector2(3, AB_CELL - 16)
+		var key := _outlined("%d" % ((i + 1) % 10), 9)
+		key.position = Vector2(2, AB_CELL - 14)
 		cell.add_child(key)
-		var n := _outlined("", 10)
+		var n := _outlined("", 9)
 		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		n.position = Vector2(AB_CELL - 30, AB_CELL - 16)
+		n.position = Vector2(AB_CELL - 30, AB_CELL - 14)
 		n.size = Vector2(26, 14)
 		cell.add_child(n)
 		_hotbar_row.add_child(cell)
 	player.hand.selection_changed.connect(_update_hotbar)
 	player.inventory.changed.connect(_update_hotbar.call_deferred)
+	# un objet posable arrive dans le sac : la rangée se montre un instant
+	player.inventory.changed.connect(func(): _hotbar_peek = 2.5)
 	_update_hotbar()
 
 
