@@ -166,6 +166,11 @@ const IRON_CHANCE := 0.018
 const GOLD_CHANCE := 0.004
 
 const CHUNK := 16
+## Masque de l'eau (une case = un pixel : blanc = lac ou mer) : le plan d'eau et le fond marin ne se montrent
+## qu'au-dessus des vraies cases d'eau. Sans lui, creuser sous le niveau de la mer remplissait le trou d'eau.
+var _water_mask: Image
+var _water_mask_tex: ImageTexture
+var _water_mask_dirty := false
 ## Sous cette altitude, on est dans un donjon (le sol est celui de `dungeon_grid`).
 const UNDERGROUND := -40.0
 const SEA_FLOOR := -2.0
@@ -1282,6 +1287,9 @@ func _process(delta: float) -> void:
 		RenderingServer.global_shader_parameter_set("see_from", cam.global_position)
 		RenderingServer.global_shader_parameter_set("see_to", player.global_position + Vector3(0, 0.9, 0))
 		RenderingServer.global_shader_parameter_set("see_radius", 1.9)
+	if _water_mask_dirty and _water_mask_tex:
+		_water_mask_dirty = false
+		_water_mask_tex.update(_water_mask)
 	_stream_timer -= delta
 	if _stream_timer <= 0.0:
 		_stream_timer = 0.05
@@ -1521,6 +1529,7 @@ func _ensure_materials() -> void:
 	_terrain_mat.shader = sh
 	_terrain_mat.set_shader_parameter("grain", GRAIN)
 	_terrain_mat.set_shader_parameter("water_y", water_surface)
+	_bind_water_mask(_terrain_mat)
 	_liquid_mat = StandardMaterial3D.new()
 	_liquid_mat.vertex_color_use_as_albedo = true
 	_liquid_mat.vertex_color_is_srgb = true
@@ -1543,6 +1552,7 @@ func _build_terrain_chunk(ch: Vector2i) -> void:
 	if _terrain_nodes.has(ch) and is_instance_valid(_terrain_nodes[ch]):
 		_terrain_nodes[ch].queue_free()
 	_gen_chunk_data(ch)
+	_update_water_mask(ch)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var liquid := SurfaceTool.new()
@@ -1671,6 +1681,35 @@ func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: V
 		st.add_vertex(verts[k])
 
 
+## Le masque de l'eau : tout est « eau » tant qu'un morceau n'est pas construit (l'horizon garde sa mer).
+func _make_water_mask() -> void:
+	_water_mask = Image.create(world_size.x, world_size.y, false, Image.FORMAT_L8)
+	_water_mask.fill(Color.WHITE)
+	_water_mask_tex = ImageTexture.create_from_image(_water_mask)
+	_water_mask_dirty = false
+	if _terrain_mat:
+		_bind_water_mask(_terrain_mat)
+
+
+## Recopie dans le masque les cases d'eau d'un morceau (après génération, creusage, comblement...).
+func _update_water_mask(ch: Vector2i) -> void:
+	if _water_mask == null:
+		return
+	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
+		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
+			var t := _types[y * world_size.x + x]
+			_water_mask.set_pixel(x, y, Color.WHITE if t == WATER or t == DEEP else Color.BLACK)
+	_water_mask_dirty = true
+
+
+## À brancher sur un matériau qui doit suivre le masque de l'eau.
+func _bind_water_mask(mat: ShaderMaterial) -> void:
+	if _water_mask_tex == null:
+		_make_water_mask()
+	mat.set_shader_parameter("water_mask", _water_mask_tex)
+	mat.set_shader_parameter("world_size", Vector2(world_size))
+
+
 func _build_water() -> void:
 	var shader := Shader.new()
 	shader.code = """
@@ -1678,6 +1717,8 @@ shader_type spatial;
 render_mode blend_mix, cull_disabled, depth_draw_opaque;
 uniform vec4 water_color : source_color;
 uniform sampler2D grain : filter_linear_mipmap, repeat_enable;
+uniform sampler2D water_mask : filter_nearest;
+uniform vec2 world_size = vec2(1536.0);
 // hauteur des petites vagues (deux couches de grain qui glissent en sens contraires)
 float waves(vec2 p) {
 	float a = texture(grain, p * 0.11 + vec2(TIME * 0.018, TIME * 0.011)).r;
@@ -1687,6 +1728,11 @@ float waves(vec2 p) {
 }
 void fragment() {
 	vec3 wp = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	// pas d'eau au-dessus de la terre (un trou creusé sous le niveau de la mer reste sec)
+	vec2 muv = wp.xz / world_size;
+	if (muv.x >= 0.0 && muv.y >= 0.0 && muv.x < 1.0 && muv.y < 1.0 && texture(water_mask, muv).r < 0.5) {
+		discard;
+	}
 	vec2 p = wp.xz;
 	// normale des vagues (différences finies), passée dans l'espace de la vue
 	float e = 0.35;
@@ -1721,16 +1767,21 @@ void fragment() {
 	var water := MeshInstance3D.new()
 	water.name = "Eau"
 	water.mesh = plane
+	_make_water_mask()
+	_bind_water_mask(mat)
 	water.material_override = mat
 	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	water.position = Vector3(world_size.x / 2.0, water_surface, world_size.y / 2.0)
 	$Terrain.add_child(water)
 	# fond de l'océan autour de l'île
-	var floor_mat := StandardMaterial3D.new()
-	floor_mat.albedo_color = water_floor_color.darkened(0.35)
-	floor_mat.albedo_texture = GRAIN
-	floor_mat.uv1_scale = Vector3(world_size.x * 3.0, world_size.y * 3.0, 1) * GRAIN_SCALE
-	floor_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+	# (lui aussi suit le masque de l'eau : pas de fond marin au fond d'un trou creusé dans la terre)
+	var floor_mat := ShaderMaterial.new()
+	floor_mat.shader = Shader.new()
+	floor_mat.shader.code = SEA_FLOOR_SHADER
+	floor_mat.set_shader_parameter("albedo", water_floor_color.darkened(0.35))
+	floor_mat.set_shader_parameter("grain", GRAIN)
+	floor_mat.set_shader_parameter("grain_scale", GRAIN_SCALE)
+	_bind_water_mask(floor_mat)
 	var floor_mesh := PlaneMesh.new()
 	floor_mesh.size = Vector2(world_size) * 3.0
 	var sea_floor := MeshInstance3D.new()
@@ -3275,12 +3326,33 @@ void fragment() {
 }
 """
 
+## Fond de la mer : couleur et grain, seulement sous les cases d'eau (et au large, hors du monde).
+const SEA_FLOOR_SHADER := """
+shader_type spatial;
+uniform vec4 albedo : source_color;
+uniform sampler2D grain : source_color, filter_nearest_mipmap, repeat_enable;
+uniform float grain_scale = 1.0;
+uniform sampler2D water_mask : filter_nearest;
+uniform vec2 world_size = vec2(1536.0);
+void fragment() {
+	vec3 wp = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	vec2 muv = wp.xz / world_size;
+	if (muv.x >= 0.0 && muv.y >= 0.0 && muv.x < 1.0 && muv.y < 1.0 && texture(water_mask, muv).r < 0.5) {
+		discard;
+	}
+	ALBEDO = albedo.rgb * texture(grain, wp.xz * grain_scale).rgb;
+	ROUGHNESS = 1.0;
+}
+"""
+
 ## Sol : couleurs des sommets (sRGB) et grain, avec la teinte de la saison sur l'herbe et la neige l'hiver.
 const TERRAIN_SHADER := """
 shader_type spatial;
 render_mode cull_back;
 uniform sampler2D grain : source_color, filter_nearest_mipmap, repeat_enable;
 uniform float water_y = -0.2;
+uniform sampler2D water_mask : filter_linear;
+uniform vec2 world_size = vec2(1536.0);
 global uniform vec4 season_ground;
 global uniform float season_snow;
 varying vec3 wpos;
@@ -3315,6 +3387,8 @@ void fragment() {
 	}
 	// sol mouillé au bord de l'eau
 	float wet = 1.0 - smoothstep(water_y + 0.02, water_y + 0.35, wpos.y);
+	// seulement près d'un lac ou de la mer (pas au fond d'un trou creusé dans la terre)
+	wet *= texture(water_mask, wpos.xz / world_size).r;
 	c *= 1.0 - 0.25 * wet;
 	ALBEDO = c * texture(grain, UV).rgb;
 	ROUGHNESS = mix(1.0, 0.45, wet);

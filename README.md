@@ -1134,3 +1134,13 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
 - **Bug corrigé : le sac remontait tout seul** quand on descendait dedans et qu'un objet arrivait, qu'on en
   équipait un ou qu'on fabriquait quelque chose. La liste (et celle des recettes) reste maintenant où on l'a
   laissée ; elle ne repart en haut que si on change d'onglet ou de tri.
+## Creuser sous le niveau de la mer : plus d'eau sous les terres
+
+- Avant, un seul grand plan d'eau couvrait tout le monde au niveau de la mer (avec un fond marin 2 m plus bas) :
+  dès qu'on creusait plus bas que la mer sur la terre ferme, le trou se remplissait d'eau à l'écran et le
+  fond marin masquait le fond du trou.
+- Maintenant, un **masque de l'eau** (une case = un pixel) dit où sont les vrais lacs et la mer : le plan d'eau,
+  le fond marin et le sol mouillé ne s'affichent plus qu'au-dessus des cases d'eau. On peut creuser aussi bas
+  qu'on veut sous les terres : le trou reste **sec**, comme dans Minecraft. Les lacs, la mer et le large
+  autour de l'île gardent leur eau.
+- Le masque suit les changements du terrain (un lac comblé devient sec, un trou creusé reste sec).
