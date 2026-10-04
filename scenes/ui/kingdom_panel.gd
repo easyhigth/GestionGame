@@ -211,20 +211,41 @@ func _tips(k: Kingdom, n: VillageNeeds) -> Array:
 
 # ---------------------------------------------------------------- carte
 
+var _map: KingdomMap
+var _map_side: VBoxContainer
+
+
 func _page_map(page: VBoxContainer) -> void:
-	var info := MenuKit.label("Survole une pièce ou un habitant ; clique sur un habitant pour ouvrir sa fiche.", 11, MenuKit.C_DIM)
-	var map := KingdomMap.new()
-	map.player = player
-	map.custom_minimum_size = Vector2(PAGE.x - 16, PAGE.y - 58)
-	map.hovered.connect(func(t): info.text = t if t != "" else "Survole une pièce ou un habitant ; clique sur un habitant pour ouvrir sa fiche.")
-	map.villager_clicked.connect(func(v):
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	page.add_child(row)
+	var info := MenuKit.label("Molette : zoom · glisser : se déplacer · clic : détails d'une pièce ou fiche d'un habitant", 10, MenuKit.C_DIM)
+	_map = KingdomMap.new()
+	_map.player = player
+	_map.custom_minimum_size = Vector2(500, PAGE.y - 56)
+	_map.hovered.connect(func(t): info.text = t if t != "" else "Molette : zoom · glisser : se déplacer · clic : détails d'une pièce ou fiche d'un habitant")
+	_map.villager_clicked.connect(func(v):
 		close()
 		player.open_inventory.emit(v))
-	page.add_child(map)
-	var legend := HBoxContainer.new()
-	legend.add_theme_constant_override("separation", 10)
-	for l in [["Pièce", Color("c8a060")], ["Pièce à finir", Color(0.6, 0.6, 0.6, 0.5)], ["Murs", KingdomMap.WALL], ["Champs", KingdomMap.FIELD],
-			["Plans en attente", KingdomMap.PLAN], ["Feu de camp", Color("ff8a3a")], ["Toi", MenuKit.C_GOLD]]:
+	_map.room_clicked.connect(func(r): _fill_map_side(r))
+	row.add_child(_map)
+	var side := PanelContainer.new()
+	side.add_theme_stylebox_override("panel", MenuKit.card(false, 7.0))
+	side.custom_minimum_size = Vector2(214, PAGE.y - 56)
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	side.add_child(sc)
+	_map_side = VBoxContainer.new()
+	_map_side.add_theme_constant_override("separation", 4)
+	_map_side.custom_minimum_size.x = 196
+	sc.add_child(_map_side)
+	row.add_child(side)
+	_fill_map_side({})
+	# légende
+	var legend := HFlowContainer.new()
+	legend.add_theme_constant_override("h_separation", 10)
+	for l in [["Pièce reconnue", Color("c8a060")], ["Pièce à finir", Color(0.7, 0.7, 0.7)], ["Murs et toits", Color("8a7a66")], ["Champs", Color("6a4426")],
+			["Plans", KingdomMap.PLAN], ["Arbres", Color("3c6e2a")], ["Eau", Color("3f7cb0")], ["Feu de camp", Color("ff8a3a")], ["Toi", MenuKit.C_GOLD]]:
 		var h := HBoxContainer.new()
 		h.add_theme_constant_override("separation", 3)
 		var sw := ColorRect.new()
@@ -232,11 +253,112 @@ func _page_map(page: VBoxContainer) -> void:
 		sw.custom_minimum_size = Vector2(10, 10)
 		sw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		h.add_child(sw)
-		h.add_child(MenuKit.label(l[0], 10, MenuKit.C_DIM))
+		h.add_child(MenuKit.label(l[0], 9, MenuKit.C_DIM))
 		legend.add_child(h)
-	legend.add_child(MenuKit.label("· habitants : couleur de leur classe, anneau vert = au travail", 10, MenuKit.C_DIM))
+	legend.add_child(MenuKit.label("· ● habitant (couleur de sa classe, anneau vert : au travail)", 9, MenuKit.C_DIM))
 	page.add_child(legend)
 	page.add_child(info)
+
+
+## Panneau de côté de la carte : la pièce choisie, ou la liste des pièces (un clic pour y aller).
+func _fill_map_side(r: Dictionary) -> void:
+	if _map_side == null:
+		return
+	for c in _map_side.get_children():
+		c.queue_free()
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	if k == null:
+		return
+	if r.is_empty():
+		_map_side.add_child(MenuKit.bold("Tes pièces", 13, MenuKit.C_GOLD))
+		var list := k.rooms.filter(func(x): return x.get("enclosed", false))
+		if list.is_empty():
+			var l := MenuKit.label("Aucune pièce fermée pour l'instant. Bâtis des murs, une porte et le mobilier (B, ou un plan prêt).", 10, MenuKit.C_DIM)
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			l.custom_minimum_size.x = 190
+			_map_side.add_child(l)
+		for x in list:
+			var t: RoomTypeData = x.type
+			var b := MenuKit.button(("%s%s" % [t.display_name, ("  %d/%d" % [k.workers_of(x).size(), t.job_slots]) if t.job_slots > 0 else ""]) if t else "Pièce à finir", 190, 10)
+			b.custom_minimum_size.y = 26
+			b.add_theme_color_override("font_color", t.color.lightened(0.3) if t else MenuKit.C_DIM)
+			var room = x
+			b.pressed.connect(func():
+				_map.select_room(room)
+				_fill_map_side(room))
+			_map_side.add_child(b)
+		var bo := get_tree().get_first_node_in_group("build_orders")
+		if bo and not bo.orders.is_empty():
+			_map_side.add_child(MenuKit.chip("%d plans en attente" % bo.orders.size(), KingdomMap.PLAN))
+		return
+	var t: RoomTypeData = r.type
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 6)
+	var dot := ColorRect.new()
+	dot.color = t.color if t else Color(0.7, 0.7, 0.7)
+	dot.custom_minimum_size = Vector2(12, 12)
+	dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(dot)
+	head.add_child(MenuKit.bold(t.display_name if t else "Pièce à finir", 13, MenuKit.C_TEXT))
+	_map_side.add_child(head)
+	_map_side.add_child(MenuKit.label("%d cases" % r.cells.size(), 9, MenuKit.C_DIM))
+	if t == null:
+		var close: RoomTypeData = r.get("closest")
+		var miss: Dictionary = r.get("missing", {})
+		var txt := "Il lui manque de quoi devenir une pièce."
+		if close:
+			txt = "Presque : %s. Il manque :" % close.display_name
+		var l := MenuKit.label(txt, 10, MenuKit.C_GOLD)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size.x = 190
+		_map_side.add_child(l)
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 3)
+		for id in miss:
+			var it := Items.get_item(id)
+			if it:
+				flow.add_child(MenuKit.item_badge(it, int(miss[id]), 30))
+		_map_side.add_child(flow)
+		if r.get("too_small", false):
+			_map_side.add_child(MenuKit.label("Et la pièce est trop petite.", 10, MenuKit.C_BAD))
+	else:
+		var d := MenuKit.label(t.effect_text if t.effect_text != "" else t.description, 10, MenuKit.C_DIM)
+		d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		d.custom_minimum_size.x = 190
+		_map_side.add_child(d)
+		if t.job_slots > 0:
+			var ws := k.workers_of(r)
+			_map_side.add_child(MenuKit.label("%s : %d / %d" % [t.job_name, ws.size(), t.job_slots], 11, MenuKit.C_GOLD))
+			for v in ws:
+				var h := HBoxContainer.new()
+				h.add_theme_constant_override("separation", 5)
+				h.add_child(MenuKit.mini_portrait(MenuKit.villager_portrait_id(v), 26))
+				h.add_child(MenuKit.label(str(v.get("villager_name")), 10, MenuKit.C_TEXT))
+				_map_side.add_child(h)
+			if ws.size() < t.job_slots:
+				var l2 := MenuKit.label("Place libre : parle à un habitant (E) → Poste de travail.", 9, MenuKit.C_DIM)
+				l2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				l2.custom_minimum_size.x = 190
+				_map_side.add_child(l2)
+		var prods: Array = t.production_pool if not t.production_pool.is_empty() else ([t.production] if t.production else [])
+		if not prods.is_empty():
+			_map_side.add_child(MenuKit.label("Produit :", 10, MenuKit.C_DIM))
+			var flow := HFlowContainer.new()
+			flow.add_theme_constant_override("h_separation", 3)
+			var seen := {}
+			for it in prods:
+				if it and not seen.has(it.id):
+					seen[it.id] = true
+					flow.add_child(MenuKit.item_badge(it, 0, 28))
+			_map_side.add_child(flow)
+		if t.beds > 0:
+			_map_side.add_child(MenuKit.icon_label("house", "%d lit%s" % [t.beds, "s" if t.beds > 1 else ""], 10, MenuKit.C_TEXT))
+	var back := MenuKit.button("← Toutes les pièces", 190, 10)
+	back.custom_minimum_size.y = 26
+	back.pressed.connect(func():
+		_map.select_room({})
+		_fill_map_side({}))
+	_map_side.add_child(back)
 
 
 # ---------------------------------------------------------------- habitants

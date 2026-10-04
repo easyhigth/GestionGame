@@ -33,7 +33,7 @@ func count_of(node: Node, cls: String) -> int:
 		n += 1
 	return n
 
-const STEPS := ["apercu", "carte", "habitants", "production", "familiers", "quetes", "expeditions", "expeditions_choix", "diplomatie", "recrutement", "banniere", "fin_de_partie", "fiche", "boutique", "quete"]
+const STEPS := ["apercu", "carte", "carte_zoom", "habitants", "production", "familiers", "quetes", "expeditions", "expeditions_choix", "diplomatie", "recrutement", "banniere", "fin_de_partie", "fiche", "boutique", "quete"]
 
 func _process(_d) -> bool:
 	f += 1
@@ -105,6 +105,28 @@ func _process(_d) -> bool:
 					var trd = get_first_node_in_group("trade")
 					trd.arrive()
 					set_meta("trd", trd)
+				"carte_zoom":
+					var km = hud.kingdom_panel._map
+					var k = get_first_node_in_group("kingdom")
+					# deux pièces d'exemple : une maison finie, un atelier à compléter
+					var c0: Vector2i = w.spawn_cell + Vector2i(-9, -4)
+					var cells_a := {}
+					var cells_b := {}
+					for x in 5:
+						for y in 4:
+							cells_a[c0 + Vector2i(x, y)] = true
+							cells_b[c0 + Vector2i(x, y + 6)] = true
+					var mai = load("res://data/rooms/maison.tres")
+					k.rooms.push_front({"type": null, "cells": cells_b, "floor": 0.0, "enclosed": true, "doors": 1, "counts": {}, "tier": 0, "closest": mai, "missing": {"lit": 1}})
+					k.rooms.push_front({"type": mai, "cells": cells_a, "floor": 0.0, "enclosed": true, "doors": 1, "counts": {}, "tier": 0, "missing": {}})
+					for r in k.rooms:
+						if r.enclosed:
+							km.select_room(r)
+							hud.kingdom_panel._fill_map_side(r)
+							km.center = km.room_center(r)
+							break
+					km.zoom_at(km.size / 2.0, 2.2)
+					km.queue_redraw()
 				"quete":
 					hud.shop_dialog.close()
 					var qb = get_first_node_in_group("quests")
@@ -123,7 +145,7 @@ func _process(_d) -> bool:
 				hud.shop_dialog.open(trd.merchant)
 			check("le marchand est là", trd.merchant != null)
 		if sub == 12:
-			var panel: Control = hud.kingdom_panel if id in ["apercu", "carte", "habitants", "production", "familiers", "quetes"] else (hud.expedition_panel if id.begins_with("expeditions") else null)
+			var panel: Control = hud.kingdom_panel if id in ["apercu", "carte", "carte_zoom", "habitants", "production", "familiers", "quetes"] else (hud.expedition_panel if id.begins_with("expeditions") else null)
 			if panel:
 				print("%s : %d cartes, %d jauges/pastilles" % [id, count_of(panel, "PanelContainer"), count_of(panel, "ColorRect")])
 				check("écran %s rempli" % id, count_of(panel, "PanelContainer") >= 4)

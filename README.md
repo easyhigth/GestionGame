@@ -573,7 +573,7 @@ Pour les héros de haut niveau (jusqu'au niveau 1000), le **Portail des Failles*
 - Test : `tests/test_class_skills.gd`.
 
 ## Carte du royaume, fiches et événements d'expédition
-- **Carte du royaume** (U → onglet *Carte*, `scenes/ui/kingdom_map.gd`) : le village vu du ciel — murs posés, champs, pièces reconnues dans la couleur de leur type (avec leur nom), pièces pas encore reconnues en gris, plans en attente en pointillés dorés, feu de camp, habitants (couleur de leur classe, anneau vert : au travail) et le héros. Survoler une pièce donne ses postes occupés (ou la pièce qu'elle est presque) ; survoler un habitant donne sa classe, son poste et son humeur ; un clic ouvre sa fiche.
+- **Carte du royaume** (U → onglet *Carte*, `scenes/ui/kingdom_map.gd`) : le village vu du ciel, voir la section suivante.
 - **Fiche d'un habitant (E)** : carte d'identité (classe en couleur, niveau, humeur en jauge), interrupteur Compagnon, et les postes de travail en cartes à cliquer (couleur de la pièce, places prises, ★ talent ; poste actuel en vert, postes complets grisés).
 - **Boutique** : ta bourse en tuile, chaque objet dans une carte avec son icône et son prix en pastille dorée.
 - **Quêtes** : la quête sur parchemin avec une icône par type (livraison, chasse, exploration, défense, construction), l'objet demandé en icône (et ce que tu as) ou le portrait du monstre à chasser, la progression en jauge, la récompense en icônes, l'amitié en jauge.
@@ -802,3 +802,13 @@ Choix de conception :
 Toutes les étapes de la feuille de route sont terminées. Pistes pour la suite : commerce entre villages, plus de régions et de boss, arbres de talents pour les habitants.
 
 Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la Going Medieval (plans bâtis par les habitants), **arbre de talents du héros** (27 talents, 15 nouvelles attaques et nouveaux sorts).
+
+## Carte du royaume détaillée
+U → onglet *Carte* (`scenes/ui/kingdom_map.gd`, `kingdom_panel.gd::_page_map`).
+- **Le vrai terrain** : chaque case dans la couleur de son sol et de sa région (herbe, sable, roche, eau, place, terre, champs), avec un **relief ombré** (pentes éclairées depuis le nord-ouest, hauteurs plus claires).
+- **Décor** : arbres (chênes, sapins) avec leur ombre, buissons, rochers, fleurs, **filons de fer et d'or**.
+- **Constructions** : le bloc du dessus de chaque colonne dans la couleur de sa texture, avec une ombre portée ; au zoom, l'icône de chaque meuble.
+- **Pièces** : contour net, nom et postes occupés (ex. *Forge 1/2*) dans une étiquette ; les pièces à finir en gris avec « ? ». **Clic sur une pièce** : panneau de détails à droite (effet, ouvriers avec portraits, places libres, production, lits ; pour une pièce à finir, la pièce qu'elle est presque et les **meubles manquants en icônes**). Sans sélection, le panneau liste toutes tes pièces (clic = centrer dessus).
+- **Plans** en hachures dorées, **feu de camp** lumineux, **habitants** (couleur de leur classe, anneau vert au travail, prénom au zoom ; clic = fiche), **héros** en flèche dorée.
+- **Navigation** : molette (zoom vers le curseur), glisser pour se déplacer, boutons − / + / ⌖ (recadrer sur le village). **Rose des vents**, **échelle en mètres**, légende et info-bulle de survol pour tout (meuble, arbre, filon, eau, champ, plan...).
+- Test : `tests/run_tests.sh panels` (captures `pn_02_carte.png` et `pn_03_carte_zoom.png`).
