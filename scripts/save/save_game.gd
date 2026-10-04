@@ -36,6 +36,8 @@ var options := {
 	## point de vue : 0 = 3e personne, 1 = vue de dessus, 2 = 1re personne (F5 pour changer)
 	"camera_mode": 0,
 	"show_help": true,
+	## tri du sac : "arrivee", "type", "nom", "nombre", "rarete"
+	"bag_sort": "arrivee",
 	"autosave": true,
 	"volume": 0.8,
 	"music_volume": 0.6,

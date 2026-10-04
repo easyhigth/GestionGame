@@ -2081,8 +2081,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				open_workshop.emit(ws)
 				get_viewport().set_input_as_handled()
 				return
-		open_inventory.emit(v if v else self)
-		get_viewport().set_input_as_handled()
+		# F ne sert qu'à agir : l'équipement s'ouvre avec sa propre touche (E)
+		if v:
+			open_inventory.emit(v)
+			get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("inventory"):
 		open_inventory.emit(self)
 		get_viewport().set_input_as_handled()
