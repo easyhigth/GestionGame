@@ -57,7 +57,8 @@ func _process(delta: float) -> void:
 	if world == null or Engine.is_editor_hint():
 		return
 	if raid.is_empty():
-		if not enabled:
+		# option du monde : pas de raids
+		if not enabled or not SaveGame.world_flag("raids"):
 			return
 		_timer -= delta
 		if _timer <= 0.0:

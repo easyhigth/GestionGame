@@ -250,6 +250,10 @@ func run(text: String) -> bool:
 		return false
 	var cmd := _plain(parts[0])
 	cmd = ALIASES.get(cmd, cmd)
+	# option du monde : commandes (triches) interdites, sauf l'aide
+	if cmd != "aide" and not SaveGame.cheats_allowed():
+		_say("Les commandes ne sont pas autorisées dans ce monde (Options du monde, depuis la liste des mondes).")
+		return false
 	var args: Array = Array(parts.slice(1))
 	if world == null:
 		world = get_tree().get_first_node_in_group("world") as WorldGenerator

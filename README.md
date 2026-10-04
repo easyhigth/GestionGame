@@ -1078,3 +1078,25 @@ L'ancien menu unique (13 onglets, plus de 1 400 recettes mélangées) est rempla
   bloc. Fini les centaines de lignes à faire défiler.
 
 Les anciennes sauvegardes gardent toutes leurs recettes connues.
+
+## Mondes (comme dans Minecraft)
+
+- **Jouer (mondes)** sur l'écran titre ouvre la **liste des mondes**, jusqu'à **100 mondes**, du plus récent au
+  plus ancien. Chaque monde montre son nom, le héros, son niveau, le temps de jeu, la date et ses options.
+  Un clic sélectionne un monde, un deuxième clic le lance.
+- **Créer un monde** : nom, **graine** (vide = au hasard ; un mot ou un nombre redonne toujours le même monde),
+  difficulté, et les options :
+  - **commandes autorisées** (triches : /vol, /kit, /donner... ; désactivées par défaut) ;
+  - **raids** sur le village ;
+  - **monstres la nuit** ;
+  - **faim**.
+- **Modifier** change le nom et les options d'un monde existant. **Supprimer** demande une confirmation
+  (deuxième clic), puis efface le monde pour toujours.
+- Le monde en cours se sauvegarde **à sa place** : « Sauvegarder » dans le menu pause, et la sauvegarde
+  automatique toutes les 5 minutes. « Changer de monde » ouvre la liste. **Continuer** reprend le monde joué
+  le plus récemment.
+- Les anciennes sauvegardes apparaissent comme des mondes (« Monde 1 », « Sauvegarde automatique »...), avec
+  les commandes autorisées.
+- **Bug corrigé : le jeu s'arrêtait juste après une sauvegarde depuis le menu pause.** Une erreur de script
+  dans le message de confirmation faisait arrêter le jeu (lancé depuis l'éditeur). La sauvegarde, elle, était
+  bien écrite.

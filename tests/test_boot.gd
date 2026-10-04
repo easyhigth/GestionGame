@@ -1,5 +1,5 @@
 extends SceneTree
-## Le vrai démarrage du jeu : écran titre -> « Nouvelle partie » -> création du héros -> écran de chargement -> jeu,
+## Le vrai démarrage du jeu : écran titre -> « Jouer » -> « Créer un monde » -> création du héros -> écran de chargement -> jeu,
 ## puis « Continuer » sur une sauvegarde d'avant le monde immense (640 × 640 m). Mesures en temps réel.
 var f := 0
 var ok := true
@@ -61,7 +61,10 @@ func _process(d) -> bool:
 		1:
 			if wait > 1.5:
 				shot("01_titre.png")
-				check("bouton « Nouvelle partie »", press("Nouvelle partie"))
+				# Jouer → Créer un monde → Créer le monde (comme dans Minecraft)
+				check("bouton « Jouer (mondes) »", press("Jouer (mondes)"))
+				check("bouton « Créer un monde »", press("Créer un monde"))
+				check("bouton « Créer le monde »", press("Créer le monde"))
 				step = 2; wait = 0.0
 		2:
 			if wait > 1.0 and current_scene and current_scene.has_method("_start"):

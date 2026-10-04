@@ -14,6 +14,10 @@ const DIR := "user://saves/"
 const OPTIONS := "user://options.cfg"
 const SLOTS := ["1", "2", "3"]
 const AUTO := "auto"
+## Nombre de mondes au plus (un monde = un emplacement « 1 » à « 100 »).
+const MAX_WORLDS := 100
+## Options d'un monde (choisies à sa création, modifiables ensuite dans la liste des mondes).
+const WORLD_DEFAULTS := {"name": "Nouveau monde", "cheats": false, "difficulty": 1, "raids": true, "night_monsters": true, "hunger": true}
 const VERSION := 1
 const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const GAME_SCENE := "res://scenes/main.tscn"
@@ -51,6 +55,8 @@ const GRAPHICS_NAMES := ["Basse", "Moyenne", "Haute"]
 var pending := {}
 ## Emplacement de la partie en cours (pour « Sauvegarder » et la sauvegarde automatique).
 var current_slot := "1"
+## Options du monde en cours ({} : partie lancée sans passer par la liste des mondes, tout est permis).
+var world_opts := {}
 ## Temps de jeu de la partie en cours (secondes).
 var play_time := 0.0
 ## Heure et jour, et avancement du guide, d'une partie chargée (repris par le cycle et le guide s'ils arrivent après).
@@ -97,7 +103,8 @@ func _process(delta: float) -> void:
 			_autosave_timer = 300.0
 			var p := _player()
 			if p and p.is_alive() and p.global_position.y > WorldGenerator.UNDERGROUND:
-				save_game(AUTO)
+				# le monde en cours se sauvegarde tout seul (comme dans Minecraft)
+				save_game(current_slot if current_slot != "" else AUTO)
 				p.notify.emit("Sauvegarde automatique.")
 
 
@@ -188,11 +195,10 @@ func slot_info(slot: String) -> Dictionary:
 func latest_slot() -> String:
 	var best := ""
 	var best_t := -1
-	for s in SLOTS + [AUTO]:
-		var info := slot_info(s)
-		if not info.is_empty() and int(info.get("time", 0)) > best_t:
-			best_t = int(info.time)
-			best = s
+	for w in worlds():
+		if int(w.info.get("time", 0)) > best_t:
+			best_t = int(w.info.get("time", 0))
+			best = w.slot
 	return best
 
 
@@ -211,6 +217,94 @@ func delete(slot: String) -> void:
 		DirAccess.remove_absolute(path_of(slot))
 
 
+# ---------------------------------------------------------------- mondes
+
+## Les mondes sauvegardés : [{slot, info, opts}], du plus récent au plus ancien.
+func worlds() -> Array:
+	var out := []
+	var dir := DirAccess.open(DIR)
+	if dir == null:
+		return out
+	for f in dir.get_files():
+		if not f.begins_with("partie_") or not f.ends_with(".json"):
+			continue
+		var slot := f.trim_prefix("partie_").trim_suffix(".json")
+		var d := read(slot)
+		if d.is_empty():
+			continue
+		var opts := world_opts_of(d, slot)
+		out.append({"slot": slot, "info": d.get("info", {}), "opts": opts})
+	out.sort_custom(func(a, b): return int(a.info.get("time", 0)) > int(b.info.get("time", 0)))
+	return out
+
+
+## Options d'un monde lu (les anciennes sauvegardes ont les options par défaut, commandes permises).
+func world_opts_of(d: Dictionary, slot: String) -> Dictionary:
+	var opts: Dictionary = WORLD_DEFAULTS.duplicate()
+	if d.has("world_opts"):
+		for k in d.world_opts:
+			opts[k] = d.world_opts[k]
+	else:
+		opts.cheats = true
+		opts.name = "Sauvegarde automatique" if slot == AUTO else "Monde %s" % slot
+		opts.difficulty = int(d.get("info", {}).get("difficulty", 1))
+	return opts
+
+
+## Premier emplacement libre pour un nouveau monde ("" : 100 mondes déjà).
+func free_slot() -> String:
+	for i in range(1, MAX_WORLDS + 1):
+		if not has_save(str(i)):
+			return str(i)
+	return ""
+
+
+## Crée un monde : ses options, puis la création du héros. Faux s'il y a déjà 100 mondes.
+func create_world(opts: Dictionary) -> bool:
+	var slot := free_slot()
+	if slot == "":
+		return false
+	current_slot = slot
+	world_opts = WORLD_DEFAULTS.duplicate()
+	for k in opts:
+		world_opts[k] = opts[k]
+	options.difficulty = int(world_opts.difficulty)
+	var sd := str(world_opts.get("seed", "")).strip_edges()
+	GameState.world_seed = (int(sd) if sd.is_valid_int() else abs(hash(sd))) if sd != "" else -1
+	new_game()
+	# le monde apparaît vite dans la liste
+	_autosave_timer = 20.0
+	return true
+
+
+## Change les options d'un monde sauvegardé (nom, commandes, difficulté...).
+func set_world_opts(slot: String, opts: Dictionary) -> void:
+	var d := read(slot)
+	if d.is_empty():
+		return
+	var cur := world_opts_of(d, slot)
+	for k in opts:
+		cur[k] = opts[k]
+	d.world_opts = cur
+	if d.has("info"):
+		d.info.name = cur.name
+		d.info.difficulty = int(cur.difficulty)
+	var f := FileAccess.open(path_of(slot), FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(d))
+		f.close()
+
+
+## Commandes de la console autorisées dans ce monde ?
+func cheats_allowed() -> bool:
+	return world_opts.is_empty() or bool(world_opts.get("cheats", true))
+
+
+## Une option du monde en cours (raids, monstres la nuit, faim...) ; vraie si le monde n'en a pas.
+func world_flag(key: String) -> bool:
+	return bool(world_opts.get(key, true))
+
+
 # ---------------------------------------------------------------- sauvegarde
 
 func save_game(slot: String) -> bool:
@@ -219,6 +313,9 @@ func save_game(slot: String) -> bool:
 	if world == null or p == null:
 		return false
 	var d := {"version": VERSION}
+	if not world_opts.is_empty():
+		world_opts.difficulty = int(options.difficulty)
+		d.world_opts = world_opts.duplicate()
 	d.player = _save_player(p, world)
 	d.world = world.export_state()
 	d.build = _save_build(world.build)
@@ -308,7 +405,8 @@ func save_game(slot: String) -> bool:
 		"level": p.level, "kingdom": k.title() if k else "",
 		"zone": z.get("name", "Donjon"), "time": int(Time.get_unix_time_from_system()),
 		"date": Time.get_datetime_string_from_system(false, true), "play_time": int(play_time),
-		"difficulty": int(options.difficulty)}
+		"difficulty": int(options.difficulty), "name": str(world_opts.get("name", "Monde %s" % slot)),
+		"cheats": cheats_allowed()}
 	var f := FileAccess.open(path_of(slot), FileAccess.WRITE)
 	if f == null:
 		return false
@@ -422,6 +520,8 @@ func load_game(slot: String) -> bool:
 	GameState.hero = h
 	pending = d
 	pending["slot"] = slot
+	world_opts = world_opts_of(d, slot)
+	options.difficulty = int(world_opts.difficulty)
 	current_slot = slot if slot != AUTO else current_slot
 	play_time = float(d.get("play_time", 0.0))
 	get_tree().paused = false
@@ -462,6 +562,7 @@ func new_game() -> void:
 
 func to_title() -> void:
 	pending = {}
+	world_opts = {}
 	get_tree().paused = false
 	get_tree().change_scene_to_file(TITLE_SCENE)
 

@@ -1428,6 +1428,10 @@ func _weather_speed() -> float:
 
 
 func _update_hunger(delta: float) -> void:
+	# option du monde : sans faim, le héros reste rassasié
+	if not SaveGame.world_flag("hunger"):
+		hunger = HUNGER_MAX
+		return
 	if not is_alive() or building or ui_open:
 		return
 	var rate := HUNGER_PER_SECOND
