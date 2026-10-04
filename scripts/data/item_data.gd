@@ -51,8 +51,10 @@ const RARITY_COLORS := {
 @export var enchants: Dictionary = {}
 ## Arme à deux mains : retire le bouclier quand on l'équipe.
 @export var two_handed: bool = false
-## Nombre maximum d'exemplaires dans une case d'inventaire.
+## Nombre maximum d'exemplaires dans une case d'inventaire (1 : ne s'empile pas). Tout ce qui s'empile monte
+## jusqu'à STACK_MAX par case (voir stack_size).
 @export var max_stack: int = 1
+const STACK_MAX := 999
 
 @export_group("Bonus")
 @export var attack: int = 0
@@ -138,6 +140,32 @@ func is_placeable() -> bool:
 
 func is_equipment() -> bool:
 	return slot != Slot.NONE
+
+
+## Exemplaires par case du sac : 1 pour ce qui ne s'empile pas, sinon 999.
+func stack_size() -> int:
+	return 1 if max_stack <= 1 else STACK_MAX
+
+
+## Famille de l'objet, pour trier le sac : 0 équipement, 1 outils, 2 potions, 3 nourriture, 4 graines, 5 blocs,
+## 6 meubles, 7 matériaux.
+func family() -> int:
+	if is_equipment():
+		return 0
+	if id.begins_with("hache") or id.begins_with("pioche") or id.begins_with("pelle") or id.begins_with("canne") or id.begins_with("houe") \
+			or id.begins_with("sifflet"):
+		return 1
+	if is_potion():
+		return 2
+	if is_food():
+		return 3
+	if is_seed():
+		return 4
+	if is_block():
+		return 5
+	if is_furniture():
+		return 6
+	return 7
 
 
 ## Valeur globale de l'objet (sert aux habitants pour choisir le meilleur équipement).

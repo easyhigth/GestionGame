@@ -24,9 +24,9 @@ L'idée du plan : la main gauche reste sur ZQSD et tout ce qui sert en combat es
 | Espace | sauter (dans l'eau : remonter) |
 | Maj | roulade (invulnérable un instant) |
 | A | compétence unique |
-| E | **utiliser** : parler, recruter, quête, fiche d'un habitant, coffre, barrière, monter, dormir |
+| F | **agir** : parler, recruter, quête, fiche d'un habitant, atelier, coffre, barrière, monter, dormir |
 | R | boire une potion |
-| F | viser la cible la plus proche (encore : la suivante) |
+| Tab | viser la cible la plus proche (encore : la suivante) ; aussi clic molette |
 | G | creuser (maintenir) ; dans l'eau : plonger |
 | X | manger |
 | C | **prendre / ranger l'objet en main** (reprend le dernier objet tenu) |
@@ -38,7 +38,7 @@ L'idée du plan : la main gauche reste sur ZQSD et tout ce qui sert en combat es
 **Menus (sous leur initiale)**
 | Touche | Menu |
 |---|---|
-| I ou Tab | inventaire (sac, équipement, artisanat) |
+| **E** (ou I) | **équipement** : sac, équipement, artisanat sur soi |
 | B | bâtir : mode construction |
 | M | carte du monde et voyage rapide |
 | J (ou O) | journal (histoire, quêtes) |
@@ -1106,7 +1106,7 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
 - **F** sert maintenant à **toutes les interactions** : ateliers (établi, four, enclume...), coffres de
   rangement, portes, montures, entrées de grottes, et **parler aux habitants et aux PNJ**. Les invites à
   l'écran disent « F : ... ».
-- **Verrouiller un ennemi** passe sur **E** (le clic molette verrouille toujours aussi).
+- **Verrouiller un ennemi** passe sur **Tab** (le clic molette verrouille toujours aussi).
 - **Creuser** : vise le sol (le contour s'affiche) et **clic gauche**, comme pour un bloc. La terre vient
   d'abord (à mains nues ou à la pelle), et tombe en blocs de terre ou de sable à ramasser.
 - Vers **2 m** de profondeur, on atteint la **roche** : il faut une **pioche**. Plus bas, la roche donne parfois
@@ -1114,3 +1114,23 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
 - Vers **5 m**, la pioche **perce la voûte d'une galerie souterraine** : le héros descend dans une grotte à
   explorer (monstres, minerais, coffres), avec une sortie vers la surface.
 - La touche G (creuser sous ses pieds) marche toujours.
+
+## E pour l'équipement, F pour agir
+
+- **E** (ou I) ouvre et ferme l'**équipement** (sac, équipement, artisanat sur soi) : c'est sa seule fonction.
+- **F** ne sert qu'à **agir** sur ce qui est devant soi (atelier, coffre, habitant, PNJ, porte, monture...). Sans
+  rien à portée, F ne fait rien : il n'ouvre plus le sac.
+- **Viser / verrouiller un ennemi** : **Tab** (ou clic molette), comme dans beaucoup de jeux de rôle.
+- Toutes les touches restent modifiables dans Commandes → Personnaliser.
+
+## Le sac : trier, 999 par case, défilement corrigé
+
+- **Trier** : en haut du sac, cinq boutons : **Arrivée** (l'ordre où on a ramassé), **Type** (équipement, outils,
+  potions, nourriture, graines, blocs, meubles, matériaux), **Nom**, **Nombre** (les plus grosses piles d'abord),
+  **Rareté**. Le choix est gardé ; les objets ramassés se rangent tout seuls à leur place.
+- **999 par case** : tout ce qui s'empile (bois, pierre, blocs, nourriture, potions...) monte jusqu'à **999** dans
+  une même case (avant : 20, 50 ou 99 selon l'objet). Armes, armures et outils ne s'empilent pas. Les anciennes
+  sauvegardes regroupent leurs piles au chargement.
+- **Bug corrigé : le sac remontait tout seul** quand on descendait dedans et qu'un objet arrivait, qu'on en
+  équipait un ou qu'on fabriquait quelque chose. La liste (et celle des recettes) reste maintenant où on l'a
+  laissée ; elle ne repart en haut que si on change d'onglet ou de tri.

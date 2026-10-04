@@ -63,6 +63,8 @@ func _process(_d) -> bool:
 			and KeyBindings.key_text("journal") == "J" and KeyBindings.key_text("diplomacy") == "N")
 		check("texte avec touches : %s" % KeyBindings.fmt("Se mange ({eat}) · {place_click} : poser, puis {place_click}"),
 			KeyBindings.fmt("Se mange ({eat}) · {place_click} : poser, puis {place_click}") == "Se mange (X) · Clic droit : poser, puis clic droit")
+		check("équipement : E, agir : F, viser : Tab (%s / %s / %s)" % [KeyBindings.key_text("inventory"), KeyBindings.key_text("interact"), KeyBindings.key_text("lock_on")],
+			KeyBindings.key_text("inventory") == "E" and KeyBindings.key_text("interact") == "F" and KeyBindings.key_text("lock_on") == "Tab")
 		# aucune touche du clavier en double (hors déplacements et chiffres)
 		var seen := {}
 		var dup := []

@@ -47,7 +47,7 @@ const PAGES := [
 		["Mode construction : plans, murs, pièces prêtes", "{build_mode}"],
 	]],
 	["Menus", [
-		["Inventaire : sac, équipement, artisanat", "{inventory} / Tab"],
+		["Équipement et sac (artisanat sur soi)", "{inventory} / I"],
 		["Métiers d'artisanat", "{crafts}"],
 		["Carte du monde · voyage rapide par les obélisques", "{world_map}"],
 		["Journal : histoire et quêtes", "{journal}"],

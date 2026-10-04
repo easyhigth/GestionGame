@@ -25,6 +25,11 @@ var _title: Label
 var _slots_box: VBoxContainer
 var _stats: Label
 var _bag: GridContainer
+var _bag_scroll: ScrollContainer
+var _recipe_scroll: ScrollContainer
+var _sort_buttons := {}
+var _recipe_key := ""
+var _scroll_hold := {"bag": 0, "recipes": 0, "frames": 0}
 var _info_name: Label
 var _info_icon: TextureRect
 var _info_text: Label
@@ -177,7 +182,7 @@ func _build() -> void:
 	_title = _label("Équipement", 15, Color("f2c86a"))
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(_title)
-	head.add_child(_label("Clic : équiper · Clic droit : que faire avec ?    [I] / [Échap] : fermer", 10, C_DIM))
+	head.add_child(_label(KeyBindings.fmt("Clic : équiper · Clic droit : que faire avec ?    [{inventory}] / [Échap] : fermer"), 10, C_DIM))
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 8)
 	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -196,7 +201,23 @@ func _build() -> void:
 
 	# 2. sac
 	var c2 := _column("Sac", 300, cols)
+	# trier le sac (le choix est gardé dans les options)
+	var sort_row := HBoxContainer.new()
+	sort_row.add_theme_constant_override("separation", 2)
+	sort_row.add_child(_label("Trier :", 9, C_DIM))
+	for so in Inventory.SORTS:
+		var sb := Button.new()
+		sb.text = so[1]
+		sb.toggle_mode = true
+		sb.focus_mode = Control.FOCUS_NONE
+		sb.add_theme_font_size_override("font_size", 9)
+		var mode: String = so[0]
+		sb.pressed.connect(func(): set_bag_sort(mode))
+		sort_row.add_child(sb)
+		_sort_buttons[mode] = sb
+	c2.add_child(sort_row)
 	var scroll := ScrollContainer.new()
+	_bag_scroll = scroll
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	c2.add_child(scroll)
@@ -272,6 +293,7 @@ func _build() -> void:
 	srow.add_child(_only_ok)
 	c3.add_child(srow)
 	var rscroll := ScrollContainer.new()
+	_recipe_scroll = rscroll
 	rscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	c3.add_child(rscroll)
@@ -331,9 +353,20 @@ func _refresh() -> void:
 	var s: Dictionary = target.call("total_stats")
 	_stats.text = "Vie %d    Attaque %d    Défense %d\nMagie %d    Vitesse %d %%" % [s.health, s.attack, s.defense, s.magic, roundi(s.speed * 100.0)]
 
+	# on garde la position de défilement : rafraîchir (un objet ramassé, un clic...) ne remonte plus en haut
+	# (plusieurs rafraîchissements dans la même image : on garde la position voulue, pas celle déjà rognée)
+	var keep_bag: int = _scroll_hold.bag if _scroll_hold.frames > 0 else _bag_scroll.scroll_vertical
+	# la liste des recettes ne repart en haut que si on change d'onglet, de vue ou de recherche
+	var rkey := "%s|%s|%s|%s|%s|%s" % [_mode, _cat, _view, _shape, _mat_id, _search.text]
+	var keep_recipes: int = (_scroll_hold.recipes if _scroll_hold.frames > 0 else _recipe_scroll.scroll_vertical) if rkey == _recipe_key else 0
+	_recipe_key = rkey
 	for c in _bag.get_children():
+		_bag.remove_child(c)
 		c.queue_free()
-	for e in player.inventory.entries:
+	var sort_mode := str(SaveGame.options.get("bag_sort", "arrivee"))
+	for m in _sort_buttons:
+		(_sort_buttons[m] as Button).set_pressed_no_signal(m == sort_mode)
+	for e in player.inventory.sorted(sort_mode):
 		var item: ItemData = e.item
 		var btn := Button.new()
 		btn.custom_minimum_size = Vector2(54, 54)
@@ -374,6 +407,34 @@ func _refresh() -> void:
 
 	_refresh_crafting()
 	_refresh_job()
+	_restore_scroll(keep_bag, keep_recipes)
+
+
+## Remet les listes là où le joueur les avait laissées. Leur nouvelle taille n'est connue qu'après la mise en
+## page : on réapplique la position pendant quelques images.
+func _restore_scroll(bag: int, recipes: int) -> void:
+	_scroll_hold = {"bag": bag, "recipes": recipes, "frames": 3}
+	_apply_scroll_hold()
+
+
+func _apply_scroll_hold() -> void:
+	_bag_scroll.scroll_vertical = _scroll_hold.bag
+	_recipe_scroll.scroll_vertical = _scroll_hold.recipes
+
+
+func _process(_delta: float) -> void:
+	if _scroll_hold.frames > 0:
+		_scroll_hold.frames -= 1
+		_apply_scroll_hold()
+
+
+## Trie le sac : "arrivee", "type", "nom", "nombre" ou "rarete".
+func set_bag_sort(mode: String) -> void:
+	SaveGame.options.bag_sort = mode
+	SaveGame.save_options()
+	_scroll_hold.frames = 0
+	_bag_scroll.scroll_vertical = 0
+	_refresh()
 
 
 var _stations: Array = []
