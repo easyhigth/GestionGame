@@ -1114,3 +1114,14 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
 - Vers **5 m**, la pioche **perce la voûte d'une galerie souterraine** : le héros descend dans une grotte à
   explorer (monstres, minerais, coffres), avec une sortie vers la surface.
 - La touche G (creuser sous ses pieds) marche toujours.
+
+## Creuser sous le niveau de la mer : plus d'eau sous les terres
+
+- Avant, un seul grand plan d'eau couvrait tout le monde au niveau de la mer (avec un fond marin 2 m plus bas) :
+  dès qu'on creusait plus bas que la mer sur la terre ferme, le trou se remplissait d'eau à l'écran et le
+  fond marin masquait le fond du trou.
+- Maintenant, un **masque de l'eau** (une case = un pixel) dit où sont les vrais lacs et la mer : le plan d'eau,
+  le fond marin et le sol mouillé ne s'affichent plus qu'au-dessus des cases d'eau. On peut creuser aussi bas
+  qu'on veut sous les terres : le trou reste **sec**, comme dans Minecraft. Les lacs, la mer et le large
+  autour de l'île gardent leur eau.
+- Le masque suit les changements du terrain (un lac comblé devient sec, un trou creusé reste sec).
