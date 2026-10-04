@@ -756,12 +756,9 @@ func _set_lighting(dark: bool, r: RegionData) -> void:
 			env.ambient_light_color = (r.dungeon_ambient if r else Color(0.12, 0.1, 0.14)).lightened(0.25)
 			if brume_tier > 0:
 				env.ambient_light_color = env.ambient_light_color.lerp(BRUME_COLOR, 0.45)
-			env.ambient_light_energy = 0.9
+			env.ambient_light_energy = 0.6
 		if player and _player_light == null:
-			_player_light = OmniLight3D.new()
-			_player_light.light_color = Color(1.0, 0.92, 0.8)
-			_player_light.light_energy = 0.9
-			_player_light.omni_range = 7.0
+			_player_light = FlickerLight.make(Color(1.0, 0.86, 0.66), 1.1, 7.5, 0.1)
 			_player_light.position.y = 2.2
 			player.add_child(_player_light)
 	else:

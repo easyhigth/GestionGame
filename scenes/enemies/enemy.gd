@@ -244,6 +244,7 @@ func _physics_process(delta: float) -> void:
 	_lod_check -= delta
 	if _lod_check <= 0.0:
 		_lod_check = 0.5
+		_update_night_glow()
 		var pl := get_tree().get_first_node_in_group("player") as Node3D
 		_lod_far = pl != null and not tamed and _target == null and is_alive() and not has_meta("raider") \
 				and pl.global_position.distance_squared_to(global_position) > 45.0 * 45.0
@@ -562,4 +563,83 @@ func impact_material() -> String:
 		if k in id:
 			return MATERIALS[k]
 	return super()
+
+
+# ---------------------------------------------------------------- lueur dans le noir
+
+## La nuit (et sous terre), les monstres proches du héros ont les yeux qui luisent de leur couleur et un
+## léger halo : on les repère dans l'obscurité.
+var _glow: Node3D
+
+
+func _update_night_glow() -> void:
+	var want := false
+	if is_alive() and not tamed and is_inside_tree():
+		var pl := get_tree().get_first_node_in_group("player") as Node3D
+		if pl and pl.global_position.distance_squared_to(global_position) < 32.0 * 32.0:
+			var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
+			want = has_meta("night") or (dc != null and dc.daylight() < 0.35) or pl.global_position.y < WorldGenerator.UNDERGROUND
+	if want == (_glow != null):
+		return
+	if not want:
+		_glow.queue_free()
+		_glow = null
+		return
+	var col := (data.color if data else Color(1, 0.4, 0.3)).lightened(0.35)
+	_glow = Node3D.new()
+	_glow.name = "LueurNocturne"
+	var head := visual._bones.get("Head") as Node3D if visual else null
+	var parent: Node3D = head if head else visual
+	parent.add_child(_glow)
+	# les yeux : deux petits cubes lumineux sur le devant de la tête
+	var box := _head_box(head)
+	# des yeux qui brillent vraiment (halo de l'image)
+	var mat := SkillFX.own_glow(col.lightened(0.25), 3.2, false)
+	# le devant de la tête, dans le repère de l'os (le modèle regarde vers son +Z)
+	var fw := Vector3(0, 0, 1)
+	var upl := Vector3.UP
+	if head:
+		fw = (head.global_basis.inverse() * visual.global_basis.z).normalized()
+		upl = (head.global_basis.inverse() * Vector3.UP).normalized()
+	var side := upl.cross(fw).normalized()
+	var half := box.size * 0.5
+	var depth := absf(fw.x) * half.x + absf(fw.y) * half.y + absf(fw.z) * half.z
+	var width := absf(side.x) * box.size.x + absf(side.y) * box.size.y + absf(side.z) * box.size.z
+	var height := absf(upl.x) * box.size.x + absf(upl.y) * box.size.y + absf(upl.z) * box.size.z
+	var front := box.get_center() + fw * (depth + 0.015) + upl * height * 0.1
+	var eye := BoxMesh.new()
+	var e := clampf(width * 0.2, 0.05, 0.16)
+	eye.size = Vector3(e, e * 0.8, 0.03)
+	for sx in [-1.0, 1.0]:
+		var mi := MeshInstance3D.new()
+		mi.mesh = eye
+		mi.material_override = mat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.position = front + side * sx * width * 0.22
+		mi.basis = Basis.looking_at(-fw, upl) if absf(fw.dot(upl)) < 0.95 else Basis()
+		_glow.add_child(mi)
+	var l := OmniLight3D.new()
+	l.light_color = col
+	l.light_energy = 0.9
+	l.omni_range = 3.2 * maxf(1.0, data.model_scale if data else 1.0)
+	l.shadow_enabled = false
+	l.position = front + fw * 0.4
+	_glow.add_child(l)
+
+
+## Boîte de la tête (dans le repère de l'os « Head ») d'après ses blocs ; une boîte par défaut sinon.
+func _head_box(head: Node3D) -> AABB:
+	if head == null:
+		return AABB(Vector3(-0.15, 1.4, -0.15), Vector3(0.3, 0.3, 0.3))
+	var box := AABB()
+	var first := true
+	for c in head.find_children("*", "MeshInstance3D", true, false):
+		var mi := c as MeshInstance3D
+		if mi.mesh == null or mi.get_parent() is Node3D and (mi.get_parent() as Node3D).name == "LueurNocturne":
+			continue
+		var t := head.global_transform.affine_inverse() * mi.global_transform
+		var b := t * mi.mesh.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	return AABB(Vector3(-0.15, 0.0, -0.15), Vector3(0.3, 0.3, 0.3)) if first else box
 
