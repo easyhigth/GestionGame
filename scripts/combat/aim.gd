@@ -243,17 +243,25 @@ static func target_box(world: WorldGenerator, a: Dictionary) -> AABB:
 	return AABB()
 
 
-## Arêtes d'un cube unité centré (contour du bloc visé, comme dans Minecraft).
-static func wire_box() -> ArrayMesh:
-	var v := PackedVector3Array()
-	var c := [Vector3(-0.5, -0.5, -0.5), Vector3(0.5, -0.5, -0.5), Vector3(0.5, -0.5, 0.5), Vector3(-0.5, -0.5, 0.5),
-		Vector3(-0.5, 0.5, -0.5), Vector3(0.5, 0.5, -0.5), Vector3(0.5, 0.5, 0.5), Vector3(-0.5, 0.5, 0.5)]
-	for e in [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]:
-		v.append(c[e[0]])
-		v.append(c[e[1]])
-	var arr := []
-	arr.resize(Mesh.ARRAY_MAX)
-	arr[Mesh.ARRAY_VERTEX] = v
-	var m := ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arr)
-	return m
+## Arêtes d'un cube unité centré (contour du bloc visé, comme dans Minecraft) : des baguettes épaisses,
+## bien visibles de loin (une ligne simple ne fait qu'un pixel).
+static func wire_box(t := 0.035) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var h := 0.5
+	# 12 arêtes : 4 selon x, 4 selon y, 4 selon z
+	var edges := []
+	for a in [-h, h]:
+		for b in [-h, h]:
+			edges.append([Vector3(0, a, b), Vector3(1 + t * 2, t, t)])
+			edges.append([Vector3(a, 0, b), Vector3(t, 1 + t * 2, t)])
+			edges.append([Vector3(a, b, 0), Vector3(t, t, 1 + t * 2)])
+	for e in edges:
+		var c: Vector3 = e[0]
+		var sz: Vector3 = e[1] * 0.5
+		var v := [c + Vector3(-sz.x, -sz.y, -sz.z), c + Vector3(sz.x, -sz.y, -sz.z), c + Vector3(sz.x, sz.y, -sz.z), c + Vector3(-sz.x, sz.y, -sz.z),
+			c + Vector3(-sz.x, -sz.y, sz.z), c + Vector3(sz.x, -sz.y, sz.z), c + Vector3(sz.x, sz.y, sz.z), c + Vector3(-sz.x, sz.y, sz.z)]
+		for f in [[0, 1, 2, 3], [5, 4, 7, 6], [4, 0, 3, 7], [1, 5, 6, 2], [3, 2, 6, 7], [4, 5, 1, 0]]:
+			st.add_vertex(v[f[0]]); st.add_vertex(v[f[1]]); st.add_vertex(v[f[2]])
+			st.add_vertex(v[f[0]]); st.add_vertex(v[f[2]]); st.add_vertex(v[f[3]])
+	return st.commit()

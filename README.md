@@ -935,3 +935,22 @@ L'interface prenait trop de place : la double barre du bas occupait **30 % de la
   - Tout ce qui s'affiche en jeu est rangé dans un seul conteneur (`Hud._chrome`).
   - Le héros émet `ui_changed` quand un menu s'ouvre ou se ferme.
 - Test : `tests/run_tests.sh hud`. Il mesure la barre du bas et vérifie que rien ne reste affiché sous la carte, le journal, l'inventaire, le royaume et les talents. Captures : `hud_XX_*.png`.
+
+## Finitions de prise en main (session de jeu automatique)
+
+Une partie jouée toute seule (`tests/test_session.gd`) : le héros marche en 3e personne, combat deux squelettes
+au viseur, lance une compétence, pose des blocs, ouvre son sac puis passe la nuit près du feu ; une capture à
+chaque moment (`se_*.png`) sert à repérer les défauts visuels. Ce qu'elle a fait corriger :
+
+- **Grands titres qui se chevauchaient** : le titre de l'acte (« Acte I — Une autre vie ») et celui de la région
+  s'affichaient l'un sur l'autre au début. Les grands titres (région, acte, raid, événement, boss) passent
+  désormais **l'un après l'autre**.
+- **Contour du bloc visé plus épais** : de vraies arêtes sombres (et non des lignes d'un pixel), visibles de jour
+  comme de nuit.
+- **Aide à la visée** en 3e et 1re personne : un ennemi à portée, à moins de 4° du viseur, est accroché (on ne
+  rate plus un monstre de peu).
+- **Option « Viser à la souris »** (Options) : décochée, on retrouve l'ancien mode où le héros frappe et pose
+  **devant lui**.
+- **Guide replié** : le conseil détaillé d'un objectif reste 12 s, puis le guide se réduit à une ligne (titre et
+  objectif) ; il revient un moment de temps en temps, ou avec la touche d'aide-mémoire.
+- **Rappel des touches** (en haut à droite) : il s'efface après les 3 premières minutes de jeu.

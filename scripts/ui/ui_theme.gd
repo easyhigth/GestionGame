@@ -190,3 +190,13 @@ static func _build() -> Theme:
 	line.thickness = 2
 	t.set_stylebox("separator", "HSeparator", line)
 	return t
+
+
+## Réserve la place des grands titres au centre de l'écran pendant `secs` secondes ; renvoie le temps
+## à attendre avant de pouvoir afficher le sien.
+static func banner_slot(n: Node, secs: float) -> float:
+	var root := n.get_tree().root
+	var now := Time.get_ticks_msec() / 1000.0
+	var free_at := maxf(now, float(root.get_meta("banner_until", 0.0)))
+	root.set_meta("banner_until", free_at + secs)
+	return free_at - now
