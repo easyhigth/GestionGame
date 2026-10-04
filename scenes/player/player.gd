@@ -1190,6 +1190,7 @@ func _handle_combat_input(input: Vector3, delta: float) -> void:
 		if not held:
 			if _held >= charge_time:
 				_stop_charge()
+				_threaten(true)
 				_do_move("spin", 1.0, 1.0)
 				feat.emit("Attaque tournoyante !", Color("ffd86a"))
 			else:
@@ -1207,9 +1208,30 @@ func _handle_combat_input(input: Vector3, delta: float) -> void:
 		_next_combo()
 
 
+## Le monstre le plus proche devant le héros voit venir le coup : il peut esquiver ou lever sa garde
+## (une attaque chargée brise toute garde).
+func _threaten(heavy: bool) -> void:
+	var best: Node = null
+	var best_d := attack_reach() + 1.3
+	for n in get_tree().get_nodes_in_group(hostile_group()):
+		if not n.has_method("on_threatened"):
+			continue
+		var to: Vector3 = (n as Node3D).global_position - global_position
+		to.y = 0.0
+		var d := to.length()
+		if heavy and d < attack_reach() + 1.0 and n.has_method("break_guard"):
+			n.break_guard()
+		if d < best_d and (d < 0.5 or facing.dot(to / d) > 0.35):
+			best_d = d
+			best = n
+	if best:
+		best.on_threatened(self, heavy)
+
+
 func _attack_pressed() -> void:
 	_held = 0.0
 	_aim_with_camera()
+	_threaten(false)
 	_vm_swing = 1.0
 	if blocking:
 		set_blocking(false)

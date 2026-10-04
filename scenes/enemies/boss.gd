@@ -66,24 +66,21 @@ func _physics_process(delta: float) -> void:
 		return
 	name_label.visible = true
 	if phase == 1 and health.ratio() <= 0.5:
-		phase = 2
-		Sound.play("boss_roar", global_position + Vector3(0, 2, 0), 3.0, 0.0)
-		visual.trail_color = Color(1, 0.3, 0.2)
-		visual.flash(Color(1, 0.2, 0.1, 0.9), 0.5)
-		VoxelBurst.spawn(self, global_position + Vector3(0, 1.4, 0), Color(1, 0.3, 0.2), 60, 8.0, 0.12, 0.9, "sphere", 6.0)
-		SkillFX.ring(self, global_position, 7.0, Color(1, 0.3, 0.2), 0.6)
-		phase_changed.emit(2)
-		_power_timer = 1.5
+		_enter_phase(2)
+	elif phase == 2 and health.ratio() <= 0.25:
+		_enter_phase(3)
+	if phase == 3:
+		_fury_fx(delta)
 	_power_timer -= delta
 	if _power_timer <= 0.0 and can_act() and not in_move() and _target:
-		_power_timer = randf_range(5.5, 8.0) * (0.65 if phase == 2 else 1.0)
+		_power_timer = randf_range(5.5, 8.0) * [1.0, 1.0, 0.65, 0.5][phase]
 		_use_power()
 
 
 func _on_move_ended(n: String, interrupted: bool) -> void:
 	super(n, interrupted)
-	if phase == 2:
-		_attack_cooldown *= 0.6
+	if phase >= 2:
+		_attack_cooldown *= 0.6 if phase == 2 else 0.45
 
 
 ## Enchaîne ses pouvoirs dans l'ordre (en phase 2, il peut en lancer deux à la suite).
@@ -104,8 +101,64 @@ func _use_power() -> void:
 				_shockwave()
 		"charge":
 			_charge()
-	if phase == 2 and randf() < 0.35 and pw != "onde":
+	if phase >= 2 and randf() < 0.35 and pw != "onde":
 		_after(1.4, func(): if is_alive(): _shockwave())
+	# phase 3 : il ajoute les lames en croix (quatre bandes rouges qui partent de lui)
+	if phase == 3:
+		_after(2.2, func(): if is_alive(): _cross_blades())
+
+
+# ---------------------------------------------------------------- phases
+
+## Changement de phase mis en scène : le boss rugit, devient intouchable un instant pendant que le temps
+## ralentit, une onde le repousse... Phase 2 (la moitié de sa vie) : enragé, plus rapide. Phase 3 (le
+## quart) : fureur, entouré de braises, pouvoirs deux fois plus fréquents et lames en croix.
+func _enter_phase(n: int) -> void:
+	phase = n
+	cancel_move()
+	_invulnerable_left = maxf(_invulnerable_left, 1.6)
+	var col := Color(1, 0.3, 0.2) if n == 2 else Color(0.75, 0.15, 1.0)
+	Sound.play("boss_roar", global_position + Vector3(0, 2, 0), 3.0 + n, 0.0)
+	Sound.play("ult_boom", global_position, -2.0 + n, 0.0)
+	visual.trail_color = col
+	visual.flash(Color(col, 0.45), 0.3)
+	TimeFX.slow_motion(0.35, 0.9)
+	var h := 1.4 * (data.model_scale if data else 1.0)
+	VoxelBurst.emit(self, global_position + Vector3(0, h, 0), {"palette": VoxelBurst.palette_of(col), "count": 70 + 30 * n, "speed": 9.0,
+		"size": 0.13, "life": 1.0, "hdr": 2.0, "streak": 1.5, "gravity": 4.0})
+	VoxelBurst.emit(self, global_position + Vector3(0, h, 0), {"palette": VoxelBurst.palette_of(col), "count": 40, "speed": 3.0,
+		"size": 0.1, "life": 0.8, "mode": "implode", "radius": 5.0, "hdr": 1.8})
+	SkillFX.ring(self, global_position, 7.0 + n, col, 0.7)
+	SkillFX.light(self, global_position + Vector3(0, h, 0), col, 6.0, 10.0, 1.2)
+	if n == 3:
+		SkillFX.scorch(self, global_position, 4.0, 8.0)
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.6, 0), "ENRAGÉ !" if n == 2 else "FUREUR !", col.lightened(0.3), true)
+	# l'onde du rugissement repousse ceux qui sont collés à lui (sans les blesser)
+	for c in get_tree().get_nodes_in_group(hostile_group()):
+		var cb := c as Combatant
+		if cb and cb.is_alive() and cb.global_position.distance_to(global_position) < 4.5:
+			var away := cb.global_position - global_position
+			away.y = 0.0
+			cb._knockback = away.normalized() * 10.0
+	var hero := get_tree().get_first_node_in_group("player")
+	if hero and hero.has_method("shake"):
+		hero.shake(0.6)
+	phase_changed.emit(n)
+	_power_timer = 1.8
+
+
+var _fury_t := 0.0
+
+
+## Phase 3 : des braises violettes montent autour de lui.
+func _fury_fx(delta: float) -> void:
+	_fury_t -= delta
+	if _fury_t > 0.0:
+		return
+	_fury_t = 0.25
+	var r := 1.2 * (data.model_scale if data else 1.0)
+	VoxelBurst.emit(self, global_position + Vector3(0, 0.2, 0), {"palette": [Color(0.75, 0.15, 1.0), Color(1, 0.35, 0.6), Color(0.4, 0.05, 0.6)],
+		"count": 6, "speed": 1.6, "size": 0.08, "life": 1.0, "mode": "column", "radius": r, "hdr": 1.8, "gravity": -2.0, "drag": 1.0})
 
 
 # ---------------------------------------------------------------- pouvoirs
@@ -123,33 +176,7 @@ func _after(t: float, cb: Callable) -> void:
 
 ## Disque rouge qui se remplit, puis coup sur tous ceux qui sont dedans.
 static func telegraph(from: Node, pos: Vector3, radius: float, time: float, color := TELEGRAPH) -> void:
-	var holder := from.get_tree().current_scene if from.get_tree().current_scene else from.get_tree().root
-	var root := Node3D.new()
-	holder.add_child(root)
-	root.global_position = pos + Vector3(0, 0.07, 0)
-	for k in 2:
-		var mi := MeshInstance3D.new()
-		var c := CylinderMesh.new()
-		c.top_radius = radius
-		c.bottom_radius = radius
-		c.height = 0.04 + k * 0.02
-		c.radial_segments = 24
-		c.rings = 1
-		mi.mesh = c
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		mat.albedo_color = Color(color, 0.18 if k == 0 else 0.42)
-		mi.material_override = mat
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(mi)
-		if k == 1:
-			mi.scale = Vector3(0.05, 1, 0.05)
-			var tw := mi.create_tween()
-			tw.tween_property(mi, "scale", Vector3.ONE, time)
-	var end := root.create_tween()
-	end.tween_interval(time)
-	end.tween_callback(root.queue_free)
+	SkillFX.telegraph(from, pos, radius, time, color)
 
 
 func _hit_area(center: Vector3, radius: float, mult: float, knock: float) -> void:
@@ -224,6 +251,44 @@ func _summon() -> void:
 		e.home = global_position
 		_adds.append(e)
 		VoxelBurst.spawn(e, e.global_position + Vector3(0, 0.6, 0), Color(0.6, 0.3, 0.9), 20, 3.0, 0.1, 0.5)
+
+
+## Quatre bandes rouges partent du boss (en croix, ou en X une fois sur deux), puis des lames d'énergie
+## les parcourent : il faut se placer entre elles.
+func _cross_blades() -> void:
+	var center := global_position
+	var rot := 0.0 if randf() < 0.5 else PI / 4.0
+	var length := 10.0
+	var wind := 1.1
+	var col := Color(0.85, 0.2, 1.0)
+	for i in 4:
+		var d := Vector3(cos(rot + i * PI / 2.0), 0, sin(rot + i * PI / 2.0))
+		SkillFX.telegraph(self, center, 0.75, wind, Color(0.9, 0.2, 0.6), d, length)
+	visual.play_move("cast_1", 0.8)
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.5, 0), "!!", Color("ff4aff"), true)
+	_after(wind, func():
+		if not is_alive():
+			return
+		for i in 4:
+			var d := Vector3(cos(rot + i * PI / 2.0), 0, sin(rot + i * PI / 2.0))
+			VoxelBurst.emit(self, center + d * 1.5 + Vector3(0, 0.5, 0), {"palette": VoxelBurst.palette_of(col), "count": 30, "speed": 14.0,
+				"size": 0.1, "life": 0.6, "mode": "cone", "dir": d, "spread": 6.0, "streak": 3.0, "hdr": 2.2, "gravity": 0.0, "drag": 0.5})
+		for n in get_tree().get_nodes_in_group(hostile_group()):
+			var c := n as Combatant
+			if c == null or not c.is_alive():
+				continue
+			var off := c.global_position - center
+			off.y = 0.0
+			for i in 4:
+				var d := Vector3(cos(rot + i * PI / 2.0), 0, sin(rot + i * PI / 2.0))
+				var along := off.dot(d)
+				if along > 0.0 and along < length and (off - d * along).length() < 0.75 + c.body_radius:
+					if not c.receive_hit(roundi(attack_power() * 1.3), self, 8.0, 2.0):
+						c.notify_near_miss(self)
+					break
+		var hero := get_tree().get_first_node_in_group("player")
+		if hero and hero.has_method("shake"):
+			hero.shake(0.3))
 
 
 func _charge() -> void:

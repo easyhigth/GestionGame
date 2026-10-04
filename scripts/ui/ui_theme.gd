@@ -192,11 +192,11 @@ static func _build() -> Theme:
 	return t
 
 
-## Réserve la place des grands titres au centre de l'écran pendant `secs` secondes ; renvoie le temps
-## à attendre avant de pouvoir afficher le sien.
-static func banner_slot(n: Node, secs: float) -> float:
-	var root := n.get_tree().root
-	var now := Time.get_ticks_msec() / 1000.0
-	var free_at := maxf(now, float(root.get_meta("banner_until", 0.0)))
-	root.set_meta("banner_until", free_at + secs)
-	return free_at - now
+## Un grand titre (région, acte, événement...) est-il encore à l'écran ? Les titres s'inscrivent dans le
+## groupe « big_banner » ; le suivant attend que le précédent se soit effacé.
+static func banner_busy(n: Node, except: CanvasItem = null) -> bool:
+	for c in n.get_tree().get_nodes_in_group("big_banner"):
+		var ci := c as CanvasItem
+		if ci and ci != except and ci.is_visible_in_tree() and ci.modulate.a > 0.03:
+			return true
+	return false

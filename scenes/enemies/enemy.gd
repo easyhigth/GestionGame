@@ -130,7 +130,95 @@ func _start_attack() -> void:
 	# avertissement : il prend la pose de préparation en clignotant de sa couleur
 	var windup := float(MoveLibrary.get_move(m).get("windup", 0.4)) / move_speed
 	visual.flash(Color(data.color if data else Color(1, 0.4, 0.2), 0.5), windup)
+	_telegraph_attack(m, windup)
 	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.3, 0), "!", Color("ff4a3a"), true)
+
+
+## Zone rouge au sol pendant la préparation des grands coups : la charge (une bande devant lui), le
+## balayage (un disque autour de lui), et les coups des grands monstres (un disque devant eux).
+func _telegraph_attack(m: String, windup: float) -> void:
+	var big := (data.model_scale if data else 1.0) >= 1.4
+	var reach := attack_reach()
+	match m:
+		"charge_ram":
+			var lunge: Array = MoveLibrary.get_move(m).get("lunge", [0, 0, 3.0])
+			SkillFX.telegraph(self, global_position, body_radius + 0.2, windup + 0.15, SkillFX.TELEGRAPH, facing, float(lunge[2]) + reach + 0.6)
+		"enemy_sweep":
+			SkillFX.telegraph(self, global_position, reach + 0.3, windup + 0.1)
+		_:
+			if big:
+				SkillFX.telegraph(self, global_position + facing * reach * 0.6, reach * 0.7, windup + 0.1)
+
+
+# ---------------------------------------------------------------- esquive et garde
+
+## Les monstres agiles esquivent d'un bond, les monstres armés ou cuirassés lèvent leur garde (une
+## attaque chargée la brise). Plus le monstre est fort, plus il le fait souvent.
+const AGILE := ["loup", "panthere", "harpie", "gobelin", "bandit", "homme_lezard", "araignee", "fee", "serpent", "salamandre", "esprit"]
+const GUARD := ["squelette", "orc", "bandit_chef", "seigneur", "aurele", "morvain", "demon", "ogre", "scorpion", "ren_possede"]
+var _react_cd := randf_range(1.0, 3.0)
+var _guard_left := 0.0
+
+
+func temperament() -> String:
+	var id := data.resource_path.get_file().get_basename() if data else ""
+	for k in GUARD:
+		if k in id:
+			return "guard"
+	for k in AGILE:
+		if k in id:
+			return "agile"
+	return ""
+
+
+## Le héros s'apprête à frapper ce monstre (appelé par le joueur au moment du coup).
+func on_threatened(attacker: Combatant, heavy := false) -> bool:
+	if tamed or not is_alive() or in_move() or not can_act() or _react_cd > 0.0 or self is Boss:
+		return false
+	var t := temperament()
+	if t == "":
+		return false
+	_react_cd = randf_range(2.5, 4.5)
+	var chance := clampf(0.12 + level * 0.012, 0.12, 0.4)
+	if randf() > chance:
+		return false
+	if t == "agile":
+		dodge_from(attacker)
+		return true
+	if heavy:
+		return false
+	_guard_left = randf_range(0.6, 1.0)
+	set_blocking(true)
+	_block_time = 1.0   # pas de parade parfaite : juste une garde
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.2, 0), "Garde", Color("c8d8ff"))
+	return true
+
+
+## Attaque chargée : la garde levée cède (le monstre est étourdi un court instant).
+func break_guard() -> void:
+	if _guard_left <= 0.0:
+		return
+	_guard_left = 0.0
+	set_blocking(false)
+	_stagger_left = maxf(_stagger_left, 0.8)
+	visual.play_move("stagger")
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.2, 0), "Garde brisée !", Color("ffb040"), true)
+	Sound.play("parry", global_position + Vector3(0, 1, 0), -4.0)
+
+
+## Bond de côté (ou en arrière) pour éviter le coup, avec un nuage de poussière.
+func dodge_from(attacker: Node3D) -> void:
+	var away := global_position - attacker.global_position
+	away.y = 0.0
+	away = away.normalized() if away.length() > 0.01 else -facing
+	var side := away.cross(Vector3.UP) * (1.0 if randf() < 0.5 else -1.0)
+	_knockback = (side * 0.8 + away * 0.6).normalized() * 9.0
+	_invulnerable_left = maxf(_invulnerable_left, 0.3)
+	visual.play_move("flinch", 1.6)
+	VoxelBurst.emit(self, global_position + Vector3(0, 0.1, 0), {"color": Color(0.7, 0.62, 0.5), "count": 10, "speed": 2.2,
+		"size": 0.12, "life": 0.5, "glow": false, "grow": true, "alpha": 0.6, "mode": "ring", "gravity": -0.5})
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.2, 0), "Esquive", Color("b8f0ff"))
+	Sound.play("dash", global_position, -6.0)
 
 
 func _on_move_ended(_name: String, _interrupted: bool) -> void:
@@ -168,6 +256,11 @@ func _physics_process(delta: float) -> void:
 	elif _lod_acc > 0.0:
 		_lod_acc = 0.0
 	_combat_step(delta)
+	_react_cd -= delta
+	if _guard_left > 0.0:
+		_guard_left -= delta
+		if _guard_left <= 0.0:
+			set_blocking(false)
 	if not is_alive():
 		_dead_time += delta
 		velocity = Vector3.ZERO
@@ -205,6 +298,12 @@ func _physics_process(delta: float) -> void:
 		return
 	if not can_act() or in_move():
 		pass
+	elif _guard_left > 0.0 and _target:
+		# garde levée : il fait face sans avancer
+		var tg := _target.global_position - global_position
+		tg.y = 0.0
+		if tg.length() > 0.01:
+			facing = tg.normalized()
 	elif _target:
 		_fight(delta, speed)
 	else:

@@ -670,3 +670,60 @@ class Trail extends Node3D:
 		if smoke and randf() < 0.5:
 			VoxelBurst.emit(self, global_position, {"color": Color(0.25, 0.22, 0.2), "count": 1, "speed": 0.4, "size": size * 2.5,
 				"life": 0.8, "glow": false, "grow": true, "alpha": 0.5, "gravity": -1.0, "mode": "up"})
+
+
+# ---------------------------------------------------------------- télégraphes (zones rouges au sol)
+
+const TELEGRAPH := Color(1.0, 0.25, 0.15)
+
+
+## Zone rouge au sol qui se remplit pendant `time` secondes avant un coup : un disque de rayon `radius`
+## (ou, avec `dir`, une bande de `length` m sur `radius` * 2 de large, pour une charge).
+static func telegraph(from: Node, pos: Vector3, radius: float, time: float, color := TELEGRAPH,
+		dir := Vector3.ZERO, length := 0.0) -> Node3D:
+	var holder := from.get_tree().current_scene if from.get_tree().current_scene else from.get_tree().root
+	var root := Node3D.new()
+	holder.add_child(root)
+	root.global_position = pos + Vector3(0, 0.07, 0)
+	var line := dir != Vector3.ZERO and length > 0.0
+	if line:
+		var d := Vector3(dir.x, 0, dir.z).normalized()
+		root.global_basis = Basis.looking_at(d, Vector3.UP)
+	for k in 2:
+		var mi := MeshInstance3D.new()
+		if line:
+			var b := BoxMesh.new()
+			b.size = Vector3(radius * 2.0, 0.04 + k * 0.02, length)
+			mi.mesh = b
+			mi.position = Vector3(0, 0, -length * 0.5)
+		else:
+			var c := CylinderMesh.new()
+			c.top_radius = radius
+			c.bottom_radius = radius
+			c.height = 0.04 + k * 0.02
+			c.radial_segments = 24
+			c.rings = 1
+			mi.mesh = c
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.albedo_color = Color(color, 0.18 if k == 0 else 0.42)
+		mi.material_override = mat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(mi)
+		if k == 1:
+			# le remplissage : du centre vers le bord (disque), du départ vers le bout (bande)
+			if line:
+				mi.scale = Vector3(1, 1, 0.05)
+				mi.position = Vector3(0, 0, -length * 0.025)
+				var tw2 := mi.create_tween().set_parallel()
+				tw2.tween_property(mi, "scale", Vector3.ONE, time)
+				tw2.tween_property(mi, "position", Vector3(0, 0, -length * 0.5), time)
+			else:
+				mi.scale = Vector3(0.05, 1, 0.05)
+				mi.create_tween().tween_property(mi, "scale", Vector3.ONE, time)
+	var end := root.create_tween()
+	end.tween_interval(time)
+	end.tween_callback(root.queue_free)
+	return root
+
