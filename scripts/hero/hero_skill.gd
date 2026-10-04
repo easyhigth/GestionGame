@@ -228,12 +228,56 @@ func activate() -> bool:
 	if data.category == "mystique":
 		_mythic_intro(prm)
 	call("_a_" + kind, prm)
-	Sound.play("cast", owner.global_position + Vector3(0, 1, 0), -2.0)
+	_cast_sound(kind, prm)
 	cooldown_left = data.cooldown * SkillData.CD_SCALE[tier] * (1.0 - clampf(p("cdr_pct"), 0.0, 0.6))
 	owner.visual.flash(Color(data.color, 0.4), 0.15)
 	owner.feat.emit(("✦ " + current_name() + " ✦") if data.category == "mystique" else current_name() + " !", data.color.lightened(0.25))
 	activated.emit()
 	return true
+
+
+# ---------------------------------------------------------------- sons
+
+## Genre de magie d'une compétence (feu, glace, foudre, lumière, ombre, nature, arcane, arme) : d'après
+## son effet, puis sa couleur.
+static func genre_of(kind: String, prm: Dictionary, col: Color) -> String:
+	var fx := str(prm.get("fx", ""))
+	if kind in ["heal", "rally", "barrier"] or fx == "holy":
+		return "holy"
+	if kind in ["meteor", "crater"] or fx in ["fire", "flames"]:
+		return "fire"
+	if kind in ["chain", "storm"] or fx == "bolt":
+		return "lightning"
+	if kind == "slow_field" or fx in ["ice", "snow"]:
+		return "ice"
+	if kind in ["drain", "fear", "vortex"] or fx in ["shadow", "blood"]:
+		return "shadow"
+	if kind in ["dash", "execute", "move", "cone", "volley"] or fx in ["blade", "rocks"]:
+		return "physical"
+	if col.s < 0.25:
+		return "physical"
+	var h := col.h
+	if h < 0.09 or h > 0.94:
+		return "fire"
+	if h < 0.18:
+		return "holy"
+	if h < 0.45:
+		return "nature"
+	if h < 0.66:
+		return "ice"
+	return "arcane"
+
+
+## Le son du lancer : celui du genre ; les compétences légendaires et mystiques (les « ultimes »)
+## rassemblent d'abord leur énergie puis éclatent dans une déflagration.
+func _cast_sound(kind: String, prm: Dictionary) -> void:
+	var at := owner.global_position + Vector3(0, 1, 0)
+	Sound.play("cast_" + HeroSkill.genre_of(kind, prm, data.color), at, -1.0)
+	if grade() >= 3:
+		Sound.play("ult_charge", at, -2.0, 0.0)
+		owner.get_tree().create_timer(0.45).timeout.connect(func():
+			if is_instance_valid(owner):
+				Sound.play("ult_boom", owner.global_position, 1.0 + (grade() - 3) * 2.0, 0.04))
 
 
 # ---------------------------------------------------------------- ampleur des effets

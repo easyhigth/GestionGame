@@ -808,6 +808,172 @@ def music_boss():
     return region_song(['Cm', 'Ab', 'Bb', 'G', 'Cm', 'Ab', 'Fm', 'G'], 150, mel, 'horn', 'stabs', 'battle', pad_cut=1400, pad_vol=0.1, lead_gain=0.22)
 
 
+# ---------------------------------------------------------------- impacts : arme qui frappe et matière touchée
+
+def sfx_hit_blade():
+    """Lame : un « tchac » vif, sifflement métallique très court et chair entaillée."""
+    slice_ = expdecay(bandpass(noise(0.12, 101), 2500, 9000), 0.018)
+    ring = mix(*[gain(expdecay(osc('sine', f, 0.2), 0.04), g) for f, g in ((2400, 0.25), (3700, 0.15))])
+    body = expdecay(osc('sine', lambda t: 210 - 300 * t, 0.12), 0.03)
+    return mix(gain(slice_, 1.0), ring, gain(body, 0.7))
+
+
+def sfx_hit_blunt():
+    """Masse, marteau : un coup sourd et lourd."""
+    body = expdecay(osc('sine', lambda t: 95 - 90 * t, 0.32), 0.07)
+    thud = expdecay(lowpass(noise(0.18, 103), 900), 0.03)
+    return mix(gain(body, 1.0), gain(thud, 1.0))
+
+
+def sfx_hit_pierce():
+    """Lance, dague, flèche : un « tock » sec et pointu."""
+    tick = expdecay(bandpass(noise(0.06, 105), 1800, 7000), 0.008)
+    body = expdecay(osc('sine', lambda t: 320 - 500 * t, 0.08), 0.02)
+    return mix(gain(tick, 1.0), gain(body, 0.6))
+
+
+def sfx_hit_fist():
+    """Poing : un « pof » mat."""
+    body = expdecay(osc('sine', lambda t: 150 - 120 * t, 0.14), 0.035)
+    puff = expdecay(lowpass(noise(0.1, 107), 1500), 0.02)
+    return mix(gain(body, 0.9), gain(puff, 0.8))
+
+
+def sfx_hit_magic():
+    """Bâton, sort : un claquement d'énergie qui grésille."""
+    zap = expdecay(osc('saw', lambda t: 1400 - 2600 * t, 0.16), 0.04)
+    fizz = expdecay(bandpass(noise(0.16, 109), 3000, 9000), 0.05)
+    return mix(gain(lowpass(zap, 4000), 0.6), gain(fizz, 0.6))
+
+
+def sfx_mat_bone():
+    """Os (squelettes) : des claquements secs qui s'entrechoquent."""
+    out = silence(0.22)
+    for i, (at, f) in enumerate(((0.0, 1900), (0.035, 1500), (0.075, 2300))):
+        c = mix(expdecay(osc('square', f, 0.05), 0.008), expdecay(bandpass(noise(0.05, 111 + i), 1500, 6000), 0.006))
+        place(out, lowpass(c, 6000), at, 0.8 - i * 0.2)
+    return out
+
+
+def sfx_mat_armor():
+    """Armure de métal : un « clang » qui résonne."""
+    ring = mix(*[gain(expdecay(osc('sine', f, 0.5), 0.12), g) for f, g in ((880, 1.0), (1420, 0.6), (2210, 0.4), (3170, 0.25))])
+    hit = expdecay(bandpass(noise(0.05, 113), 1500, 8000), 0.01)
+    return mix(gain(ring, 0.7), hit)
+
+
+def sfx_mat_stone():
+    """Pierre (golems, gargouilles) : un choc minéral et des gravillons."""
+    knock = expdecay(osc('sine', lambda t: 260 - 200 * t, 0.18), 0.03)
+    grit = expdecay(bandpass(noise(0.25, 115), 1200, 6000), 0.06)
+    return mix(gain(knock, 0.8), gain(grit, 0.7))
+
+
+def sfx_mat_wood():
+    """Bois (sylvains, dryades) : un « toc » creux."""
+    return mix(expdecay(osc('sine', lambda t: 340 - 120 * t, 0.2), 0.05), gain(expdecay(osc('sine', 690, 0.15), 0.03), 0.4),
+               gain(expdecay(bandpass(noise(0.06, 117), 800, 3000), 0.01), 0.5))
+
+
+def sfx_mat_slime():
+    """Gelée, grenouille : un « splotch » mouillé."""
+    blob = expdecay(osc('sine', lambda t: 180 + 500 * math.sin(math.pi * min(1.0, t / 0.18)), 0.22), 0.06)
+    wet = expdecay(lowpass(noise(0.22, 119), 1200), 0.05)
+    return mix(gain(blob, 0.8), gain(wet, 0.8))
+
+
+def sfx_mat_spirit():
+    """Esprits, fantômes : un souffle cristallin."""
+    s = mix(*[gain(expdecay(osc('sine', f, 0.45), 0.15), 0.4) for f in (1046, 1568, 2093)])
+    air = expdecay(bandpass(noise(0.4, 121), 3000, 9000), 0.12)
+    return mix(s, gain(air, 0.5))
+
+
+# ---------------------------------------------------------------- sorts : un son par genre de magie
+
+def sfx_cast_fire():
+    """Feu : une flamme qui s'embrase (souffle grave qui gronde)."""
+    roar = env(lowpass(noise(0.7, 131), lambda t: 600 + 2500 * min(1.0, t / 0.25)), 0.04, 0.3, 0.5, 0.3)
+    crackle = silence(0.7)
+    rnd = random.Random(133)
+    for i in range(14):
+        place(crackle, expdecay(bandpass(noise(0.03, 140 + i), 2000, 8000), 0.005), rnd.uniform(0.05, 0.6), rnd.uniform(0.3, 0.7))
+    return mix(gain(roar, 0.9), crackle, gain(expdecay(osc('sine', lambda t: 80 + 40 * t, 0.7), 0.25), 0.5))
+
+
+def sfx_cast_ice():
+    """Glace : des cristaux qui tintent et se figent."""
+    out = silence(0.8)
+    for i, f in enumerate((2093, 2637, 3136, 3951, 2349)):
+        place(out, expdecay(osc('sine', f, 0.5), 0.12), i * 0.05, 0.35)
+    crack = expdecay(bandpass(noise(0.2, 151), 3000, 9000), 0.03)
+    return mix(out, gain(crack, 0.6), gain(env(bandpass(noise(0.8, 153), 4000, 10000), 0.2, 0.4, 0, 0.2), 0.2))
+
+
+def sfx_cast_lightning():
+    """Foudre : un claquement électrique et un grésillement."""
+    snap = expdecay(bandpass(noise(0.08, 161), 1500, 10000), 0.01)
+    buzz = env(lowpass(osc('saw', lambda t: 110 + 30 * math.sin(t * 260), 0.5), 3000), 0.005, 0.2, 0.3, 0.2)
+    sizzle = expdecay(highpass(noise(0.5, 163), 5000), 0.12)
+    boom = expdecay(osc('sine', lambda t: 70 - 30 * t, 0.5), 0.15)
+    return mix(gain(snap, 1.0), gain(buzz, 0.35), gain(sizzle, 0.5), gain(boom, 0.6))
+
+
+def sfx_cast_holy():
+    """Lumière, soin : un accord de cloches qui s'élève."""
+    out = silence(1.0)
+    for i, n in enumerate((72, 76, 79, 84)):
+        place(out, env(mix(osc('sine', note(n), 0.8), gain(osc('sine', note(n) * 2.01, 0.8), 0.25)), 0.02, 0.2, 0.4, 0.4), i * 0.06, 0.4)
+    shimmer = env(bandpass(noise(1.0, 171), 5000, 10000), 0.3, 0.3, 0.2, 0.4)
+    return mix(out, gain(shimmer, 0.15))
+
+
+def sfx_cast_shadow():
+    """Ombre, vide : un souffle grave inversé qui aspire."""
+    swell = env(lowpass(osc('saw', lambda t: 55 + 20 * t, 0.8), lambda t: 200 + 900 * t), 0.6, 0.0, 1.0, 0.15)
+    whisper = env(bandpass(noise(0.8, 181), 400, 1800), 0.5, 0.0, 1.0, 0.2)
+    return mix(gain(swell, 0.8), gain(whisper, 0.5))
+
+
+def sfx_cast_nature():
+    """Nature : un bruissement de feuilles et un appel de bois."""
+    rustle = env(bandpass(noise(0.6, 191), 1500, 6000), 0.1, 0.2, 0.4, 0.25)
+    out = silence(0.6)
+    for i, n in enumerate((67, 71, 74)):
+        place(out, env(osc('tri', note(n), 0.3), 0.01, 0.25, 0, 0.05), i * 0.08, 0.35)
+    return mix(gain(rustle, 0.6), out)
+
+
+def sfx_cast_arcane():
+    """Arcane : un scintillement qui monte et tourbillonne."""
+    s = mix(osc('sine', lambda t: 600 + 1800 * t + 120 * math.sin(t * 40), 0.6), gain(osc('sine', lambda t: 905 + 2600 * t, 0.6), 0.4))
+    return env(mix(s, gain(bandpass(noise(0.6, 201), 4000, 10000), 0.25)), 0.08, 0.3, 0.3, 0.2)
+
+
+def sfx_cast_physical():
+    """Technique d'arme : un grand souffle d'air (élan, charge)."""
+    s = bandpass(noise(0.4, 211), 150, lambda t: 400 + 3000 * math.sin(math.pi * min(1.0, t / 0.4)))
+    return mix(env(s, 0.05, 0.35, 0, 0), gain(expdecay(osc('sine', lambda t: 90 - 40 * t, 0.4), 0.12), 0.6))
+
+
+def sfx_ult_charge():
+    """Ultime : l'énergie qui se rassemble (montée de plus en plus aiguë)."""
+    rise = env(mix(osc('saw', lambda t: 80 + 300 * t * t, 1.1), gain(osc('saw', lambda t: 81 + 303 * t * t, 1.1), 0.8)), 0.4, 0.0, 1.0, 0.05)
+    air = env(bandpass(noise(1.1, 221), lambda t: 300 + 4000 * t, lambda t: 1200 + 7000 * t), 0.6, 0.0, 1.0, 0.05)
+    return mix(gain(lowpass(rise, lambda t: 400 + 3000 * t), 0.5), gain(air, 0.5))
+
+
+def sfx_ult_boom():
+    """Ultime : la déflagration (sous-grave, souffle et débris qui retombent)."""
+    sub = expdecay(osc('sine', lambda t: 55 - 25 * t, 2.2), 0.6)
+    blast = expdecay(lowpass(noise(2.2, 231), lambda t: 6000 * math.exp(-t * 2.5) + 300), 0.35)
+    out = silence(2.2)
+    rnd = random.Random(233)
+    for i in range(22):
+        place(out, expdecay(bandpass(noise(0.05, 240 + i), 1000, 6000), 0.01), rnd.uniform(0.3, 1.9), rnd.uniform(0.15, 0.4))
+    return mix(gain(sub, 1.0), gain(blast, 0.9), out)
+
+
 SFX = {k[4:]: v for k, v in globals().items() if k.startswith('sfx_')}
 AMB = {'amb_day': amb_day, 'amb_night': amb_night, 'amb_fire': amb_fire, 'amb_rain': amb_rain, 'amb_wind': amb_wind}
 MUSIC = {'day': music_day, 'night': music_night, 'combat': music_combat, 'title': music_title,

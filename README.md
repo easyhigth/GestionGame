@@ -954,3 +954,22 @@ chaque moment (`se_*.png`) sert à repérer les défauts visuels. Ce qu'elle a f
 - **Guide replié** : le conseil détaillé d'un objectif reste 12 s, puis le guide se réduit à une ligne (titre et
   objectif) ; il revient un moment de temps en temps, ou avec la touche d'aide-mémoire.
 - **Rappel des touches** (en haut à droite) : il s'efface après les 3 premières minutes de jeu.
+
+## Sons du combat
+
+Tous les bruitages sont générés par `tools/audio_generator.py` (synthèse, sans fichier extérieur).
+
+- **Chaque arme a son impact** : lame (« tchac » métallique), masse et marteau (coup sourd), lance et dague
+  (« tock » sec), poings (« pof » mat), bâton et projectiles magiques (claquement d'énergie). Les gros coups et
+  les critiques ajoutent un grondement.
+- **Chaque cible a sa matière** : les squelettes claquent comme des os, les gelées et grenouilles font
+  « splotch », les dryades sonnent le bois creux, les esprits et fées un souffle cristallin, les orcs, scorpions
+  et chevaliers un « clang » d'armure, les démons et créatures de magma la pierre. Un habitant ou le héros en
+  armure de métal sonne aussi le métal.
+- **Chaque compétence a le son de son genre** : feu (flamme qui s'embrase), glace (cristaux qui tintent),
+  foudre (claquement électrique), lumière et soins (accord de cloches), ombre (souffle grave qui aspire),
+  nature (bruissement), arcane (scintillement), technique d'arme (grand souffle). Le genre se déduit de l'effet
+  de la compétence, sinon de sa couleur.
+- **Les ultimes** (talents légendaires et mystiques) rassemblent leur énergie dans une montée de plus en plus
+  aiguë, puis éclatent dans une déflagration : sous-grave, souffle et débris qui retombent (plus forte encore
+  pour une mystique).
