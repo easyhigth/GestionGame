@@ -29,6 +29,18 @@ var _bag_scroll: ScrollContainer
 var _recipe_scroll: ScrollContainer
 var _sort_buttons := {}
 var _recipe_key := ""
+## Grille d'artisanat façon Minecraft (2×2 sur soi, 3×3 à un atelier) : une case = null ou {item, count}.
+## Les objets posés dans la grille sortent du sac ; ils y retournent quand on ferme ou qu'on change d'atelier.
+var _grid: Array = []
+var _grid_side := 0
+var _grid_box: GridContainer
+var _grid_result: PanelContainer
+var _grid_note: RichTextLabel
+var _grid_pick := 0
+## Recette posée depuis le livre (prioritaire quand plusieurs recettes ont la même disposition).
+var _grid_pref: RecipeData
+## Plusieurs fabrications d'affilée : on ne rafraîchit qu'à la fin.
+var _batch := false
 var _scroll_hold := {"bag": 0, "recipes": 0, "frames": 0}
 var _info_name: Label
 var _info_icon: TextureRect
@@ -70,6 +82,7 @@ func _ready() -> void:
 
 ## Le sac (I) : l'artisanat de poche.
 func open(who: Node) -> void:
+	return_grid()
 	_mode = ""
 	_view = ""
 	if not _cat in _tab_list():
@@ -79,6 +92,7 @@ func open(who: Node) -> void:
 
 ## E devant un atelier : le sac à gauche, le menu de l'atelier à droite.
 func open_station(station: String) -> void:
+	return_grid()
 	_mode = station
 	_view = ""
 	_mat_id = ""
@@ -105,6 +119,7 @@ func _open(who: Node) -> void:
 
 
 func close() -> void:
+	return_grid()
 	hide()
 	_set_hud_info(true)
 	if player:
@@ -171,8 +186,8 @@ func _build() -> void:
 	win.add_theme_stylebox_override("panel", UiTheme.frame(14))
 	MenuKit.animate_open(win)
 	win.set_anchors_preset(Control.PRESET_CENTER)
-	win.custom_minimum_size = Vector2(920, 470)
-	win.position = Vector2(-460, -235)
+	win.custom_minimum_size = Vector2(920, 560)
+	win.position = Vector2(-460, -280)
 	add_child(win)
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 6)
@@ -218,6 +233,9 @@ func _build() -> void:
 	c2.add_child(sort_row)
 	var scroll := ScrollContainer.new()
 	_bag_scroll = scroll
+	scroll.set_drag_forwarding(Callable(),
+		func(_pos, data): return data is Dictionary and data.has("grid_from"),
+		func(_pos, data): grid_take(int(data.grid_from)))
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	c2.add_child(scroll)
@@ -275,6 +293,39 @@ func _build() -> void:
 	_bench.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_bench.custom_minimum_size = Vector2(310, 0)
 	c3.add_child(_bench)
+	# la grille d'artisanat : on y glisse les objets du sac, le résultat apparaît à droite
+	var grow := HBoxContainer.new()
+	grow.add_theme_constant_override("separation", 6)
+	c3.add_child(grow)
+	_grid_box = GridContainer.new()
+	_grid_box.add_theme_constant_override("h_separation", 3)
+	_grid_box.add_theme_constant_override("v_separation", 3)
+	grow.add_child(_grid_box)
+	var arrow := _label("➜", 20, C_DIM)
+	arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	grow.add_child(arrow)
+	_grid_result = PanelContainer.new()
+	_grid_result.custom_minimum_size = Vector2(56, 56)
+	_grid_result.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_grid_result.gui_input.connect(_on_result_input)
+	_grid_result.mouse_entered.connect(func():
+		var r := grid_recipe()
+		if r:
+			_show_info(r.result))
+	grow.add_child(_grid_result)
+	_grid_note = RichTextLabel.new()
+	_grid_note.bbcode_enabled = true
+	_grid_note.fit_content = true
+	_grid_note.scroll_active = false
+	_grid_note.custom_minimum_size = Vector2(110, 0)
+	_grid_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_grid_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_grid_note.add_theme_font_size_override("normal_font_size", 9)
+	_grid_note.meta_clicked.connect(func(meta):
+		_grid_pick += 1 if str(meta) == "next" else -1
+		_grid_pref = null
+		_refresh_grid())
+	grow.add_child(_grid_note)
 	# recherche dans toutes les recettes, filtre « fabricable »
 	var srow := HBoxContainer.new()
 	_srow = srow
@@ -323,7 +374,7 @@ func _icon_box(item: ItemData, size: float) -> Control:
 # ---------------------------------------------------------------- contenu
 
 func _refresh() -> void:
-	if not visible or target == null or player == null:
+	if _batch or not visible or target == null or player == null:
 		return
 	var eq := target.get_node("Equipment") as CharacterEquipment
 	_title.text = "Équipement — %s" % target.call("display_title")
@@ -383,29 +434,40 @@ func _refresh() -> void:
 			n.position = Vector2(26, 36)
 			btn.add_child(n)
 		btn.mouse_entered.connect(_show_info.bind(item))
-		btn.pressed.connect(_use_item.bind(item))
+		btn.pressed.connect(func():
+			# Maj+clic : toute la pile dans la grille d'artisanat (comme dans Minecraft)
+			if Input.is_key_pressed(KEY_SHIFT):
+				grid_quick_add(item, e.count)
+			else:
+				_use_item(item))
 		# clic droit : que faire avec cet objet ?
 		btn.gui_input.connect(func(ev):
 			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
 				show_uses(item))
-		# glisser un objet posable vers la barre de construction
-		if player.hand and player.hand.choices().has(item):
-			btn.gui_input.connect(func(ev):
-				if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
-					btn.set_meta("press_at", ev.position if ev.pressed else Vector2.INF)
-				elif ev is InputEventMouseMotion and (ev.button_mask & MOUSE_BUTTON_MASK_LEFT) and btn.has_meta("press_at"):
-					var at: Vector2 = btn.get_meta("press_at")
-					if at != Vector2.INF and at.distance_to(ev.position) > 6.0 and not btn.get_viewport().gui_is_dragging():
-						btn.set_meta("press_at", Vector2.INF)
-						var prev := _icon_box(item, 40)
-						prev.modulate.a = 0.85
-						btn.force_drag({"bar_item": item.id}, prev))
+		# glisser un objet : vers la grille d'artisanat (toute la pile ; Ctrl : un seul), et vers la barre de
+		# construction s'il se pose
+		var placeable: bool = player.hand != null and player.hand.choices().has(item)
+		var stack: int = e.count
+		btn.gui_input.connect(func(ev):
+			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
+				btn.set_meta("press_at", ev.position if ev.pressed else Vector2.INF)
+			elif ev is InputEventMouseMotion and (ev.button_mask & MOUSE_BUTTON_MASK_LEFT) and btn.has_meta("press_at"):
+				var at: Vector2 = btn.get_meta("press_at")
+				if at != Vector2.INF and at.distance_to(ev.position) > 6.0 and not btn.get_viewport().gui_is_dragging():
+					btn.set_meta("press_at", Vector2.INF)
+					var prev := _icon_box(item, 40)
+					prev.modulate.a = 0.85
+					var data := {"bag_item": item, "count": stack}
+					if placeable:
+						data.bar_item = item.id
+					btn.force_drag(data, prev))
 		_bag.add_child(btn)
 	if player.inventory.entries.is_empty():
 		_bag.add_child(_label("Sac vide", 10, C_DIM))
 	_refresh_bar_row()
 
 	_refresh_crafting()
+	_refresh_grid()
 	_refresh_job()
 	_restore_scroll(keep_bag, keep_recipes)
 
@@ -1009,11 +1071,17 @@ func _recipe_row(r: RecipeData, near: bool, show_station := false) -> Control:
 			_refresh())
 		row.add_child(ob)
 	var b := Button.new()
-	b.text = "Fabriquer" if here else Workshops.station_name(Workshops.station_of(r))
-	b.tooltip_text = "" if here else "Se fabrique à l'atelier : %s" % Workshops.station_name(Workshops.station_of(r))
+	var fits := not CraftGrid.pattern(r, CraftGrid.side_for(_mode)).is_empty()
+	b.text = ("Placer" if fits else "Fabriquer") if here else Workshops.station_name(Workshops.station_of(r))
+	b.tooltip_text = ("Pose la recette dans la grille (Maj+clic : de quoi la fabriquer le plus de fois possible)" if fits else "") \
+		if here else "Se fabrique à l'atelier : %s" % Workshops.station_name(Workshops.station_of(r))
 	b.disabled = not ok
 	b.add_theme_font_size_override("font_size", 9)
-	b.pressed.connect(_craft.bind(r))
+	b.pressed.connect(func():
+		if fits:
+			grid_fill(r, Input.is_key_pressed(KEY_SHIFT))
+		else:
+			_craft(r))
 	row.add_child(b)
 	panel.mouse_entered.connect(_show_info.bind(r.result))
 	return panel
@@ -1134,6 +1202,264 @@ func _craft(r: RecipeData) -> void:
 		player.notify.emit("Fabriqué : %s%s" % [r.result.display_name, ("  ·  " + extra) if extra != "" else ""])
 		player.crafted.emit(r.result.id)
 		Sound.ui("craft")
+	_refresh()
+
+
+# ---------------------------------------------------------------- grille d'artisanat (façon Minecraft)
+
+## Taille de la grille selon l'atelier ouvert (2×2 sur soi, 3×3 à un atelier).
+func _ensure_grid() -> void:
+	var side := CraftGrid.side_for(_mode)
+	if side == _grid_side and _grid.size() == side * side:
+		return
+	return_grid()
+	_grid_side = side
+	_grid.resize(side * side)
+	_grid.fill(null)
+
+
+## Rend au sac tout ce qui est dans la grille.
+func return_grid() -> void:
+	if player == null:
+		return
+	for i in _grid.size():
+		var g = _grid[i]
+		if g != null:
+			_grid[i] = null
+			player.inventory.add(g.item, g.count)
+
+
+## Ce qu'il y a dans la grille (la sauvegarde le compte avec le sac).
+func grid_items() -> Array:
+	return _grid.filter(func(g): return g != null)
+
+
+## Pose `count` objets du sac dans une case (ce qui y était d'autre retourne au sac).
+func grid_put(slot: int, item: ItemData, count: int) -> void:
+	_ensure_grid()
+	if slot < 0 or slot >= _grid.size():
+		return
+	var g = _grid[slot]
+	if g != null and g.item != item:
+		_grid[slot] = null
+		player.inventory.add(g.item, g.count)
+		g = null
+	var room: int = item.stack_size() - (g.count if g != null else 0)
+	count = mini(mini(count, room), player.inventory.count(item))
+	if count <= 0:
+		return
+	_batch = true
+	player.inventory.remove(item, count)
+	_batch = false
+	if g == null:
+		_grid[slot] = {"item": item, "count": count}
+	else:
+		g.count += count
+	Sound.ui("ui_click")
+	_refresh()
+
+
+## Maj+clic dans le sac : la pile va dans la case qui a déjà cet objet, sinon dans la première case libre.
+func grid_quick_add(item: ItemData, count: int) -> void:
+	_ensure_grid()
+	var slot := -1
+	for i in _grid.size():
+		if _grid[i] != null and _grid[i].item == item and _grid[i].count < item.stack_size():
+			slot = i
+			break
+	if slot < 0:
+		slot = _grid.find(null)
+	if slot >= 0:
+		grid_put(slot, item, count)
+
+
+## Rend au sac une case de la grille (`n` objets, ou tout).
+func grid_take(slot: int, n := -1) -> void:
+	if slot < 0 or slot >= _grid.size() or _grid[slot] == null:
+		return
+	var g = _grid[slot]
+	var k: int = g.count if n < 0 else mini(n, g.count)
+	g.count -= k
+	if g.count <= 0:
+		_grid[slot] = null
+	player.inventory.add(g.item, k)
+	_refresh()
+
+
+## Le livre de recettes : pose la recette dans la grille (comme le livre de Minecraft). `max` : de quoi la
+## fabriquer le plus de fois possible.
+func grid_fill(r: RecipeData, max := false) -> void:
+	_ensure_grid()
+	_batch = true
+	return_grid()
+	var pat := CraftGrid.pattern(r, _grid_side)
+	var times := 1
+	if max:
+		times = 1 << 30
+		for i in r.ingredients.size():
+			times = mini(times, player.inventory.count(r.ingredients[i]) / maxi(1, r.amount_of(i)))
+		for c in pat:
+			times = mini(times, (c.item as ItemData).stack_size() / int(c.qty))
+		times = maxi(times, 1)
+	for c in pat:
+		var k := mini(int(c.qty) * times, player.inventory.count(c.item))
+		if k > 0:
+			player.inventory.remove(c.item, k)
+			_grid[c.slot] = {"item": c.item, "count": k}
+	_batch = false
+	_grid_pref = r
+	Sound.ui("ui_click")
+	_refresh()
+
+
+## La recette que fait la grille (null : aucune), parmi celles qui ont cette disposition.
+func grid_recipe() -> RecipeData:
+	var m := CraftGrid.matches(_grid, _mode)
+	if m.is_empty():
+		return null
+	if _grid_pref and m.has(_grid_pref):
+		return _grid_pref
+	return m[posmod(_grid_pick, m.size())]
+
+
+## Fabrique `n` fois la recette de la grille (Maj+clic : autant que possible).
+func grid_craft(n := 1) -> int:
+	var r := grid_recipe()
+	if r == null or Crafts.level(player, Crafts.craft_of_recipe(r)) < Crafts.recipe_level(r):
+		return 0
+	var made := 0
+	var extra := ""
+	_batch = true
+	for k in n:
+		if not CraftGrid.consume(_grid, r, _grid_side):
+			break
+		player.inventory.add(r.result, r.result_count)
+		var x := Crafts.on_crafted(player, r)
+		if x != "":
+			extra = x
+		player.crafted.emit(r.result.id)
+		made += 1
+	_batch = false
+	if made > 0:
+		player.notify.emit("Fabriqué : %s ×%d%s" % [r.result.display_name, made * r.result_count, ("  ·  " + extra) if extra != "" else ""])
+		Sound.ui("craft")
+	_refresh()
+	return made
+
+
+func _on_result_input(ev: InputEvent) -> void:
+	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+		var r := grid_recipe()
+		if r:
+			grid_craft(CraftGrid.times(_grid, r, _grid_side) if ev.shift_pressed else 1)
+
+
+func _refresh_grid() -> void:
+	_ensure_grid()
+	for c in _grid_box.get_children():
+		_grid_box.remove_child(c)
+		c.queue_free()
+	_grid_box.columns = _grid_side
+	var empty := _grid.all(func(g): return g == null)
+	# grille vide : la dernière recette posée s'y dessine en fantôme (pour la refaire)
+	var ghost := {}
+	if empty and _grid_pref:
+		for c in CraftGrid.pattern(_grid_pref, _grid_side):
+			ghost[c.slot] = c
+	var cell_size := 46.0 if _grid_side == 3 else 54.0
+	for i in _grid.size():
+		var g = _grid[i]
+		var item: ItemData = g.item if g != null else (ghost[i].item if ghost.has(i) else null)
+		var cell := _icon_box(item, cell_size)
+		if g == null and ghost.has(i):
+			cell.modulate = Color(1, 1, 1, 0.3)
+		var n := int(g.count) if g != null else (int(ghost[i].qty) if ghost.has(i) else 0)
+		if n > 1:
+			var l := _label("×%d" % n, 9)
+			l.add_theme_color_override("font_outline_color", Color.BLACK)
+			l.add_theme_constant_override("outline_size", 3)
+			l.position = Vector2(cell_size - 28, cell_size - 17)
+			l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			cell.add_child(l)
+		cell.tooltip_text = ("%s ×%d · clic droit : en retirer un · Maj+clic : tout retirer" % [g.item.display_name, g.count]) if g != null \
+			else "Glisse un objet du sac ici (Ctrl : un seul), ou Maj+clic sur un objet du sac"
+		if g != null:
+			cell.mouse_entered.connect(_show_info.bind(g.item))
+		var slot := i
+		cell.set_drag_forwarding(
+			func(_pos):
+				if _grid[slot] == null:
+					return null
+				var prev := _icon_box(_grid[slot].item, 40)
+				prev.modulate.a = 0.85
+				cell.set_drag_preview(prev)
+				return {"grid_from": slot},
+			func(_pos, data): return data is Dictionary and (data.has("bag_item") or data.has("grid_from")),
+			func(_pos, data):
+				if data.has("bag_item"):
+					grid_put(slot, data.bag_item, 1 if Input.is_key_pressed(KEY_CTRL) else int(data.count))
+				else:
+					_grid_move(int(data.grid_from), slot))
+		cell.gui_input.connect(func(ev):
+			if ev is InputEventMouseButton and ev.pressed:
+				if ev.button_index == MOUSE_BUTTON_RIGHT:
+					grid_take(slot, 1)
+				elif ev.button_index == MOUSE_BUTTON_LEFT and ev.shift_pressed:
+					grid_take(slot))
+		_grid_box.add_child(cell)
+	# le résultat
+	for c in _grid_result.get_children():
+		c.queue_free()
+	var r := grid_recipe()
+	var m := CraftGrid.matches(_grid, _mode)
+	var t := CraftGrid.times(_grid, r, _grid_side) if r else 0
+	var lv_ok := r == null or Crafts.level(player, Crafts.craft_of_recipe(r)) >= Crafts.recipe_level(r)
+	_grid_result.add_theme_stylebox_override("panel", UiTheme.box("slot", 8, Vector4(3, 3, 3, 3), Color("ffe08a") if r and t > 0 and lv_ok else Color.WHITE))
+	if r:
+		var ic := _icon_box(r.result, 50)
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if t == 0 or not lv_ok:
+			ic.modulate = Color(1, 1, 1, 0.4)
+		_grid_result.add_child(ic)
+		if r.result_count > 1:
+			var l := _label("×%d" % r.result_count, 10)
+			l.add_theme_color_override("font_outline_color", Color.BLACK)
+			l.add_theme_constant_override("outline_size", 3)
+			l.position = Vector2(28, 36)
+			ic.add_child(l)
+	var txt := ""
+	if r == null:
+		txt = "[color=#%s]%s[/color]" % [C_DIM.to_html(false), "Glisse des objets du sac dans la grille (ou Maj+clic dessus), ou choisis une recette plus bas : « Placer »." if empty
+			else "Aucune recette avec ces objets."]
+	else:
+		txt = "[b]%s[/b]" % r.result.display_name
+		if not lv_ok:
+			txt += "\n[color=#%s]%s niv. %d requis[/color]" % [C_BAD.to_html(false), Crafts.CRAFTS[Crafts.craft_of_recipe(r)].name, Crafts.recipe_level(r)]
+		elif t > 0:
+			txt += "\n[color=#%s]Clic : fabriquer · Maj+clic : tout (×%d → %d)[/color]" % [C_OK.to_html(false), t, t * r.result_count]
+		else:
+			txt += "\n[color=#%s]Il manque des objets dans certaines cases.[/color]" % C_BAD.to_html(false)
+		if CraftGrid.pattern(r, _grid_side).any(func(c): return int(c.qty) > 1):
+			txt += "\n[color=#%s]Plusieurs objets par case (chiffre de la case).[/color]" % C_DIM.to_html(false)
+		if m.size() > 1:
+			txt += "\n[url=prev]◀[/url] %d / %d [url=next]▶[/url]  autre résultat" % [m.find(r) + 1, m.size()]
+	_grid_note.text = txt
+
+
+## Glisser une case de la grille sur une autre : les deux échangent leur contenu (ou s'ajoutent).
+func _grid_move(from: int, to: int) -> void:
+	if from == to or _grid[from] == null:
+		return
+	var a = _grid[from]
+	var b = _grid[to]
+	if b != null and b.item == a.item:
+		var k: int = mini(a.count, a.item.stack_size() - b.count)
+		b.count += k
+		a.count -= k
+		_grid[from] = a if a.count > 0 else null
+	else:
+		_grid[to] = a
+		_grid[from] = b
 	_refresh()
 
 
