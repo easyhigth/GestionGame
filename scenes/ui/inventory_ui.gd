@@ -409,12 +409,31 @@ func _refresh_job() -> void:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k == null:
 		return
+	# carte d'identité : classe, niveau, humeur
+	var idc := MenuKit.card_box(false, 6.0, 2)
+	var iv: VBoxContainer = idc.get_child(0)
+	var chips := HBoxContainer.new()
+	chips.add_theme_constant_override("separation", 4)
+	var cd = Villager.class_data(str(target.get("fight_class")))
+	if cd:
+		chips.add_child(MenuKit.chip(cd.display_name, cd.color))
+	chips.add_child(MenuKit.chip("Nv %d" % int(target.get("level")), MenuKit.C_GOLD))
+	var hap: float = float(target.get("happiness"))
+	chips.add_child(MenuKit.chip(VillageNeeds.mood_name(hap), VillageNeeds.mood_color(hap)))
+	iv.add_child(chips)
+	var mood := HBoxContainer.new()
+	mood.add_theme_constant_override("separation", 4)
+	mood.add_child(MenuKit.icon("heart", 12))
+	mood.add_child(MenuKit.gauge(hap / 100.0, VillageNeeds.mood_color(hap), 200, 7))
+	iv.add_child(mood)
+	_job_box.add_child(idc)
 	_evolution_box()
-	# compagnon d'expédition (2 au plus)
+	# compagnon d'expédition
 	var n_comp := get_tree().get_nodes_in_group("villagers").filter(func(v): return v.get("companion")).size()
 	var comp := CheckButton.new()
 	var max_comp: int = Villager.max_companions(get_tree())
-	comp.text = "Compagnon d'expédition (%d/%d)" % [n_comp, max_comp]
+	comp.text = "Compagnon (%d / %d)" % [n_comp, max_comp]
+	comp.tooltip_text = "Il te suit partout, combat avec toi et progresse avec toi."
 	comp.add_theme_font_size_override("font_size", 11)
 	comp.button_pressed = target.get("companion")
 	comp.disabled = not target.get("companion") and n_comp >= max_comp
@@ -426,43 +445,75 @@ func _refresh_job() -> void:
 		_refresh())
 	_job_box.add_child(comp)
 	if target.get("companion"):
-		_job_box.add_child(_label("Niveau %d · progresse avec toi." % target.get("level"), 9, C_DIM))
+		_job_box.add_child(_label("Il progresse avec toi.", 9, C_DIM))
 		return
-	if target.has_method("class_name_fr") and target.class_name_fr() != "":
-		_job_box.add_child(_label("Classe : %s" % target.class_name_fr(), 11, C_DIM))
-	_job_box.add_child(_label("Poste de travail", 12, Color("f2c86a")))
+	# poste de travail : des cartes à cliquer
+	_job_box.add_child(MenuKit.icon_label("house", "Poste de travail", 11, Color("f2c86a")))
 	var cur = target.get("work_room")
-	var opt := OptionButton.new()
-	opt.add_theme_font_size_override("font_size", 10)
-	opt.add_item("Aucun (se promène)")
 	var rooms := k.workplaces()
-	var sel := 0
-	for i in rooms.size():
-		var r: Dictionary = rooms[i]
-		var t: RoomTypeData = r.type
-		var a := Kingdom.affinity(target, t.job_id)
-		var stars := "★".repeat(clampi(roundi((a - 0.5) * 4.0), 1, 5))
-		opt.add_item("%s — %s %d/%d  %s" % [t.display_name, t.job_name, k.workers_of(r).size(), t.job_slots, stars])
-		if r == cur:
-			sel = i + 1
-	opt.select(sel)
-	opt.item_selected.connect(func(idx):
-		var ok := k.assign(target, null if idx == 0 else rooms[idx - 1])
-		if not ok:
-			player.notify.emit("Plus de place à ce poste.")
-		_refresh())
-	_job_box.add_child(opt)
 	if rooms.is_empty():
 		var l := _label("Construis une pièce avec des postes (forge, boulangerie...) pour lui donner un métier.", 9, C_DIM)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(230, 0)
 		_job_box.add_child(l)
-	else:
-		var best := []
-		for jid in Kingdom.RACE_AFFINITY.get((target.get("race") as RaceData).model_id, []):
-			best.append(jid)
-		var l2 := _label("Doué pour : %s" % ", ".join(best), 9, C_DIM)
-		_job_box.add_child(l2)
+		return
+	var sc := ScrollContainer.new()
+	sc.custom_minimum_size = Vector2(240, 96)
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 3)
+	sc.add_child(list)
+	_job_box.add_child(sc)
+	var entries := [null] + rooms
+	for r in entries:
+		var is_cur: bool = (r == null and cur == null) or (r != null and r == cur)
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(228, 30)
+		b.add_theme_stylebox_override("normal", MenuKit.style(Color(0.25, 0.32, 0.15, 0.95), MenuKit.C_OK, 2, 3, 3) if is_cur else MenuKit.card(false, 3.0))
+		b.add_theme_stylebox_override("hover", UiTheme.box("card_hover", 6, Vector4(3, 2, 3, 2)))
+		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 5)
+		h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		h.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		h.offset_left = 5
+		h.offset_right = -5
+		b.add_child(h)
+		var title := "Aucun (il se promène)"
+		var info := ""
+		var full := false
+		if r != null:
+			var t: RoomTypeData = r.type
+			var w := k.workers_of(r).size()
+			full = w >= t.job_slots and not is_cur
+			title = "%s · %s" % [t.job_name, t.display_name]
+			var a := Kingdom.affinity(target, t.job_id)
+			info = "%d/%d  %s" % [w, t.job_slots, "★".repeat(clampi(roundi((a - 0.5) * 4.0), 1, 5))]
+			var dot := ColorRect.new()
+			dot.color = t.color
+			dot.custom_minimum_size = Vector2(8, 8)
+			dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			h.add_child(dot)
+		var tl := MenuKit.label(title, 10, MenuKit.C_GOLD if is_cur else (C_DIM if full else C_TEXT))
+		tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tl.clip_text = true
+		tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		h.add_child(tl)
+		if info != "":
+			var il := MenuKit.label(info, 9, MenuKit.C_BAD if full else Color("e8b84a"))
+			il.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			il.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			h.add_child(il)
+		b.disabled = full
+		b.tooltip_text = "Poste complet." if full else ("Poste actuel." if is_cur else "Clique pour l'affecter ici. ★ : son talent pour ce métier.")
+		var room = r
+		b.pressed.connect(func():
+			if not k.assign(target, room):
+				player.notify.emit("Plus de place à ce poste.")
+			_refresh())
+		list.add_child(b)
 
 
 ## Pacte : donner un nom à l'habitant pour le faire évoluer.

@@ -44,7 +44,7 @@ func _needs() -> VillageNeeds:
 
 ## Onglet affiché : apercu, habitants, production, familiers, quetes.
 var _tab := "apercu"
-const TABS := [["apercu", "Vue d'ensemble", "crown"], ["habitants", "Habitants", "people"], ["production", "Production", "food"],
+const TABS := [["apercu", "Vue d'ensemble", "crown"], ["carte", "Carte", "compass"], ["habitants", "Habitants", "people"], ["production", "Production", "food"],
 	["familiers", "Familiers", "star"], ["quetes", "Quêtes", "scroll"]]
 const PAGE := Vector2(740, 360)
 
@@ -71,7 +71,7 @@ func _refresh() -> void:
 	_box.add_child(head)
 	_box.add_child(MenuKit.tab_bar(TABS, _tab, func(id):
 		_tab = id
-		_refresh(), 138))
+		_refresh(), 118))
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = PAGE
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -81,6 +81,8 @@ func _refresh() -> void:
 	page.custom_minimum_size.x = PAGE.x - 14
 	scroll.add_child(page)
 	match _tab:
+		"carte":
+			_page_map(page)
 		"habitants":
 			_page_people(page, n)
 		"production":
@@ -205,6 +207,36 @@ func _tips(k: Kingdom, n: VillageNeeds) -> Array:
 	elif not have.has("temple") and members.size() >= 3:
 		tips.append(["heart", "Un temple rendrait les habitants plus heureux (+10).", "temple", false])
 	return tips
+
+
+# ---------------------------------------------------------------- carte
+
+func _page_map(page: VBoxContainer) -> void:
+	var info := MenuKit.label("Survole une pièce ou un habitant ; clique sur un habitant pour ouvrir sa fiche.", 11, MenuKit.C_DIM)
+	var map := KingdomMap.new()
+	map.player = player
+	map.custom_minimum_size = Vector2(PAGE.x - 16, PAGE.y - 58)
+	map.hovered.connect(func(t): info.text = t if t != "" else "Survole une pièce ou un habitant ; clique sur un habitant pour ouvrir sa fiche.")
+	map.villager_clicked.connect(func(v):
+		close()
+		player.open_inventory.emit(v))
+	page.add_child(map)
+	var legend := HBoxContainer.new()
+	legend.add_theme_constant_override("separation", 10)
+	for l in [["Pièce", Color("c8a060")], ["Pièce à finir", Color(0.6, 0.6, 0.6, 0.5)], ["Murs", KingdomMap.WALL], ["Champs", KingdomMap.FIELD],
+			["Plans en attente", KingdomMap.PLAN], ["Feu de camp", Color("ff8a3a")], ["Toi", MenuKit.C_GOLD]]:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 3)
+		var sw := ColorRect.new()
+		sw.color = l[1]
+		sw.custom_minimum_size = Vector2(10, 10)
+		sw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		h.add_child(sw)
+		h.add_child(MenuKit.label(l[0], 10, MenuKit.C_DIM))
+		legend.add_child(h)
+	legend.add_child(MenuKit.label("· habitants : couleur de leur classe, anneau vert = au travail", 10, MenuKit.C_DIM))
+	page.add_child(legend)
+	page.add_child(info)
 
 
 # ---------------------------------------------------------------- habitants

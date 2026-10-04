@@ -33,7 +33,7 @@ func count_of(node: Node, cls: String) -> int:
 		n += 1
 	return n
 
-const STEPS := ["apercu", "habitants", "production", "familiers", "quetes", "expeditions", "expeditions_choix", "diplomatie", "recrutement", "banniere", "fin_de_partie"]
+const STEPS := ["apercu", "carte", "habitants", "production", "familiers", "quetes", "expeditions", "expeditions_choix", "diplomatie", "recrutement", "banniere", "fin_de_partie", "fiche", "boutique", "quete"]
 
 func _process(_d) -> bool:
 	f += 1
@@ -46,6 +46,16 @@ func _process(_d) -> bool:
 		for e in get_nodes_in_group("enemy_units"): e.queue_free()
 		p.inventory.add(items.get_item("pain"), 6)
 		p.inventory.add(items.get_item("graines_ble"), 10)
+		# un plan de maison en attente, pour la carte
+		var bm = p.get_node_or_null("BuildMode")
+		if bm and bm.has_method("plan_layout"):
+			var k = get_first_node_in_group("kingdom")
+			for t in k.room_types:
+				if t.id == "maison":
+					var sel: Array = bm.plan_layout(t, w.spawn_cell + Vector2i(6, -6))
+					bm._selection = sel
+					bm._commit_selection()
+					print("plan maison : %d éléments, %d plans" % [sel.size(), get_first_node_in_group("build_orders").orders.size()])
 	var step := (f - 10) / 20
 	var sub := (f - 10) % 20
 	if f >= 10 and step < STEPS.size():
@@ -84,13 +94,36 @@ func _process(_d) -> bool:
 				"fin_de_partie":
 					hud.heraldry_panel.close()
 					hud.endgame_panel.open()
+				"fiche":
+					hud.endgame_panel.close()
+					var v = get_first_node_in_group("villagers")
+					set_meta("vil", v)
+					p.open_inventory.emit(v)
+				"boutique":
+					var inv = get_first_node_in_group("inventory_ui")
+					if inv: inv.close()
+					var trd = get_first_node_in_group("trade")
+					trd.arrive()
+					set_meta("trd", trd)
+				"quete":
+					hud.shop_dialog.close()
+					var qb = get_first_node_in_group("quests")
+					var q: Dictionary = qb.make_offer("apporter")
+					if not q.is_empty():
+						qb.accept(q)
+						hud.quest_dialog.open(q.giver)
 				_:
 					if not hud.kingdom_panel.visible:
 						hud.kingdom_panel.open()
 					hud.kingdom_panel._tab = id
 					hud.kingdom_panel._refresh()
+		if sub == 6 and id == "boutique":
+			var trd = get_meta("trd")
+			if trd.merchant:
+				hud.shop_dialog.open(trd.merchant)
+			check("le marchand est là", trd.merchant != null)
 		if sub == 12:
-			var panel: Control = hud.kingdom_panel if id in ["apercu", "habitants", "production", "familiers", "quetes"] else (hud.expedition_panel if id.begins_with("expeditions") else null)
+			var panel: Control = hud.kingdom_panel if id in ["apercu", "carte", "habitants", "production", "familiers", "quetes"] else (hud.expedition_panel if id.begins_with("expeditions") else null)
 			if panel:
 				print("%s : %d cartes, %d jauges/pastilles" % [id, count_of(panel, "PanelContainer"), count_of(panel, "ColorRect")])
 				check("écran %s rempli" % id, count_of(panel, "PanelContainer") >= 4)
