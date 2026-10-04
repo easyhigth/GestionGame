@@ -998,3 +998,17 @@ Tous les bruitages sont générés par `tools/audio_generator.py` (synthèse, sa
   Pendant chaque changement de phase, il est intouchable un court instant. La barre de vie du boss indique
   sa phase (ENRAGÉ, FUREUR) et change de couleur.
 - Les grands titres attendent maintenant que le précédent se soit effacé, même quand le jeu rame.
+
+## Lumières : nuit, flammes et grottes sombres
+
+- **Torches et feux qui vivent** : la lumière d'une torche, d'un brasero ou d'une lanterne **vacille** comme
+  une vraie flamme (`FlickerLight`). Elle éclaire plus loin (8 m) : la nuit, on voit nettement les cercles
+  de lumière autour du campement.
+- **Grottes vraiment sombres** : sous terre, les ténèbres avalent tout au-delà de quelques mètres, et la
+  lumière ambiante est bien plus faible. On avance à la lueur de sa **lanterne**, qui vacille elle aussi.
+  Les lumières des grottes sortent maintenant de **grappes de cristaux ou de champignons luisants**, bien
+  visibles et qui palpitent doucement. Les donjons sont un peu plus sombres aussi.
+- **Créatures de la nuit** : la nuit, et sous terre, les monstres proches ont **les yeux qui luisent** de leur
+  couleur, et un léger halo autour d'eux. On les repère dans l'obscurité. Au lever du jour, ça s'éteint
+  (sauf pour les monstres sortis avec la nuit).
+- Les panneaux des grottes (« Sortie », « Descendre »...) s'effacent quand on est collé contre eux.

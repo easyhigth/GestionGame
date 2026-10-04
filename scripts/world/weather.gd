@@ -301,6 +301,17 @@ func _update_fog() -> void:
 	if _precip == "sable":
 		sand = clampf(_mix[1], 0.0, 1.0) * 0.8
 	var amount := maxf(fog, sand)
+	# sous terre (grottes, donjons) : les ténèbres avalent tout au-delà de quelques mètres
+	if player and player.global_position.y < WorldGenerator.UNDERGROUND:
+		_env.fog_enabled = true
+		_env.fog_mode = Environment.FOG_MODE_DEPTH
+		_env.fog_density = 1.0
+		_env.fog_depth_begin = 4.0
+		_env.fog_depth_end = 30.0
+		_env.fog_sky_affect = 1.0
+		_env.fog_light_color = Color(0.012, 0.01, 0.018)
+		_env.fog_light_energy = 1.0
+		return
 	var wg := get_tree().get_first_node_in_group("world") as WorldGenerator
 	if wg and wg.close_view:
 		# vue rapprochée : brume de distance toujours là (fin du monde chargé), plus proche par temps de brouillard

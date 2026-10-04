@@ -482,12 +482,14 @@ func _build(e: Dictionary, lv: int) -> void:
 	cells.sort()
 	for i in 12 + lv * 3:
 		var c: Vector2i = cells[rng.randi() % cells.size()]
-		var l := OmniLight3D.new()
-		l.light_color = _theme().light if themed else [Color("6ad8ff"), Color("9aff8a"), Color("ffb070")][rng.randi() % 3]
-		l.light_energy = 1.6
-		l.omni_range = 9.0
+		var lc: Color = _theme().light if themed else [Color("6ad8ff"), Color("9aff8a"), Color("ffb070")][rng.randi() % 3]
+		# une lueur qui palpite doucement, et sa source bien visible (grappe de cristaux ou de champignons)
+		var l := FlickerLight.make(lc, 1.8, 8.0, 0.1)
+		l.speed = 1.6
 		_content.add_child(l)
 		l.global_position = floor_pos(c) + Vector3(0, 1.2, 0)
+		_content.add_child(_glow_cluster(lc, rng))
+		(_content.get_child(_content.get_child_count() - 1) as Node3D).global_position = floor_pos(c)
 	# entrée / sortie, passage vers le bas, coffres, monstres
 	var start := _origin + Vector2i(SIZE / 2, SIZE - 6)
 	_add_marker(start + Vector2i(0, 2), "exit", ("Sortie\nE : remonter dans la ville" if themed else "Sortie\nE : remonter") if lv == 1 else "Remonter\nE : niveau %d" % (lv - 1), Color("ffe0a0"))
@@ -678,6 +680,10 @@ func _label(parent: Node3D, text: String, y: float, col: Color) -> Label3D:
 	lb.outline_size = 9
 	lb.modulate = col
 	lb.position.y = y
+	# tout contre le panneau, le texte ne mange pas l'écran
+	lb.visibility_range_begin = 3.5
+	lb.visibility_range_begin_margin = 0.6
+	lb.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	parent.add_child(lb)
 	return lb
 
@@ -771,6 +777,28 @@ func _carve(key: Vector3i, _live: bool) -> void:
 
 # ---------------------------------------------------------------- lumière, nettoyage, sauvegarde
 
+## Grappe de petits cristaux (ou champignons) luisants posée au sol.
+func _glow_cluster(col: Color, rng: RandomNumberGenerator) -> Node3D:
+	var root := Node3D.new()
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.emission_enabled = true
+	mat.emission = col
+	mat.emission_energy_multiplier = 2.2
+	for i in rng.randi_range(3, 5):
+		var mi := MeshInstance3D.new()
+		var b := BoxMesh.new()
+		var h := rng.randf_range(0.18, 0.55)
+		b.size = Vector3(0.12, h, 0.12)
+		mi.mesh = b
+		mi.material_override = mat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.position = Vector3(rng.randf_range(-0.35, 0.35), h * 0.5, rng.randf_range(-0.35, 0.35))
+		mi.rotation = Vector3(rng.randf_range(-0.3, 0.3), rng.randf() * TAU, rng.randf_range(-0.3, 0.3))
+		root.add_child(mi)
+	return root
+
+
 func _set_lighting(on: bool) -> void:
 	var scene_root: Node = world.get_parent()
 	var sun := scene_root.get_node_or_null("Soleil") as DirectionalLight3D
@@ -785,13 +813,10 @@ func _set_lighting(on: bool) -> void:
 			_saved["env"] = [env.background_color, env.ambient_light_color, env.ambient_light_energy]
 			env.background_color = Color(0.01, 0.008, 0.006)
 			env.ambient_light_color = Color(0.7, 0.6, 0.5)
-			env.ambient_light_energy = 1.1
+			env.ambient_light_energy = 0.35   # grottes sombres : ce sont les torches et la lanterne qui éclairent
 		if _player_light == null:
 			# la lanterne du héros
-			_player_light = OmniLight3D.new()
-			_player_light.light_color = Color(1.0, 0.8, 0.55)
-			_player_light.light_energy = 1.8
-			_player_light.omni_range = 11.0
+			_player_light = FlickerLight.make(Color(1.0, 0.78, 0.5), 1.9, 9.5, 0.1)
 			_player_light.position.y = 1.8
 			player.add_child(_player_light)
 	else:
