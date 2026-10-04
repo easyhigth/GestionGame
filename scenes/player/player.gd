@@ -264,6 +264,13 @@ func _update_max_health(refill := false) -> void:
 ## Recalcule les caractéristiques (après une absorption, un renforcement...).
 func refresh_stats() -> void:
 	_update_max_health(false)
+	# la traînée de l'arme prend la couleur de sa rareté (blanche pour une arme commune)
+	var w := weapon()
+	var tc := Color(0.85, 0.95, 1.0)
+	if w and w.rarity > ItemData.Rarity.COMMON:
+		tc = w.rarity_color()
+	if visual:
+		visual.set_trail_color(tc)
 	xp_changed.emit(xp, xp_to_next(), level)
 
 

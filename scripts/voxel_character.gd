@@ -30,7 +30,7 @@ static var _library_cache := {}
 
 const POSE_BONES := ["ArmL", "ArmR", "HandL", "HandR", "Torso", "Head", "LegL", "LegR"]
 const TRAIL_MAX := 320
-const TRAIL_LIFE := 0.22
+const TRAIL_LIFE := 0.2
 
 var _pivot: Node3D
 var _instance: Node3D
@@ -65,7 +65,8 @@ var _last_root := Vector3.ZERO
 var _last_spin := 0.0
 
 # traînée de l'arme
-var _trail: MultiMeshInstance3D
+var _trail: MeshInstance3D
+var _spark_t := 0.0
 var _trail_pos: Array[Vector3] = []
 var _trail_age: Array[float] = []
 var _trail_on := false
@@ -479,12 +480,23 @@ func _update_trail(delta: float) -> void:
 		if _trail == null:
 			_make_trail()
 		var pts := _blade_points()
-		if _trail_on and _trail_prev.size() == pts.size():
-			for i in pts.size():
+		if pts.size() == 3:
+			var base: Vector3 = pts[0].lerp(pts[2], -0.35)
+			var tip: Vector3 = pts[2].lerp(pts[0], -0.12)
+			# entre deux images, on intercale des points pour une courbe bien lisse
+			if _trail_on and _trail_prev.size() == 2:
 				for k in 4:
-					_trail_pos.append(_trail_prev[i].lerp(pts[i], float(k + 1) / 4.0))
+					var f := float(k + 1) / 4.0
+					_trail_pos.append(_trail_prev[0].lerp(base, f))
+					_trail_pos.append(_trail_prev[1].lerp(tip, f))
 					_trail_age.append(0.0)
-		_trail_prev = pts
+			_trail_prev = [base, tip]
+			# des étincelles s'échappent de la pointe
+			_spark_t -= delta
+			if _spark_t <= 0.0 and _trail_on:
+				_spark_t = 0.035
+				VoxelBurst.emit(self, tip, {"palette": VoxelBurst.palette_of(_trail_col), "count": 2, "speed": 1.5,
+					"size": 0.05, "life": 0.25, "hdr": 2.4, "gravity": 3.0, "streak": 1.5})
 	_trail_on = active
 	if _trail == null:
 		return
@@ -493,49 +505,60 @@ func _update_trail(delta: float) -> void:
 		_trail_age[i] += delta
 		if _trail_age[i] >= TRAIL_LIFE:
 			_trail_age.remove_at(i)
-			_trail_pos.remove_at(i)
+			_trail_pos.remove_at(i * 2)
+			_trail_pos.remove_at(i * 2)
 		else:
 			i += 1
-	while _trail_pos.size() > TRAIL_MAX:
-		_trail_pos.remove_at(0)
+	while _trail_age.size() > TRAIL_MAX / 2:
 		_trail_age.remove_at(0)
-	var mm := _trail.multimesh
-	mm.visible_instance_count = _trail_pos.size()
-	for j in _trail_pos.size():
+		_trail_pos.remove_at(0)
+		_trail_pos.remove_at(0)
+	# le ruban : une bande lumineuse de la garde à la pointe, qui s'efface par l'arrière
+	var im := _trail.mesh as ImmediateMesh
+	im.clear_surfaces()
+	var n := _trail_age.size()
+	if n < 2:
+		return
+	im.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	for j in n:
 		var k := 1.0 - _trail_age[j] / TRAIL_LIFE
-		var sz := 0.09 * k + 0.02
-		mm.set_instance_transform(j, Transform3D(Basis().scaled(Vector3.ONE * sz), _trail_pos[j]))
-		mm.set_instance_color(j, Color(_trail_col, k * 0.9))
+		var head := float(j) / float(n - 1)
+		var a := k * k * (0.35 + 0.65 * head)
+		im.surface_set_color(Color(_trail_col.r, _trail_col.g, _trail_col.b, a * 0.25))
+		im.surface_add_vertex(_trail_pos[j * 2])
+		im.surface_set_color(Color(1, 1, 1, a))
+		im.surface_add_vertex(_trail_pos[j * 2 + 1])
+	im.surface_end()
 
 
 func _make_trail() -> void:
-	_trail = MultiMeshInstance3D.new()
+	_trail = MeshInstance3D.new()
 	_trail.top_level = true
 	_trail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	var box := BoxMesh.new()
-	box.size = Vector3.ONE
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.vertex_color_use_as_albedo = true
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	box.material = mat
-	mm.mesh = box
-	mm.instance_count = TRAIL_MAX
-	mm.visible_instance_count = 0
-	_trail.multimesh = mm
-	add_child(_trail)
-	_trail.global_transform = Transform3D.IDENTITY
+	_trail.mesh = ImmediateMesh.new()
 	if not _trail_force:
 		_trail_col = trail_color
+	_trail.material_override = SkillFX.own_glow(Color(_trail_col.lightened(0.2), 1.0), 2.2, true)
+	add_child(_trail)
+	_trail.global_transform = Transform3D.IDENTITY
+	_trail.extra_cull_margin = 16.0
+
+
+## Couleur habituelle de la traînée (celle de l'arme tenue).
+func set_trail_color(c: Color) -> void:
+	trail_color = c
+	if not _trail_force:
+		_trail_col = c
+		if _trail and _trail.material_override:
+			(_trail.material_override as ShaderMaterial).set_shader_parameter("tint", Color(c.lightened(0.2), 1.0))
 
 
 ## Force la traînée (ex. esquive parfaite) et change sa couleur.
 func set_trail(on: bool, color: Color = Color(0, 0, 0, 0)) -> void:
 	_trail_force = on
 	_trail_col = color if color.a > 0.0 else trail_color
+	if _trail and _trail.material_override:
+		(_trail.material_override as ShaderMaterial).set_shader_parameter("tint", Color(_trail_col.lightened(0.2), 1.0))
 
 
 # ---------------------------------------------------------------- effets

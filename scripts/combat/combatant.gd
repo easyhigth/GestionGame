@@ -246,10 +246,30 @@ func _do_hit(h: Dictionary) -> void:
 	var arc := 360.0 if h.get("around", false) else float(h.get("arc", 120.0))
 	var atk := roundi(attack_power() * float(h.get("dmg", 1.0)) * _move_damage)
 	var n := Combat.melee(self, reach, arc, atk, knockback_strength() * float(h.get("kb", 1.0)), float(h.get("poise", 1.0)) * _move_damage)
+	# entaille lumineuse : le héros et les boss (les autres ont seulement la traînée de l'arme)
+	if is_in_group("player") or is_in_group("bosses"):
+		var heavy := float(h.get("dmg", 1.0)) * _move_damage >= 1.4 or float(h.get("kb", 1.0)) >= 1.5
+		var col := visual.trail_color
+		var at := global_position + Vector3(0, 0.95 * visual.scale.y, 0)
+		if arc >= 300.0:
+			SkillFX.slash(self, at, facing, col, reach * 0.95, 340.0, 0.0, 0.3, 0.6)
+		else:
+			var tilt := (0.45 if _hits_done % 2 == 0 else -0.45) * (0.5 if heavy else 1.0)
+			SkillFX.slash(self, at, facing, col, reach * (0.9 if heavy else 0.75), minf(arc + 30.0, 210.0), tilt,
+				0.26 if heavy else 0.2, 0.6 if heavy else 0.4)
+		if heavy:
+			VoxelBurst.emit(self, at + Vector3(facing.x, 0, facing.z).normalized() * reach * 0.6, {"palette": VoxelBurst.palette_of(col),
+				"count": 16, "speed": 5.0, "size": 0.05, "life": 0.3, "mode": "cone", "dir": facing, "spread": 50.0,
+				"streak": 2.0, "hdr": 2.4, "gravity": 4.0})
 	if h.get("shock", false):
 		var front := global_position + Vector3(facing.x, 0, facing.z).normalized() * minf(reach * 0.6, 1.4) + Vector3(0, 0.1, 0)
-		VoxelBurst.spawn(self, front, Color(0.95, 0.9, 0.75), 26, 5.5, 0.12, 0.45, "ring", 2.0, false)
-		VoxelBurst.spawn(self, front, Color(1.0, 0.95, 0.8), 10, 3.0, 0.08, 0.35, "up", 6.0)
+		VoxelBurst.emit(self, front, {"palette": [Color(0.75, 0.68, 0.55), Color(0.6, 0.52, 0.42), Color(0.9, 0.85, 0.7)], "count": 30,
+			"speed": 5.5, "size": 0.14, "life": 0.55, "mode": "ring", "gravity": 2.0, "glow": false})
+		VoxelBurst.emit(self, front, {"color": Color(0.5, 0.45, 0.4), "count": 10, "speed": 1.4, "size": 0.35, "life": 0.9,
+			"mode": "up", "glow": false, "grow": true, "alpha": 0.45, "gravity": -1.0})
+		VoxelBurst.emit(self, front, {"palette": VoxelBurst.palette_of(visual.trail_color), "count": 14, "speed": 4.0, "size": 0.06,
+			"life": 0.35, "mode": "up", "gravity": 7.0, "hdr": 2.4, "streak": 1.5})
+		SkillFX.ring(self, front, 2.2, visual.trail_color, 0.35)
 	_on_attack_landed(n, h)
 
 
@@ -346,7 +366,19 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 		Sound.play("hurt", Vector3.INF, -4.0)
 	if attacker:
 		attacker._on_damage_dealt(self, dmg)
-	VoxelBurst.spawn(self, global_position + Vector3(0, 1.0 * visual.scale.y, 0), Color(1.0, 0.95, 0.7), 10, 4.5, 0.07, 0.3)
+	# impact : éclat, étincelles dans le sens du coup ; critiques et gros coups : étoile, onde, lumière
+	var hit_at := global_position + Vector3(0, 1.0 * visual.scale.y, 0)
+	var hit_dir := Vector3.UP
+	if source:
+		hit_dir = (global_position - source.global_position) * Vector3(1, 0, 1)
+		hit_dir = (hit_dir.normalized() if hit_dir.length() > 0.01 else Vector3.UP) + Vector3(0, 0.35, 0)
+		hit_at -= Vector3(hit_dir.x, 0, hit_dir.z).normalized() * body_radius * 0.6
+	var hit_col := Color(1.0, 0.92, 0.65)
+	if attacker and attacker.visual:
+		hit_col = attacker.visual.trail_color
+	if team != Team.ENEMIES:
+		hit_col = Color(1.0, 0.45, 0.35)
+	SkillFX.impact(self, hit_at, hit_col, hit_dir, crit, dmg >= 15 or knockback >= 8.0)
 	if source:
 		var away := global_position - source.global_position
 		away.y = 0.0
@@ -393,7 +425,9 @@ func _on_blocked(attack: int, source: Node3D, knockback: float) -> void:
 	away.y = 0.0
 	_knockback = away.normalized() * knockback * 0.6
 	var spark_pos := global_position + Vector3(facing.x, 0, facing.z).normalized() * 0.45 + Vector3(0, 1.0, 0)
-	VoxelBurst.spawn(self, spark_pos, Color(1.0, 0.85, 0.4), 14, 5.0, 0.06, 0.25)
+	VoxelBurst.emit(self, spark_pos, {"palette": VoxelBurst.palette_of(Color(1.0, 0.8, 0.35)), "count": 18, "speed": 6.0,
+		"size": 0.05, "life": 0.3, "streak": 2.5, "hdr": 2.6, "gravity": 8.0})
+	SkillFX.flash_sphere(self, spark_pos, Color(0.8, 0.9, 1.0), 0.3, 0.12, 2.5)
 	Combat.popup(self, global_position + Vector3(0, 2.0, 0), "Bloqué" if dmg == 0 else str(dmg), Color("c8d8ff"))
 	Sound.play("block", global_position + Vector3(0, 1, 0))
 	visual.flash(Color(0.8, 0.9, 1.0, 0.4), 0.08)
@@ -402,8 +436,14 @@ func _on_blocked(attack: int, source: Node3D, knockback: float) -> void:
 ## Parade réussie : l'attaquant est déséquilibré, on peut contre-attaquer.
 func _on_parry(attacker: Combatant) -> void:
 	var pos := global_position + Vector3(facing.x, 0, facing.z).normalized() * 0.5 + Vector3(0, 1.1, 0)
-	VoxelBurst.spawn(self, pos, Color(1.0, 1.0, 0.85), 30, 7.0, 0.08, 0.35)
-	VoxelBurst.spawn(self, pos, Color(1.0, 0.8, 0.3), 18, 3.5, 0.12, 0.45, "ring", 0.0)
+	# parade : un grand éclat doré, une étoile, un anneau et une lumière
+	VoxelBurst.emit(self, pos, {"palette": VoxelBurst.palette_of(Color(1.0, 0.85, 0.4)), "count": 40, "speed": 8.0,
+		"size": 0.06, "life": 0.4, "streak": 2.5, "hdr": 2.8, "gravity": 4.0})
+	VoxelBurst.emit(self, pos, {"color": Color(1.0, 0.85, 0.35), "count": 26, "speed": 4.5, "size": 0.08, "life": 0.45,
+		"mode": "ring", "hdr": 2.2, "gravity": 0.0, "streak": 1.2})
+	SkillFX.star(self, pos, Color(1.0, 0.9, 0.5), 2.0, 0.28)
+	SkillFX.flash_sphere(self, pos, Color(1.0, 0.9, 0.6), 0.7, 0.2, 3.0)
+	SkillFX.light(self, pos, Color(1.0, 0.85, 0.5), 4.0, 5.0, 0.3)
 	blocking = false
 	visual.play_move("parry")
 	Sound.play("parry", pos, 2.0, 0.02)
