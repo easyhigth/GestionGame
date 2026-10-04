@@ -562,6 +562,7 @@ func _build_maps() -> void:
 	_zone_title.offset_right = 400
 	_zone_title.offset_top = 84
 	_zone_title.offset_bottom = 124
+	_zone_title.add_to_group("big_banner")
 	_zone_sub = _outlined("", 14)
 	_zone_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_zone_sub.modulate.a = 0.0
@@ -656,14 +657,14 @@ func open_city_shop(t: Node) -> void:
 ## Grand titre au centre-haut de l'écran, qui s'efface après quelques secondes.
 ## Deux grands titres ne se chevauchent jamais (région, acte de l'histoire, événement...) : le suivant attend.
 func show_banner(title: String, sub: String, color: Color) -> void:
-	var wait := UiTheme.banner_slot(self, 4.5)
-	if wait > 0.0:
-		get_tree().create_timer(wait).timeout.connect(_show_banner_now.bind(title, sub, color))
+	if UiTheme.banner_busy(self, _zone_title):
+		get_tree().create_timer(0.3).timeout.connect(show_banner.bind(title, sub, color))
 		return
 	_show_banner_now(title, sub, color)
 
 
 func _show_banner_now(title: String, sub: String, color: Color) -> void:
+	_zone_title.modulate.a = maxf(_zone_title.modulate.a, 0.05)   # place prise tout de suite
 	_zone_title.text = title
 	_zone_title.add_theme_color_override("font_color", color)
 	_zone_sub.text = KeyBindings.fmt(sub)
@@ -717,10 +718,10 @@ func _update_boss_bar(delta: float) -> void:
 		_boss_box.hide()
 		return
 	_boss_box.show()
-	_boss_name.text = "☠  %s  ·  Nv %d%s  ☠" % [b.data.display_name, b.level, "  ·  ENRAGÉ" if b.phase == 2 else ""]
+	_boss_name.text = "☠  %s  ·  Nv %d%s  ☠" % [b.data.display_name, b.level, ["", "", "  ·  ENRAGÉ", "  ·  FUREUR"][b.phase]]
 	_boss_name.add_theme_color_override("font_color", b.data.color.lightened(0.3))
 	_boss_fill.size.x = 596.0 * b.health.ratio()
-	_boss_fill.color = Color("c8302a") if b.phase == 1 else Color("ff5a1a")
+	_boss_fill.color = [Color("c8302a"), Color("c8302a"), Color("ff5a1a"), Color("c040ff")][b.phase]
 	_boss_lag.size.x = maxf(_boss_fill.size.x, move_toward(_boss_lag.size.x, _boss_fill.size.x, delta * 120.0))
 
 

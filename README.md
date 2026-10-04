@@ -973,3 +973,28 @@ Tous les bruitages sont générés par `tools/audio_generator.py` (synthèse, sa
 - **Les ultimes** (talents légendaires et mystiques) rassemblent leur énergie dans une montée de plus en plus
   aiguë, puis éclatent dans une déflagration : sous-grave, souffle et débris qui retombent (plus forte encore
   pour une mystique).
+
+## Combat vivant
+
+- **Zones rouges au sol** avant les grands coups : une bande devant un monstre qui va charger (sangliers,
+  loups, ours...), un disque autour d'un monstre qui balaie, un disque devant les grands monstres. Elle se
+  remplit pendant la préparation du coup : quand elle est pleine, ça frappe. On a le temps de rouler hors de
+  la zone.
+- **Les monstres réagissent** au coup qui vient :
+  - les **agiles** (loups, panthères, harpies, gobelins, bandits, araignées, fées, serpents...) **esquivent**
+    d'un bond de côté, dans un nuage de poussière ;
+  - les **armés et cuirassés** (squelettes, orcs, ogres, démons, chefs bandits...) **lèvent leur garde** : les
+    coups normaux sont bloqués, mais une **attaque chargée brise la garde** et les étourdit un instant.
+
+  Plus le monstre a de niveaux, plus il le fait souvent (de 12 % à 40 % des coups), jamais deux fois de
+  suite.
+- **Boss en trois phases** :
+  - **Enragé**, à la moitié de sa vie : rugissement, temps ralenti, onde qui repousse le héros ; il devient
+    plus rapide et enchaîne ses pouvoirs.
+  - **Fureur**, au quart de sa vie : sol brûlé, braises violettes autour de lui, pouvoirs deux fois plus
+    fréquents, et un nouveau pouvoir, les **lames en croix**. Quatre bandes rouges partent de lui (en + ou
+    en X), puis des lames d'énergie les parcourent : il faut se placer entre elles.
+
+  Pendant chaque changement de phase, il est intouchable un court instant. La barre de vie du boss indique
+  sa phase (ENRAGÉ, FUREUR) et change de couleur.
+- Les grands titres attendent maintenant que le précédent se soit effacé, même quand le jeu rame.

@@ -1274,9 +1274,10 @@ func _build_banner() -> void:
 ## Grand titre au milieu de l'écran, qui apparaît puis s'efface.
 func banner(title: String, sub: String) -> void:
 	# pas par-dessus le titre d'une région ou d'un événement : on attend qu'il s'efface
-	var wait := UiTheme.banner_slot(self, 5.5)
-	if wait > 0.0:
-		get_tree().create_timer(wait).timeout.connect(_banner_now.bind(title, sub))
+	var box0 := _banner.get_parent() as CanvasItem
+	box0.add_to_group("big_banner")
+	if UiTheme.banner_busy(self, box0):
+		get_tree().create_timer(0.3).timeout.connect(banner.bind(title, sub))
 		return
 	_banner_now(title, sub)
 
@@ -1285,6 +1286,7 @@ func _banner_now(title: String, sub: String) -> void:
 	_banner.text = title
 	_banner_sub.text = sub
 	var box := _banner.get_parent() as Control
+	box.modulate.a = maxf(box.modulate.a, 0.05)   # place prise tout de suite
 	var tw := create_tween()
 	tw.tween_property(box, "modulate:a", 1.0, 0.8)
 	tw.tween_interval(3.5)
