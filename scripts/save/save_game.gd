@@ -354,7 +354,7 @@ func _save_player(p: Player, world: WorldGenerator) -> Dictionary:
 		"inventory": inv, "equipment": _equip_ids(p.equipment),
 		"souls": p.souls, "absorbed": p.skill.absorbed if p.skill else {},
 		"talents": p.talents.keys(), "ability_slots": p.ability_slots, "build_slots": p.hand.slots if p.hand else [], "hunger": p.hunger, "hero_evo": p.hero_evo,
-		"crafts": p.crafts, "craft_favs": p.craft_favs,
+		"crafts": p.crafts, "craft_favs": p.craft_favs, "seen_items": p.seen_items.keys(), "pinned": p.pinned,
 	}
 
 
@@ -543,6 +543,16 @@ func apply_pending(world: WorldGenerator) -> void:
 			p.crafts[str(c)] = int(cd[c])
 		Crafts.init_for(p)
 		p.craft_favs = Array(pd.get("craft_favs", [])).map(func(x): return str(x))
+		p.seen_items = {}
+		for sid in pd.get("seen_items", []):
+			p.seen_items[str(sid)] = true
+		# sauvegarde d'avant le carnet : toutes les recettes restent connues
+		if not pd.has("seen_items"):
+			for iid in Items.items:
+				p.seen_items[str(iid)] = true
+		p.pinned = Array(pd.get("pinned", [])).map(func(x): return str(x))
+		Workshops.note_seen(p)
+		p.pins_changed.emit()
 		p._apply_evo_look()
 		p._give_class_talent()
 		p._apply_talents()

@@ -1046,3 +1046,35 @@ Tous les bruitages sont générés par `tools/audio_generator.py` (synthèse, sa
   monter, **G** pour descendre) incline la caméra de la vue du dessus jusqu'au **ras du sol**. On voit ainsi
   si une base touche bien le sol ou si elle flotte. La caméra ne passe jamais sous le terrain. Clic molette
   + glisser fait aussi monter ou descendre la caméra, désormais jusqu'au sol.
+
+## Artisanat par ateliers
+
+L'ancien menu unique (13 onglets, plus de 1 400 recettes mélangées) est remplacé par des ateliers.
+
+- **Sur soi (I) : l'essentiel.** Outils en bois, établi, feu de camp, torches, portes, planches, armures de
+  cuir... De quoi démarrer, sans rien chercher.
+- **Chaque atelier a son menu** : **E devant le meuble** l'ouvre (l'invite « Utiliser : Enclume » s'affiche).
+  - **Établi** : outils de pierre, meubles, armes en bois, en os et en pierre, bateaux.
+  - **Enclume** : armes et armures de métal, outils en fer, **Forge** (renforcement, gemmes, runes).
+  - **Four** et **foyer de forge** : lingots, verre, terre cuite... et ils cuisent aussi les repas.
+  - **Table du tailleur** : blocs de pierre taillée, dalles, escaliers, murets.
+  - **Feu de camp** (et le feu du village) : la cuisine.
+  - **Chaudron** : potions.
+  - **Autel** : **Enchantement** et objets légendaires.
+
+  Chaque menu ne montre que ce que ce meuble sait faire.
+- **Carnet de découvertes** : une recette n'apparaît qu'une fois qu'on a eu en main tous ses ingrédients. En
+  ramassant un nouveau matériau, un message annonce ce qu'il permet de fabriquer (« 3 nouvelles recettes :
+  ... »). Les menus indiquent combien de recettes restent inconnues. L'onglet **Carnet** (sur soi) liste toutes
+  les recettes connues, de tous les ateliers, avec une recherche.
+- **Chercher à partir de son sac** :
+  - **clic droit sur un objet du sac** : tout ce qu'on peut fabriquer avec, et à quel atelier ;
+  - **clic sur un ingrédient** d'une recette : **comment l'obtenir** (quel atelier le fabrique, ce qu'on récolte
+    pour l'avoir, quels monstres le lâchent, si le marchand le vend...).
+- **Épingler (📌)** un objet : sa **liste de courses** s'affiche à l'écran, sous le guide (« Lingot de fer 1/2 ·
+  Bois 2/2 »). Quand tout est réuni, elle dit où aller (« Prêt : enclume, 23 m au nord »). Trois objets au plus.
+- **Construction : une forme, puis une matière** : on choisit Blocs, Dalles, Escaliers, Murets, Barrières,
+  Portillons ou Toits en pente, puis la matière (granite, chêne, laine, béton...) dans une grille d'icônes, puis le
+  bloc. Fini les centaines de lignes à faire défiler.
+
+Les anciennes sauvegardes gardent toutes leurs recettes connues.

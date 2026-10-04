@@ -753,7 +753,7 @@ func _commit_selection() -> void:
 							if player.inventory.count(it) <= 0 and not missing.has(it.display_name):
 								missing.append(it.display_name)
 			if not missing.is_empty():
-				player.notify.emit("Meubles à fabriquer pour cette pièce : %s (Artisanat → Mobilier)." % ", ".join(PackedStringArray(missing)))
+				player.notify.emit(KeyBindings.fmt("Meubles à fabriquer pour cette pièce : %s (à l'établi : {interact} devant lui → Mobilier).") % ", ".join(PackedStringArray(missing)))
 		"door":
 			n += _plan_door(Vector2i(_selection[0][0].x, _selection[0][0].z))
 		"window":

@@ -92,6 +92,14 @@ var talents := {}
 var crafts := {}
 ## Recettes favorites (identifiants des objets fabriqués).
 var craft_favs: Array = []
+## Carnet de découvertes : objets déjà eus en main (une recette est connue quand on a vu tous ses ingrédients).
+var seen_items := {}
+## Objets épinglés (3 au plus) : leur liste de courses s'affiche à l'écran.
+var pinned: Array = []
+signal pins_changed
+## E devant un atelier (établi, enclume, four...) : son menu d'artisanat.
+signal open_workshop(station: String)
+const MAX_PINS := 3
 ## Évolution du héros (0 à 3), donnée par l'histoire principale (voir Evolution).
 var hero_evo := 0
 var _evo_fx := 0.0
@@ -180,6 +188,8 @@ func _ready() -> void:
 		_update_viewmodel()
 		tool_in_hand = ""
 		_apply_talents())
+	# carnet : ce qu'on ramasse fait découvrir de nouvelles recettes
+	inventory.changed.connect(_on_inventory_changed)
 	hand = HandBuild.new()
 	hand.name = "HandBuild"
 	hand.player = self
@@ -2060,6 +2070,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		var v := nearest_villager()
+		# un atelier (établi, enclume, four...) : son menu d'artisanat
+		if v == null:
+			var ws := Workshops.station_near(self)
+			if ws != "":
+				open_workshop.emit(ws)
+				get_viewport().set_input_as_handled()
+				return
 		open_inventory.emit(v if v else self)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("inventory"):
@@ -2326,6 +2343,25 @@ func _apply_shake(delta: float) -> void:
 ## L'habitant le plus proche à portée (ou null).
 ## Ce que ferait la touche Parler / utiliser ici (pour l'invite à l'écran) ; "" s'il n'y a rien de particulier.
 ## Suit l'ordre de l'appui sur E (voir _unhandled_input), en plus léger.
+func _on_inventory_changed() -> void:
+	var found := Workshops.note_seen(self)
+	if not found.is_empty() and is_inside_tree() and get_tree().current_scene != null and Engine.get_process_frames() > 30:
+		notify.emit(Workshops.discovery_text(found))
+	if not pinned.is_empty():
+		pins_changed.emit()
+
+
+## Épingle (ou désépingle) un objet à fabriquer : sa liste de courses s'affiche à l'écran.
+func toggle_pin(item_id: String) -> void:
+	if pinned.has(item_id):
+		pinned.erase(item_id)
+	else:
+		pinned.append(item_id)
+		while pinned.size() > MAX_PINS:
+			pinned.pop_front()
+	pins_changed.emit()
+
+
 func interact_hint() -> String:
 	var mo := _mounts_node()
 	if mo and mo.is_riding():
@@ -2353,6 +2389,9 @@ func interact_hint() -> String:
 	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
 	if grid and dc and dc.is_night() and grid.furniture_near(global_position, 2.2).has("lit"):
 		return "Dormir jusqu'au matin"
+	var ws := Workshops.station_near(self)
+	if ws != "":
+		return "Utiliser : " + Workshops.station_name(ws)
 	return ""
 
 
