@@ -34,6 +34,18 @@ var _recipes: VBoxContainer
 var _bench: Label
 var _cat := "Outils"
 var _cat_buttons := {}
+## Atelier ouvert ("" : l'artisanat de poche, depuis le sac ; sinon l'identifiant du meuble : etabli, enclume...).
+var _mode := ""
+## Vue de la colonne de droite : "" (les recettes), "uses" (que faire avec un objet), "source" (comment l'obtenir).
+var _view := ""
+var _view_item: ItemData
+var _back_view := ""
+var _tabs: HFlowContainer
+var _craft_title: Control
+var _srow: HBoxContainer
+## Construction : forme choisie (bloc, dalle, escalier...) et matière choisie (identifiant de l'ingrédient).
+var _shape := "bloc"
+var _mat_id := ""
 var _job_box: VBoxContainer
 
 
@@ -44,12 +56,32 @@ func _ready() -> void:
 	player = hud.get("player") as Player
 	if player:
 		player.open_inventory.connect(open)
+		player.open_workshop.connect(open_station)
 		player.inventory.changed.connect(_refresh)
+		player.pins_changed.connect(_refresh)
 	add_to_group("inventory_ui")
 	hide()
 
 
+## Le sac (I) : l'artisanat de poche.
 func open(who: Node) -> void:
+	_mode = ""
+	_view = ""
+	if not _cat in _tab_list():
+		_cat = _tab_list()[0]
+	_open(who)
+
+
+## E devant un atelier : le sac à gauche, le menu de l'atelier à droite.
+func open_station(station: String) -> void:
+	_mode = station
+	_view = ""
+	_mat_id = ""
+	_cat = _tab_list()[0]
+	_open(player)
+
+
+func _open(who: Node) -> void:
 	Sound.ui("ui_open")
 	if target and target.has_node("Equipment"):
 		var old_eq := target.get_node("Equipment") as CharacterEquipment
@@ -145,7 +177,7 @@ func _build() -> void:
 	_title = _label("Équipement", 15, Color("f2c86a"))
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(_title)
-	head.add_child(_label("Clic : équiper    [I] / [Échap] : fermer", 10, C_DIM))
+	head.add_child(_label("Clic : équiper · Clic droit : que faire avec ?    [I] / [Échap] : fermer", 10, C_DIM))
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 8)
 	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -212,28 +244,22 @@ func _build() -> void:
 
 	# 3. artisanat
 	var c3 := _column("Artisanat", 330, cols)
-	var tabs := HFlowContainer.new()
-	tabs.add_theme_constant_override("h_separation", 2)
-	tabs.add_theme_constant_override("v_separation", 2)
-	tabs.custom_minimum_size.x = 320
-	for cname in ["Outils", "Cuisine", "Équipement", "Construction", "Mobilier", "Matériaux", "Légendaire", "Armurerie", "Armures", "Forge", "Enchantement", "Métiers", "★ Favoris"]:
-		var tb := Button.new()
-		tb.text = cname
-		tb.toggle_mode = true
-		tb.add_theme_font_size_override("font_size", 9)
-		tb.pressed.connect(func(): _cat = cname; _refresh())
-		tabs.add_child(tb)
-		_cat_buttons[cname] = tb
-	c3.add_child(tabs)
+	_craft_title = c3.get_child(0) as Control
+	_tabs = HFlowContainer.new()
+	_tabs.add_theme_constant_override("h_separation", 2)
+	_tabs.add_theme_constant_override("v_separation", 2)
+	_tabs.custom_minimum_size.x = 320
+	c3.add_child(_tabs)
 	_bench = _label("", 9, C_DIM)
 	_bench.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_bench.custom_minimum_size = Vector2(310, 0)
 	c3.add_child(_bench)
 	# recherche dans toutes les recettes, filtre « fabricable »
 	var srow := HBoxContainer.new()
+	_srow = srow
 	srow.add_theme_constant_override("separation", 4)
 	_search = LineEdit.new()
-	_search.placeholder_text = "Rechercher (ex. épée acier, laine bleue)..."
+	_search.placeholder_text = "Chercher dans le carnet (ex. épée acier)..."
 	_search.custom_minimum_size = Vector2(210, 26)
 	_search.add_theme_font_size_override("font_size", 10)
 	_search.clear_button_enabled = true
@@ -325,6 +351,10 @@ func _refresh() -> void:
 			btn.add_child(n)
 		btn.mouse_entered.connect(_show_info.bind(item))
 		btn.pressed.connect(_use_item.bind(item))
+		# clic droit : que faire avec cet objet ?
+		btn.gui_input.connect(func(ev):
+			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
+				show_uses(item))
 		# glisser un objet posable vers la barre de construction
 		if player.hand and player.hand.choices().has(item):
 			btn.gui_input.connect(func(ev):
@@ -342,62 +372,283 @@ func _refresh() -> void:
 		_bag.add_child(_label("Sac vide", 10, C_DIM))
 	_refresh_bar_row()
 
-	var near := player.is_near_workbench()
-	_stations = player.nearby_stations()
-	var names := []
-	for sid in _stations:
-		var it: ItemData = Items.get_item(sid)
-		names.append(it.display_name if it else sid)
-	_bench.text = "À proximité : %s" % (", ".join(PackedStringArray(names)) if names else "aucun meuble d'artisan (approche-toi d'un établi, d'un four, d'une enclume...)")
-	_bench.add_theme_color_override("font_color", C_OK if near else C_DIM)
-	for cn in _cat_buttons:
-		_cat_buttons[cn].set_pressed_no_signal(cn == _cat)
-	for c in _recipes.get_children():
-		c.queue_free()
-	if _search and _search.text.strip_edges() != "":
-		_search_rows(near)
-		_refresh_job()
-		return
-	if _cat == "★ Favoris":
-		var favs: Array = Items.recipes.filter(func(r): return r.result and player.craft_favs.has(r.result.id))
-		if favs.is_empty():
-			_recipes.add_child(_label("Aucune recette favorite : clique sur ☆ à côté d'une recette.", 10, C_DIM))
-		for r: RecipeData in _filter_ok(favs, near):
-			_recipes.add_child(_recipe_row(r, near))
-		_refresh_job()
-		return
-	if _cat == "Forge":
-		_forge_rows()
-		_refresh_job()
-		return
-	if _cat == "Armures":
-		_armor_rows(near)
-		_refresh_job()
-		return
-	if _cat == "Construction":
-		_construction_rows(near)
-		_refresh_job()
-		return
-	if _cat == "Armurerie":
-		_armory_rows(near)
-		_refresh_job()
-		return
-	if _cat == "Enchantement":
-		_enchant_rows()
-		_refresh_job()
-		return
-	if _cat == "Métiers":
-		_crafts_rows()
-		_refresh_job()
-		return
-	var list: Array = Items.recipes.filter(func(r): return r.category == _cat or (_cat == "Matériaux" and r.category == "Matériaux"))
-	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
-	for r: RecipeData in _filter_ok(list, near):
-		_recipes.add_child(_recipe_row(r, near))
+	_refresh_crafting()
 	_refresh_job()
 
 
 var _stations: Array = []
+
+
+## Onglets de l'artisanat ouvert : ceux de l'atelier (ou de la poche), plus le carnet et les métiers sur soi.
+func _tab_list() -> Array:
+	var out := Workshops.tabs_for(_mode)
+	if _mode == "":
+		out += ["Carnet", "Métiers"]
+	return out
+
+
+func _rebuild_tabs() -> void:
+	for c in _tabs.get_children():
+		_tabs.remove_child(c)
+		c.queue_free()
+	_cat_buttons.clear()
+	for cname in _tab_list():
+		var tb := Button.new()
+		tb.text = cname
+		tb.toggle_mode = true
+		tb.add_theme_font_size_override("font_size", 10)
+		tb.pressed.connect(func(): _cat = cname; _view = ""; _refresh())
+		_tabs.add_child(tb)
+		_cat_buttons[cname] = tb
+
+
+## La colonne de droite : l'atelier ouvert (ou l'artisanat de poche), ou une fiche « que faire avec » /
+## « comment l'obtenir ».
+func _refresh_crafting() -> void:
+	# un onglet propre à un autre atelier (ouvert par un raccourci) : on passe à cet atelier
+	if not _cat in _tab_list():
+		var st := Workshops.station_for_tab(_cat)
+		if _cat in Workshops.tabs_for(st):
+			_mode = st
+	if not _cat in _tab_list():
+		_cat = _tab_list()[0]
+	_rebuild_tabs()
+	var near := player.is_near_workbench() or _mode == "etabli"
+	_stations = player.nearby_stations()
+	if _mode != "" and not _stations.has(_mode):
+		_stations.append(_mode)
+	var title := ("Atelier : " + Workshops.station_name(_mode)) if _mode != "" else "Artisanat de poche"
+	if _craft_title:
+		var labels := [_craft_title] if _craft_title is Label else _craft_title.find_children("*", "Label", true, false)
+		if not labels.is_empty():
+			(labels[0] as Label).text = title
+	if _mode != "":
+		_bench.text = str(Workshops.STATIONS[_mode][2]) if Workshops.STATIONS.has(_mode) else ""
+		_bench.add_theme_color_override("font_color", C_OK)
+	else:
+		_bench.text = KeyBindings.fmt("Sur toi, l'essentiel. Le reste se fabrique aux ateliers : {interact} devant un établi, une enclume, un four, une table du tailleur...")
+		_bench.add_theme_color_override("font_color", C_DIM)
+	for cn in _cat_buttons:
+		_cat_buttons[cn].set_pressed_no_signal(cn == _cat and _view == "")
+	_srow.visible = _cat == "Carnet" and _view == ""
+	for c in _recipes.get_children():
+		_recipes.remove_child(c)
+		c.queue_free()
+	match _view:
+		"uses":
+			_uses_rows(near)
+			return
+		"source":
+			_source_rows()
+			return
+	match _cat:
+		"Carnet":
+			_carnet_rows(near)
+		"Forge":
+			_forge_rows()
+		"Armures":
+			_armor_rows(near)
+		"Construction":
+			_shape_rows(near)
+		"Armurerie":
+			_armory_rows(near)
+		"Enchantement":
+			_enchant_rows()
+		"Métiers":
+			_crafts_rows()
+		_:
+			var all: Array = Workshops.recipes_at(_mode).filter(func(r): return r.category == _cat)
+			var list := all.filter(func(r): return Workshops.is_known(player, r))
+			list.sort_custom(func(a, b): return int(_ok(a, near)) > int(_ok(b, near)))
+			for r: RecipeData in _filter_ok(list, near):
+				_recipes.add_child(_recipe_row(r, near))
+			_unknown_note(all.size() - list.size())
+
+
+## Recette faisable ici et maintenant (ingrédients, atelier, niveau de métier).
+func _ok(r: RecipeData, near: bool) -> bool:
+	return _here(r) and r.can_craft(player.inventory, near, _stations) and Crafts.level(player, Crafts.craft_of_recipe(r)) >= Crafts.recipe_level(r)
+
+
+## La recette se fait-elle là où l'on est (l'atelier ouvert, ou sur soi) ?
+func _here(r: RecipeData) -> bool:
+	var st := Workshops.station_of(r)
+	return st == "" or Workshops.serves(_mode, st)
+
+
+func _unknown_note(n: int) -> void:
+	if n <= 0:
+		return
+	var l := _label("%d recette%s encore inconnue%s : ramasse de nouveaux matériaux pour les découvrir." % [n, "s" if n > 1 else "", "s" if n > 1 else ""], 9, C_DIM)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(300, 0)
+	_recipes.add_child(l)
+
+
+func _back_button() -> Button:
+	var b := Button.new()
+	b.text = "← Retour"
+	b.add_theme_font_size_override("font_size", 10)
+	b.pressed.connect(func():
+		_view = _back_view
+		_back_view = ""
+		_refresh())
+	return b
+
+
+## Clic droit sur un objet du sac : tout ce qu'on peut en faire (recettes connues, et à quel atelier).
+func show_uses(item: ItemData) -> void:
+	_back_view = ""
+	_view = "uses"
+	_view_item = item
+	_refresh()
+
+
+## « Comment obtenir cet objet ? » (ingrédient cliqué dans une recette)
+func show_source(item: ItemData) -> void:
+	_back_view = _view if _view != "source" else ""
+	_view = "source"
+	_view_item = item
+	_refresh()
+
+
+func _uses_rows(near: bool) -> void:
+	var it := _view_item
+	_recipes.add_child(_back_button())
+	_recipes.add_child(MenuKit.heading("Avec %s, tu peux fabriquer :" % it.display_name, 12))
+	var list := Workshops.uses_of(player, it)
+	if list.is_empty():
+		_recipes.add_child(_label("Rien pour l'instant (aucune recette connue ne l'utilise).", 10, C_DIM))
+	list.sort_custom(func(a, b): return int(_ok(a, near)) > int(_ok(b, near)))
+	for r: RecipeData in list.slice(0, 40):
+		_recipes.add_child(_recipe_row(r, near, true))
+	if list.size() > 40:
+		_recipes.add_child(_label("... et %d autres." % (list.size() - 40), 9, C_DIM))
+	var how := Button.new()
+	how.text = "Comment obtenir %s ?" % it.display_name
+	how.add_theme_font_size_override("font_size", 10)
+	how.pressed.connect(show_source.bind(it))
+	_recipes.add_child(how)
+
+
+func _source_rows() -> void:
+	var it := _view_item
+	_recipes.add_child(_back_button())
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.add_child(_icon_box(it, 40))
+	row.add_child(MenuKit.heading("Obtenir : %s" % it.display_name, 12))
+	_recipes.add_child(row)
+	_recipes.add_child(_label("Tu en as %d." % player.inventory.count(it), 10, C_DIM))
+	for line in Workshops.sources_of(it):
+		var l := _label("• " + str(line), 10, C_TEXT)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(300, 0)
+		_recipes.add_child(l)
+	if Items.recipes.any(func(r): return r.result == it):
+		var pinb := Button.new()
+		pinb.text = "📌 Désépingler" if player.pinned.has(it.id) else "📌 Épingler (liste de courses à l'écran)"
+		pinb.add_theme_font_size_override("font_size", 10)
+		pinb.pressed.connect(func(): player.toggle_pin(it.id))
+		_recipes.add_child(pinb)
+
+
+## Le carnet : toutes les recettes découvertes, de tous les ateliers (avec la recherche).
+func _carnet_rows(near: bool) -> void:
+	var visible_r: Array = Items.recipes.filter(func(r): return r.result and not r.result.has_meta("hidden"))
+	var known := visible_r.filter(func(r): return Workshops.is_known(player, r))
+	_recipes.add_child(_label("Carnet : %d recettes découvertes sur %d. Ramasse de nouveaux matériaux pour en découvrir d'autres." % [known.size(), visible_r.size()], 9, C_DIM))
+	var words := _plain(_search.text.strip_edges()).split(" ", false) if _search else PackedStringArray()
+	var found := known.filter(func(r):
+		var n := _plain(r.result.display_name)
+		for w in words:
+			if not n.contains(w):
+				return false
+		return true)
+	found = _filter_ok(found, near)
+	found.sort_custom(func(a, b): return int(_ok(a, near)) > int(_ok(b, near)))
+	if words.is_empty():
+		_recipes.add_child(_label("Tape un nom dans la recherche, ou fais un clic droit sur un objet du sac.", 10, C_DIM))
+	for r: RecipeData in found.slice(0, 50):
+		_recipes.add_child(_recipe_row(r, near, true))
+	if found.size() > 50:
+		_recipes.add_child(_label("... %d autres : précise la recherche." % (found.size() - 50), 9, C_DIM))
+
+
+## Construction : on choisit une forme (bloc, dalle, escalier...), puis une matière, puis la variante.
+func _shape_rows(near: bool) -> void:
+	var all: Array = Workshops.recipes_at(_mode).filter(func(r): return r.category == "Construction")
+	var known: Array = all.filter(func(r): return Workshops.is_known(player, r))
+	var shapes := []
+	for sh in Workshops.SHAPES:
+		if known.any(func(r): return Workshops.shape_of(r.result) == sh[0]):
+			shapes.append(sh)
+	if shapes.is_empty():
+		_recipes.add_child(_label("Aucun bloc connu ici pour l'instant.", 10, C_DIM))
+		_unknown_note(all.size())
+		return
+	if not shapes.any(func(sh): return sh[0] == _shape):
+		_shape = shapes[0][0]
+		_mat_id = ""
+	_recipes.add_child(_label("1. La forme", 10, Color("f2c86a")))
+	var srow := HFlowContainer.new()
+	srow.add_theme_constant_override("h_separation", 3)
+	srow.add_theme_constant_override("v_separation", 3)
+	srow.custom_minimum_size.x = 310
+	for sh in shapes:
+		var b := Button.new()
+		b.text = sh[1]
+		b.toggle_mode = true
+		b.button_pressed = sh[0] == _shape
+		b.add_theme_font_size_override("font_size", 10)
+		b.pressed.connect(func(): _shape = sh[0]; _mat_id = ""; _refresh())
+		srow.add_child(b)
+	_recipes.add_child(srow)
+	var of_shape := known.filter(func(r): return Workshops.shape_of(r.result) == _shape)
+	var mats := {}
+	for r in of_shape:
+		var m := Workshops.material_of(r)
+		if m and not mats.has(m.id):
+			mats[m.id] = m
+	if not mats.has(_mat_id):
+		# de préférence une matière qu'on a dans le sac
+		_mat_id = ""
+		for mid in mats:
+			if player.inventory.count(mats[mid]) > 0:
+				_mat_id = mid
+				break
+		if _mat_id == "" and not mats.is_empty():
+			_mat_id = mats.keys()[0]
+	_recipes.add_child(_label("2. La matière", 10, Color("f2c86a")))
+	var grid := GridContainer.new()
+	grid.columns = 8
+	grid.add_theme_constant_override("h_separation", 3)
+	grid.add_theme_constant_override("v_separation", 3)
+	for mid in mats:
+		var m: ItemData = mats[mid]
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(36, 36)
+		b.tooltip_text = "%s (tu en as %d)" % [m.display_name, player.inventory.count(m)]
+		b.toggle_mode = true
+		b.button_pressed = mid == _mat_id
+		var box := _icon_box(m, 32)
+		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.position = Vector2(2, 2)
+		if player.inventory.count(m) == 0:
+			box.modulate = Color(1, 1, 1, 0.4)
+		b.add_child(box)
+		b.pressed.connect(func(): _mat_id = mid; _refresh())
+		grid.add_child(b)
+	_recipes.add_child(grid)
+	if _mat_id == "":
+		return
+	_recipes.add_child(_label("3. Le bloc (%s)" % (mats[_mat_id] as ItemData).display_name, 10, Color("f2c86a")))
+	var list := of_shape.filter(func(r):
+		var m := Workshops.material_of(r)
+		return m and m.id == _mat_id)
+	for r: RecipeData in _filter_ok(list, near):
+		_recipes.add_child(_recipe_row(r, near))
+	_unknown_note(all.size() - known.size())
 
 
 ## Poste de travail d'un habitant (affiché quand on ouvre l'équipement d'un habitant).
@@ -632,11 +883,12 @@ func _forge_rows() -> void:
 		_recipes.add_child(panel)
 
 
-func _recipe_row(r: RecipeData, near: bool) -> Control:
+func _recipe_row(r: RecipeData, near: bool, show_station := false) -> Control:
 	var craft := Crafts.craft_of_recipe(r)
 	var need_lv := Crafts.recipe_level(r)
 	var lv_ok := Crafts.level(player, craft) >= need_lv
-	var ok := r.can_craft(player.inventory, near, _stations) and lv_ok
+	var here := _here(r)
+	var ok := here and r.can_craft(player.inventory, near, _stations) and lv_ok
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _style(C_SLOT if ok else C_SLOT.darkened(0.2), C_FRAME.darkened(0.5 if ok else 0.7), 1))
 	var row := HBoxContainer.new()
@@ -652,12 +904,11 @@ func _recipe_row(r: RecipeData, near: bool) -> Control:
 	for i in r.ingredients.size():
 		var have := player.inventory.count(r.ingredients[i])
 		var need := r.amount_of(i)
-		parts.append("[color=#%s]%d %s (%d)[/color]" % [(C_OK if have >= need else C_BAD).to_html(false), need, r.ingredients[i].display_name, have])
-	if r.needs_workbench:
-		parts.append("[color=#%s]établi[/color]" % (C_OK if near else C_BAD).to_html(false))
-	if r.station != "":
-		var st_item: ItemData = Items.get_item(r.station)
-		parts.append("[color=#%s]près : %s[/color]" % [(C_OK if _stations.has(r.station) else C_BAD).to_html(false), st_item.display_name if st_item else r.station])
+		# chaque ingrédient est un lien : « comment l'obtenir ? »
+		parts.append("[url=%s][color=#%s]%d %s (%d)[/color][/url]" % [r.ingredients[i].id, (C_OK if have >= need else C_BAD).to_html(false), need, r.ingredients[i].display_name, have])
+	var st := Workshops.station_of(r)
+	if st != "" and (show_station or not here):
+		parts.append("[color=#%s]atelier : %s[/color]" % [(C_OK if here else Color("e8b84a")).to_html(false), Workshops.station_name(st).to_lower()])
 	if need_lv > 1:
 		parts.append("[color=#%s]%s niv. %d[/color]" % [(C_OK if lv_ok else C_BAD).to_html(false), Crafts.CRAFTS[craft].name, need_lv])
 	var ing := RichTextLabel.new()
@@ -667,23 +918,23 @@ func _recipe_row(r: RecipeData, near: bool) -> Control:
 	ing.text = ", ".join(parts)
 	ing.add_theme_font_size_override("normal_font_size", 9)
 	ing.custom_minimum_size = Vector2(200, 0)
-	ing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ing.meta_underlined = false
+	ing.tooltip_text = "Clique sur un ingrédient : comment l'obtenir ?"
+	ing.meta_clicked.connect(func(meta):
+		var src := Items.get_item(str(meta)) as ItemData
+		if src:
+			show_source(src))
 	txt.add_child(ing)
 	row.add_child(txt)
-	var fav := Button.new()
-	var is_fav: bool = player.craft_favs.has(r.result.id)
-	fav.text = "★" if is_fav else "☆"
-	fav.flat = true
-	fav.tooltip_text = "Retirer des favoris" if is_fav else "Ajouter aux favoris"
-	fav.add_theme_font_size_override("font_size", 13)
-	fav.add_theme_color_override("font_color", Color("ffd24a") if is_fav else C_DIM)
-	fav.pressed.connect(func():
-		if player.craft_favs.has(r.result.id):
-			player.craft_favs.erase(r.result.id)
-		else:
-			player.craft_favs.append(r.result.id)
-		_refresh())
-	row.add_child(fav)
+	var pin := Button.new()
+	var pinned: bool = player.pinned.has(r.result.id)
+	pin.text = "📌"
+	pin.flat = true
+	pin.tooltip_text = "Désépingler" if pinned else "Épingler : sa liste de courses s'affiche à l'écran"
+	pin.add_theme_font_size_override("font_size", 12)
+	pin.modulate = Color.WHITE if pinned else Color(1, 1, 1, 0.35)
+	pin.pressed.connect(func(): player.toggle_pin(r.result.id))
+	row.add_child(pin)
 	# armes de l'arsenal : on peut aussi les commander au forgeron du village
 	if r.category == "Armurerie" and Artisans.has_smith(get_tree()):
 		var ob := Button.new()
@@ -697,7 +948,8 @@ func _recipe_row(r: RecipeData, near: bool) -> Control:
 			_refresh())
 		row.add_child(ob)
 	var b := Button.new()
-	b.text = "Fabriquer"
+	b.text = "Fabriquer" if here else Workshops.station_name(Workshops.station_of(r))
+	b.tooltip_text = "" if here else "Se fabrique à l'atelier : %s" % Workshops.station_name(Workshops.station_of(r))
 	b.disabled = not ok
 	b.add_theme_font_size_override("font_size", 9)
 	b.pressed.connect(_craft.bind(r))
@@ -811,7 +1063,12 @@ func _unequip(slot: int) -> void:
 func _craft(r: RecipeData) -> void:
 	if Crafts.level(player, Crafts.craft_of_recipe(r)) < Crafts.recipe_level(r):
 		return
-	if r.craft(player.inventory, player.is_near_workbench(), player.nearby_stations()):
+	if not _here(r):
+		return
+	var sts := player.nearby_stations()
+	if _mode != "":
+		sts.append(_mode)
+	if r.craft(player.inventory, player.is_near_workbench() or _mode == "etabli", sts):
 		var extra := Crafts.on_crafted(player, r)
 		player.notify.emit("Fabriqué : %s%s" % [r.result.display_name, ("  ·  " + extra) if extra != "" else ""])
 		player.crafted.emit(r.result.id)
@@ -854,13 +1111,27 @@ func _stepper(text: String, on_prev: Callable, on_next: Callable) -> HBoxContain
 func _armory_rows(near: bool) -> void:
 	var nt := Arsenal.TYPE_ORDER.size()
 	var nm := Arsenal.MATERIALS.size()
+	# les matériaux travaillés à cet atelier (bois, os et pierre à l'établi, les métaux à l'enclume)
+	var mats := []
+	for i in nm:
+		var rid := Arsenal.make_id(Arsenal.TYPE_ORDER[0], Arsenal.MATERIALS[i].id, 0)
+		for r: RecipeData in Items.recipes:
+			if r.result and r.result.id == rid:
+				if Workshops.station_of(r) == _mode or _mode == "":
+					mats.append(i)
+				break
+	if mats.is_empty():
+		mats = range(nm)
+	if not mats.has(_arm_mat):
+		_arm_mat = mats[0]
 	var type: String = Arsenal.TYPE_ORDER[_arm_type]
 	var m: Dictionary = Arsenal.MATERIALS[_arm_mat]
 	_recipes.add_child(_label("Arsenal : %d armes (%d types × %d matériaux × 4 designs)" % [nt * nm * 4, nt, nm], 9, C_DIM))
 	_recipes.add_child(_stepper("Type : %s (%d/%d)" % [Arsenal.TYPES[type].names[0], _arm_type + 1, nt],
 		func(): _arm_type = (_arm_type + nt - 1) % nt, func(): _arm_type = (_arm_type + 1) % nt))
+	var mi := mats.find(_arm_mat)
 	_recipes.add_child(_stepper("Matériau : %s" % str(m.suffix).trim_prefix("en ").trim_prefix("d'").capitalize(),
-		func(): _arm_mat = (_arm_mat + nm - 1) % nm, func(): _arm_mat = (_arm_mat + 1) % nm))
+		func(): _arm_mat = mats[(mi + mats.size() - 1) % mats.size()], func(): _arm_mat = mats[(mi + 1) % mats.size()]))
 	var flv := Crafts.level(player, "forgeron")
 	_recipes.add_child(_label("Forgeron d'armes : niveau %d  ·  ce matériau : niveau %d" % [flv, int(m.level)], 9, C_OK if flv >= int(m.level) else C_BAD))
 	var kg := get_tree().get_first_node_in_group("kingdom")
@@ -969,23 +1240,10 @@ func _crafts_rows() -> void:
 
 ## Ouvre l'inventaire sur un onglet (ex. « Métiers »).
 func open_tab(who: Node, tab: String) -> void:
+	_mode = Workshops.station_for_tab(tab)
+	_view = ""
 	_cat = tab
-	open(who)
-
-
-var _family := 0
-
-
-## Onglet « Construction » : les blocs par famille (pierres, bois, laine, béton...), façon Minecraft.
-func _construction_rows(near: bool) -> void:
-	var fams := BlockCatalog.FAMILIES
-	var list: Array = Items.recipes.filter(func(r): return r.category == "Construction" and r.get_meta("family", "Classiques") == fams[_family])
-	_recipes.add_child(_label("%d blocs de construction en tout" % BlockCatalog.count_blocks(Items), 9, C_DIM))
-	_recipes.add_child(_stepper("%s (%d)" % [fams[_family], list.size()],
-		func(): _family = (_family + fams.size() - 1) % fams.size(), func(): _family = (_family + 1) % fams.size()))
-	list.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
-	for r: RecipeData in _filter_ok(list, near):
-		_recipes.add_child(_recipe_row(r, near))
+	_open(who)
 
 
 var _armor_fam := 3
@@ -1019,25 +1277,7 @@ static func _plain(t: String) -> String:
 func _filter_ok(list: Array, near: bool) -> Array:
 	if _only_ok == null or not _only_ok.button_pressed:
 		return list
-	return list.filter(func(r): return r.can_craft(player.inventory, near, _stations) and Crafts.level(player, Crafts.craft_of_recipe(r)) >= Crafts.recipe_level(r))
-
-
-## Recherche : tous les mots doivent se trouver dans le nom de l'objet (60 résultats au plus).
-func _search_rows(near: bool) -> void:
-	var words := _plain(_search.text.strip_edges()).split(" ", false)
-	var found: Array = Items.recipes.filter(func(r):
-		if r.result == null or r.result.has_meta("hidden"):
-			return false
-		var n := _plain(r.result.display_name)
-		for w in words:
-			if not n.contains(w):
-				return false
-		return true)
-	found = _filter_ok(found, near)
-	found.sort_custom(func(a, b): return int(a.can_craft(player.inventory, near, _stations)) > int(b.can_craft(player.inventory, near, _stations)))
-	_recipes.add_child(_label("%d recette(s) trouvée(s)%s" % [found.size(), " (60 premières)" if found.size() > 60 else ""], 9, C_DIM))
-	for r: RecipeData in found.slice(0, 60):
-		_recipes.add_child(_recipe_row(r, near))
+	return list.filter(func(r): return _ok(r, near))
 
 
 ## Comparaison avec ce que le héros porte à la même place.

@@ -213,7 +213,7 @@ func _process(_d) -> bool:
 		for c in root.find_children("*", "Control", true, false):
 			if c.get_script() and c.get_script().resource_path.ends_with("inventory_ui.gd"):
 				inv_ui = c
-		inv_ui._family = 3
+		inv_ui._shape = "bloc"
 		inv_ui.open_tab(p, "Construction")
 		start("ui1")
 	if false:

@@ -59,6 +59,7 @@ var heraldry_panel: HeraldryPanel
 var endgame_panel: EndgamePanel
 var endgame: Endgame
 var keys_help: KeysHelp
+var craft_pins: CraftPins
 var quest_dialog: QuestDialog
 var shop_dialog: ShopDialog
 var trade: Trade
@@ -1114,6 +1115,10 @@ func _build_day_and_guide() -> void:
 	get_parent().add_child.call_deferred(her)
 	keys_help = KeysHelp.new()
 	add_child(keys_help)
+	# objets épinglés dans l'artisanat : leur liste de courses, sous le guide
+	craft_pins = CraftPins.new()
+	craft_pins.player = player
+	add_child(craft_pins)
 	heraldry_panel = HeraldryPanel.new()
 	heraldry_panel.player = player
 	add_child(heraldry_panel)
