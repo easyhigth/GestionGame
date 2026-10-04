@@ -101,43 +101,67 @@ func _refresh() -> void:
 	head.add_child(MenuKit.portrait(MenuKit.villager_portrait_id(v), 76))
 	var hv := VBoxContainer.new()
 	hv.alignment = BoxContainer.ALIGNMENT_CENTER
+	hv.add_theme_constant_override("separation", 4)
 	hv.add_child(MenuKit.heading(v.villager_name, 18))
-	var cls: String = v.class_name_fr() if v.has_method("class_name_fr") else ""
-	hv.add_child(MenuKit.label("%s  ·  %s  ·  Niveau %d" % [v.race.display_name if v.race else "?", cls if cls != "" else "Sans classe", v.level], 12, C_DIM))
+	var chips := HBoxContainer.new()
+	chips.add_theme_constant_override("separation", 4)
+	chips.add_child(MenuKit.chip(v.race.display_name if v.race else "?", C_DIM))
+	var cd := Villager.class_data(str(v.get("fight_class")))
+	if cd:
+		chips.add_child(MenuKit.chip(cd.display_name, cd.color))
+	chips.add_child(MenuKit.chip("Niveau %d" % v.level, C_GOLD))
+	if prisoner:
+		chips.add_child(MenuKit.chip("Prisonnier", C_BAD))
+	hv.add_child(chips)
+	# caractéristiques en icônes
+	var s := v.total_stats()
+	var stats := HBoxContainer.new()
+	stats.add_theme_constant_override("separation", 10)
+	for st in [["heart", s.max_health], ["sword", s.attack], ["shield", s.defense], ["magic", s.magic]]:
+		stats.add_child(MenuKit.icon_label(st[0], str(st[1]), 12, C_TEXT))
+	var w := v.weapon()
+	stats.add_child(MenuKit.label(("· " + w.display_name) if w else "· sans arme", 10, C_DIM))
+	hv.add_child(stats)
 	head.add_child(hv)
 	_box.add_child(head)
-	_box.add_child(_label("« %s »" % v.recruit_offer.get("text", "Je cherche un endroit où vivre."), 12, C_TEXT))
-	var tal := []
+	# sa phrase, sur un parchemin
+	var quote := PanelContainer.new()
+	quote.add_theme_stylebox_override("panel", UiTheme.parchment(10))
+	var ql := MenuKit.label("« %s »" % v.recruit_offer.get("text", "Je cherche un endroit où vivre."), 12, MenuKit.C_INK)
+	ql.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ql.custom_minimum_size.x = 420
+	quote.add_child(ql)
+	_box.add_child(quote)
+	# talents
+	var tal := HFlowContainer.new()
+	tal.add_theme_constant_override("h_separation", 4)
+	tal.add_child(MenuKit.label("Talents :", 11, C_DIM))
 	var keys := v.talents.keys()
 	keys.sort_custom(func(a, b): return v.talents[a] > v.talents[b])
 	for j in keys:
-		tal.append("%s %s" % [Villager.JOB_NAMES.get(j, j), "★".repeat(clampi(roundi(float(v.talents[j]) * 6.0), 1, 5))])
-	_box.add_child(_label("Talents : " + ",  ".join(PackedStringArray(tal)), 12, C_DIM))
-	var s := v.total_stats()
-	var w := v.weapon()
-	_box.add_child(_label("Vie %d   Attaque %d   Défense %d   Magie %d%s" % [s.max_health, s.attack, s.defense, s.magic,
-		("   ·   Arme : " + w.display_name) if w else "   ·   Sans arme"], 11, C_DIM))
+		tal.add_child(MenuKit.chip("%s %s" % [Villager.JOB_NAMES.get(j, j), "★".repeat(clampi(roundi(float(v.talents[j]) * 6.0), 1, 5))], C_GOLD))
+	_box.add_child(tal)
 	# ce qu'il demande
 	var items: Array = v.recruit_offer.get("items", [])
 	if items.is_empty():
-		_box.add_child(_label("Il te rejoint sans rien demander." if not prisoner else "Libéré, il te rejoint avec joie.", 12, C_OK))
+		_box.add_child(MenuKit.icon_label("star", "Il te rejoint sans rien demander." if not prisoner else "Libéré, il te rejoint avec joie.", 12, C_OK))
 	else:
-		var parts := []
+		var ask := HBoxContainer.new()
+		ask.add_theme_constant_override("separation", 6)
+		ask.add_child(MenuKit.label("Il demande :", 12, C_TEXT))
 		for pair in items:
 			var have := player.inventory.count(pair[0])
-			parts.append("[color=#%s]%d %s (tu en as %d)[/color]" % [(C_OK if have >= int(pair[1]) else C_BAD).to_html(false), pair[1], (pair[0] as ItemData).display_name, have])
-		var rt := RichTextLabel.new()
-		rt.bbcode_enabled = true
-		rt.fit_content = true
-		rt.scroll_active = false
-		rt.custom_minimum_size = Vector2(428, 0)
-		rt.add_theme_font_size_override("normal_font_size", 12)
-		rt.text = "Il demande : " + ", ".join(PackedStringArray(parts))
-		_box.add_child(rt)
+			ask.add_child(MenuKit.item_badge(pair[0], int(pair[1]), 34))
+			ask.add_child(MenuKit.label("%s\ntu en as %d" % [(pair[0] as ItemData).display_name, have], 10, C_OK if have >= int(pair[1]) else C_BAD))
+		_box.add_child(ask)
 	var pop := population(get_tree())
 	var room := pop.x < pop.y
-	_box.add_child(_label("Population du village : %d / %d%s" % [pop.x, pop.y,
-		"" if room else "  —  construis une maison (lit + coffre) ou un dortoir pour l'accueillir"], 11, C_OK if room else C_BAD))
+	var prow := HBoxContainer.new()
+	prow.add_theme_constant_override("separation", 6)
+	prow.add_child(MenuKit.icon("people", 16))
+	prow.add_child(MenuKit.gauge(float(pop.x) / maxf(1.0, pop.y), C_OK if room else C_BAD, 120, 8))
+	prow.add_child(MenuKit.label("Village %d / %d%s" % [pop.x, pop.y, "" if room else " : construis une maison ou un dortoir"], 11, C_OK if room else C_BAD))
+	_box.add_child(prow)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER

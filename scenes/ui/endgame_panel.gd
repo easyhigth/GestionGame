@@ -78,7 +78,7 @@ func _refresh() -> void:
 	var eg := _eg()
 	_box.add_child(MenuKit.title("Portail des Failles", 22))
 	# palier du monde
-	_box.add_child(MenuKit.label("Palier du monde", 15, Color("e0b0ff")))
+	_box.add_child(MenuKit.section("Palier du monde : monstres plus forts, plus de butin", "skull", 14))
 	var t := eg.tier
 	_box.add_child(_stepper("%s  (palier %d)" % [Endgame.TIER_NAMES[t], t],
 		func(): eg.set_tier(maxi(0, eg.tier - 1)),
@@ -89,9 +89,8 @@ func _refresh() -> void:
 	var nxt := t + 1
 	if nxt < Endgame.TIER_LEVEL.size() and nxt > eg.max_tier():
 		_box.add_child(_text("Prochain palier (%s) au niveau %d." % [Endgame.TIER_NAMES[nxt], Endgame.TIER_LEVEL[nxt]], 10, MenuKit.C_DIM))
-	_box.add_child(HSeparator.new())
 	# failles
-	_box.add_child(MenuKit.label("Failles", 15, Color("e0b0ff")))
+	_box.add_child(MenuKit.section("Failles : vagues de monstres et leur gardien", "magic", 14))
 	_rank = clampi(_rank, 1, eg.best_rift + 1)
 	_box.add_child(_stepper("Rang %d  ·  monstres niveau %d" % [_rank, eg.rift_level(_rank)],
 		func(): _rank = maxi(1, _rank - 1),
@@ -106,9 +105,8 @@ func _refresh() -> void:
 		close()
 		eg.enter_rift(_rank))
 	_box.add_child(enter)
-	_box.add_child(HSeparator.new())
 	# titans
-	_box.add_child(MenuKit.label("Titans", 15, Color("ffb050")))
+	_box.add_child(MenuKit.section("Titans : géants qui rôdent dans le monde", "crown", 14))
 	if eg.titan.is_empty():
 		_box.add_child(_text("Aucun titan éveillé. Un titan s'éveille tous les deux ou trois jours (à partir du niveau 30)." if player.power_level() >= 30
 			else "Les titans dorment encore : ils s'éveilleront quand tu auras atteint le niveau 30."))
