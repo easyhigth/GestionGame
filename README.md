@@ -836,3 +836,61 @@ U → onglet *Carte* (`scenes/ui/kingdom_map.gd`, `kingdom_panel.gd::_page_map`)
 - **Plans** en hachures dorées, **feu de camp** lumineux, **habitants** (couleur de leur classe, anneau vert au travail, prénom au zoom ; clic = fiche), **héros** en flèche dorée.
 - **Navigation** : molette (zoom vers le curseur), glisser pour se déplacer, boutons − / + / ⌖ (recadrer sur le village). **Rose des vents**, **échelle en mètres**, légende et info-bulle de survol pour tout (meuble, arbre, filon, eau, champ, plan...).
 - Test : `tests/run_tests.sh panels` (captures `pn_02_carte.png` et `pn_03_carte_zoom.png`).
+
+## Effets spéciaux des attaques et des compétences
+Chaque attaque est reconnaissable à sa forme, à sa couleur et à sa façon d'exploser. Plus une compétence est rare, plus son effet est grand, lumineux et détaillé (`HeroSkill.grade()` : 0 pour une commune, 4 pour une mystique ; la compétence unique de l'histoire suit son rang).
+
+**Moteur** (`scripts/combat/voxel_burst.gd`, `scripts/combat/skill_fx.gd`, shaders `fx_glow_add` / `fx_glow_mix`) :
+- **Particules** :
+  - palettes de couleurs : un éclat clair, la couleur, une teinte sombre ;
+  - **éclat lumineux** : la couleur dépasse 1 et brille avec le halo de l'image ;
+  - **étincelles étirées** dans le sens de leur course, **fumée** qui gonfle ;
+  - modes cône, disque, colonne, coquille et **implosion en spirale**.
+- **Garde-fou** : un budget de cubes à l'écran allège les gerbes quand il y en a trop.
+- Nouveaux effets :
+  - **explosion** en couches : éclair, boule de feu, étincelles, onde au sol, fumée, débris, brûlure ;
+  - **éclair** zigzag avec ramifications, qui crépite ;
+  - **entaille** en croissant ; **cercle de runes** tournant ; **étoile d'impact** ;
+  - **lumière** qui éclaire le décor (au plus 6 à la fois) ;
+  - **traînées** derrière les projectiles et les météores ;
+  - **filets de lumière** d'un point à un personnage (vol de vie, soins).
+
+**Attaques de base** :
+- **Traînée de l'arme** : un **ruban de lumière** de la garde à la pointe, dans la couleur de la rareté de l'arme, d'où s'échappent des étincelles.
+- **Entaille** lumineuse à chaque coup du héros et des boss : inclinée en alternance dans le combo, un cercle complet pour le tourbillon, plus large pour les coups lourds.
+- **Impact** à chaque coup reçu : éclat et étincelles dans le sens du coup. Les **critiques** et les gros coups ajoutent une **étoile de lumière**, une onde et une lumière.
+- **Coups bloqués et parades** : gerbes d'étincelles. Une parade est dorée, avec étoile, anneau et lumière.
+- **Onde au sol** des coups lourds : poussière, fumée, anneau.
+- Les tirs de **bâton** ont un halo, une traînée et un éclat à l'impact ; les **flèches**, une fine traînée.
+
+**Compétences** :
+- **Geste de lancement** : cercle de runes sous le héros et gerbe à ses mains. Dès légendaire, une colonne de lumière et un éclair d'écran.
+- Chaque genre a sa signature :
+
+  | Compétence | Effet |
+  |---|---|
+  | Nova | explosion d'énergie, éclairs qui courent au sol jusqu'au bord |
+  | Météores | runes au point d'impact, boule de feu à traînée de flammes et de fumée, explosion et brûlure |
+  | Éclair en chaîne | vrais éclairs ramifiés d'ennemi en ennemi |
+  | Souffle | jet de flammes en trois couches |
+  | Tourbillon | aspiration en spirale puis explosion |
+  | Exécution | tranche en croix (et explosion si elle achève) |
+  | Ruée et transfert | trait de lumière sur le trajet |
+  | Soin | runes et colonne de lumières |
+  | Vol de vie | filets de lumière des ennemis vers le héros |
+  | Étourdissement | étoiles qui tournent au-dessus des sonnés |
+  | Zones | bulles, flocons ou flammes tant qu'elles durent |
+  | Invocation | la tombe s'ouvre |
+  | Effroi | vague d'ombre |
+
+- **Ultimes mystiques** : le temps ralentit, l'énergie est aspirée vers le héros, un immense cercle de runes s'ouvre, une couronne de huit colonnes de lumière s'élève, puis la frappe tombe.
+  - La foudre tombe en vrais éclairs ; les lames sont de vraies épées géantes (garde, poignée, pommeau).
+  - Chaque impact est une explosion complète.
+- **Cataclysme** : tout le décor est aspiré en silence, puis une couronne de douze explosions s'éloigne du centre avant que le cratère se creuse.
+
+Test : `tests/run_tests.sh effects` lance une vitrine de 14 effets et vérifie que tout se nettoie (plus aucun cube ni lumière) :
+- coup d'épée, tourbillon, critique ;
+- nova commune et légendaire, éclair en chaîne, souffle, comète, tempête de lames, soin, exécution, salve ;
+- la mystique « Mille Soleils d'Acier » et le Cataclysme.
+
+Les captures sont `fx_XX_*.png`.

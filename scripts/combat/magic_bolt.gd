@@ -47,6 +47,15 @@ func _ready() -> void:
 	light.light_energy = 1.2
 	light.omni_range = 2.5
 	add_child(light)
+	# halo lumineux et traînée de particules
+	var halo := MeshInstance3D.new()
+	var hb := BoxMesh.new()
+	hb.size = Vector3.ONE * 0.42
+	halo.mesh = hb
+	halo.material_override = SkillFX.own_glow(Color(color, 0.35), 2.2, true)
+	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_core.add_child(halo)
+	SkillFX.trail(self, color, 0.03, 0.07, 2.4)
 
 
 func _physics_process(delta: float) -> void:
@@ -81,6 +90,7 @@ func _build_arrow() -> void:
 	add_child(_core)
 	# la flèche regarde dans sa direction (pointe vers +Z du maillage)
 	_core.basis = Basis.looking_at(-direction, Vector3.UP)
+	SkillFX.trail(self, Color(0.95, 0.92, 0.8), 0.03, 0.035, 1.6)
 
 
 func _burst() -> void:
@@ -91,6 +101,9 @@ func _burst() -> void:
 		tw.tween_callback(queue_free)
 		return
 	set_physics_process(false)
+	SkillFX.flash_sphere(self, global_position, color, 0.6, 0.18, 3.0)
+	VoxelBurst.emit(self, global_position, {"palette": VoxelBurst.palette_of(color), "count": 18, "speed": 5.0, "size": 0.06,
+		"life": 0.35, "hdr": 2.6, "streak": 2.0, "gravity": 3.0})
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector3.ONE * 2.2, 0.12)
 	tw.tween_property(self, "scale", Vector3.ONE * 0.01, 0.1)
