@@ -8,6 +8,7 @@ extends Node3D
 ## On travaille sur un niveau (Page ↑ / Page ↓) : les murs partent de ce niveau, les sols
 ## sont posés dessous, et tout ce qui est au-dessus peut être caché (C) pour voir l'intérieur.
 ##   Caméra : ZQSD/flèches (Maj : vite) · molette : zoom · clic molette + glisser ou A/E : tourner
+##            Maj + molette ou T / G : monter ou descendre la caméra (jusqu'au ras du sol)
 ##   Clic gauche (glisser) : tracer · Clic droit : annuler le tracé ou le plan visé · R : tourner le meuble
 ##   1-8 : catégorie · [ ] : hauteur des murs · C : couper au-dessus du niveau · B / Échap : quitter
 ## Manette : joystick gauche : déplacer · droit : tourner / zoom · A : tracer · B : annuler · Y : tourner
@@ -65,6 +66,9 @@ var _cam: Camera3D
 var _focus := Vector3.ZERO
 var _yaw := 0.0
 var _pitch := deg_to_rad(55.0)
+## Inclinaison de la caméra : du ras du sol (on voit si une base touche bien le sol) à la vue du dessus.
+const PITCH_MIN := deg_to_rad(3.0)
+const PITCH_MAX := deg_to_rad(88.0)
 var _dist := 18.0
 var _orbiting := false
 
@@ -411,6 +415,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					var up := mb.button_index == MOUSE_BUTTON_WHEEL_UP
 					if mb.ctrl_pressed:
 						_set_layer(layer + (1 if up else -1))
+					elif mb.shift_pressed:
+						# Maj + molette : la caméra descend jusqu'au ras du sol (ou remonte) pour voir les bases
+						_tilt(-1.0 if up else 1.0, 0.09)
 					else:
 						_dist = clampf(_dist * (0.88 if up else 1.12), 5.0, 60.0)
 			MOUSE_BUTTON_LEFT:
@@ -425,7 +432,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _orbiting:
 			var mm := event as InputEventMouseMotion
 			_yaw -= mm.relative.x * 0.008
-			_pitch = clampf(_pitch + mm.relative.y * 0.006, deg_to_rad(25.0), deg_to_rad(85.0))
+			_pitch = clampf(_pitch + mm.relative.y * 0.006, PITCH_MIN, PITCH_MAX)
 		handled = _orbiting
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var k := event as InputEventKey
@@ -527,6 +534,11 @@ func _update_camera(delta: float) -> void:
 	if pan.length() > 0.05:
 		var move := Vector3(pan.x, 0, pan.y).rotated(Vector3.UP, _yaw) * (_dist * 0.9 + 6.0) * delta * (2.2 if fast else 1.0)
 		_focus += move
+	# hauteur de la caméra : T la monte (vue du dessus), G la descend (au ras du sol)
+	if Input.is_physical_key_pressed(KEY_T):
+		_tilt(1.0, delta * 1.4)
+	if Input.is_physical_key_pressed(KEY_G):
+		_tilt(-1.0, delta * 1.4)
 	# rotation clavier (touches A/E en AZERTY, Q/E en QWERTY)
 	if Input.is_physical_key_pressed(KEY_Q):
 		_yaw += delta * 1.8
@@ -546,8 +558,23 @@ func _update_camera(delta: float) -> void:
 	_focus.y = lerpf(_focus.y, float(layer), clampf(delta * 6.0, 0.0, 1.0))
 	world.stream_focus = _focus
 	var dir := Vector3(sin(_yaw) * cos(_pitch), sin(_pitch), cos(_yaw) * cos(_pitch))
-	_cam.global_position = _focus + dir * _dist
-	_cam.look_at(_focus)
+	var at := _focus + dir * _dist
+	# au ras du sol, la caméra ne passe pas sous le terrain
+	var floor_y := world.ground_height_at(at) + 0.6 if world else at.y
+	at.y = maxf(at.y, floor_y)
+	_cam.global_position = at
+	if at.distance_to(_focus) > 0.05:
+		_cam.look_at(_focus)
+
+
+## Monte (sens > 0) ou descend la caméra autour du point visé.
+func _tilt(sens: float, amount: float) -> void:
+	_pitch = clampf(_pitch + sens * amount, PITCH_MIN, PITCH_MAX)
+
+
+## Inclinaison actuelle de la caméra, en degrés (pour les tests).
+func camera_pitch_deg() -> float:
+	return rad_to_deg(_pitch)
 
 
 ## Case visée : rayon de la caméra jusqu'au plan horizontal du niveau choisi.
@@ -1059,7 +1086,7 @@ func _build_ui() -> void:
 		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_A)),
 		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_S)),
 		OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_D))]
-	_help.text = "%s : déplacer (Maj : vite)   %s ou clic molette : tourner   Molette : zoom   Clic gauche (glisser) : tracer   Clic droit : annuler   R : tourner le meuble   [ ] : hauteur des murs   Tab : outil   V : matériau   1-8 : catégorie   B / Échap : quitter" % [move_keys, rot_keys]
+	_help.text = "%s : déplacer (Maj : vite)   %s ou clic molette : tourner   Molette : zoom   Maj+molette ou T/G : caméra haut/bas (ras du sol)   Clic gauche (glisser) : tracer   Clic droit : annuler   R : tourner le meuble   [ ] : hauteur des murs   Tab : outil   V : matériau   1-8 : catégorie   B / Échap : quitter" % [move_keys, rot_keys]
 	# droite : royaume
 	var kp := PanelContainer.new()
 	kp.add_theme_stylebox_override("panel", panel_st)
