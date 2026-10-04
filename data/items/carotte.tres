@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "carotte"
 display_name = "Carotte"
-description = "Croquante et sucrée. Se mange (H) ou se plante (C puis V sur de la terre labourée)."
+description = "Croquante et sucrée. Se mange ({eat}) ou se plante (en main, puis {place_click} sur de la terre labourée)."
 max_stack = 30
 food = 10.0
 food_heal = 2

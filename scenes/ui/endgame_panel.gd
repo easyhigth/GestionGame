@@ -65,6 +65,7 @@ func _stepper(value: String, on_prev: Callable, on_next: Callable, col := MenuKi
 
 
 func _text(t: String, size := 11, col := MenuKit.C_TEXT) -> Label:
+	t = KeyBindings.fmt(t)
 	var l := MenuKit.label(t, size, col)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size.x = 620
@@ -111,7 +112,7 @@ func _refresh() -> void:
 		_box.add_child(_text("Aucun titan éveillé. Un titan s'éveille tous les deux ou trois jours (à partir du niveau 30)." if player.power_level() >= 30
 			else "Les titans dorment encore : ils s'éveilleront quand tu auras atteint le niveau 30."))
 	else:
-		_box.add_child(_text("%s (niveau %d) rôde dans le monde : il est marqué sur la carte (M)." % [eg.titan.name, int(eg.titan.level)], 12, Color("ffb050")))
+		_box.add_child(_text("%s (niveau %d) rôde dans le monde : il est marqué sur la carte ({world_map})." % [eg.titan.name, int(eg.titan.level)], 12, Color("ffb050")))
 	_box.add_child(_text("Titans vaincus : %d" % eg.titans_slain, 11, MenuKit.C_DIM))
 	var close_b := MenuKit.button("Fermer", 200, 13)
 	close_b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

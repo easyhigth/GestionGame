@@ -285,7 +285,7 @@ func _pact_hint(player_dist: float) -> void:
 		return
 	var base := _label_base()
 	if player_dist < 4.0 and Familiars.can_tame(self):
-		name_label.text = base + "\n[E] Pacte (apprivoiser)"
+		name_label.text = KeyBindings.fmt(base + "\n[{interact}] Pacte (apprivoiser)")
 		name_label.modulate = Color("d8c0ff")
 	elif name_label.text != base:
 		name_label.text = base

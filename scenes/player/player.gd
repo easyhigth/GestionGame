@@ -107,9 +107,11 @@ var _step_left := 0.0
 ## Récolte à la main : délai entre deux coups de pelle.
 const DIG_TIME := 0.5
 var _dig_timer := 0.0
+## Clic droit maintenu avec un objet en main : on pose en continu.
+var _place_repeat := 0.0
 ## Outil sorti du sac et tenu en main pour récolter (« » = l'arme est en main).
 var tool_in_hand := ""
-## Pose de blocs et de meubles à la main (C / X : choisir, V : poser).
+## Pose de blocs et de meubles à la main (molette / Ctrl + chiffre : choisir, clic droit ou V : poser, C : ranger).
 var hand: HandBuild
 var _tool_hold := 0.0
 ## Temps pendant lequel l'outil reste en main après le dernier coup de récolte.
@@ -386,7 +388,7 @@ func grant_class_skills(announce := true) -> void:
 			var col: Color = n.get("color", Color("ffd27a"))
 			Sound.ui("talent")
 			feat.emit("Compétence de classe : %s !" % n.name, col.lightened(0.2))
-			notify.emit("%s : %s (barre de compétences, T : arbre, onglet Classe)." % [n.name, n.desc])
+			notify.emit("%s : %s (barre de compétences, {talents} : arbre, onglet Classe)." % [n.name, n.desc])
 			VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), col, 40, 3.5, 0.1, 1.0, "up", -1.5)
 	if got:
 		_apply_talents()
@@ -490,7 +492,7 @@ func grant_story_talent(id: String) -> void:
 	_apply_talents()
 	Sound.ui("levelup")
 	feat.emit("Compétence unique : %s !" % n.name, Color("d8c0ff"))
-	notify.emit("Nouvelle compétence unique : %s. %s (T : arbre de talents%s)" % [n.name, n.desc,
+	notify.emit("Nouvelle compétence unique : %s. %s ({talents} : arbre de talents%s)" % [n.name, n.desc,
 		", touches 1-4" if n.kind == "active" else ""])
 	VoxelBurst.spawn(self, global_position + Vector3(0, 0.3, 0), Color("c8a8ff"), 60, 4.5, 0.12, 1.3, "up", -1.5)
 	SkillFX.ring(self, global_position, 4.0, Color("c8a8ff"), 0.7)
@@ -700,9 +702,9 @@ func gain_xp(amount: int) -> void:
 		grant_class_skills()
 		if level == TalentTree.SPEC_LEVEL and TalentTree.chosen_spec(class_id(), talents) == "" and not TalentTree.spec_nodes(class_id()).is_empty():
 			var sn := TalentTree.spec_nodes(class_id())
-			notify.emit("Niveau %d : choisis ta spécialisation, %s ou %s (T : arbre, onglet Classe et Pacte)." % [TalentTree.SPEC_LEVEL, sn[0].name, sn[2].name])
+			notify.emit("Niveau %d : choisis ta spécialisation, %s ou %s ({talents} : arbre, onglet Classe et Pacte)." % [TalentTree.SPEC_LEVEL, sn[0].name, sn[2].name])
 		Sound.ui("levelup")
-		notify.emit("+%d point%s de compétence (T : arbre de compétences)." % [TalentTree.points_for_level(level), "s" if TalentTree.points_for_level(level) > 1 else ""])
+		notify.emit("+%d point%s de compétence ({talents} : arbre de compétences)." % [TalentTree.points_for_level(level), "s" if TalentTree.points_for_level(level) > 1 else ""])
 		talents_changed.emit()
 		notify.emit("Niveau %d : vie, attaque et magie augmentent." % level)
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.2, 0), Color(1.0, 0.85, 0.3), 40, 3.5, 0.1, 1.2, "up", -1.5)
@@ -966,6 +968,12 @@ func _physics_process(delta: float) -> void:
 				VoxelBurst.spawn(self, global_position + Vector3(0, 0.05, 0), Color(0.8, 0.75, 0.65), 8, 2.0, 0.07, 0.3, "ring", 0.0, false)
 		# creuser le sol devant soi (maintenir G / gâchette droite) : terre, sable, cailloux
 		_dig_timer = maxf(0.0, _dig_timer - delta)
+		# blocs seulement (pas la canne, la barque...), et on s'arrête au premier échec
+		if holding_item() and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and can_act() and hand.selected_item() \
+				and hand.selected_item().is_block():
+			_place_repeat -= delta
+			if _place_repeat <= 0.0:
+				_place_repeat = 0.25 if _place_in_hand() else INF
 		if Input.is_action_pressed("dig") and can_act() and not in_move() and not is_dashing() and not airborne and _dig_timer <= 0.0:
 			_dig_timer = DIG_TIME
 			_aim_with_camera()
@@ -1033,7 +1041,8 @@ func _handle_combat_input(input: Vector3, delta: float) -> void:
 		_start_dash(input if input != Vector3.ZERO else facing)
 		return
 	# garde / parade
-	var guard := Input.is_action_pressed("block")
+	# un objet en main : le clic droit pose (voir _input), pas de garde
+	var guard := Input.is_action_pressed("block") and not (holding_item() and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT))
 	if guard and not in_move() and not is_dashing():
 		if Input.is_action_just_pressed("block") or not blocking:
 			set_blocking(true)
@@ -1253,16 +1262,16 @@ func _on_hunger_state() -> void:
 	refresh_stats()
 	hunger_changed.emit(hunger)
 	if st == 0 and old > 0:
-		notify.emit("Tu as faim : mange quelque chose (H). Plus de régénération de vie.")
+		notify.emit("Tu as faim : mange quelque chose ({eat}). Plus de régénération de vie.")
 	elif st == -1:
-		notify.emit("Tu meurs de faim ! Mange vite (H).")
+		notify.emit("Tu meurs de faim ! Mange vite ({eat}).")
 
 
 ## Potions bues depuis le début (pour le guide).
 var potions_drunk := 0
 
 
-## Boit une potion (touche Z) : une potion de soin si le héros est blessé, sinon une potion de renfort
+## Boit une potion (touche R) : une potion de soin si le héros est blessé, sinon une potion de renfort
 ## dont l'effet n'est pas déjà actif. Renvoie la potion bue (null sinon).
 func drink_potion() -> ItemData:
 	var hurt := health.ratio() < 0.9
@@ -1735,11 +1744,11 @@ func _input(event: InputEvent) -> void:
 			hand.select_slot(9 if kc == KEY_0 else kc - KEY_1)
 			get_viewport().set_input_as_handled()
 			return
-	# Échap avec un bloc en main : on le range (mains nues) avant d'ouvrir le menu
-	if event.is_action_pressed("pause") and hand and hand.selected != "":
-		hand.selected = ""
-		hand.selection_changed.emit()
-		notify.emit("Bloc rangé : mains nues.")
+	# clic droit avec un objet en main : le poser (comme Minecraft) ; mains nues : la garde
+	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_RIGHT \
+			and event.pressed and holding_item():
+		_place_in_hand()
+		_place_repeat = 0.3
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventJoypadButton and event.pressed and Input.is_action_pressed("block") \
@@ -1772,9 +1781,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("place_block"):
-		_aim_with_camera()
-		if hand.place():
-			_vm_swing = 0.7
+		_place_in_hand()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("hand_toggle"):
+		hand.toggle()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("hotbar_next") or event.is_action_pressed("hotbar_prev"):
@@ -1996,7 +2007,7 @@ func _update_orbit_stick(delta: float) -> void:
 		cam_pitch = clamp_pitch(cam_pitch + ry * delta * 1.4)
 
 
-## Molette : zoom ; clic molette maintenu : tourner la caméra (un simple clic : viser la cible).
+## Molette : zoom (un objet en main : changer d'objet) ; clic molette maintenu : tourner la caméra (un simple clic : viser la cible).
 func _camera_input(event: InputEvent) -> bool:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
@@ -2009,6 +2020,11 @@ func _camera_input(event: InputEvent) -> bool:
 				_orbiting = false
 				if _orbit_moved < 8.0 and Time.get_ticks_msec() - _orbit_pressed_at < 350:
 					_toggle_lock()
+			return true
+		if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN) \
+				and holding_item() and not mb.ctrl_pressed:
+			# un objet en main : la molette change d'objet (Ctrl + molette : zoom)
+			hand.cycle(1 if mb.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1)
 			return true
 		if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 			camera_zoom = clampf(camera_zoom * (0.9 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1.1), 0.45, 1.8)
@@ -2118,6 +2134,50 @@ func _apply_shake(delta: float) -> void:
 # ---------------------------------------------------------------- village, objets
 
 ## L'habitant le plus proche à portée (ou null).
+## Ce que ferait la touche Parler / utiliser ici (pour l'invite à l'écran) ; "" s'il n'y a rien de particulier.
+## Suit l'ordre de l'appui sur E (voir _unhandled_input), en plus léger.
+func interact_hint() -> String:
+	var mo := _mounts_node()
+	if mo and mo.is_riding():
+		return "Descendre"
+	var wch := WorldChest.nearest(self)
+	if wch:
+		return "Ouvrir le coffre"
+	var tf := Townsfolk.nearest(self)
+	if tf:
+		return "Parler à %s" % tf.display_name if tf.display_name != "" else "Parler"
+	var s := nearest_stranger()
+	if s:
+		return "Parler au voyageur"
+	var v := nearest_villager()
+	if v:
+		var vn: String = str(v.get("villager_name")) if v.get("villager_name") != null else ""
+		var st := get_tree().get_first_node_in_group("story")
+		if v.has_meta("story") and st:
+			return "Parler à %s" % vn
+		var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
+		if qb and not qb.quest_of(v).is_empty():
+			return "Quête de %s" % vn
+		return "Fiche de %s (poste, équipement)" % vn
+	var grid := get_tree().get_first_node_in_group("build_grid") as BuildGrid
+	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
+	if grid and dc and dc.is_night() and grid.furniture_near(global_position, 2.2).has("lit"):
+		return "Dormir jusqu'au matin"
+	return ""
+
+
+func holding_item() -> bool:
+	return hand != null and hand.selected != ""
+
+
+func _place_in_hand() -> bool:
+	_aim_with_camera()
+	if hand.place():
+		_vm_swing = 0.7
+		return true
+	return false
+
+
 func nearest_villager() -> Node3D:
 	var best: Node3D = null
 	var best_d := interact_distance

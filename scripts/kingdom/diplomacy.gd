@@ -377,7 +377,7 @@ func _settler(id: String) -> void:
 	pos.y = w.ground_height_at(pos + Vector3(0, 3, 0))
 	v.global_position = pos
 	v.home = pos
-	_say("Un colon de la province de %s arrive au village (%s) : parle-lui (E)." % [NATIONS[id].name, v.villager_name])
+	_say("Un colon de la province de %s arrive au village (%s) : parle-lui ({interact})." % [NATIONS[id].name, v.villager_name])
 
 
 func declare_war(id: String, by_us: bool) -> void:
@@ -394,7 +394,7 @@ func declare_war(id: String, by_us: bool) -> void:
 	if player:
 		var nm: String = NATIONS[id].name
 		player.feat.emit(("Tu déclares la guerre à %s !" if by_us else "%s te déclare la guerre !") % nm, Color("ff5a4a"))
-		player.notify.emit("Guerre contre %s : ses armées vont attaquer le village. Repousse-en %d pour la faire capituler (Y : diplomatie)." % [nm, WINS_TO_SURRENDER])
+		player.notify.emit("Guerre contre %s : ses armées vont attaquer le village. Repousse-en %d pour la faire capituler ({diplomacy} : diplomatie)." % [nm, WINS_TO_SURRENDER])
 	Sound.ui("war_drums")
 	war_declared.emit(id, by_us)
 	changed.emit()

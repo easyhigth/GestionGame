@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "soupe_legumes"
 display_name = "Soupe de légumes"
-description = "Carottes et pommes de terre mijotées : un repas complet. Se mange (H)."
+description = "Carottes et pommes de terre mijotées : un repas complet. Se mange ({eat})."
 max_stack = 10
 food = 40.0
 food_heal = 12

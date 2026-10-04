@@ -104,7 +104,7 @@ func try_interact(p: Player) -> bool:
 			Sound.play("eat", h.global_position)
 			if h.feed():
 				p.feat.emit("Cheval apprivoisé !", Color("ffe08a"))
-				p.notify.emit("Le cheval porte maintenant une selle : E pour monter, E pour descendre.")
+				p.notify.emit("Le cheval porte maintenant une selle : {interact} pour monter, {interact} pour descendre.")
 				tamed.emit(h)
 			else:
 				p.notify.emit("Le cheval mange la carotte (%d / %d)." % [h.trust, Horse.TAME_CARROTS])
@@ -136,7 +136,7 @@ func ride_familiar(e: Enemy) -> void:
 	player.global_position = e.global_position
 	player.visual.position.y = 0.95 * e.visual.scale.y
 	Sound.play("step_grass", e.global_position)
-	player.notify.emit("Tu montes %s : E pour descendre." % e.familiar_name)
+	player.notify.emit("Tu montes %s : {interact} pour descendre." % e.familiar_name)
 	boarded.emit("familier")
 
 
@@ -149,7 +149,7 @@ func board(b: Node3D) -> void:
 	Sound.play("door", b.global_position)
 	boarded.emit(b.get_meta("kind", "barque"))
 	if sail:
-		player.notify.emit("Cap sur le large ! Le voilier file deux fois plus vite que la barque. E près d'une berge pour débarquer.")
+		player.notify.emit("Cap sur le large ! Le voilier file deux fois plus vite que la barque. {interact} près d'une berge pour débarquer.")
 
 
 # ---------------------------------------------------------------- griffon
@@ -174,7 +174,7 @@ func call_griffon(p: Player) -> String:
 	griffon.rotation.y = atan2(-fwd.x, -fwd.z)
 	VoxelBurst.spawn(world, at + Vector3(0, 1.5, 0), Color("f2ead8"), 26, 4.0, 0.1, 0.8, "up", 3.0, false)
 	Sound.ui("talent")
-	p.notify.emit("Le griffon se pose dans un grand battement d'ailes. E pour monter.")
+	p.notify.emit("Le griffon se pose dans un grand battement d'ailes. {interact} pour monter.")
 	return ""
 
 
@@ -201,7 +201,7 @@ func mount_griffon() -> void:
 	player.swimming = false
 	(griffon.get_meta("label") as Label3D).visible = false
 	Sound.ui("talent")
-	player.notify.emit("En selle ! Saut : monter, Creuser : descendre, E : se poser.")
+	player.notify.emit("En selle ! {jump} : monter, {dig} : descendre, {interact} : se poser.")
 	boarded.emit("griffon")
 
 

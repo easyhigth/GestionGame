@@ -118,7 +118,7 @@ func _on_dialog(choice: String, q: Dictionary) -> void:
 	if s == "" and choice == "ok":
 		states[q.id] = {"state": "active", "progress": 0}
 		if player:
-			player.notify.emit("Quête de %s : %s. (O : journal)" % [Story.NPCS[q.npc].name, q.title])
+			player.notify.emit("Quête de %s : %s. ({journal} : journal)" % [Story.NPCS[q.npc].name, q.title])
 			Sound.ui("ui_open")
 	elif s == "active" and is_complete(q):
 		_complete(q)

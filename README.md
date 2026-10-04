@@ -5,35 +5,59 @@
 ## Ouvrir le projet
 Godot 4.7 > Importer > `project.godot`, puis F5 pour lancer. Le jeu commence par l'écran titre (`scenes/ui/title_screen.tscn`) : Continuer, Nouvelle partie (création du héros), Charger, Options, Quitter. `scenes/main.tscn` se lance aussi seul (F6) avec un héros par défaut.
 
-## Commandes
-Toutes les touches sont aussi dans le jeu : menu pause (Échap / Start) ou écran titre → **Commandes** (4 onglets, clavier-souris et manette côte à côte). En jeu, seul un petit rappel s'affiche sous la mini-carte (désactivable dans les options).
+## Commandes (clavier et souris)
+Le jeu se joue au **clavier et à la souris** (la manette marche aussi, avec ses boutons habituels). Toutes les touches sont dans le jeu : **Échap → Commandes**. Le 1er onglet, **Plan du clavier**, dessine le clavier (dans ta disposition, AZERTY ou QWERTY) et la souris. Chaque touche utilisée y a la couleur de sa famille : vert pour se déplacer, rouge pour combattre, or pour agir dans le monde, bleu pour les menus. Les autres onglets donnent la liste complète : Se déplacer, Combattre, Récolter et bâtir, Menus, Construction, et Personnaliser pour changer n'importe quelle touche. **F1** affiche un aide-mémoire compact à l'écran.
 
-- **F5 : changer de vue**, comme dans Minecraft : **3e personne** (par défaut : la caméra suit le héros au-dessus de son épaule, la souris la tourne, on frappe là où vise le viseur), **vue de dessus** (l'ancienne caméra, clic molette pour tourner) et **1re personne** (les yeux du héros). Alt maintenu libère la souris pour cliquer à l'écran ; elle se libère toute seule dès qu'un menu s'ouvre. Le choix est gardé dans les options (Options → Point de vue).
-- ZQSD ou flèches (joystick gauche) : se déplacer, dans le sens de la caméra
-- Espace (A à la manette) : sauter (assez haut pour monter sur un bloc de 1 m)
-- Maj (B à la manette) : roulade (esquive : invulnérable pendant la roulade)
-- Clic molette maintenu + glisser (joystick droit) : tourner la caméra à 360° autour du héros et changer sa hauteur ; molette : zoom
-- Clic molette simple, F, L ou gâchette gauche : viser la cible la plus proche
-- Clic gauche / J (maintenu) : frapper avec son arme, ou lancer un sort avec un bâton de mage ; frapper un arbre, un rocher, un buisson ou un décor du village le récolte
-- G (maintenu, gâchette droite à la manette) : creuser le sol devant soi (terre, sable ou cailloux) ; dans l'eau : plonger (Espace : remonter)
-- H (LB + croix haut à la manette) : manger ; cliquer sur une nourriture dans le sac la mange aussi
-- **Double barre en bas de l'écran, toujours affichée** :
-  - rangée du haut, **Construire** (façon Minecraft) : 10 cases où se rangent toutes seules les blocs, meubles, graines et outils posables ramassés ou fabriqués. **Ctrl+1 … Ctrl+0** prend l'objet de la case en main (un clic sur la case aussi) ; la même touche, ou **Échap**, le range (mains nues). C / X passent à l'objet suivant / précédent (LB + croix gauche/droite à la manette) ; V (L3) : le poser, semer ou labourer devant soi ;
-  - rangée du bas, **Compétences** (façon MMORPG) : **1 … 9, 0** lancent les compétences de l'arbre, et la compétence unique (Q) est au bout de la rangée.
-- Q (RB) : compétence unique ; 1 à 9 et 0 : la barre de compétences (manette : croix droite pour choisir l'emplacement, R3 pour lancer)
-- T (ou croix gauche à la manette) : arbre de compétences
-- I (ou Tab) : inventaire, équipement et artisanat
-- E près d'un habitant : ouvrir son équipement pour lui donner des armes et armures (s'il a une quête « ! » ou « ? », c'est d'abord la quête qui s'ouvre)
-- E près d'un voyageur : lui parler pour le recruter ; E près du marchand ambulant : acheter et vendre
-- E devant une entrée de donjon : y descendre ; E dans un donjon : ouvrir un coffre, remonter par le portail
-- E près d'un cheval apprivoisé ou d'une barque : monter / descendre (carottes en main près d'un cheval sauvage : l'apprivoiser)
-- B (ou croix bas à la manette) : mode construction (voir plus bas)
-- U : panneau du royaume (habitants, lits, réserve de nourriture, bonheur)
-- O : journal de l'histoire (16 actes, objectif en cours, éclats, personnages)
-- P : ordre aux familiers (suivre, attendre ici, attaquer ma cible)
-- M (ou croix haut à la manette) : carte du monde et voyage rapide
-- Échap (ou Start à la manette) : pause (sauvegarder, charger, options, menu principal)
-- Touches de test, seulement quand le jeu est lancé depuis l'éditeur Godot : R (changer de race), N (nouveau monde)
+L'idée du plan : la main gauche reste sur ZQSD et tout ce qui sert en combat est autour. Les menus sont à droite du clavier, sous leur initiale.
+
+**Souris**
+- Clic gauche : frapper (maintenir : attaque chargée), récolter, casser un bloc.
+- Clic droit : garde et parade. **Avec un objet en main, le clic droit le pose** (bloc, meuble, graine, houe, canne à pêche, barque...), comme dans Minecraft. Maintenu, il pose les blocs en continu.
+- Molette : zoom de la caméra. **Avec un objet en main, elle change d'objet** (Ctrl + molette : zoom).
+- Clic molette : viser la cible la plus proche ; maintenu : tourner la caméra (vue de dessus).
+- Boutons de côté : roulade (avant) et potion (arrière).
+
+**Main gauche (autour de ZQSD)**
+| Touche (AZERTY) | Action |
+|---|---|
+| Z Q S D | se déplacer, dans le sens de la caméra |
+| Espace | sauter (dans l'eau : remonter) |
+| Maj | roulade (invulnérable un instant) |
+| A | compétence unique |
+| E | **utiliser** : parler, recruter, quête, fiche d'un habitant, coffre, barrière, monter, dormir |
+| R | boire une potion |
+| F | viser la cible la plus proche (encore : la suivante) |
+| G | creuser (maintenir) ; dans l'eau : plonger |
+| X | manger |
+| C | **prendre / ranger l'objet en main** (reprend le dernier objet tenu) |
+| V | poser (comme le clic droit) |
+| 1 … 0 | compétences de la barre du bas |
+| Ctrl + 1 … 0 | prendre l'objet d'une case de la barre de construction |
+| Alt (maintenu) | libérer la souris pour cliquer à l'écran |
+
+**Menus (sous leur initiale)**
+| Touche | Menu |
+|---|---|
+| I ou Tab | inventaire (sac, équipement, artisanat) |
+| B | bâtir : mode construction |
+| M | carte du monde et voyage rapide |
+| J (ou O) | journal (histoire, quêtes) |
+| T | talents et compétences |
+| U | royaume (habitants, carte, production, expéditions) |
+| N | nations : diplomatie |
+| P | familiers (ordre suivant) |
+| H | hauts faits : succès et bestiaire |
+| F1 | aide-mémoire des touches · F3 : métiers · F5 : changer de vue |
+| Entrée | terminal de commandes (/aide) · Échap : pause, ou fermer la fenêtre ouverte |
+
+La touche d'un menu le referme aussi.
+
+**Ce qui aide à s'y retrouver**
+- **Invite à l'écran** : près de quelque chose d'utilisable, une plaque au-dessus des barres dit ce que fait E (« [E] Parler à Magnus », « [E] Ouvrir le coffre », « [E] Dormir jusqu'au matin », « [E] Descendre »...).
+- **Tous les textes du jeu suivent tes touches** : guide, astuces, messages, descriptions d'objets, étiquettes des habitants, barres du bas. Ils écrivent `{action}` dans le code (`KeyBindings.fmt`), qui devient la touche choisie, dans la disposition du clavier. Si tu changes une touche, tout le jeu l'affiche.
+- La barre de construction rappelle ce que fait le clic droit avec l'objet tenu (« Clic droit : poser », « pêcher »...), ainsi que la molette et C.
+- Changements par rapport à avant : potion Z → R, manger H → X, journal O → J, diplomatie Y → N, succès F1 → H, aide-mémoire F2 → F1. C / X ne servent plus à faire défiler les objets : c'est la molette. J / K / L ne doublent plus la souris. Échap ne range plus l'objet en main (c'est C). Touches de test depuis l'éditeur : F9 (nouveau monde), F10 (race suivante).
+- Test : `tests/run_tests.sh keys` (plan du clavier, onglets, pas de touche en double, personnalisation et conflits, clic droit qui pose, molette, C, invite à l'écran).
 
 ## Ce que tu peux modifier sans code
 - `data/races/*.tres` : les 22 races (nom, description, stats, modèle 3D nu du joueur, modèles des habitants, équipements de la race). Duplique un fichier pour créer une race.
@@ -624,7 +648,7 @@ Pour les héros de haut niveau (jusqu'au niveau 1000), le **Portail des Failles*
   - **Épidémie** : des habitants tombent malades (-20 bonheur) ; soigne-les dans le panneau du royaume (U), une soupe de légumes ou une potion de soin chacun.
 - Un événement dure jusqu'à la fin du lendemain, ou jusqu'à ce qu'il soit réglé.
 
-## Succès et bestiaire (touche F1)
+## Succès et bestiaire (touche H)
 - **116 succès** en 11 catégories : combat (victoires, 25 de chaque monstre), boss (les 9 boss), héros (niveaux, évolution, or), royaume (habitants, rangs), histoire (16 actes, quêtes des personnages), familiers, forge (renforcement, gemmes, runes), Brume, diplomatie (traités, capitulation, provinces), événements du monde, exploration (salles secrètes, Gardiens, obélisques, bestiaire complet).
 - Chaque succès rapporte des points. **Titres** (affichés à côté du nom du héros) : Aventurier (50 points), Héros du royaume (150), Légende vivante (300), Mythe éternel (500), et des titres de succès (Tueur de boss, Empereur, Maître de la Brume, Dompteur, Cartographe, Naturaliste...). **Auras** (lumière et étincelles autour du héros) bleue, dorée et violette à 150, 300 et 500 points. Titre et aura se choisissent dans le panneau.
 - **Bestiaire illustré** : les 27 monstres du monde et les 9 seigneurs des donjons, chacun avec son portrait (silhouette tant qu'il n'est pas vaincu) et sa fiche sur parchemin : victoires, vie, attaque, défense, régions, butin, ressources rares (avec leurs chances), notes du naturaliste et conseil de combat.
@@ -635,7 +659,7 @@ Pour les héros de haut niveau (jusqu'au niveau 1000), le **Portail des Failles*
 - Quatre **étendards** aux couleurs du royaume flottent autour du village ; on peut en poser d'autres (Artisanat → Mobilier → Étendard : 3 bois et 2 laines, près d'un établi). Ils changent dès qu'on modifie la bannière.
 - **L'allée des trophées** : chaque boss de donjon vaincu laisse une statue de pierre (sur un piédestal, avec son nom) autour du feu de camp.
 
-## Diplomatie (touche Y)
+## Diplomatie (touche N)
 - Cinq nations voisines : **Horde de Karg** (orcs), **Cour de Sylvaë** (fées et dryades), **Sultanat des Sables** (hommes-lézards), **Jarls du Givre** (clans du nord), **Principauté des Cendres** (démons). Chacune a une relation de -100 à +100 et un caractère vers lequel elle revient peu à peu.
 - **Présents** (50 or, ou ce que la nation aime, une fois par jour) et **demandes** remplies (de l'or en échange) font monter la relation.
 - **Traités** : paix (relation 0 : elle ne te déclarera jamais la guerre), commerce (20 : une caravane tous les 3 jours et de meilleurs prix chez le marchand), alliance (60, avec paix et commerce : un présent rare tous les 5 jours et un pillard de moins par raid).

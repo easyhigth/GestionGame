@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "poisson_grille"
 display_name = "Poisson grillé"
-description = "Un poisson grillé au feu de bois. Se mange (H)."
+description = "Un poisson grillé au feu de bois. Se mange ({eat})."
 max_stack = 20
 food = 22.0
 food_heal = 6

@@ -6,6 +6,6 @@
 script = ExtResource("1")
 id = "graines_ble"
 display_name = "Graines de blé"
-description = "À semer sur de la terre labourée (C pour les choisir, V pour semer). On en trouve en coupant les hautes herbes."
+description = "À semer sur de la terre labourée (en main, puis {place_click} pour semer). On en trouve en coupant les hautes herbes."
 max_stack = 50
 crop = "ble"

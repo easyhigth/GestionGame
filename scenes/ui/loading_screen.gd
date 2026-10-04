@@ -6,11 +6,11 @@ extends Control
 
 const SCENE := "res://scenes/ui/loading_screen.tscn"
 const GAME := "res://scenes/main.tscn"
-const TIPS := ["Entrée ou / : le terminal de commandes (/aide).", "M : la carte du monde. Les obélisques permettent d'y voyager.",
+const TIPS := ["{console} ou / : le terminal de commandes (/aide).", "{world_map} : la carte du monde. Les obélisques permettent d'y voyager.",
 	"Les routes pavées mènent du village aux cinq capitales.", "Une taverne dans chaque capitale : un repas le jour, une chambre la nuit.",
-	"Au pied des falaises, des grottes cachent du fer, de l'or et du mithril.", "F2 : l'aide-mémoire des touches.",
+	"Au pied des falaises, des grottes cachent du fer, de l'or et du mithril.", "{keys_help} : l'aide-mémoire des touches. Échap → Commandes : le plan du clavier.",
 	"Les châteaux abandonnés sont hantés par des morts-vivants... et gardent un trésor.", "Les épaves échouées sur les plages cachent un coffre.",
-	"En guerre, tu peux assiéger une capitale depuis le panneau de la diplomatie (Y).", "Les citadins marqués « ! » ont une quête pour toi."]
+	"En guerre, tu peux assiéger une capitale depuis le panneau de la diplomatie ({diplomacy}).", "Les citadins marqués « ! » ont une quête pour toi."]
 const BAR_W := 620.0
 const BAR_H := 22.0
 
@@ -61,7 +61,7 @@ func _ready() -> void:
 	bar_row.add_child(_bar)
 	_pct_label = _label("0 %", "bold", 16, Color(0.95, 0.85, 0.55))
 	box.add_child(_pct_label)
-	box.add_child(_label("Astuce : " + TIPS[randi() % TIPS.size()], "body", 15, Color(0.7, 0.66, 0.6)))
+	box.add_child(_label("Astuce : " + KeyBindings.fmt(TIPS[randi() % TIPS.size()]), "body", 15, Color(0.7, 0.66, 0.6)))
 
 
 func _label(text: String, font: String, size: int, col: Color) -> Label:

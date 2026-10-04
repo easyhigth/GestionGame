@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = "houe"
 display_name = "Houe"
-description = "Laboure l'herbe et la terre pour y semer. Il suffit de l'avoir dans son sac : choisis des graines (C) et sème devant toi (V)."
+description = "Laboure l'herbe et la terre pour y semer. Il suffit de l'avoir dans son sac : prends des graines en main et sème devant toi ({place_click})."
 max_stack = 1

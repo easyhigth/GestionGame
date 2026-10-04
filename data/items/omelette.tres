@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = "omelette"
 display_name = "Omelette"
-description = "Deux œufs battus, cuits au feu. Se mange (H)."
+description = "Deux œufs battus, cuits au feu. Se mange ({eat})."
 max_stack = 20
 food = 24.0
 food_heal = 6

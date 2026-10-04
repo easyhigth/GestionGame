@@ -327,7 +327,7 @@ func _arrivals(dt: float, list: Array, p: Player) -> void:
 	v.global_position = pos
 	v.home = pos
 	if p:
-		p.notify.emit("Attiré par ton village heureux, un voyageur arrive (%s) : parle-lui (E) pour qu'il s'installe." % v.villager_name)
+		p.notify.emit("Attiré par ton village heureux, un voyageur arrive (%s) : parle-lui ({interact}) pour qu'il s'installe." % v.villager_name)
 
 
 # ---------------------------------------------------------------- sauvegarde

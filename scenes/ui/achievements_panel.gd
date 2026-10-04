@@ -100,7 +100,7 @@ func _refresh() -> void:
 		row.add_child(_detail)
 		_fill_bestiary(a)
 		_show_entry(_selected if _selected != "" else Achievements.BESTIARY[0])
-	var close_b := MenuKit.button("Fermer (F1)", 200, 13)
+	var close_b := MenuKit.button("Fermer ({achievements})", 200, 13)
 	close_b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close_b.pressed.connect(close)
 	_box.add_child(close_b)

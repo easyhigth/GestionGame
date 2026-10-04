@@ -143,7 +143,7 @@ func _refresh() -> void:
 	var nav := HBoxContainer.new()
 	nav.alignment = BoxContainer.ALIGNMENT_CENTER
 	nav.add_theme_constant_override("separation", 12)
-	var back := MenuKit.nav_button("Royaume (U)", "crown", 200)
+	var back := MenuKit.nav_button("Royaume ({kingdom})", "crown", 200)
 	back.pressed.connect(func():
 		close()
 		var hud := get_parent()

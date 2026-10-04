@@ -159,16 +159,16 @@ func _show_page() -> void:
 		var st := _story()
 		var n: Node3D = st.npc(who) if st else null
 		_set_portrait(n if n else _npc)
-	_text.text = String(p[1]).replace("{hero}", hero_name)
+	_text.text = KeyBindings.fmt(String(p[1]).replace("{hero}", hero_name))
 	for c in _buttons.get_children():
 		c.queue_free()
 	if _page < _pages.size() - 1:
-		var b := MenuKit.button("Suite (E)", 140, 13)
+		var b := MenuKit.button("Suite ({interact})", 140, 13)
 		b.pressed.connect(_next)
 		_buttons.add_child(b)
 		b.grab_focus.call_deferred()
 	elif _choices.is_empty():
-		var b := MenuKit.button("Fermer (E)", 140, 13)
+		var b := MenuKit.button("Fermer ({interact})", 140, 13)
 		b.pressed.connect(_close.bind(""))
 		_buttons.add_child(b)
 		b.grab_focus.call_deferred()

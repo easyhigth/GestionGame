@@ -482,7 +482,7 @@ static func _slopes(db: Node) -> void:
 		var src: ItemData = db.items.get("bloc_planches" if w[0] == "chene" else "bloc_%s_planches" % w[0])
 		if src == null:
 			continue
-		var g := _block(db, "portillon_" + w[0], "Portillon de %s" % w[1], "Une porte de barrière : E pour l'ouvrir ou la fermer.", src.block_texture, 0)
+		var g := _block(db, "portillon_" + w[0], "Portillon de %s" % w[1], "Une porte de barrière : {interact} pour l'ouvrir ou la fermer.", src.block_texture, 0)
 		g.set_meta("shape", "gate")
 		_recipe(db, g, 1, [["wood" if w[0] == "chene" else "bois_" + w[0], 2], ["fiber", 2]], "", "Murets et barrières")
 	for src_id in ["bloc_tuiles", "bloc_ardoise", "bloc_chaume", "bloc_planches", "bloc_pierre_polie", "bloc_m_cuivre", "bloc_terre_cuite_rouge",
