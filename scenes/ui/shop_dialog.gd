@@ -88,8 +88,8 @@ func _refresh(message: String, focus := "") -> void:
 			tr.origin, tr.specialty.to_lower(), tr.leave_day, "  ·  marché : meilleurs prix" if tr.has_market() else ""], 11, MenuKit.C_DIM)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(sub)
-	var purse := MenuKit.label("Ta bourse : %d pièces d'or" % tr.gold(player), 15, MenuKit.C_GOLD)
-	purse.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var purse := MenuKit.stat_tile("coin", str(tr.gold(player)), "Ta bourse (pièces d'or)", MenuKit.C_GOLD, -1.0, 200)
+	purse.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_box.add_child(purse)
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 16)
@@ -98,7 +98,7 @@ func _refresh(message: String, focus := "") -> void:
 	# --- ce qu'il vend
 	var left := VBoxContainer.new()
 	cols.add_child(left)
-	left.add_child(MenuKit.label("Il vend", 14, MenuKit.C_GOLD))
+	left.add_child(MenuKit.section("Il vend", "coin", 14))
 	var ls := _scroll(left)
 	var lbox: VBoxContainer = ls.get_child(0)
 	if tr.stock.is_empty():
@@ -122,13 +122,13 @@ func _refresh(message: String, focus := "") -> void:
 			row.add_child(b5)
 		else:
 			row.add_child(_gap(44))
-		lbox.add_child(row)
+		lbox.add_child(row.get_parent())
 		if focus == "b:" + s.id and not b.disabled:
 			focus_btn = b
 	# --- ce qu'on peut lui vendre
 	var right := VBoxContainer.new()
 	cols.add_child(right)
-	right.add_child(MenuKit.label("Tu vends", 14, MenuKit.C_GOLD))
+	right.add_child(MenuKit.section("Tu vends", "house", 14))
 	var rs := _scroll(right)
 	var rbox: VBoxContainer = rs.get_child(0)
 	var seen := {}
@@ -154,7 +154,7 @@ func _refresh(message: String, focus := "") -> void:
 			row.add_child(ball)
 		else:
 			row.add_child(_gap(52))
-		rbox.add_child(row)
+		rbox.add_child(row.get_parent())
 		if focus == "s:" + it.id:
 			focus_btn = b
 	if rbox.get_child_count() == 0:
@@ -197,21 +197,29 @@ func _gap(w: float) -> Control:
 	return c
 
 
+## Une ligne d'objet dans une carte (renvoie la ligne ; la carte est son parent).
 func _row(it: ItemData, name: String, detail: String, ok: bool) -> HBoxContainer:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", MenuKit.card(not ok, 5.0))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var icon := TextureRect.new()
-	icon.texture = Items.get_icon(it)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(30, 30)
-	row.add_child(icon)
+	card.add_child(row)
+	row.add_child(MenuKit.item_badge(it, 0, 34))
 	var txt := VBoxContainer.new()
-	txt.add_theme_constant_override("separation", -3)
+	txt.add_theme_constant_override("separation", -2)
 	txt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	txt.add_child(MenuKit.label(name, 12, it.rarity_color() if ok else it.rarity_color().darkened(0.4)))
-	txt.add_child(MenuKit.label(detail, 10, MenuKit.C_DIM))
+	# le prix en pastille dorée, le reste en petit
+	var parts := detail.split(" · ")
+	var info := HBoxContainer.new()
+	info.add_theme_constant_override("separation", 4)
+	for part in parts:
+		if "or" in part:
+			info.add_child(MenuKit.chip("◉ " + part.strip_edges(), MenuKit.C_GOLD if ok else MenuKit.C_BAD, 9))
+		elif part.strip_edges() != "":
+			info.add_child(MenuKit.label(part, 9, MenuKit.C_DIM))
+	txt.add_child(info)
 	row.add_child(txt)
 	return row
 

@@ -120,6 +120,35 @@ func _process(_d) -> bool:
 		var e2 = ex.active.pop_back()
 		var r2: Dictionary = ex.finish(e2, 0.999)
 		check("échec : moins de butin et un blessé", not r2.ok and party2[0].health.current < party2[0].health.max_health)
+		get_first_node_in_group("kingdom").rank = 6
+		# événements d'expédition
+		var party3: Array = ex.available().slice(0, 2)
+		ex.start("chasse", party3)
+		var e3 = ex.active[0]
+		ex.trigger_event(e3, "voyageur")
+		check("un événement attend un choix", e3.has("event"))
+		var left0: float = e3.left
+		ex.choose(e3, 0)
+		check("choix : soigner le voyageur (+1 min)", e3.get("recruit", false) and e3.left > left0 and not e3.has("event"))
+		var strangers0 := get_nodes_in_group("strangers").size()
+		ex.active.clear()
+		ex.finish(e3, 0.0)
+		var newcomers := get_nodes_in_group("strangers").filter(func(v): return v.has_meta("attracted") and v.recruit_offer.get("items", []).is_empty())
+		check("le voyageur sauvé attend au village (%d)" % newcomers.size(), get_nodes_in_group("strangers").size() > strangers0 and not newcomers.is_empty())
+		var party4: Array = ex.available().slice(0, 1)
+		ex.start("mine", party4)
+		var e4 = ex.active[0]
+		var c4: float = e4.chance
+		ex.trigger_event(e4, "grotte")
+		set_meta("e4c", c4)
+		hud.expedition_panel.open()
+	if f == 52:
+		shot("03_evenement.png")
+		var e4 = ex.active[0]
+		hud.expedition_panel.close()
+		ex.active.clear()
+		ex.finish(e4, 0.999)
+		check("sans réponse, le choix prudent est pris au retour", e4.get("choice", "") == "Passer leur chemin" and is_equal_approx(float(e4.chance), float(get_meta("e4c"))))
 		hud.talent_ui.open()
 		hud.talent_ui._tab.emit_signal("pressed")
 		hud.talent_ui._selected = "spec_mage_a"

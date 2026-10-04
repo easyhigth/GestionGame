@@ -80,6 +80,33 @@ func _refresh() -> void:
 			c2.tooltip_text = "\n".join(PackedStringArray(ex.history))
 			st.add_child(c2)
 		_box.add_child(st)
+	# événements en attente : un choix à faire
+	for e in ex.active:
+		if not e.has("event"):
+			continue
+		var ev: Dictionary = Expeditions.EVENTS[e.event]
+		var card := PanelContainer.new()
+		card.add_theme_stylebox_override("panel", MenuKit.style(Color(0.3, 0.2, 0.08, 0.95), MenuKit.C_GOLD, 2, 4, 7))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		card.add_child(row)
+		row.add_child(MenuKit.label(ev.icon, 22))
+		var txt := MenuKit.label("%s — %s" % [", ".join(PackedStringArray(e.names)), ev.text], 11, MenuKit.C_TEXT)
+		txt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		txt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		txt.custom_minimum_size.x = 240
+		row.add_child(txt)
+		for i in ev.options.size():
+			var b := MenuKit.button(ev.options[i][0], 200, 10)
+			b.custom_minimum_size.y = 30
+			var idx: int = i
+			var exp_e: Dictionary = e
+			b.pressed.connect(func():
+				ex.choose(exp_e, idx)
+				player.notify.emit("Expédition : « %s »." % exp_e.get("choice", ""))
+				_refresh())
+			row.add_child(b)
+		_box.add_child(card)
 	# les missions
 	var grid := GridContainer.new()
 	grid.columns = 4
@@ -99,7 +126,8 @@ func _refresh() -> void:
 	var avail := ex.available()
 	_picked = _picked.filter(func(v): return is_instance_valid(v) and avail.has(v))
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(770, 96)
+	var n_events := ex.active.filter(func(e): return e.has("event")).size()
+	scroll.custom_minimum_size = Vector2(770, maxf(48.0, 96.0 - 50.0 * n_events))
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var roster := GridContainer.new()
 	roster.columns = 3
