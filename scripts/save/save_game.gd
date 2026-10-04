@@ -40,6 +40,8 @@ var options := {
 	"show_fps": false,
 	## taille de l'interface (1 : normale ; 0,8 : plus petite, on voit plus le monde)
 	"ui_scale": 1.0,
+	## la souris vise (comme dans Minecraft) ; sinon le héros frappe et pose devant lui
+	"mouse_aim": true,
 	## touches du clavier changées par le joueur : action -> code physique (voir KeyBindings)
 	"keys": {},
 }

@@ -881,7 +881,7 @@ var _aim_label: Label
 
 
 func aim_active() -> bool:
-	return _mouse_seen and camera != null and camera.current and not building and not ui_open and is_alive() \
+	return _mouse_seen and bool(SaveGame.options.get("mouse_aim", true)) and camera != null and camera.current and not building and not ui_open and is_alive() \
 		and not (cam_mode == CamMode.TOP and Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE))
 
 
@@ -897,6 +897,22 @@ func _update_aim() -> void:
 	var origin := camera.project_ray_origin(mp)
 	var dir := camera.project_ray_normal(mp)
 	aim = Aim.cast(self, origin, dir, camera.global_position.distance_to(global_position) + 16.0)
+	# aide légère (3e et 1re personne) : un ennemi à portée, à moins de 4° du viseur, est visé
+	if str(aim.get("kind")) != "enemy" and cam_mode != CamMode.TOP:
+		var best: Combatant = null
+		var best_a := deg_to_rad(4.0)
+		for n in get_tree().get_nodes_in_group(hostile_group()):
+			var c := n as Combatant
+			if c == null or not c.is_alive() or c.global_position.distance_to(global_position) > attack_reach() + 2.5:
+				continue
+			var a := dir.angle_to(c.global_position + Vector3(0, 0.9, 0) - origin)
+			if a < best_a:
+				best_a = a
+				best = c
+		if best:
+			var at := best.global_position + Vector3(0, 0.9, 0)
+			aim = {"kind": "enemy", "node": best, "point": at, "normal": -dir, "t": origin.distance_to(at),
+				"dist": at.distance_to(global_position + Vector3(0, 1.0, 0)), "assist": true}
 	_show_aim()
 
 
@@ -943,15 +959,15 @@ func _show_aim() -> void:
 		_aim_box.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var m := StandardMaterial3D.new()
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		m.albedo_color = Color(0.05, 0.05, 0.05, 0.85)
+		m.albedo_color = Color(0.04, 0.04, 0.04, 0.8)
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		m.no_depth_test = false
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
 		_aim_box.material_override = m
 		add_child(_aim_box)
 	if _aim_box:
 		_aim_box.visible = show
 		if show:
-			_aim_box.global_transform = Transform3D(Basis().scaled(box.size + Vector3.ONE * 0.02), box.get_center())
+			_aim_box.global_transform = Transform3D(Basis().scaled(box.size + Vector3.ONE * 0.03), box.get_center())
 
 
 ## En 3e et 1re personne (et en vue de dessus avec la souris), on frappe et on lance ses sorts là où

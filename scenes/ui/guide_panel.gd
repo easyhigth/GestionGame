@@ -118,6 +118,13 @@ var _tips_timer := 1.5
 var _start_pos := Vector3.INF
 var _start_yaw := NAN
 var _start_mode := 0
+## Le conseil détaillé ne reste affiché que quelques secondes après chaque nouvel objectif (puis le guide
+## se réduit à une ligne) ; il revient un moment de temps en temps, ou avec la touche d'aide-mémoire.
+const HINT_TIME := 12.0
+const HINT_REMIND := 75.0
+var _hint_left := HINT_TIME
+var _hint_remind := HINT_REMIND
+var _shown_step := -1
 
 
 func _ready() -> void:
@@ -515,6 +522,7 @@ func _check_tips() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_hint(delta)
 	# les bases : on réagit tout de suite à l'action
 	match current_id():
 		"sauter":
@@ -560,7 +568,42 @@ func _refresh() -> void:
 	var n := int(s[3])
 	_task.text = s[1] + ("  (%d / %d)" % [progress, n] if n > 1 else "")
 	_hint.text = with_keys(s[2])
+	if step != _shown_step:
+		_shown_step = step
+		show_hint()
 	_bar.size.x = 236.0 * (float(step - first) + float(progress) / float(n)) / float(total)
+
+
+## Affiche le conseil de l'objectif en cours pendant `secs` secondes.
+func show_hint(secs := HINT_TIME) -> void:
+	_hint_left = secs
+	_hint_remind = HINT_REMIND
+	_hint.visible = true
+	reset_size()
+
+
+func is_collapsed() -> bool:
+	return not _hint.visible
+
+
+func _update_hint(delta: float) -> void:
+	if is_done():
+		return
+	if _hint_left > 0.0:
+		_hint_left -= delta
+		if _hint_left <= 0.0:
+			_hint.visible = false
+			reset_size()
+	else:
+		# petit rappel de temps en temps tant que l'objectif n'est pas atteint
+		_hint_remind -= delta
+		if _hint_remind <= 0.0:
+			show_hint(8.0)
+
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("keys_help") and visible and not is_done():
+		show_hint()
 
 
 ## Remplace {action} par la touche du joueur.

@@ -654,7 +654,16 @@ func open_city_shop(t: Node) -> void:
 
 
 ## Grand titre au centre-haut de l'écran, qui s'efface après quelques secondes.
+## Deux grands titres ne se chevauchent jamais (région, acte de l'histoire, événement...) : le suivant attend.
 func show_banner(title: String, sub: String, color: Color) -> void:
+	var wait := UiTheme.banner_slot(self, 4.5)
+	if wait > 0.0:
+		get_tree().create_timer(wait).timeout.connect(_show_banner_now.bind(title, sub, color))
+		return
+	_show_banner_now(title, sub, color)
+
+
+func _show_banner_now(title: String, sub: String, color: Color) -> void:
 	_zone_title.text = title
 	_zone_title.add_theme_color_override("font_color", color)
 	_zone_sub.text = KeyBindings.fmt(sub)
@@ -799,6 +808,9 @@ func _update_health() -> void:
 var _clock_timer := 0.0
 var _clock_night: Variant = null
 var _hud_slow := 0.0
+## Le rappel « Échap : menu… » (en haut à droite) s'efface après les premières minutes de jeu.
+const HELP_TIME := 180.0
+var _help_age := 0.0
 
 
 func _process(delta: float) -> void:
@@ -807,7 +819,8 @@ func _process(delta: float) -> void:
 	# en construction, l'interface de construction remplace l'aide et la compétence
 	if player:
 		var b := player.building
-		info.visible = bool(SaveGame.options.show_help) and not b and not player.ui_open
+		_help_age += delta
+		info.visible = bool(SaveGame.options.show_help) and not b and not player.ui_open and _help_age < HELP_TIME
 		if _skill_box:
 			_skill_box.visible = not b
 		if _dock:

@@ -92,7 +92,7 @@ func _build() -> void:
 		sl.value_changed.connect(func(v): o[key] = v; _save())
 		sl.drag_ended.connect(func(_c): Sound.ui("pickup"))
 		_row(pair[1], sl)
-	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"], ["show_fps", "Afficher les images par seconde"]]:
+	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"], ["show_fps", "Afficher les images par seconde"], ["mouse_aim", "Viser à la souris (sinon : devant le héros)"]]:
 		var cb := CheckButton.new()
 		cb.button_pressed = bool(o.get(pair[0], false))
 		var key: String = pair[0]
