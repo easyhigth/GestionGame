@@ -944,7 +944,7 @@ func _show_aim() -> void:
 	if not aim.is_empty():
 		var k := str(aim.kind)
 		var d := float(aim.get("dist", INF))
-		if k == "enemy" and d <= attack_reach() + 1.6:
+		if k in ["enemy", "animal"] and d <= attack_reach() + 1.6:
 			col = Color(1.0, 0.35, 0.3, 0.95)
 		elif k in ["block", "furniture", "decor", "prop", "crop"] and d <= Aim.REACH_HIT and not holding_item():
 			col = Color(1.0, 0.85, 0.35, 0.95)
@@ -1318,7 +1318,29 @@ func _aim_assist() -> void:
 		visual.rotation.y = atan2(facing.x, facing.z)
 
 
+## Les coups portent aussi sur les animaux (poules, moutons, vaches) devant le héros : on peut chasser.
+func _hit_animals(hit: Dictionary) -> int:
+	var reach := clampf(attack_reach() * float(hit.get("reach", 1.0)), 1.6, 3.0)
+	var arc := deg_to_rad(float(hit.get("arc", 120.0)) * 0.5)
+	var fwd := Vector2(facing.x, facing.z).normalized()
+	var dmg := maxi(1, roundi(attack_power() * float(hit.get("dmg", 1.0)) * _move_damage * 0.5))
+	var n := 0
+	for a in get_tree().get_nodes_in_group("farm_animals"):
+		var an := a as FarmAnimal
+		if an == null or not an.is_alive():
+			continue
+		var off := Vector2(an.global_position.x - global_position.x, an.global_position.z - global_position.z)
+		if off.length() > reach + 0.4 or absf(an.global_position.y - global_position.y) > 1.6:
+			continue
+		if off.length() > 0.3 and absf(fwd.angle_to(off.normalized())) > arc:
+			continue
+		if an.take_hit(dmg, self):
+			n += 1
+	return n
+
+
 func _on_attack_landed(hits: int, hit: Dictionary) -> void:
+	hits += _hit_animals(hit)
 	var harvested := _harvest_swing(hit)
 	if hits <= 0:
 		if harvested:

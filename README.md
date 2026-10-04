@@ -1032,3 +1032,17 @@ Tous les bruitages sont générés par `tools/audio_generator.py` (synthèse, sa
 - **Récolte** : quand on vise un arbre, un rocher, un bloc ou une culture (sans ennemi tout près), le héros
   lève son outil au-dessus de l'épaule et l'abat, comme un bûcheron ou un mineur, au lieu de donner un coup
   d'épée.
+
+## Chasse et caméra de construction
+
+- **On peut attaquer les animaux** (poules, moutons, vaches), sauvages ou de l'enclos :
+  - le viseur les accroche (il devient rouge) ;
+  - frappé, l'animal a mal, recule et **s'enfuit** quelques secondes ;
+  - abattu, il laisse **de la viande crue** (à cuire au feu de camp), plus **de la laine** pour un mouton,
+    **du cuir** pour une vache ou **des graines** pour une poule.
+
+  Poule : 4 PV, mouton : 10, vache : 14 (moitié moins pour un petit).
+- **Caméra de construction qui descend jusqu'au sol** : en mode construction, **Maj + molette** (ou **T** pour
+  monter, **G** pour descendre) incline la caméra de la vue du dessus jusqu'au **ras du sol**. On voit ainsi
+  si une base touche bien le sol ou si elle flotte. La caméra ne passe jamais sous le terrain. Clic molette
+  + glisser fait aussi monter ou descendre la caméra, désormais jusqu'au sol.

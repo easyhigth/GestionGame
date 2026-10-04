@@ -79,6 +79,19 @@ static func cast(p: Player, origin: Vector3, dir: Vector3, max_t := 40.0) -> Dic
 		var hit := ray_box(origin, dir, cp + Vector3(-r, 0, -r), cp + Vector3(r, hgt, r), best.t)
 		if not hit.is_empty() and float(hit[0]) < float(best.t):
 			best = {"kind": "enemy", "t": hit[0], "point": origin + dir * float(hit[0]), "normal": hit[1], "node": c}
+	# 1 bis) animaux (poules, moutons, vaches) : on peut les chasser
+	for n in p.get_tree().get_nodes_in_group("farm_animals"):
+		var an := n as Node3D
+		if an == null or not an.has_method("is_alive") or not an.is_alive():
+			continue
+		var ap := an.global_position
+		if ap.distance_to(origin) > max_t + 3.0:
+			continue
+		var ah := float(an.info().label_y) * 0.8
+		var ar := 0.25 + ah * 0.25
+		var hit := ray_box(origin, dir, ap + Vector3(-ar, 0, -ar), ap + Vector3(ar, ah, ar), best.t)
+		if not hit.is_empty() and float(hit[0]) < float(best.t):
+			best = {"kind": "animal", "t": hit[0], "point": origin + dir * float(hit[0]), "normal": hit[1], "node": an}
 	# 2) décors du village (cabanes, tonneaux...) près du héros
 	var hc := world.cell_at(p.global_position)
 	var under := p.global_position.y < WorldGenerator.UNDERGROUND

@@ -9,11 +9,14 @@ extends Node3D
 ## prise dans la réserve à chaque produit, vitesse, hauteur de l'étiquette.
 const SPECIES := {
 	"poule": {"name": "Poule", "plural": "poules", "models": ["chicken", "chicken_brown"], "food": "graines_ble",
-		"product": "oeuf", "every": 150.0, "feed": 2.0, "speed": 1.6, "label_y": 0.95},
+		"product": "oeuf", "every": 150.0, "feed": 2.0, "speed": 1.6, "label_y": 0.95,
+		"hp": 4, "loot": [["viande_crue", 1, 1], ["graines_ble", 0, 2]]},
 	"mouton": {"name": "Mouton", "plural": "moutons", "models": ["sheep"], "food": "ble",
-		"product": "laine", "every": 300.0, "feed": 4.0, "speed": 1.3, "label_y": 1.55},
+		"product": "laine", "every": 300.0, "feed": 4.0, "speed": 1.3, "label_y": 1.55,
+		"hp": 10, "loot": [["viande_crue", 1, 2], ["laine", 1, 2]]},
 	"vache": {"name": "Vache", "plural": "vaches", "models": ["cow", "cow_brown"], "food": "ble",
-		"product": "lait", "every": 240.0, "feed": 5.0, "speed": 1.2, "label_y": 2.0},
+		"product": "lait", "every": 240.0, "feed": 5.0, "speed": 1.2, "label_y": 2.0,
+		"hp": 14, "loot": [["viande_crue", 2, 3], ["leather", 1, 2]]},
 }
 ## Rayon de l'enclos autour de la mangeoire, et de la promenade d'un animal sauvage.
 const PEN_RADIUS := 5.0
@@ -38,6 +41,11 @@ var facing := Vector3.BACK
 var _target := Vector3.INF
 var _pause := 0.0
 var _heart := 0.0
+## Points de vie (0 : selon l'espèce) ; un animal frappé s'enfuit un moment.
+var hp := 0
+var _flee_left := 0.0
+var _flee_from := Vector3.ZERO
+var _knock := Vector3.ZERO
 
 
 func setup(sp: String, index := -1) -> void:
@@ -68,9 +76,68 @@ func _ready() -> void:
 	label.visible = false
 	add_child(label)
 	_apply_age()
+	if hp <= 0:
+		hp = max_hp()
 	facing = Vector3(randf_range(-1, 1), 0, randf_range(-1, 1)).normalized()
 	if home == Vector3.ZERO:
 		home = global_position
+
+
+# ---------------------------------------------------------------- chasse
+
+func max_hp() -> int:
+	return maxi(1, int(info().get("hp", 6)) / (2 if is_baby() else 1))
+
+
+func is_alive() -> bool:
+	return hp > 0 and is_inside_tree() and not is_queued_for_deletion()
+
+
+## Frappé (par le héros) : il a mal, recule, s'enfuit ; à 0 point de vie, il tombe et laisse viande,
+## laine ou cuir. Renvoie vrai si le coup a porté.
+func take_hit(dmg: int, from: Node3D) -> bool:
+	if not is_alive():
+		return false
+	dmg = maxi(1, dmg)
+	hp = maxi(0, hp - dmg)
+	following = false
+	var away := global_position - from.global_position
+	away.y = 0.0
+	away = away.normalized() if away.length() > 0.01 else -facing
+	_knock = away * 5.0
+	_flee_from = from.global_position
+	_flee_left = 4.0
+	visual.flash(Color(1, 0.3, 0.3, 0.7), 0.15)
+	visual.play_move("flinch", 1.4)
+	var top := global_position + Vector3(0, float(info().label_y), 0)
+	Combat.popup(self, top, str(dmg), Color("ffe070"))
+	VoxelBurst.emit(self, global_position + Vector3(0, float(info().label_y) * 0.5, 0), {"color": Color(0.75, 0.12, 0.1), "count": 8,
+		"speed": 3.0, "size": 0.07, "life": 0.4, "glow": false, "gravity": 9.0})
+	Sound.play("hit_fist", global_position + Vector3(0, 0.6, 0), -2.0)
+	if hp <= 0:
+		_die(from)
+	return true
+
+
+func _die(from: Node3D) -> void:
+	var inf := info()
+	var n := 0
+	for l in inf.get("loot", []):
+		var it := Items.get_item(str(l[0]))
+		var k := randi_range(int(l[1]), int(l[2]))
+		if is_baby():
+			k = mini(k, 1)
+		if it and k > 0:
+			var a := TAU * n / 4.0 + randf() * 0.5
+			world.spawn_pickup(it, global_position + Vector3(cos(a), 0, sin(a)) * 0.6, k, get_parent())
+			n += 1
+	VoxelBurst.emit(self, global_position + Vector3(0, 0.5, 0), {"color": Color(0.95, 0.92, 0.85), "count": 14, "speed": 2.5,
+		"size": 0.12, "life": 0.6, "glow": false, "grow": true, "alpha": 0.7, "gravity": -0.5})
+	Sound.play("enemy_die", global_position, -6.0)
+	var p := from as Player
+	if p:
+		p.notify.emit("%s abattu%s." % [inf.name, "e" if species in ["poule", "vache"] else ""])
+	queue_free()
 
 
 func _apply_age() -> void:
@@ -113,7 +180,17 @@ func _process(delta: float) -> void:
 			home = global_position
 	var speed: float = float(info().speed) * (1.6 if following else 1.0)
 	var velocity := Vector3.ZERO
-	if following:
+	_knock = _knock.move_toward(Vector3.ZERO, 14.0 * delta)
+	if _flee_left > 0.0:
+		# effrayé : il détale loin de celui qui l'a frappé
+		_flee_left -= delta
+		var away := global_position - _flee_from
+		away.y = 0.0
+		if away.length() > 0.01:
+			facing = away.normalized()
+		velocity = facing * speed * 2.2 + _knock
+		_target = Vector3.INF
+	elif following:
 		var to := p.global_position - global_position
 		to.y = 0.0
 		if to.length() > 1.8:
