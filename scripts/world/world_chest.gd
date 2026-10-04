@@ -38,7 +38,7 @@ func _ready() -> void:
 
 
 func _refresh() -> void:
-	_label.text = "Vide" if opened else {"wreck": "Coffre de l'épave\nE : ouvrir", "capital": "Trésor de la capitale\nE : ouvrir", "sunken": "Trésor englouti\nE : ouvrir"}.get(kind, "Trésor\nE : ouvrir")
+	_label.text = "Vide" if opened else {"wreck": "Coffre de l'épave\nF : ouvrir", "capital": "Trésor de la capitale\nF : ouvrir", "sunken": "Trésor englouti\nF : ouvrir"}.get(kind, "Trésor\nF : ouvrir")
 	_label.modulate = Color(0.7, 0.7, 0.7) if opened else Color("ffd24a")
 
 

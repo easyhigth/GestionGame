@@ -1296,7 +1296,7 @@ func _on_landed() -> void:
 func _aiming_at_harvest() -> bool:
 	if not aim_active() or _enemy_close(4.0):
 		return false
-	return str(aim.get("kind", "")) in ["decor", "block", "prop", "furniture", "crop"] and float(aim.get("dist", INF)) <= Aim.REACH_HIT
+	return str(aim.get("kind", "")) in ["decor", "block", "prop", "furniture", "crop", "terrain"] and float(aim.get("dist", INF)) <= Aim.REACH_HIT
 
 
 func _do_move(name: String, speed: float, dmg: float) -> void:

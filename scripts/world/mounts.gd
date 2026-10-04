@@ -182,7 +182,7 @@ func _make_griffon() -> Node3D:
 	var g := ExploreModels.griffon()
 	world.add_child(g)
 	var lab := Label3D.new()
-	lab.text = "Griffon\nE : monter"
+	lab.text = "Griffon\nF : monter"
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 30
 	lab.pixel_size = 0.007
@@ -446,7 +446,7 @@ func spawn_boat(pos: Vector3, rot := 0.0, kind := "barque") -> Node3D:
 	b.global_position = pos - Vector3(0, 0.05, 0)
 	b.rotation.y = rot
 	var lab := Label3D.new()
-	lab.text = "%s\nE : monter" % ("Voilier" if kind == "voilier" else "Barque")
+	lab.text = "%s\nF : monter" % ("Voilier" if kind == "voilier" else "Barque")
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 28
 	lab.pixel_size = 0.006
@@ -475,7 +475,7 @@ func _update_islands() -> void:
 			pos.y = world.ground_height_at(pos + Vector3(0, 5, 0))
 			n.global_position = pos
 			var lab := Label3D.new()
-			lab.text = "Coffre vide" if opened.has(isl.id) else "Trésor de l'île\nE : ouvrir"
+			lab.text = "Coffre vide" if opened.has(isl.id) else "Trésor de l'île\nF : ouvrir"
 			lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 			lab.font_size = 30
 			lab.pixel_size = 0.007

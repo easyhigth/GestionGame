@@ -51,7 +51,7 @@ const STEPS := [
 	["pecher", "Pêche 3 poissons", "Canne en main ({build_bar}), {place_click} face à l'eau pour lancer. Quand ça mord : {place_click}, puis encore quand le curseur est dans le vert.", 3],
 	["grotte", "Ouvre un coffre englouti", "Nage (entre dans l'eau), plonge avec {dig} et remonte avec {jump}. Au fond des eaux profondes, des cristaux bleus marquent l'entrée d'une grotte ({interact}).", 1],
 	# chapitre 8 : l'aventure
-	["donjon", "Vaincs le boss d'un donjon", "E devant une entrée de donjon. Attention aux dalles qui rougissent (piques) ; le Gardien et la salle secrète valent le détour.", 1],
+	["donjon", "Vaincs le boss d'un donjon", "F devant une entrée de donjon. Attention aux dalles qui rougissent (piques) ; le Gardien et la salle secrète valent le détour.", 1],
 	["forge", "Renforce un objet à +1", "{interact} devant une enclume → Forge. Les gemmes et les runes s'y posent aussi.", 1],
 	["potion", "Bois une potion ({potion})", "Une potion de soin se prépare au chaudron avec 8 baies ; un Laboratoire d'alchimie en fabrique d'autres.", 1],
 	["succes", "Ouvre les succès et le bestiaire ({achievements})", "Chaque succès rapporte des points : titres et auras pour ton héros. Le bestiaire décrit les monstres vaincus.", 1],

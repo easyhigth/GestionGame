@@ -1,5 +1,5 @@
 extends SceneTree
-## Artisanat par ateliers : sur soi l'essentiel, chaque atelier (E devant) son propre menu ; recettes
+## Artisanat par ateliers : sur soi l'essentiel, chaque atelier (F devant) son propre menu ; recettes
 ## découvertes en ramassant les matériaux ; clic droit sur un objet : ce qu'on peut en faire ; « comment
 ## l'obtenir ? » ; objet épinglé avec sa liste de courses à l'écran ; blocs choisis par forme puis matière.
 ## Captures ws_XX_nom.png.
@@ -90,7 +90,7 @@ func _process(_d) -> bool:
 			check("pas d'enclume sur soi", not names.any(func(t): return t.begins_with("Enclume")))
 			shot("01_sur_soi.png")
 			inv.close()
-			# un établi devant le héros : E ouvre son atelier
+			# un établi devant le héros : F ouvre son atelier
 			var fwd := Vector3(-sin(p.cam_yaw), 0, -cos(p.cam_yaw))
 			place("etabli", fwd * 1.4)
 			check("atelier à portée : établi (%s)" % ws.station_near(p), ws.station_near(p) == "etabli")
@@ -101,7 +101,7 @@ func _process(_d) -> bool:
 			p._unhandled_input(ev)
 			step = 2; wait = 15
 		2:
-			check("E ouvre l'atelier de l'établi", inv.visible and inv._mode == "etabli")
+			check("F ouvre l'atelier de l'établi", inv.visible and inv._mode == "etabli")
 			var tabs2: Array = inv._tab_list()
 			print("   onglets de l'établi : ", tabs2)
 			check("l'établi : outils, meubles, armurerie", tabs2.has("Outils") and tabs2.has("Mobilier") and tabs2.has("Armurerie"))

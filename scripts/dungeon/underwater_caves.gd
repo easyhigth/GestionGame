@@ -170,7 +170,7 @@ func _make_entrance(e: Dictionary) -> Node3D:
 	col.lifetime = maxf(1.0, (world.water_surface - e.pos.y) / 1.6)
 	col.preprocess = col.lifetime
 	var lab := Label3D.new()
-	lab.text = "Grotte sous-marine\nE : entrer"
+	lab.text = "Grotte sous-marine\nF : entrer"
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 34
 	lab.pixel_size = 0.007
@@ -466,7 +466,7 @@ func _add_exit(c: Vector2i) -> void:
 	ring.position.y = 0.1
 	n.add_child(ring)
 	_bubbles(n.global_position, 40)
-	_label(n, "Sortie\nE : remonter", 2.4, Color("bff6ff"))
+	_label(n, "Sortie\nF : remonter", 2.4, Color("bff6ff"))
 	_interactables.append({"node": n, "pos": n.global_position, "kind": "exit", "used": false})
 
 
@@ -491,7 +491,7 @@ func _add_chest(c: Vector2i, index: int, used: bool) -> void:
 	_content.add_child(n)
 	n.global_position = _floor_pos(c)
 	n.rotation.y = PI
-	var lab := _label(n, "Vide" if used else "Coffre englouti\nE : ouvrir", 1.6, Color(0.7, 0.7, 0.7) if used else Color("ffd24a"))
+	var lab := _label(n, "Vide" if used else "Coffre englouti\nF : ouvrir", 1.6, Color(0.7, 0.7, 0.7) if used else Color("ffd24a"))
 	_interactables.append({"node": n, "pos": n.global_position, "kind": "chest", "used": used, "label": lab, "index": index})
 
 

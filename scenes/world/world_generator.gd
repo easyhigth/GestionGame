@@ -2257,7 +2257,7 @@ func _add_gate(holder: Node3D, z: Dictionary) -> void:
 	body.add_child(veil)
 	var label := Label3D.new()
 	var dm := get_node_or_null("Donjons") as DungeonManager
-	var gt: Array = dm.gate_text(z) if dm else [("Donjon de %s\nVaincu ✔" if z.get("cleared", false) else "Donjon de %s\nE : entrer") % z.name, Color("b0ffb0") if z.get("cleared", false) else Color("ffb0a0")]
+	var gt: Array = dm.gate_text(z) if dm else [("Donjon de %s\nVaincu ✔" if z.get("cleared", false) else "Donjon de %s\nF : entrer") % z.name, Color("b0ffb0") if z.get("cleared", false) else Color("ffb0a0")]
 	label.text = gt[0]
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.font_size = 36
