@@ -361,7 +361,7 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 		color = Color("ff9a2a")
 	var top := global_position + Vector3(0, 1.9 * visual.scale.y, 0)
 	Combat.popup(self, top, str(dmg) + ("!" if crit else ""), color, dmg >= 15 or crit)
-	Sound.play("hit_heavy" if crit or dmg >= 15 else "hit", global_position + Vector3(0, 1, 0))
+	_hit_sound(attacker, source, crit or dmg >= 15)
 	if is_in_group("player"):
 		Sound.play("hurt", Vector3.INF, -4.0)
 	if attacker:
@@ -396,6 +396,51 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 			elif poise_max < 20.0:
 				flinch()
 	return true
+
+
+## Son d'un coup reçu : celui de l'arme qui frappe (lame, masse, pointe, poing, magie), celui de la
+## matière touchée (os, armure, pierre, bois, gelée, esprit) et un grondement de plus pour les gros coups.
+func _hit_sound(attacker: Combatant, source: Node, heavy: bool) -> void:
+	var at := global_position + Vector3(0, 1, 0)
+	Sound.play(Combatant.weapon_sound(attacker, source), at, -1.0)
+	var mat := impact_material()
+	if mat != "":
+		Sound.play("mat_" + mat, at, -3.0)
+	if heavy:
+		Sound.play("hit_heavy", at, -2.0)
+
+
+const METAL_WORDS := ["fer", "acier", "mithril", "orichalque", "maille", "plaque", "plate", "bronze", "argent", "_or"]
+
+
+## Bruit de l'arme de `attacker` (un projectile magique : « magie »).
+static func weapon_sound(attacker: Combatant, source: Node) -> String:
+	if source is MagicBolt or attacker == null:
+		return "hit_magic" if source is MagicBolt else "hit"
+	match attacker.weapon_style():
+		ItemData.WeaponStyle.SWORD:
+			return "hit_blade"
+		ItemData.WeaponStyle.SPEAR:
+			return "hit_pierce"
+		ItemData.WeaponStyle.HEAVY:
+			return "hit_blunt"
+		ItemData.WeaponStyle.STAFF:
+			return "hit_magic"
+		ItemData.WeaponStyle.UNARMED:
+			return "hit_fist"
+	return "hit"
+
+
+## Matière qui sonne quand on est touché ("" : la chair, sans son de plus). Les monstres la précisent ;
+## un combattant en armure de métal sonne « armure ».
+func impact_material() -> String:
+	if equipment:
+		var chest := equipment.get_item(ItemData.Slot.CHEST)
+		if chest:
+			for m in METAL_WORDS:
+				if m in chest.id:
+					return "armor"
+	return ""
 
 
 func _attacker_of(source: Node) -> Combatant:

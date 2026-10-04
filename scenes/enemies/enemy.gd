@@ -448,3 +448,19 @@ func _drop_loot() -> void:
 		n += 1
 	if not rare.is_empty():
 		RareDrops.announce(player as Player, rare)
+
+
+## Matière qui sonne sous les coups, d'après le monstre.
+const MATERIALS := {"squelette": "bone", "seigneur_squelette": "bone", "slime": "slime", "grenouille": "slime",
+	"dryade": "wood", "esprit": "spirit", "fee": "spirit", "brume": "spirit", "possede": "spirit",
+	"golem": "stone", "gargouille": "stone", "scorpion": "armor", "bandit_chef": "armor", "orc": "armor",
+	"morvain": "armor", "aurele": "armor", "demon": "stone", "magma": "stone"}
+
+
+func impact_material() -> String:
+	var id := data.resource_path.get_file().get_basename() if data else ""
+	for k in MATERIALS:
+		if k in id:
+			return MATERIALS[k]
+	return super()
+
