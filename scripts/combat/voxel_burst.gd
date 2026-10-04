@@ -136,6 +136,9 @@ static func palette_of(c: Color) -> Array:
 
 func _ready() -> void:
 	top_level = true
+	# gerbes remplies à la main (sans emit) : la couleur de la gerbe pour chaque cube
+	while _col.size() < _pos.size():
+		_col.append(color)
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D

@@ -44,6 +44,21 @@ func gold() -> int:
 func pickups_loot() -> Array:
 	return get_nodes_in_group("pickups").filter(func(q): return is_instance_valid(q) and q.item and str(q.item.id).contains("#"))
 
+## Objets de butin (« # ») dans le sac du héros et dans les sacs et l'équipement des habitants.
+func loot_held() -> Array:
+	var out := []
+	for who in [p] + get_nodes_in_group("villagers"):
+		if who.get("inventory"):
+			for e in who.inventory.entries:
+				if str(e.item.id).contains("#"):
+					out.append(e.item)
+		var eq = who.get("equipment")
+		if eq:
+			for it in eq.slots.values():
+				if it and str(it.id).contains("#"):
+					out.append(it)
+	return out
+
 func kill_all() -> int:
 	var n := 0
 	for e in eg._alive:
@@ -194,14 +209,15 @@ func _process(_d) -> bool:
 		hud.map_ui.close()
 		var tn = eg._titan_node
 		# objets de butin déjà dans le sac (le héros peut ramasser le trésor en passant dessus)
-		set_meta("bag0", p.inventory.entries.filter(func(e): return str(e.item.id).contains("#")).map(func(e): return e.item))
+		set_meta("bag0", loot_held())
 		tn.health.take_damage(tn.health.current + 99999999, p)
 		start("titan_dead")
 	if later("titan_dead", 1500):
 		check("titan vaincu (%d)" % eg.titans_slain, eg.titans_slain == 1 and eg.titan.is_empty())
 		var bag0: Array = get_meta("bag0")
 		var got: Array = pickups_loot().map(func(q): return q.item)
-		got += p.inventory.entries.filter(func(e): return str(e.item.id).contains("#") and not bag0.has(e.item)).map(func(e): return e.item)
+		# ramassé entre-temps par le héros ou par un habitant (ils ramassent l'équipement au sol)
+		got += loot_held().filter(func(it): return not bag0.has(it))
 		print("   trésor du titan : ", got.map(func(it): return it.display_name))
 		check("trésor légendaire ou mystique", got.size() >= 3 and got.any(func(it): return it.rarity >= 4))
 		shot("eg_08_tresor_titan.png")
