@@ -128,13 +128,17 @@ func _process(_d) -> bool:
 		p._invulnerable_left = 0.0
 		p.health.heal(9999)
 		hp_before = p.health.current
+		# on compte les coups des piques (la vie seule ne suffit pas : un passage de niveau la remonte)
+		set_meta("spike_hits", 0)
+		var trap_node = tr.node
+		p.hurt.connect(func(_d, src): if src == trap_node: set_meta("spike_hits", int(get_meta("spike_hits")) + 1))
 		start("trap")
 	if has_meta("trap") and not has_meta("trap_done"):
 		p.global_position = dm.traps[0].pos
 		p._invulnerable_left = 0.0
 	if later("trap", 3000):
 		shot("04_piques.png")
-		check("les piques blessent le héros (%d -> %d)" % [hp_before, p.health.current], p.health.current < hp_before)
+		check("les piques blessent le héros (%d coup(s), vie %d -> %d)" % [int(get_meta("spike_hits")), hp_before, p.health.current], int(get_meta("spike_hits")) > 0)
 		protect = true
 		print("RÉSULTAT : " + ("tout est bon" if ok else "ÉCHECS"))
 		return true
