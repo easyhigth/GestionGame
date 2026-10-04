@@ -894,3 +894,33 @@ Test : `tests/run_tests.sh effects` lance une vitrine de 14 effets et vérifie q
 - la mystique « Mille Soleils d'Acier » et le Cataclysme.
 
 Les captures sont `fx_XX_*.png`.
+
+## Visée à la souris (comme dans Minecraft)
+C'est la souris qui décide **où l'on frappe, ce que l'on récolte ou casse, et où l'on pose un bloc**, plus la direction du héros (`scripts/combat/aim.gd`, `Player._update_aim`).
+- **3e et 1re personne** : le **viseur** au centre de l'écran.
+- **Vue de dessus** : le **curseur** de la souris ; il suffit de cliquer sur un ennemi pour le frapper.
+
+**Le rayon de visée** part de la caméra, à chaque image :
+- Il s'arrête sur la première chose touchée : un ennemi, un bloc ou un meuble posé, un arbre, un rocher, un buisson, un filon, une plante, un décor du village, une culture mûre, ou le sol.
+- Il avance case par case le long du rayon et teste ce qui s'y trouve. Le sol en marches est compté à sa vraie hauteur, ainsi que les demi-blocs et les escaliers.
+
+**Ce qui en dépend** :
+- **Frapper, lancer un sort, tirer** : le héros se tourne vers le point visé, ou vers l'ennemi visé. Ce n'est plus le héros qui choisit sa cible.
+- **Récolter, casser** :
+  - Seul ce qui est sous le viseur est touché, à moins de 3,2 m.
+  - Un viseur dans le vide ne casse rien, même s'il y a un arbre juste à côté.
+  - La pelle (G) creuse la case du sol visée.
+- **Poser** (clic droit) :
+  - Contre la face visée d'un bloc ; sur le sol visé, ou à côté si c'est le flanc d'une marche ; ou sur le dessus d'un meuble.
+  - Jusqu'à 5,5 m, jamais dans le corps du héros.
+  - Le cube fantôme (vert : possible, rouge : impossible) montre exactement où.
+  - Graines et houe : la case de sol visée.
+- **Repères à l'écran** :
+  - Le viseur devient rouge sur un ennemi à portée, doré sur ce qui se récolte ou se casse.
+  - Un **contour** entoure le bloc, l'arbre ou le décor visé.
+
+**À la manette, ou tant que la souris n'a pas bougé**, le héros frappe et pose devant lui comme avant.
+
+Test : `tests/run_tests.sh aim`. Il vérifie :
+- en 1re personne : le bloc visé et sa face, la pose contre cette face au clic droit, l'arbre visé récolté, rien de touché en visant le ciel, et le héros qui se tourne vers un ennemi visé sur le côté ;
+- en vue de dessus : le curseur posé sur un ennemi qui le vise.

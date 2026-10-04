@@ -109,6 +109,9 @@ static func find_target(p: Player, reach: float, with_blocks := false) -> Dictio
 	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
 	if world == null:
 		return {}
+	# à la souris : seulement ce qui est sous le viseur (ou le curseur), à portée
+	if p.aim_active():
+		return p.aim_target()
 	if p.global_position.y < WorldGenerator.UNDERGROUND:
 		# dans une grotte de montagne : on creuse les parois
 		return _built_target(p, world) if with_blocks and _cave(p) != null else {}
@@ -428,6 +431,12 @@ static func dig(p: Player) -> ItemData:
 	var cell := world.cell_at(p.global_position + fwd * 1.0)
 	if cell == world.cell_at(p.global_position):
 		cell = world.cell_at(p.global_position + fwd * 1.5)
+	# à la souris : on creuse la case visée (le sol, ou la case d'une plante visée)
+	if p.aim_active():
+		var a: Dictionary = p.aim
+		if a.is_empty() or float(a.get("dist", INF)) > Aim.REACH_HIT + 0.8 or not str(a.get("kind")) in ["terrain", "decor", "crop"]:
+			return null
+		cell = a.cell
 	var t := world.terrain_type(cell)
 	var h := world.terrain_height(cell)
 	if t == WorldGenerator.WATER or t == WorldGenerator.DEEP or h - DIG_STEP < DIG_FLOOR:
