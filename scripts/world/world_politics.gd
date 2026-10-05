@@ -507,7 +507,7 @@ func _spawn_units(ar: Dictionary) -> void:
 			holder.add_child(t)
 			t.global_position = at
 	# le drapeau de l'armée
-	var flag := Label3D.new()
+	var flag := PlaceLabel.new()
 	flag.name = "Drapeau"
 	flag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	flag.text = "⚑ %s\n→ %s" % [_army_name(ar), _goal_name(ar)]
@@ -769,7 +769,7 @@ func _make_arena() -> void:
 	_arena.name = "Tournoi"
 	add_child(_arena)
 	_arena.global_position = pos
-	var lab := Label3D.new()
+	var lab := PlaceLabel.new()
 	lab.name = "Titre"
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 44

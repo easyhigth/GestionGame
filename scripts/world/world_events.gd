@@ -268,7 +268,7 @@ func _make_arena() -> void:
 	var w := _world()
 	if w == null:
 		return
-	_arena_label = Label3D.new()
+	_arena_label = PlaceLabel.new()
 	_arena_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_arena_label.font_size = 40
 	_arena_label.pixel_size = 0.006

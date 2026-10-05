@@ -445,7 +445,7 @@ func spawn_boat(pos: Vector3, rot := 0.0, kind := "barque") -> Node3D:
 	world.add_child(b)
 	b.global_position = pos - Vector3(0, 0.05, 0)
 	b.rotation.y = rot
-	var lab := Label3D.new()
+	var lab := PlaceLabel.new()
 	lab.text = "%s\nF : monter" % ("Voilier" if kind == "voilier" else "Barque")
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 28
@@ -474,7 +474,7 @@ func _update_islands() -> void:
 			var pos: Vector3 = isl.pos
 			pos.y = world.ground_height_at(pos + Vector3(0, 5, 0))
 			n.global_position = pos
-			var lab := Label3D.new()
+			var lab := PlaceLabel.new()
 			lab.text = "Coffre vide" if opened.has(isl.id) else "Trésor de l'île\nF : ouvrir"
 			lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 			lab.font_size = 30
