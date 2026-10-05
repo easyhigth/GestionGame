@@ -1187,3 +1187,17 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
   expéditions ; l'aventure donne des niveaux, du butin et des ressources rares pour tenir face aux raids.
 - Anciennes sauvegardes : le drapeau est planté automatiquement près de l'ancien village. Départ classique (avec
   campement) : le drapeau est déjà planté au campement.
+
+## Raids selon la taille du royaume, et zone du camp
+
+- **La force des raids vient du royaume, plus du niveau du héros.** La **menace du royaume** (affichée dans le
+  panneau du royaume, onglet des habitants) vaut 1 + la moitié des habitants + 3 par rang (Campement → Capitale)
+  + 2 par âge + 3 par province conquise. Elle choisit la bande de pillards (gobelins, orcs, ogres, légion des
+  cendres) et leur niveau ; leur nombre dépend du rang et des habitants.
+- Résultat : **l'aventure rend les raids plus faciles** (un héros de haut niveau balaie les pillards d'un petit
+  camp), et **un grand royaume attire des bandes redoutables** qu'il faut des gardes et un héros solide pour
+  repousser. Les raids de l'histoire, eux, suivent toujours le niveau du héros.
+- **Zone du camp** : autour du drapeau, un cercle de **bornes à fanion** aux couleurs du royaume marque la zone.
+  Son rayon grandit avec le rang : 16 m (Campement), 20, 26, 32, 40, 50, jusqu'à 62 m (Capitale d'empire) ; un
+  message l'annonce quand elle s'étend. Elle apparaît aussi sur la carte du monde et la mini-carte (cercle doré).
+- Pendant un raid, les gardes défendent toute la zone, et les pillards arrivent toujours de l'extérieur.

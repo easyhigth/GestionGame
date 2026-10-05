@@ -388,6 +388,11 @@ func generate_data() -> void:
 func generate_nodes() -> void:
 	var seed_value := world_seed
 	_build_water()
+	# les bornes de la zone du camp (autour du drapeau du royaume)
+	if get_node_or_null("CampBorder") == null:
+		var cb := CampBorder.new()
+		cb.name = "CampBorder"
+		add_child(cb)
 	_generated = true
 	var focus := cell_center(spawn_cell)
 	_stream(focus, true)
@@ -3143,6 +3148,23 @@ func home_cell_or_spawn() -> Vector2i:
 ## Centre du camp en 3D (voir home_cell_or_spawn).
 func home_center() -> Vector3:
 	return cell_center(home_cell_or_spawn())
+
+
+## Rayon de la zone du camp (m) selon le rang du royaume : Campement, Hameau, Village, Bourg, Ville, Cité, Capitale.
+const HOME_RADII := [16.0, 20.0, 26.0, 32.0, 40.0, 50.0, 62.0]
+
+
+func home_radius() -> float:
+	var k := get_tree().get_first_node_in_group("kingdom") if is_inside_tree() else null
+	return HOME_RADII[clampi(int(k.rank) if k else 0, 0, HOME_RADII.size() - 1)]
+
+
+## Ce point est dans la zone du camp (drapeau planté).
+func in_home_zone(pos: Vector3) -> bool:
+	if not has_home():
+		return false
+	var c := home_center()
+	return Vector2(pos.x - c.x, pos.z - c.z).length() <= home_radius()
 
 
 ## Le drapeau vient d'être planté dans cette case (BuildGrid l'appelle).

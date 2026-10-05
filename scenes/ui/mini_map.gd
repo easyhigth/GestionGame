@@ -123,6 +123,7 @@ func _draw() -> void:
 	if not world.has_home():
 		pass
 	elif rect.has_point(v):
+		draw_arc(v, world.home_radius() * s, 0, TAU, 40, Color(0.95, 0.78, 0.4, 0.7), 1.2)
 		draw_rect(Rect2(v - Vector2(4, 4), Vector2(8, 8)), Color("f2c86a"))
 	else:
 		# flèche vers le village au bord de la mini-carte

@@ -85,8 +85,29 @@ func _process(_d) -> bool:
 			check("drapeau planté : le camp est là (%s)" % str(w.home_cell), w.has_home() and w.home_cell == spot)
 			check("centre du camp = le drapeau", w.home_center().distance_to(w.cell_center(spot)) < 0.1)
 			check("les pillards viseraient le camp", rm.village_center().distance_to(w.cell_center(spot)) < 0.1)
+			# la zone du camp : des bornes autour du drapeau, rayon selon le rang du royaume
+			var cb = get_first_node_in_group("camp_border")
+			check("bornes de la zone autour du drapeau (%d)" % (cb._posts.multimesh.instance_count if cb else 0), cb != null and cb._posts.multimesh.instance_count >= 16)
+			check("zone du campement : %d m" % roundi(w.home_radius()), is_equal_approx(w.home_radius(), 16.0))
+			check("le drapeau est dans la zone, loin dehors non", w.in_home_zone(w.cell_center(spot)) and not w.in_home_zone(w.cell_center(spot + Vector2i(40, 0))))
+			# raids : leur force vient du royaume, pas du niveau du héros
+			p.level = 60
+			rm.announce()
+			check("raid ordinaire : niveau = menace du royaume (%d), pas celui du héros (%d)" % [int(rm.raid.level), p.power_level()], int(rm.raid.level) == rm.threat_level() and int(rm.raid.level) < 10)
+			check("les pillards arrivent de l'extérieur de la zone", Vector2(rm.raid.spawn.x - w.home_center().x, rm.raid.spawn.z - w.home_center().z).length() > w.home_radius())
+			rm.raid = {}
+			p.level = 1
 			p.set_camera_mode(1, false)
-			step = 2; wait = 30
+			step = 20; wait = 30
+		20:
+			# le royaume monte de rang : la zone s'agrandit
+			var k = get_first_node_in_group("kingdom")
+			k.rank = 2
+			step = 21; wait = 5
+		21:
+			var cb = get_first_node_in_group("camp_border")
+			check("rang Village : zone de %d m, bornes replacées" % roundi(w.home_radius()), is_equal_approx(w.home_radius(), 26.0) and is_equal_approx(cb._built_for.z, 26.0))
+			step = 2; wait = 20
 		2:
 			shot("01_drapeau_plante.png")
 			# reprendre le drapeau : on le frappe, il revient au sac
