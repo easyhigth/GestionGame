@@ -1395,7 +1395,7 @@ func apply_quality(q: int) -> void:
 
 
 ## Rendu de l'image : tons « filmiques », halo des lumières (torches, lave, feu), brume de distance
-## (la couleur suit le ciel, voir DayCycle) et couleurs un peu plus riches. Allégé en qualité basse.
+## (la couleur suit le ciel, voir DayCycle). Allégé en qualité basse.
 func _apply_post(q: int) -> void:
 	var we := get_parent().get_node_or_null("Ambiance") as WorldEnvironment if get_parent() else null
 	if we == null or we.environment == null:
@@ -1426,10 +1426,9 @@ func _apply_post(q: int) -> void:
 	if not close_view:
 		env.fog_sky_affect = 0.0
 	env.fog_aerial_perspective = 0.0
-	env.adjustment_enabled = true
-	env.adjustment_saturation = 0.98
-	env.adjustment_contrast = 1.08
-	env.adjustment_brightness = 1.0
+	# pas de réglage de contraste : il s'applique avant la conversion en sRGB et rendait d'un noir complet
+	# les faces à l'ombre (falaises, sol de lave refroidie...)
+	env.adjustment_enabled = false
 
 
 ## Crée les morceaux proches de `focus` et libère les morceaux lointains.
