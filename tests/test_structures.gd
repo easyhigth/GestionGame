@@ -102,13 +102,15 @@ func _process(_d) -> bool:
 		# les piliers sont dans la pierre de la région (sable au désert, marbre noir au volcan...)
 		var tinted := 0
 		var tinted_total := 0
+		# chargé à l'exécution : nommer WorldStructures ici le compilerait avec ce test, avant les autoloads (« Items » inconnu)
+		var pillars: Dictionary = load("res://scripts/world/world_structures.gd").get_script_constant_map()["OBELISK_PILLARS"]
 		for z in w.zones:
-			if (z.obelisk as Vector2i).x < 0 or z.type == null or not WorldStructures.OBELISK_PILLARS.has(z.type.id):
+			if (z.obelisk as Vector2i).x < 0 or z.type == null or not pillars.has(z.type.id):
 				continue
 			tinted_total += 1
 			var cc: Vector2i = (z.obelisk as Vector2i) + Vector2i(-2, -2)
 			for b in w.build.column(cc):
-				if (b[3] as ItemData).id == WorldStructures.OBELISK_PILLARS[z.type.id][1]:
+				if (b[3] as ItemData).id == pillars[z.type.id][1]:
 					tinted += 1
 					break
 		check("piliers d'obélisque teintés selon la région (%d / %d)" % [tinted, tinted_total], tinted_total > 0 and tinted == tinted_total)
