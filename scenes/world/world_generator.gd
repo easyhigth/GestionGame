@@ -3167,6 +3167,27 @@ func in_home_zone(pos: Vector3) -> bool:
 	return Vector2(pos.x - c.x, pos.z - c.z).length() <= home_radius()
 
 
+## Le foyer du camp, où les habitants se retrouvent (repas, veillées) : le feu de camp du départ s'il est près du
+## drapeau, sinon un feu de camp posé dans la zone, sinon le drapeau lui-même.
+func hearth_center() -> Vector3:
+	var home := home_center()
+	var r := 16.0 if not is_inside_tree() else home_radius()
+	if not GameState.bare_start and cell_center(spawn_cell).distance_to(home) <= r:
+		return cell_center(spawn_cell)
+	var best := home
+	var best_d := r
+	if build:
+		for k in build.furniture:
+			var f: Dictionary = build.furniture[k]
+			if (f.item as ItemData).id == "feu_de_camp":
+				var pos := Vector3(f.col.x + 0.5, f.base, f.col.y + 0.5)
+				var d := pos.distance_to(home)
+				if d < best_d:
+					best_d = d
+					best = pos
+	return best
+
+
 ## Le drapeau vient d'être planté dans cette case (BuildGrid l'appelle).
 func set_home(c: Vector2i) -> void:
 	if c == home_cell:

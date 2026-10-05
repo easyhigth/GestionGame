@@ -118,7 +118,7 @@ func _process(_d) -> bool:
 		check("3 carottes : apprivoisé (selle)", horse.tamed and count("carotte") == 2)
 		p.hand.selected = ""
 		mo.try_interact(p)
-		check("E : à cheval", mo.is_riding() and p.is_mounted() and p.visual.position.y > 0.9)
+		check("F : à cheval", mo.is_riding() and p.is_mounted() and p.visual.position.y > 0.9)
 		check("plus rapide à cheval (x%.1f)" % mo.speed_mult(), mo.speed_mult() > 1.5)
 		var a: Vector3 = p.global_position
 		move(Vector3(1, 0, 0), 20)
@@ -130,7 +130,7 @@ func _process(_d) -> bool:
 	if later("b", 700):
 		shot("01_cheval.png")
 		mo.try_interact(p)
-		check("E : on descend, le cheval reste", not mo.is_riding() and horse.global_position.distance_to(p.global_position) < 2.0 and p.visual.position.y == 0.0)
+		check("F : on descend, le cheval reste", not mo.is_riding() and horse.global_position.distance_to(p.global_position) < 2.0 and p.visual.position.y == 0.0)
 		print("== barque")
 		var sh := find_shore()
 		check("berge trouvée", not sh.is_empty())
@@ -149,7 +149,7 @@ func _process(_d) -> bool:
 		boat = mo.boats[mo.boats.size() - 1] if not mo.boats.is_empty() else null
 		check("V face à l'eau : la barque est à l'eau", boat != null and count("barque") == 0)
 		mo.try_interact(p)
-		check("E : dans la barque", mo.is_sailing())
+		check("F : dans la barque", mo.is_sailing())
 		move(Vector3(d.x, 0, d.y), 40)
 		var cell: Vector2i = w.cell_at(p.global_position)
 		print("   barque à ", cell, " type ", w.terrain_type(cell), " y ", p.global_position.y)

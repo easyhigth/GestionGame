@@ -515,7 +515,7 @@ func _pick_spot(act: String) -> Vector3:
 		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
 		if _world == null:
 			return Vector3.INF
-	var center := _world.home_center()
+	var center := _world.hearth_center()
 	var seed := float(hash(villager_name) % 1000) / 1000.0
 	match act:
 		"sommeil":
@@ -655,7 +655,7 @@ func _routine_step(delta: float) -> bool:
 
 
 func _face_center() -> void:
-	var center := _world.home_center()
+	var center := _world.hearth_center()
 	var d := center - global_position
 	d.y = 0.0
 	if d.length() > 0.1:
