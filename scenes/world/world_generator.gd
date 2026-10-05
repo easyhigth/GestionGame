@@ -2285,7 +2285,7 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	label.text = "Obélisque\n%s" % z.name
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.font_size = 40
-	label.pixel_size = 0.006
+	label.pixel_size = 0.009
 	label.outline_size = 10
 	label.modulate = Color("bff6ff")
 	label.position.y = 4.0

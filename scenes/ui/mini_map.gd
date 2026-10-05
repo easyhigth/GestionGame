@@ -168,8 +168,13 @@ func _draw() -> void:
 	var z := world.zone_at(player.global_position)
 	if not z.is_empty() and z.type:
 		var t: RegionData = z.type
-		_text(z.name, Vector2(SIZE / 2.0, SIZE + 14), 12, t.map_color.lightened(0.5))
-		_text("Nv %d-%d  ·  {world_map} : carte" % [z.level.x, z.level.y], Vector2(SIZE / 2.0, SIZE + 28), 10, Color("b8a890"))
+		var lines := [z.name, KeyBindings.fmt("Nv %d-%d  ·  {world_map} : carte" % [z.level.x, z.level.y])]
+		# fond sombre sous les deux lignes : lisibles sur la neige ou le sable en plein midi
+		var w := maxf(_font.get_string_size(lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x, _font.get_string_size(lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
+		var back := MenuKit.text_backing()
+		back.draw(get_canvas_item(), Rect2(SIZE / 2.0 - w / 2.0 - 7.0, SIZE + 3, w + 14.0, 30))
+		_text(lines[0], Vector2(SIZE / 2.0, SIZE + 15), 12, t.map_color.lightened(0.6))
+		_text(lines[1], Vector2(SIZE / 2.0, SIZE + 29), 11, Color("e0d4b8"))
 
 
 func _star(p: Vector2, r: float, col: Color) -> void:
