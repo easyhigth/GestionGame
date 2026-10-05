@@ -1,8 +1,8 @@
 extends Node
 ## Autoload « Sound » : bruitages, ambiances et musiques.
-## Les sons sont dans assets/audio/sfx/<nom>.wav et assets/audio/music/<nom>.wav (fabriqués par
+## Les sons sont dans assets/audio/sfx/<nom>.wav et assets/audio/music/<nom>.ogg (fabriqués par
 ## tools/audio_generator.py). Pour mettre un vrai enregistrement, remplace le fichier en gardant le nom
-## (un .ogg du même nom est pris en priorité). Une musique peut avoir des variantes <nom>_2, <nom>_3... :
+## (.ogg ou .wav ; un .ogg du même nom est pris en priorité). Une musique peut avoir des variantes <nom>_2, <nom>_3... :
 ## le jeu enchaîne alors le thème et ses variantes dans un ordre au hasard, pour ne pas tourner en rond.
 ##   Sound.play("hit", position)   bruitage (3D si une position est donnée)
 ##   Sound.ui("ui_click")          bruitage d'interface
@@ -258,4 +258,9 @@ func region_music(player: Node3D) -> String:
 	if z.is_empty() or z.type == null:
 		return "day"
 	var track := "region_" + (z.type as RegionData).id
-	return track if ResourceLoader.exists(MUSIC_DIR + track + ".wav") else "day"
+	return track if has_music(track) else "day"
+
+
+## Vrai si la musique existe (en .ogg ou en .wav).
+func has_music(track: String) -> bool:
+	return ResourceLoader.exists(MUSIC_DIR + track + ".ogg") or ResourceLoader.exists(MUSIC_DIR + track + ".wav")
