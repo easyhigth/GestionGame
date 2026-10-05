@@ -12,7 +12,7 @@ Usage :
     python voxel_creature_generator.py --out ../assets/characters/creatures
 """
 import argparse, os
-from voxel_character_generator import Node, V, VG, export_glb, shade
+from voxel_character_generator import Node, V, VG, VA, export_glb, shade
 
 
 def leg(pa, name, x, z, top, h, w, c, claw):
@@ -422,6 +422,130 @@ def snake(c, belly, pattern, eye, scale=1.0, crest=None, wings=None):
     return g
 
 
+# ---------------------------------------------------------------- toundra : yéti, élémentaire de glace, mammouth
+def biped(pa_root, legH, gap, lw, ld, leg_c, foot_c, tiers, arm_x, aw, ad, al, arm_c, hand_c):
+    """Corps de bipède avec les nœuds des personnages (Root > LegL, LegR, Torso > ArmL > HandL, ArmR > HandR) :
+    voxel_character.gd l'anime comme un humanoïde (il a des mains, donc ce n'est pas un quadrupède)."""
+    for name, s in (('LegL', 1), ('LegR', -1)):
+        n = pa_root.add(Node(name, (s * gap, legH, 0)))
+        V(lw, legH * 0.55, ld, leg_c, 0, -legH * 0.275, 0, n)
+        V(lw * 0.9, legH * 0.45, ld * 0.9, shade(leg_c, 0.93), 0, -legH * 0.775, 0, n)
+        V(lw + 1, 1.6, ld + 2.4, foot_c, 0, -legH + 0.8, 1, n)
+    top = pa_root.add(Node('Torso', (0, legH, 0)))
+    y = 0
+    for h, w, d, c in tiers:
+        V(w, h, d, c, 0, y + h / 2, 0, top)
+        y += h
+    arms = []
+    for name, hname, s in (('ArmL', 'HandL', 1), ('ArmR', 'HandR', -1)):
+        n = top.add(Node(name, (s * arm_x, y - 1.2, 0)))
+        V(aw + 1, aw + 1, ad + 1, arm_c, 0, 0, 0, n)
+        V(aw, al * 0.5, ad, arm_c, 0, -al * 0.25, 0, n)
+        V(aw * 0.92, al * 0.5, ad * 0.92, shade(arm_c, 0.94), 0, -al * 0.75, 0, n)
+        hd = n.add(Node(hname, (0, -al, ad / 2 * 0.3)))
+        V(aw + 0.6, aw * 0.9, ad + 0.6, hand_c, 0, -aw * 0.3, 0, hd)
+        arms.append(n)
+    return top, y, arms
+
+
+def yeti(fur, skin, eye, horn):
+    """Yéti : grand bipède voûté couvert de fourrure, longs bras, visage bleu-gris, cornes recourbées."""
+    g = Node('Root')
+    top, tH, arms = biped(g, 12, 3.6, 5.6, 5.6, fur, skin,
+                          [(5, 15, 10, shade(fur, 0.95)), (7, 17, 11, fur), (8, 19, 12, shade(fur, 1.04))],
+                          11, 5.4, 5.4, 21, fur, skin)
+    top.rx = 0.12
+    # touffes de fourrure (dos, épaules, hanches)
+    for i in range(9):
+        V(4, 2.4, 3, shade(fur, 0.88 + (i % 3) * 0.07), ((i * 37) % 15) - 7, 4 + (i * 5) % 15, -6.4, top)
+    for s in (-1, 1):
+        V(6, 4, 7, shade(fur, 1.08), s * 9.6, tH - 0.6, 0, top)
+        V(3, 3, 0.8, skin, s * 4, tH - 6, 6.2, top)          # poitrine nue
+    V(9, 6, 0.8, shade(skin, 0.95), 0, tH - 9, 6, top)
+    for a in arms:
+        for i in range(3):
+            V(6.6, 2, 6.6, shade(fur, 0.9 + i * 0.06), 0, -4 - i * 5, 0, a)
+    h = top.add(Node('Head', (0, tH + 4, 2.4)))
+    V(11, 10, 10, fur, 0, 0, 0, h)
+    V(12, 3.4, 8, shade(fur, 1.06), 0, 4.8, -0.6, h)
+    V(8, 6.4, 1.2, skin, 0, -0.6, 5.2, h)                  # visage
+    V(6.6, 2, 2, shade(skin, 0.88), 0, -3.2, 5.6, h)        # mâchoire
+    V(2, 1.6, 1.4, shade(skin, 0.7), 0, 0.2, 6.2, h)        # nez
+    for s in (-1, 1):
+        VG(1.6, 1.2, 0.5, eye, s * 2, 1.4, 5.9, h)
+        V(2.6, 0.8, 0.6, shade(fur, 0.7), s * 2, 2.6, 5.9, h)
+        V(0.8, 1.6, 0.8, 0xf4f0e0, s * 1.8, -4.2, 6.2, h)   # crocs
+        # cornes recourbées vers l'avant
+        V(2, 4, 2, horn, s * 5.8, 4.6, 0, h, rz=-s * 0.5)
+        V(1.6, 3.4, 1.6, shade(horn, 1.08), s * 7.6, 7, 1.4, h, rx=0.6, rz=-s * 0.2)
+        V(1.2, 2.4, 1.2, shade(horn, 1.15), s * 7.8, 8.2, 3.6, h, rx=1.3)
+    return g
+
+
+def ice_elemental(ice, deep, core):
+    """Élémentaire de glace : un corps de blocs de glace translucides autour d'un cœur lumineux,
+    des éclats qui flottent sur les épaules et une couronne de pics."""
+    g = Node('Root')
+    top, tH, arms = biped(g, 11, 3.4, 4.8, 4.8, deep, shade(deep, 1.1),
+                          [(5, 10, 8, deep), (6, 13, 9, shade(ice, 0.9)), (8, 17, 11, ice)],
+                          10, 5, 5, 18, ice, shade(ice, 1.08))
+    VG(5, 5, 4, core, 0, tH - 7, 3.6, top)                  # cœur de givre
+    VG(2.6, 2.6, 2, 0xffffff, 0, tH - 7, 5.4, top)
+    for s in (-1, 1):
+        for i, (dx, dy, hh) in enumerate(((7, 1, 7), (9.4, -0.4, 5), (5, 2, 5))):
+            VA(2.6, hh, 2.6, shade(ice, 1.1 - i * 0.06), s * dx, tH + dy + hh / 2 - 1, -1 - i, top, alpha=0.78, rz=-s * (0.35 + i * 0.15))
+        VA(2, 3.4, 2, ice, s * 5, 5, 5, top, alpha=0.7, rz=s * 0.4)
+    for a in arms:
+        # bras en éclats de glace
+        VA(6.4, 4, 6.4, shade(ice, 1.06), 0, -9, 0, a, alpha=0.8)
+        VG(1.2, 4, 1.2, core, 0, -12, 3, a)
+        hd = a.kids[0]
+        for j, dx in enumerate((-1.6, 0, 1.6)):
+            VA(1.4, 4 + j % 2, 1.4, shade(ice, 1.14), dx, -3.6, 1.4, hd, alpha=0.8)
+    h = top.add(Node('Head', (0, tH + 4.4, 0.8)))
+    V(9, 8, 8, ice, 0, 0, 0, h)
+    V(7, 2.4, 1, deep, 0, -2.4, 4.2, h)
+    for s in (-1, 1):
+        VG(2.2, 1.4, 0.6, core, s * 2.2, 0.6, 4.2, h)
+    for j, (x, hh) in enumerate(((-3.4, 4), (-1.6, 6), (0, 7.6), (1.6, 6), (3.4, 4))):
+        VA(1.6, hh, 1.6, shade(ice, 1.12), x, 4 + hh / 2, -0.4, h, alpha=0.8, rx=-0.15)
+    VG(1, 1.6, 1, core, 0, 4 + 7.6, -0.4, h)
+    return g
+
+
+def mammoth(c, belly, tusk, eye, scale=1.0):
+    """Mammouth laineux : énorme, longs poils, défenses recourbées, trompe."""
+    g = Node('Root', (0, 12 * scale, 0))
+    g.scale = scale
+    for name, x in (('LegL', 5.6), ('LegR', -5.6)):
+        leg(g, name, x, -9, 0, 12, 6, shade(c, 0.9), 0x3a3028)
+    top = g.add(Node('Torso'))
+    V(20, 17, 30, c, 0, 7, 0, top)
+    V(18, 4, 22, shade(c, 1.08), 0, 16.6, 2, top)            # bosse
+    V(21.4, 6, 28, shade(c, 0.86), 0, -1.4, 0, top)          # longs poils qui pendent
+    V(16, 1.2, 24, belly, 0, -4.6, 0, top)
+    for i in range(10):
+        V(2.6, 5, 2.6, shade(c, 0.78 + (i % 3) * 0.06), (-1) ** i * 10.4, -2 + (i % 2), -13 + i * 2.8, top)
+    V(3, 6, 3, shade(c, 0.8), 0, 6, -16, top)                 # queue
+    for name, x in (('ArmL', 5.8), ('ArmR', -5.8)):
+        leg(top, name, x, 10, -1, 13, 6, shade(c, 0.9), 0x3a3028)
+    h = top.add(Node('Head', (0, 11, 17)))
+    V(14, 13, 10, c, 0, 0, 0, h)
+    V(12, 4, 8, shade(c, 1.1), 0, 7, -1, h)                   # dôme du crâne
+    for s in (-1, 1):
+        V(5, 9, 1.6, shade(c, 0.85), s * 8.4, -1, -1, h)     # oreilles
+        VG(1.4, 1.2, 0.5, eye, s * 4, 2, 5.1, h)
+        # défenses : vers le bas puis vers l'avant et vers le haut
+        V(2.4, 2.4, 6, tusk, s * 4.4, -4.6, 6.4, h, rx=0.5)
+        V(2.2, 2.2, 6, shade(tusk, 1.04), s * 5.2, -5.6, 11.6, h, rx=-0.15, ry=s * 0.2)
+        V(2, 2, 5, shade(tusk, 1.08), s * 6.2, -3.6, 15.6, h, rx=-0.9, ry=s * 0.25)
+    # trompe
+    for i, (y, z, w) in enumerate(((-3, 6.4, 4.4), (-7, 7.4, 3.8), (-11, 7.6, 3.4), (-14.4, 8.6, 3), (-16.4, 10.4, 2.8))):
+        V(w, 4.4, w, shade(c, 0.72 + (i % 2) * 0.08) if i < 4 else belly, 0, y, z, h)
+        V(w + 0.4, 0.6, w + 0.4, shade(c, 0.6), 0, y + 2.2, z, h)        # plis de la trompe
+    return g
+
+
 CREATURES = {
     'wolf': lambda: wolf(0x8a8a8e, 0xd8d4cc, 0xffd24a),
     'wolf_alpha': lambda: wolf(0x3a3a40, 0x6a6a70, 0xff5a3a, 1.25, mane=0x24242a),
@@ -452,6 +576,9 @@ CREATURES = {
     'feathered_serpent': lambda: snake(0x2ab88a, 0xf0e070, 0xd02a3a, 0xffd24a, 1.0,
                                        crest=[0xd02a3a, 0xf0b020, 0x2a8ad0, 0x2ac84a, 0xd02a3a],
                                        wings=[0x2ac84a, 0x2a8ad0, 0xf0b020, 0xd02a3a]),
+    'yeti': lambda: yeti(0xe8eef4, 0x7a8ca8, 0x4ad8ff, 0x9a8a78),
+    'ice_elemental': lambda: ice_elemental(0xa8e0ff, 0x4a8ac8, 0xe0faff),
+    'mammoth': lambda: mammoth(0x7a5236, 0x5a3a26, 0xf0e8d4, 0x1a1414),
 }
 
 

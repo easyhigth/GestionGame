@@ -8,28 +8,32 @@
 [ext_resource type="Resource" path="res://data/items/bloc_marbre.tres" id="r5"]
 [ext_resource type="Resource" path="res://data/items/bloc_pierre_polie.tres" id="r6"]
 [ext_resource type="Resource" path="res://data/items/bloc_verre.tres" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_snow_1.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_snow_2.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/snow_rock_1.glb" id="r10"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/snow_rock_2.glb" id="r11"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dry_grass_1.glb" id="r12"]
+[ext_resource type="PackedScene" path="res://scenes/decor/pine_snow_1.tscn" id="r8"]
+[ext_resource type="PackedScene" path="res://scenes/decor/pine_snow_2.tscn" id="r9"]
+[ext_resource type="PackedScene" path="res://scenes/decor/snow_rock_1.tscn" id="r10"]
+[ext_resource type="PackedScene" path="res://scenes/decor/snow_rock_2.tscn" id="r11"]
+[ext_resource type="PackedScene" path="res://scenes/decor/dry_grass_1.tscn" id="r12"]
 [ext_resource type="Resource" path="res://data/enemies/loup_givre.tres" id="r13"]
 [ext_resource type="Resource" path="res://data/enemies/ours_neige.tres" id="r14"]
-[ext_resource type="Resource" path="res://data/items/stone.tres" id="r15"]
-[ext_resource type="Resource" path="res://data/items/leather.tres" id="r16"]
-[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="r17"]
-[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r18"]
-[ext_resource type="Resource" path="res://data/races/humain.tres" id="r19"]
-[ext_resource type="Resource" path="res://data/races/oni.tres" id="r20"]
-[ext_resource type="Resource" path="res://data/races/lycan.tres" id="r21"]
-[ext_resource type="Resource" path="res://data/races/nain.tres" id="r22"]
+[ext_resource type="Resource" path="res://data/enemies/yeti.tres" id="r15"]
+[ext_resource type="Resource" path="res://data/enemies/elementaire_glace.tres" id="r16"]
+[ext_resource type="Resource" path="res://data/enemies/mammouth.tres" id="r17"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="r18"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="r19"]
+[ext_resource type="Resource" path="res://data/items/iron_ore.tres" id="r20"]
+[ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r21"]
+[ext_resource type="Resource" path="res://data/races/humain.tres" id="r22"]
+[ext_resource type="Resource" path="res://data/races/oni.tres" id="r23"]
+[ext_resource type="Resource" path="res://data/races/lycan.tres" id="r24"]
+[ext_resource type="Resource" path="res://data/races/nain.tres" id="r25"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_toundra.tscn" id="r26"]
 
 [resource]
 script = ExtResource("1")
 id = "toundra"
 display_name = "Toundra gelée"
 names = PackedStringArray("Toundra de Blanchegivre", "Steppes Hurlantes", "Glacis du Nord", "Plaine des Aurores", "Fjords de Givrecœur")
-description = "Neige éternelle, loups de givre et ours gigantesques."
+description = "Neige éternelle, loups de givre, yétis, mammouths et élémentaires de glace."
 level_range = Vector2i(8, 13)
 map_color = Color(0.910, 0.941, 0.973, 1)
 temperature = -1.0
@@ -62,11 +66,13 @@ rocks = Array[PackedScene]([ExtResource("r10"), ExtResource("r11")])
 rock_chance = 0.05
 small_plants = Array[PackedScene]([ExtResource("r12")])
 small_plant_chance = 0.03
-enemies = Array[ExtResource("2")]([ExtResource("r13"), ExtResource("r13"), ExtResource("r14")])
-elite_enemies = Array[ExtResource("2")]([ExtResource("r14")])
+enemies = Array[ExtResource("2")]([ExtResource("r13"), ExtResource("r13"), ExtResource("r14"), ExtResource("r15"), ExtResource("r16"), ExtResource("r17")])
+elite_enemies = Array[ExtResource("2")]([ExtResource("r14"), ExtResource("r17")])
 camp_density = 0.5
-resources = Array[ExtResource("3")]([ExtResource("r15"), ExtResource("r16"), ExtResource("r17"), ExtResource("r18")])
+resources = Array[ExtResource("3")]([ExtResource("r18"), ExtResource("r19"), ExtResource("r20"), ExtResource("r21")])
 resource_chance = 0.008
-recruit_races = Array[ExtResource("4")]([ExtResource("r19"), ExtResource("r20"), ExtResource("r21"), ExtResource("r22")])
+recruit_races = Array[ExtResource("4")]([ExtResource("r22"), ExtResource("r23"), ExtResource("r24"), ExtResource("r25")])
 weather_weights = {"clair": 3, "nuageux": 3, "pluie": 3, "orage": 1, "brouillard": 2}
 precipitation = "neige"
+obelisk = ExtResource("r26")
+obelisk_glow = Color(0.910, 0.980, 1.000, 1)

@@ -133,9 +133,9 @@ var small_decor_range := 60.0
 
 @export_group("Lieux")
 ## Obélisque de téléportation (un par zone).
-@export var obelisk_model: PackedScene = preload("res://assets/environment/models/obelisk.glb")
+@export var obelisk_model: PackedScene = preload("res://scenes/decor/obelisk.tscn")
 ## Entrée de donjon (une par zone, hors zone de départ).
-@export var dungeon_gate_model: PackedScene = preload("res://assets/environment/models/dungeon_gate.glb")
+@export var dungeon_gate_model: PackedScene = preload("res://scenes/decor/dungeon_gate.tscn")
 
 # types de sol
 const DEEP := 0
@@ -594,6 +594,10 @@ func _ensure_chunk_of(cell: Vector2i) -> void:
 	if not _inside(cell):
 		return
 	var ci := (cell.y / CHUNK) * _chunks.x + (cell.x / CHUNK)
+	# garde-fou : sur la CI, une partie d'un monde de 1536 m rechargée en 640 m (test_boot) a demandé des morceaux
+	# hors de la grille ; on n'a rien à calculer
+	if ci >= _chunk_ready.size():
+		return
 	if _chunk_ready[ci] == 0:
 		_gen_chunk_data(Vector2i(cell.x / CHUNK, cell.y / CHUNK))
 
@@ -1336,7 +1340,7 @@ func _process(delta: float) -> void:
 			if holder:
 				var n := holder.get_node_or_null("Obelisque")
 				if n:
-					VoxelBurst.spawn(n, ob + Vector3(0, 2.5, 0), Color("8af0ff"), 40, 6.0, 0.1, 0.8, "sphere", 8.0, false)
+					VoxelBurst.spawn(n, ob + Vector3(0, 2.5, 0), _obelisk_glow(z), 40, 6.0, 0.1, 0.8, "sphere", 8.0, false)
 
 
 func _chunk_of(cell: Vector2i) -> Vector2i:
@@ -1853,7 +1857,7 @@ func _vein_models(kind: String) -> Array[PackedScene]:
 	if not _veins.has(kind):
 		var list: Array[PackedScene] = []
 		for n in (["iron_vein_1", "iron_vein_2"] if kind == "iron" else ["gold_vein_1"]):
-			var sc := load("res://assets/environment/models/%s.glb" % n) as PackedScene
+			var sc := load("res://scenes/decor/%s.tscn" % n) as PackedScene
 			if sc:
 				list.append(sc)
 		_veins[kind] = list
@@ -2272,10 +2276,13 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	cs.shape = box
 	cs.position.y = 1.5
 	body.add_child(cs)
-	if obelisk_model:
-		body.add_child(obelisk_model.instantiate())
+	# chaque région a son obélisque (glace, lave, nacre...) ; à défaut, l'obélisque commun
+	var r: RegionData = z.type
+	var model: PackedScene = r.obelisk if r and r.obelisk else obelisk_model
+	if model:
+		body.add_child(model.instantiate())
 	var light := OmniLight3D.new()
-	light.light_color = Color("8af0ff")
+	light.light_color = _obelisk_glow(z)
 	light.light_energy = 1.2
 	light.omni_range = 5.0
 	light.position.y = 3.2
@@ -2292,6 +2299,11 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	body.add_child(label)
 	holder.add_child(body)
 	body.global_position = cell_center(z.obelisk)
+
+
+func _obelisk_glow(z: Dictionary) -> Color:
+	var r: RegionData = z.type
+	return r.obelisk_glow if r else Color("8af0ff")
 
 
 ## Hauteur du seuil de l'arche par rapport au sol de la case de la porte (fondations comprises).
@@ -3357,7 +3369,6 @@ func reveal_rows(y0: int, y1: int) -> void:
 	_map_dirty = true
 
 
-## Téléporte le héros près d'un obélisque activé (ou au village).
 ## Retour au drapeau du royaume (carte, Pierre de rappel) : d'où que soit le héros, même d'un donjon, d'une grotte
 ## ou d'une faille (on en sort par leur propre sortie, qui mène alors au camp).
 func travel_home() -> bool:
@@ -3381,6 +3392,7 @@ func travel_home() -> bool:
 	return true
 
 
+## Téléporte le héros près d'un obélisque activé (ou au village).
 func travel_to(z: Dictionary) -> bool:
 	if player == null or z.is_empty() or not z.obelisk_on:
 		return false

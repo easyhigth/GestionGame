@@ -3,7 +3,8 @@
 Générateur des sons et des musiques du jeu (synthèse en Python pur, sans bibliothèque).
 
 Tout est fabriqué par programme : bruitages courts (coups, pas, récolte, magie, interface),
-ambiances en boucle (jour, nuit, feu) et musiques en boucle (titre, jour, nuit, combat).
+ambiances en boucle (jour, nuit, feu) et musiques (titre, jour, nuit, combat, régions, donjon, boss),
+chacune avec deux variantes (<nom>_2, <nom>_3) que le jeu enchaîne au hasard.
 Les fichiers vont dans assets/audio/sfx/ et assets/audio/music/ (WAV 16 bits mono).
 Pour remplacer un son par un vrai enregistrement : garde le même nom de fichier (.wav ou .ogg).
 
@@ -476,7 +477,81 @@ CHORDS = {  # accords en notes MIDI
 }
 
 
-def song(progression, bpm, bars_per_chord, melody, style):
+# Variantes : pour que la musique ne tourne pas en rond, chaque morceau a deux variantes (<nom>_2, <nom>_3)
+# que le jeu enchaîne avec le thème d'origine dans un ordre au hasard (voir scripts/audio/sound.gd).
+# Une variante garde les accords, le tempo et les instruments, mais invente une nouvelle mélodie
+# sur les notes des accords ; elle répète la grille assez de fois pour durer au moins VARIANT_SEC.
+VARIANTS = 2
+VARIANT_SEC = 30.0
+
+RHYTHMS = [  # motifs d'une mesure : (début, durée) en temps
+    [(0, 2), (2, 2)], [(0, 1), (1, 1), (2, 2)], [(0, 3), (3, 1)], [(0, 1.5), (1.5, 0.5), (2, 2)], [(0, 4)],
+    [(0, 1), (1, 1), (2, 1), (3, 1)], [(0, 0.5), (0.5, 0.5), (1, 1), (2, 0.5), (2.5, 0.5), (3, 1)],
+    [(0, 0.5), (0.5, 0.5), (1, 0.5), (1.5, 0.5), (2, 1), (3, 1)], [(1, 1), (2, 2)], [(0, 2), (2, 1), (3, 1)],
+]
+
+
+def invented_melody(prog, ref, seed, bars_per_chord=1, sparse=False):
+    """Mélodie inventée sur les notes des accords, dans le registre et au débit de la mélodie `ref`."""
+    rnd = random.Random(seed)
+    lo = min(n for _, n, _ in ref)
+    hi = max(n for _, n, _ in ref)
+    if hi - lo < 7:
+        lo, hi = lo - 3, hi + 4
+    # débit de la mélodie d'origine : notes par mesure
+    span = max(4.0, max(t + d for t, _, d in ref))
+    per_bar = len(ref) / (span / 4.0)
+    if sparse:
+        per_bar = max(0.5, per_bar * 0.5)
+    pool = sorted(RHYTHMS, key=lambda r: abs(len(r) - per_bar))[:4]
+    out = []
+    prev = (lo + hi) // 2
+    t = 0.0
+    bars = [ch for ch in prog for _ in range(bars_per_chord)]
+    motif = rnd.choice(pool)
+    for i, ch in enumerate(bars):
+        pcs = {n % 12 for n in CHORDS[ch]}
+        tones = [n for n in range(lo, hi + 1) if n % 12 in pcs]
+        # un motif rythmique repris sur deux mesures, puis un autre ; une mesure sur quatre respire (sparse)
+        if i % 2 == 0:
+            motif = rnd.choice(pool)
+        last = i == len(bars) - 1
+        if sparse and i % 4 == 3 and not last:
+            t += 4
+            continue
+        rhythm = [(0, 4)] if last else motif
+        for at, d in rhythm:
+            near = sorted(tones, key=lambda n: (abs(n - prev), rnd.random()))
+            choice = [n for n in near[:4] if n != prev] or near
+            n = choice[0] if rnd.random() < 0.55 else rnd.choice(choice)
+            if last:
+                n = min(tones, key=lambda m: (m % 12 != CHORDS[ch][0] % 12, abs(m - prev)))
+            out.append((t + at, n, d))
+            prev = n
+        t += 4
+    return out
+
+
+def vary(prog, melody, bpm, v, bars_per_chord=1):
+    """Variante n° v d'un morceau (0 = l'original) : (accords, mélodie, calme ?).
+    v = 1 : nouvelles mélodies sur la même grille ; v = 2 : passage plus calme (grille décalée, mélodie clairsemée)."""
+    if v == 0:
+        return prog, melody, False
+    calm = v >= 2
+    if calm and len(prog) >= 8:
+        prog = prog[len(prog) // 2:] + prog[:len(prog) // 2]
+    one = 60.0 / bpm * 4 * bars_per_chord * len(prog)
+    passes = max(1, int(math.ceil(VARIANT_SEC / one)))
+    beats = 4 * bars_per_chord * len(prog)
+    mel = []
+    for k in range(passes):
+        part = invented_melody(prog, melody, 1000 * v + 37 * k + len(melody), bars_per_chord, sparse=calm)
+        mel += [(tb + k * beats, n, d) for tb, n, d in part]
+    return prog * passes, mel, calm
+
+
+def song(progression, bpm, bars_per_chord, melody, style, v=0):
+    progression, melody, _ = vary(progression, melody, bpm, v, bars_per_chord)
     beat = 60.0 / bpm
     bar = beat * 4
     total = bar * bars_per_chord * len(progression)
@@ -514,37 +589,37 @@ def song(progression, bpm, bars_per_chord, melody, style):
     return fade(out, 0.0, 0.0)
 
 
-def music_day():
+def music_day(v=0):
     prog = ['C', 'G', 'Am', 'F', 'C', 'G', 'F', 'C']
     mel = []
     phrase = [(0, 72, 1), (1, 74, 1), (2, 76, 2), (4, 79, 1.5), (5.5, 77, 0.5), (6, 76, 2),
               (8, 74, 1), (9, 72, 1), (10, 74, 2), (12, 76, 1), (13, 74, 1), (14, 72, 2)]
     for rep in range(2):
         mel += [(t + rep * 16, n - (0 if rep == 0 else 0), d) for t, n, d in phrase]
-    return song(prog, 92, 1, mel, 'day')
+    return song(prog, 92, 1, mel, 'day', v=v)
 
 
-def music_night():
+def music_night(v=0):
     prog = ['Am', 'F', 'C', 'G', 'Am', 'Dm', 'E', 'Am']
     mel = [(2, 76, 3), (6, 72, 2), (10, 71, 3), (14, 67, 2), (18, 69, 3), (22, 74, 2), (26, 71, 4)]
-    return song(prog, 64, 1, mel, 'night')
+    return song(prog, 64, 1, mel, 'night', v=v)
 
 
-def music_combat():
+def music_combat(v=0):
     prog = ['Dm', 'Dm', 'Bb', 'C', 'Dm', 'Dm', 'Gm', 'A']
     mel = []
     riff = [(0, 74, 0.5), (0.5, 77, 0.5), (1, 81, 1), (2, 79, 0.5), (2.5, 77, 0.5), (3, 76, 1)]
     for bar in range(8):
         shift = {2: -2, 3: 0, 6: -2, 7: 1}.get(bar, 0)
         mel += [(t + bar * 4, n + shift, d) for t, n, d in riff]
-    return song(prog, 140, 1, mel, 'combat')
+    return song(prog, 140, 1, mel, 'combat', v=v)
 
 
-def music_title():
+def music_title(v=0):
     prog = ['F', 'C', 'Dm', 'Bb', 'F', 'C', 'Bb', 'C7']
     mel = [(0, 72, 2), (2, 77, 2), (4, 76, 1), (5, 74, 1), (6, 72, 2), (8, 70, 2), (10, 74, 2), (12, 72, 4),
            (16, 72, 2), (18, 77, 2), (20, 79, 1), (21, 81, 1), (22, 79, 2), (24, 77, 2), (26, 76, 2), (28, 77, 4)]
-    return song(prog, 84, 1, mel, 'title')
+    return song(prog, 84, 1, mel, 'title', v=v)
 
 
 # ---------------------------------------------------------------- nouveaux systèmes (leviers, pièges, potions, succès, événements...)
@@ -685,8 +760,12 @@ LEADS = {'flute': flute, 'bell': lambda n, d: bell(n, d + 0.6), 'marimba': marim
          'square': lambda n, d: env(lowpass(osc('square', note(n), d), 1500), 0.01, d * 0.4, 0.5, d * 0.3)}
 
 
-def region_song(prog, bpm, melody, lead, accomp, drums='', bass=True, lead_gain=0.32, pad_cut=900, pad_vol=0.08):
-    """Boucle d'une région : accords (pad), accompagnement (arpège ou accords frappés), percussions, mélodie."""
+def region_song(prog, bpm, melody, lead, accomp, drums='', bass=True, lead_gain=0.32, pad_cut=900, pad_vol=0.08, v=0):
+    """Boucle d'une région : accords (pad), accompagnement (arpège ou accords frappés), percussions, mélodie.
+    `v` > 0 : une variante (voir vary), la 2e sans percussions."""
+    prog, melody, calm = vary(prog, melody, bpm, v)
+    if calm:
+        drums = ''
     beat = 60.0 / bpm
     bar = beat * 4
     out = [0.0] * int(bar * len(prog) * SR)
@@ -745,67 +824,67 @@ def region_song(prog, bpm, melody, lead, accomp, drums='', bass=True, lead_gain=
     return fade(out, 0.0, 0.0)
 
 
-def music_foret():
+def music_foret(v=0):
     mel = [(0, 69, 2), (2, 72, 1), (3, 74, 1), (4, 72, 3), (8, 69, 1), (9, 67, 1), (10, 69, 2), (12, 64, 4),
            (16, 69, 2), (18, 72, 1), (19, 76, 1), (20, 74, 3), (24, 72, 1), (25, 71, 1), (26, 67, 2), (28, 69, 4)]
-    return region_song(['Dm', 'C', 'G', 'Dm', 'Dm', 'C', 'Gsus', 'Am'], 80, mel, 'flute', 'harp')
+    return region_song(['Dm', 'C', 'G', 'Dm', 'Dm', 'C', 'Gsus', 'Am'], 80, mel, 'flute', 'harp', v=v)
 
 
-def music_marais():
+def music_marais(v=0):
     mel = [(2, 64, 3), (8, 67, 2), (10, 66, 4), (18, 64, 3), (24, 71, 2), (26, 69, 4)]
-    return region_song(['Em', 'C', 'Am', 'B', 'Em', 'C', 'Am', 'B'], 60, mel, 'bell', 'drops', 'heart', pad_cut=600, lead_gain=0.22)
+    return region_song(['Em', 'C', 'Am', 'B', 'Em', 'C', 'Am', 'B'], 60, mel, 'bell', 'drops', 'heart', pad_cut=600, lead_gain=0.22, v=v)
 
 
-def music_desert():
+def music_desert(v=0):
     mel = [(0, 74, 1), (1, 75, 0.5), (1.5, 78, 0.5), (2, 79, 1), (3, 78, 0.5), (3.5, 75, 0.5), (4, 74, 2),
            (8, 81, 1), (9, 79, 0.5), (9.5, 78, 0.5), (10, 75, 1), (11, 74, 1), (12, 74, 4),
            (16, 74, 1), (17, 75, 0.5), (17.5, 78, 0.5), (18, 79, 2), (20, 81, 1), (21, 82, 1), (22, 81, 2),
            (24, 79, 1), (25, 78, 1), (26, 75, 1), (27, 74, 1), (28, 74, 4)]
-    return region_song(['D', 'Eb', 'D', 'Cm', 'D', 'Eb', 'Cm', 'D'], 96, mel, 'oud', 'oud', 'hand', lead_gain=0.3)
+    return region_song(['D', 'Eb', 'D', 'Cm', 'D', 'Eb', 'Cm', 'D'], 96, mel, 'oud', 'oud', 'hand', lead_gain=0.3, v=v)
 
 
-def music_montagnes():
+def music_montagnes(v=0):
     mel = [(0, 67, 3), (3, 71, 1), (4, 74, 4), (8, 72, 2), (10, 71, 2), (12, 67, 4),
            (16, 67, 3), (19, 71, 1), (20, 76, 4), (24, 74, 2), (26, 72, 2), (28, 71, 4)]
-    return region_song(['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'D'], 70, mel, 'horn', 'harp', pad_vol=0.1, pad_cut=1100, lead_gain=0.22)
+    return region_song(['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'D'], 70, mel, 'horn', 'harp', pad_vol=0.1, pad_cut=1100, lead_gain=0.22, v=v)
 
 
-def music_toundra():
+def music_toundra(v=0):
     mel = [(0, 81, 2), (4, 76, 2), (8, 79, 2), (12, 72, 4), (16, 81, 2), (20, 84, 2), (24, 79, 2), (28, 76, 4)]
-    return region_song(['Am', 'F', 'C', 'Em', 'Am', 'F', 'C', 'Em'], 56, mel, 'bell', 'drops', bass=False, pad_cut=700, lead_gain=0.2)
+    return region_song(['Am', 'F', 'C', 'Em', 'Am', 'F', 'C', 'Em'], 56, mel, 'bell', 'drops', bass=False, pad_cut=700, lead_gain=0.2, v=v)
 
 
-def music_bois_enchante():
+def music_bois_enchante(v=0):
     mel = [(0, 77, 1), (1, 79, 1), (2, 81, 2), (4, 83, 1), (5, 81, 1), (6, 79, 2), (8, 77, 3), (12, 72, 4),
            (16, 77, 1), (17, 79, 1), (18, 81, 2), (20, 84, 2), (22, 83, 2), (24, 81, 3), (28, 79, 4)]
-    return region_song(['F', 'G', 'Am', 'F', 'F', 'G', 'Em', 'F'], 76, mel, 'flute', 'celesta', lead_gain=0.28)
+    return region_song(['F', 'G', 'Am', 'F', 'F', 'G', 'Em', 'F'], 76, mel, 'flute', 'celesta', lead_gain=0.28, v=v)
 
 
-def music_volcan():
+def music_volcan(v=0):
     mel = [(0, 60, 1), (1, 63, 1), (2, 67, 2), (4, 68, 2), (6, 67, 2), (8, 65, 1), (9, 63, 1), (10, 62, 2), (12, 60, 4),
            (16, 60, 1), (17, 63, 1), (18, 67, 2), (20, 72, 2), (22, 71, 2), (24, 68, 2), (26, 67, 2), (28, 67, 4)]
-    return region_song(['Cm', 'Ab', 'Bb', 'G', 'Cm', 'Ab', 'Fm', 'G'], 100, mel, 'square', 'stabs', 'war', pad_cut=700, lead_gain=0.2)
+    return region_song(['Cm', 'Ab', 'Bb', 'G', 'Cm', 'Ab', 'Fm', 'G'], 100, mel, 'square', 'stabs', 'war', pad_cut=700, lead_gain=0.2, v=v)
 
 
-def music_jungle():
+def music_jungle(v=0):
     mel = [(0, 72, 0.5), (0.5, 74, 0.5), (1, 76, 1), (2, 79, 1), (3, 76, 1), (4, 74, 2), (6, 72, 2),
            (8, 69, 1), (9, 72, 1), (10, 74, 2), (12, 76, 4),
            (16, 79, 0.5), (16.5, 81, 0.5), (17, 79, 1), (18, 76, 1), (19, 74, 1), (20, 72, 2), (22, 74, 2), (24, 69, 4), (28, 72, 4)]
-    return region_song(['Am', 'C', 'G', 'Am', 'F', 'C', 'G', 'Am'], 112, mel, 'flute', 'marimba', 'shaker', lead_gain=0.24)
+    return region_song(['Am', 'C', 'G', 'Am', 'F', 'C', 'G', 'Am'], 112, mel, 'flute', 'marimba', 'shaker', lead_gain=0.24, v=v)
 
 
-def music_dungeon():
+def music_dungeon(v=0):
     mel = [(4, 64, 2), (12, 65, 2), (20, 64, 2), (26, 68, 4)]
-    return region_song(['Am', 'Am', 'Dm', 'E', 'Am', 'Fm', 'Dm', 'E'], 58, mel, 'bell', 'drops', 'heart', pad_cut=500, pad_vol=0.1, lead_gain=0.18)
+    return region_song(['Am', 'Am', 'Dm', 'E', 'Am', 'Fm', 'Dm', 'E'], 58, mel, 'bell', 'drops', 'heart', pad_cut=500, pad_vol=0.1, lead_gain=0.18, v=v)
 
 
-def music_boss():
+def music_boss(v=0):
     mel = []
     riff = [(0, 72, 0.5), (0.5, 72, 0.5), (1, 75, 0.5), (1.5, 72, 0.5), (2, 79, 1), (3, 77, 0.5), (3.5, 75, 0.5)]
     for b in range(8):
         sh = {1: -4, 2: -2, 3: -5, 5: -4, 6: -7, 7: -5}.get(b, 0)
         mel += [(t + b * 4, n + sh, d) for t, n, d in riff]
-    return region_song(['Cm', 'Ab', 'Bb', 'G', 'Cm', 'Ab', 'Fm', 'G'], 150, mel, 'horn', 'stabs', 'battle', pad_cut=1400, pad_vol=0.1, lead_gain=0.22)
+    return region_song(['Cm', 'Ab', 'Bb', 'G', 'Cm', 'Ab', 'Fm', 'G'], 150, mel, 'horn', 'stabs', 'battle', pad_cut=1400, pad_vol=0.1, lead_gain=0.22, v=v)
 
 
 # ---------------------------------------------------------------- impacts : arme qui frappe et matière touchée
@@ -1001,6 +1080,9 @@ def main():
             continue
         write(os.path.join(a.out, 'music', name + '.wav'), fn(), 0.8)
         n += 1
+        for v in range(1, VARIANTS + 1):
+            write(os.path.join(a.out, 'music', '%s_%d.wav' % (name, v + 1)), fn(v), 0.8)
+            n += 1
     print('%d son(s) écrit(s) dans %s' % (n, a.out))
 
 

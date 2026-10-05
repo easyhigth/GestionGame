@@ -8,15 +8,15 @@
 [ext_resource type="Resource" path="res://data/items/bloc_ardoise.tres" id="r5"]
 [ext_resource type="Resource" path="res://data/items/bloc_pierre_brute.tres" id="r6"]
 [ext_resource type="Resource" path="res://data/items/bloc_terre.tres" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/swamp_tree_1.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/swamp_tree_2.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_1.glb" id="r10"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_2.glb" id="r11"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/mushroom_purple.glb" id="r12"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/bush_1.glb" id="r13"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r14"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/reeds_1.glb" id="r15"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/reeds_2.glb" id="r16"]
+[ext_resource type="PackedScene" path="res://scenes/decor/swamp_tree_1.tscn" id="r8"]
+[ext_resource type="PackedScene" path="res://scenes/decor/swamp_tree_2.tscn" id="r9"]
+[ext_resource type="PackedScene" path="res://scenes/decor/dead_tree_1.tscn" id="r10"]
+[ext_resource type="PackedScene" path="res://scenes/decor/dead_tree_2.tscn" id="r11"]
+[ext_resource type="PackedScene" path="res://scenes/decor/mushroom_purple.tscn" id="r12"]
+[ext_resource type="PackedScene" path="res://scenes/decor/bush_1.tscn" id="r13"]
+[ext_resource type="PackedScene" path="res://scenes/decor/rock_1.tscn" id="r14"]
+[ext_resource type="PackedScene" path="res://scenes/decor/reeds_1.tscn" id="r15"]
+[ext_resource type="PackedScene" path="res://scenes/decor/reeds_2.tscn" id="r16"]
 [ext_resource type="Resource" path="res://data/enemies/slime_acide.tres" id="r17"]
 [ext_resource type="Resource" path="res://data/enemies/homme_lezard.tres" id="r18"]
 [ext_resource type="Resource" path="res://data/enemies/araignee.tres" id="r19"]
@@ -27,6 +27,7 @@
 [ext_resource type="Resource" path="res://data/races/gobelin.tres" id="r24"]
 [ext_resource type="Resource" path="res://data/races/slime.tres" id="r25"]
 [ext_resource type="Resource" path="res://data/races/insectoide.tres" id="r26"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_marais.tscn" id="obelisk"]
 
 [resource]
 script = ExtResource("1")
@@ -76,3 +77,5 @@ resource_chance = 0.012
 recruit_races = Array[ExtResource("4")]([ExtResource("r23"), ExtResource("r24"), ExtResource("r25"), ExtResource("r26")])
 weather_weights = {"clair": 2, "nuageux": 3, "pluie": 3, "orage": 1, "brouillard": 4}
 precipitation = "pluie"
+obelisk = ExtResource("obelisk")
+obelisk_glow = Color(0.753, 1.000, 0.439, 1)

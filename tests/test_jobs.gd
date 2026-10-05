@@ -86,6 +86,15 @@ func _process(_d) -> bool:
 		check("enchanteur : une rune", got.sanctuaire_runes.any(func(x): return str(x).begins_with("rune_")))
 		check("architecte : des blocs", got.bureau_architecte.any(func(x): return str(x).begins_with("bloc_")))
 		check("métiers connus", vs[0].JOB_NAMES.has("alchimiste") and vs[0].JOBS.has("dresseur"))
+		print("== tenues de métier")
+		var tv = vs[0]
+		tv.evo_model = 0
+		for id in ["taverne", "carriere"]:
+			tv.work_room = room(id, 10 + i)
+			var mp: String = tv.get_node("Visual").model.resource_path
+			check("tenue de %s : %s" % [id, mp.get_file()], mp.get_file().begins_with("%s_%s" % [tv.race.model_id, tv.work_job()]))
+		tv.work_room = null
+		check("sans métier : habits de base", "/base/" in str(tv.get_node("Visual").model.resource_path))
 		print("== potions")
 		for id in ["potion_soin", "potion_force", "potion_garde", "potion_celerite"]:
 			p.inventory.add(items.get_item(id), 2)

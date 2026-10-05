@@ -501,9 +501,11 @@ CREATURE_ACCENT = {
     'wolf': 0x8ad8ff, 'wolf_alpha': 0xff5a3a, 'wolf_frost': 0x9ae8ff, 'boar': 0xff8a3a, 'bear_snow': 0x7ac8ff,
     'slime_blue': 0x9ad8ff, 'slime_acid': 0xc8ff5a, 'slime_magma': 0xffd040, 'spider': 0xff3a3a,
     'scorpion': 0x8aff4a, 'salamander': 0xffb040,
+    'yeti': 0x4ad8ff, 'ice_elemental': 0xe0faff, 'mammoth': 0x9ae8ff,
 }
 CREATURE_HORN = {'wolf': 0xd8d8e0, 'wolf_alpha': 0x2a2226, 'wolf_frost': 0xeaf4fc, 'boar': 0xe8e0c8, 'bear_snow': 0xd8cbb0,
-                 'spider': 0x1a1418, 'scorpion': 0x8a6a2a, 'salamander': 0x3a2220}
+                 'spider': 0x1a1418, 'scorpion': 0x8a6a2a, 'salamander': 0x3a2220,
+                 'yeti': 0x9a8a78, 'ice_elemental': 0xc8f0ff, 'mammoth': 0xf0e8d4}
 
 
 def _find(node, name):

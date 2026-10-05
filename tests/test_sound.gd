@@ -62,8 +62,22 @@ func _process(_d) -> bool:
 		check("%d musiques chargées (régions, donjon, boss) %s" % [all_mus.size(), str(mus)], mus.is_empty())
 		var ui_missing := ["ui_close", "ui_page", "ui_hover"].filter(func(n): return snd._stream(snd.SFX_DIR, n) == null)
 		check("sons d'interface : parchemin, page, survol", ui_missing.is_empty())
-		var loop_s = snd._stream(snd.MUSIC_DIR, "day", true)
-		check("musique en boucle (%.1f s, fin %d)" % [loop_s.get_length(), loop_s.loop_end], loop_s is AudioStreamWAV and loop_s.loop_mode == AudioStreamWAV.LOOP_FORWARD and absi(loop_s.loop_end - int(loop_s.get_length() * loop_s.mix_rate)) < 2 and loop_s.loop_end > 22050 * 10)
+		# chaque musique : le thème et deux variantes, enchaînés au hasard et sans fin
+		var short := []
+		var total := 0.0
+		for n in all_mus:
+			var pl = snd._stream(snd.MUSIC_DIR, n, true)
+			if not (pl is AudioStreamPlaylist and pl.shuffle and pl.loop and pl.stream_count == 3):
+				short.append(n)
+				continue
+			var sec := 0.0
+			for k in pl.stream_count:
+				var part = pl.get_list_stream(k)
+				if not (part is AudioStreamWAV and part.loop_mode == AudioStreamWAV.LOOP_DISABLED and part.get_length() > 10.0):
+					short.append("%s[%d]" % [n, k])
+				sec += part.get_length() if part else 0.0
+			total += sec
+		check("musiques en 3 parties enchaînées au hasard (%.0f s de musique en tout) %s" % [total, str(short)], short.is_empty() and total > 14 * 60.0)
 		check("bus Musique et Bruitages", AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("Sfx") >= 0)
 		var sg = root.get_node("SaveGame")
 		sg.options.music_volume = 0.25

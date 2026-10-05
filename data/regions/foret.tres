@@ -8,18 +8,18 @@
 [ext_resource type="Resource" path="res://data/items/bloc_terre.tres" id="r5"]
 [ext_resource type="Resource" path="res://data/items/bloc_rondins.tres" id="r6"]
 [ext_resource type="Resource" path="res://data/items/bloc_planches.tres" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_1.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_2.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/pine_3.glb" id="r10"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/oak_1.glb" id="r11"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/oak_2.glb" id="r12"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/mushroom_red.glb" id="r13"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/bush_1.glb" id="r14"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/bush_2.glb" id="r15"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r16"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r17"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/grass_1.glb" id="r18"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/flowers_2.glb" id="r19"]
+[ext_resource type="PackedScene" path="res://scenes/decor/pine_1.tscn" id="r8"]
+[ext_resource type="PackedScene" path="res://scenes/decor/pine_2.tscn" id="r9"]
+[ext_resource type="PackedScene" path="res://scenes/decor/pine_3.tscn" id="r10"]
+[ext_resource type="PackedScene" path="res://scenes/decor/oak_1.tscn" id="r11"]
+[ext_resource type="PackedScene" path="res://scenes/decor/oak_2.tscn" id="r12"]
+[ext_resource type="PackedScene" path="res://scenes/decor/mushroom_red.tscn" id="r13"]
+[ext_resource type="PackedScene" path="res://scenes/decor/bush_1.tscn" id="r14"]
+[ext_resource type="PackedScene" path="res://scenes/decor/bush_2.tscn" id="r15"]
+[ext_resource type="PackedScene" path="res://scenes/decor/rock_1.tscn" id="r16"]
+[ext_resource type="PackedScene" path="res://scenes/decor/rock_2.tscn" id="r17"]
+[ext_resource type="PackedScene" path="res://scenes/decor/grass_1.tscn" id="r18"]
+[ext_resource type="PackedScene" path="res://scenes/decor/flowers_2.tscn" id="r19"]
 [ext_resource type="Resource" path="res://data/enemies/loup.tres" id="r20"]
 [ext_resource type="Resource" path="res://data/enemies/araignee.tres" id="r21"]
 [ext_resource type="Resource" path="res://data/enemies/gobelin_pillard.tres" id="r22"]
@@ -32,6 +32,7 @@
 [ext_resource type="Resource" path="res://data/races/lycan.tres" id="r29"]
 [ext_resource type="Resource" path="res://data/races/dryade.tres" id="r30"]
 [ext_resource type="Resource" path="res://data/races/homme_bete.tres" id="r31"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_foret.tscn" id="obelisk"]
 
 [resource]
 script = ExtResource("1")
@@ -79,3 +80,5 @@ resource_chance = 0.014
 recruit_races = Array[ExtResource("4")]([ExtResource("r28"), ExtResource("r29"), ExtResource("r30"), ExtResource("r31")])
 weather_weights = {"clair": 3, "nuageux": 3, "pluie": 3, "orage": 1, "brouillard": 2}
 precipitation = "pluie"
+obelisk = ExtResource("obelisk")
+obelisk_glow = Color(0.604, 1.000, 0.541, 1)

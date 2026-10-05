@@ -39,8 +39,11 @@ var _threat: Combatant
 var _threat_timer := randf() * 0.5
 var _ko_left := 0.0
 var _combo := 0
-## Pièce où l'habitant travaille (voir Kingdom), ou null.
-var work_room = null
+## Pièce où l'habitant travaille (voir Kingdom), ou null. Son métier lui donne sa tenue (modèle <race>_<métier>.glb).
+var work_room = null:
+	set(r):
+		work_room = r
+		_refresh_model()
 ## Talents personnels : métier -> bonus d'affinité.
 var talents := {}
 var _stuck := 0.0
@@ -175,10 +178,16 @@ func set_race(new_race: RaceData) -> void:
 	_apply_level(true)
 
 
-## Le modèle de sa race (sa variante de couleur), ou de son évolution s'il existe (<race>_base_evoN.glb).
+## Le modèle de sa race (sa variante de couleur), ou de son évolution s'il existe (<race>_base_evoN.glb),
+## sinon la tenue de son métier s'il travaille (<race>_<métier>.glb). Un personnage de l'histoire garde
+## toujours son modèle à lui (StoryData.npc_model).
 func _model_scene() -> PackedScene:
 	if race == null:
 		return null
+	if has_meta("story"):
+		var sm := StoryData.npc_model(str(get_meta("story")), race.resource_path)
+		if sm:
+			return sm
 	if race.villager_models.is_empty():
 		return race.model
 	if model_variant < 0 or model_variant >= race.villager_models.size():
@@ -188,7 +197,29 @@ func _model_scene() -> PackedScene:
 		var path := base.resource_path.get_basename() + "_evo%d.glb" % evo_model
 		if ResourceLoader.exists(path):
 			return load(path)
+	var job := work_job()
+	if job != "":
+		var jm := race.job_model(job, model_variant)
+		if jm:
+			return jm
 	return base
+
+
+## Métier de la pièce où il travaille (« » : aucun).
+func work_job() -> String:
+	if work_room == null or not (work_room is Dictionary) or not work_room.has("type"):
+		return ""
+	var t := work_room.type as RoomTypeData
+	return t.job_id if t else ""
+
+
+func _refresh_model() -> void:
+	var vis := get_node_or_null("Visual") as VoxelCharacter
+	if vis == null or race == null:
+		return
+	var m := _model_scene()
+	if m and m != vis.model:
+		vis.set_model(m)
 
 
 ## Vie selon la race et le niveau.

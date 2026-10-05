@@ -18,8 +18,8 @@ const WATER_H := 3.6
 const ENTRANCE_CHANCE := 0.35
 const MIN_DEPTH := 3.5
 const CHEST_MODEL := preload("res://assets/furniture/coffre.glb")
-const CRYSTAL := preload("res://assets/environment/models/crystal_blue.glb")
-const ROCK := preload("res://assets/environment/models/rock_big.glb")
+const CRYSTAL := preload("res://scenes/decor/crystal_blue.tscn")
+const ROCK := preload("res://scenes/decor/rock_big.tscn")
 
 var world: WorldGenerator
 var player: Player

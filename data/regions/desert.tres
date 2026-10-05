@@ -8,14 +8,14 @@
 [ext_resource type="Resource" path="res://data/items/bloc_sable.tres" id="r5"]
 [ext_resource type="Resource" path="res://data/items/bloc_briques.tres" id="r6"]
 [ext_resource type="Resource" path="res://data/items/bloc_marbre_dore.tres" id="r7"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_1.glb" id="r8"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_2.glb" id="r9"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/cactus_3.glb" id="r10"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dead_tree_1.glb" id="r11"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_1.glb" id="r12"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_2.glb" id="r13"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/rock_big.glb" id="r14"]
-[ext_resource type="PackedScene" path="res://assets/environment/models/dry_grass_1.glb" id="r15"]
+[ext_resource type="PackedScene" path="res://scenes/decor/cactus_1.tscn" id="r8"]
+[ext_resource type="PackedScene" path="res://scenes/decor/cactus_2.tscn" id="r9"]
+[ext_resource type="PackedScene" path="res://scenes/decor/cactus_3.tscn" id="r10"]
+[ext_resource type="PackedScene" path="res://scenes/decor/dead_tree_1.tscn" id="r11"]
+[ext_resource type="PackedScene" path="res://scenes/decor/rock_1.tscn" id="r12"]
+[ext_resource type="PackedScene" path="res://scenes/decor/rock_2.tscn" id="r13"]
+[ext_resource type="PackedScene" path="res://scenes/decor/rock_big.tscn" id="r14"]
+[ext_resource type="PackedScene" path="res://scenes/decor/dry_grass_1.tscn" id="r15"]
 [ext_resource type="Resource" path="res://data/enemies/scorpion.tres" id="r16"]
 [ext_resource type="Resource" path="res://data/enemies/squelette.tres" id="r17"]
 [ext_resource type="Resource" path="res://data/enemies/homme_lezard.tres" id="r18"]
@@ -27,6 +27,7 @@
 [ext_resource type="Resource" path="res://data/races/humain.tres" id="r24"]
 [ext_resource type="Resource" path="res://data/races/mort_vivant.tres" id="r25"]
 [ext_resource type="Resource" path="res://data/races/homme_lezard.tres" id="r26"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_desert.tscn" id="obelisk"]
 
 [resource]
 script = ExtResource("1")
@@ -74,3 +75,5 @@ resource_chance = 0.008
 recruit_races = Array[ExtResource("4")]([ExtResource("r23"), ExtResource("r24"), ExtResource("r25"), ExtResource("r26")])
 weather_weights = {"clair": 7, "nuageux": 1, "pluie": 2, "orage": 0, "brouillard": 0}
 precipitation = "sable"
+obelisk = ExtResource("obelisk")
+obelisk_glow = Color(1.000, 0.816, 0.376, 1)

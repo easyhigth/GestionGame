@@ -199,7 +199,7 @@ func _make_pedestal() -> Node3D:
 		["bush_1", Vector3(-2.3, 0.0, 1.2), 1.0], ["flowers_1", Vector3(1.8, 0.0, 1.0), 1.2], ["grass_1", Vector3(-1.1, 0.0, 1.4), 1.0],
 		["flowers_2", Vector3(-3.2, 0.0, 0.2), 1.0]]
 	for p in props:
-		var scn: PackedScene = load("res://assets/environment/models/%s.glb" % p[0])
+		var scn: PackedScene = load("res://scenes/decor/%s.tscn" % p[0])
 		if scn:
 			var n := scn.instantiate() as Node3D
 			n.position = p[1]

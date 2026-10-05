@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/base/dryad_base.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/characters/bosses/dryade_mere.glb" id="r2"]
 [ext_resource type="PackedScene" path="res://assets/equipment/dryad_equipment.glb" id="r3"]
 [ext_resource type="Resource" path="res://data/items/staff.tres" id="r4"]
 [ext_resource type="Resource" path="res://data/items/mage_robe.tres" id="r5"]

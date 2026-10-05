@@ -2,7 +2,8 @@ extends Node
 ## Autoload « Sound » : bruitages, ambiances et musiques.
 ## Les sons sont dans assets/audio/sfx/<nom>.wav et assets/audio/music/<nom>.wav (fabriqués par
 ## tools/audio_generator.py). Pour mettre un vrai enregistrement, remplace le fichier en gardant le nom
-## (un .ogg du même nom est pris en priorité).
+## (un .ogg du même nom est pris en priorité). Une musique peut avoir des variantes <nom>_2, <nom>_3... :
+## le jeu enchaîne alors le thème et ses variantes dans un ordre au hasard, pour ne pas tourner en rond.
 ##   Sound.play("hit", position)   bruitage (3D si une position est donnée)
 ##   Sound.ui("ui_click")          bruitage d'interface
 ## La musique et l'ambiance sont choisies toutes seules : titre, jour, nuit, combat (boss ou raid).
@@ -10,6 +11,8 @@ extends Node
 const SFX_DIR := "res://assets/audio/sfx/"
 const MUSIC_DIR := "res://assets/audio/music/"
 const FADE := 1.6
+## Fondu entre deux parties d'une même musique (thème et variantes).
+const PART_FADE := 1.2
 ## Distance au-delà de laquelle un bruitage 3D ne s'entend plus.
 const HEAR_DISTANCE := 32.0
 ## Autour du village, on garde la musique « de chez soi ».
@@ -84,6 +87,25 @@ func _stream(dir: String, name: String, loop := false) -> AudioStream:
 		if ResourceLoader.exists(dir + name + ext):
 			s = load(dir + name + ext)
 			break
+	if s and loop and dir == MUSIC_DIR:
+		var parts: Array[AudioStream] = [s]
+		var i := 2
+		while i <= AudioStreamPlaylist.MAX_STREAMS:
+			var part := _stream(dir, "%s_%d" % [name, i])
+			if part == null:
+				break
+			parts.append(part)
+			i += 1
+		if parts.size() > 1:
+			var pl := AudioStreamPlaylist.new()
+			pl.shuffle = true
+			pl.loop = true
+			pl.fade_time = PART_FADE
+			pl.stream_count = parts.size()
+			for k in parts.size():
+				pl.set_list_stream(k, parts[k])
+			_streams[key] = pl
+			return pl
 	if s and loop:
 		s = s.duplicate()
 		if s is AudioStreamWAV:

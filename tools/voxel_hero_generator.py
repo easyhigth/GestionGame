@@ -10,7 +10,8 @@ scripts/hero/hero_appearance.gd remplace chaque repère par la couleur choisie p
 en gardant la nuance : on peut donc choisir n'importe quelle couleur.
 
 Chaque race a 3 styles (coiffure, cornes, espèce, élément... selon la race), et l'humain
-existe avec ou sans barbe.
+existe avec ou sans barbe. Le nain a toujours une barbe : courte de base, longue et tressée
+avec l'option « Barbe » (fichiers _beard).
 Écrit aussi hero_palettes.json : couleurs proposées par race et nom des styles.
 
 Usage :
@@ -50,6 +51,8 @@ STYLE_NAMES = {
     'insectoid': ['Style 1', 'Style 2', 'Style 3'],
     'undead': ['Style 1', 'Style 2', 'Style 3'],
 }
+# races qui ont l'option « Barbe » (modèles <race>_s<style>_beard.glb)
+BEARD_RACES = ('human', 'dwarf')
 HAIR_LABEL = {'harpy': 'Plumes', 'lycan': 'Fourrure', 'beastfolk': 'Cheveux', 'fairy': 'Cheveux et ailes',
               'dryad': 'Feuillage', 'angel': 'Cheveux'}
 
@@ -63,6 +66,7 @@ def hero(race, style, beard=False):
     p['hair'] = HAIR_KEY
     p['eye'] = EYE_KEY
     p['beard'] = beard
+    p['short_beard'] = race == 'dwarf' and not beard
     if race == 'spirit':
         p['el'] = style
         p['hs'] = 0
@@ -83,7 +87,7 @@ def main():
         for s in range(len(styles)):
             export_glb(hero(race, s), os.path.join(a.out, '%s_s%d.glb' % (race, s)))
             n += 1
-            if race == 'human':
+            if race in BEARD_RACES:
                 export_glb(hero(race, s, True), os.path.join(a.out, '%s_s%d_beard.glb' % (race, s)))
                 n += 1
         hx = lambda c: '#%06x' % c
@@ -92,7 +96,8 @@ def main():
             'hair': [hx(c) for c in HAIR.get(race, HAIR_ANY)],
             'eye': [hx(c) for c in EYE.get(race, EYE_ANY)] + [hx(c) for c in EYE_ANY if c not in EYE.get(race, [])][:4],
             'styles': styles,
-            'beard': race == 'human',
+            'beard': race in BEARD_RACES,
+            'beard_default': race == 'dwarf',
             'hair_label': HAIR_LABEL.get(race, 'Cheveux'),
         }
     with open(os.path.join(a.out, 'hero_palettes.json'), 'w') as f:

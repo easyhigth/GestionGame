@@ -159,7 +159,7 @@ func _telegraph_attack(m: String, windup: float) -> void:
 ## Les monstres agiles esquivent d'un bond, les monstres armés ou cuirassés lèvent leur garde (une
 ## attaque chargée la brise). Plus le monstre est fort, plus il le fait souvent.
 const AGILE := ["loup", "panthere", "harpie", "gobelin", "bandit", "homme_lezard", "araignee", "fee", "serpent", "salamandre", "esprit"]
-const GUARD := ["squelette", "orc", "bandit_chef", "seigneur", "aurele", "morvain", "demon", "ogre", "scorpion", "ren_possede"]
+const GUARD := ["squelette", "orc", "bandit_chef", "seigneur", "aurele", "morvain", "demon", "ogre", "scorpion", "ren_possede", "elementaire_glace"]
 var _react_cd := randf_range(1.0, 3.0)
 var _guard_left := 0.0
 

@@ -23,3 +23,20 @@ extends Resource
 @export var magic: int = 10
 ## Multiplicateur de vitesse de déplacement.
 @export_range(0.5, 2.0, 0.05) var speed_multiplier: float = 1.0
+
+
+const JOB_MODEL_DIR := "res://assets/characters/models/"
+## Métiers qui ont un modèle habillé (<race>_<métier>.glb), et métiers proches qui en empruntent un.
+const JOB_MODELS := ["forgeron", "marchand", "garde", "mage", "fermier", "mineur", "aubergiste", "chasseur"]
+const JOB_MODEL_ALIASES := {"cuisinier": "aubergiste", "boulanger": "aubergiste", "enchanteur": "mage", "dresseur": "chasseur"}
+
+
+## Modèle habillé pour le métier `job` (variante de couleur `variant` : 0, 1 ou 2), ou null si ce métier n'en a pas.
+func job_model(job: String, variant := 0) -> PackedScene:
+	job = JOB_MODEL_ALIASES.get(job, job)
+	if model_id == "" or not job in JOB_MODELS:
+		return null
+	var path := JOB_MODEL_DIR + "%s_%s%s.glb" % [model_id, job, "" if variant <= 0 else "_v%d" % (variant + 1)]
+	if not ResourceLoader.exists(path):
+		path = JOB_MODEL_DIR + "%s_%s.glb" % [model_id, job]
+	return load(path) as PackedScene if ResourceLoader.exists(path) else null
