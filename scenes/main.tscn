@@ -109,8 +109,8 @@ background_color = Color(0.53, 0.74, 0.9, 1)
 sky = SubResource("Sky_main")
 ambient_light_source = 2
 reflected_light_source = 1
-ambient_light_color = Color(0.74, 0.8, 0.98, 1)
-ambient_light_energy = 0.8
+ambient_light_color = Color(0.82, 0.84, 0.9, 1)
+ambient_light_energy = 0.88
 
 [node name="Main" type="Node3D"]
 
@@ -126,7 +126,7 @@ directional_shadow_max_distance = 45.0
 
 [node name="Remplissage" type="DirectionalLight3D" parent="."]
 transform = Transform3D(-0.866, 0.2, -0.4579, 0, 0.9165, 0.4003, 0.5, 0.3464, -0.7931, 0, 20, 0)
-light_color = Color(0.7, 0.8, 1, 1)
+light_color = Color(1, 0.93, 0.84, 1)
 light_energy = 0.38
 light_specular = 0.0
 
