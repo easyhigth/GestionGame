@@ -219,6 +219,11 @@ func _process(_d) -> bool:
 		var house = k.rooms.filter(func(r): return r.type and r.type.id == "maison")
 		check("maison reconnue (%d pièce(s))" % house.size(), not house.is_empty())
 		mark("abri bâti")
+		# les voyageurs ne viennent qu'auprès d'un camp : le héros plante le drapeau du royaume près de l'arrivée
+		var flag = items.get_item(w.FLAG_ID)
+		w.plant_legacy_flag()
+		p.inventory.remove(flag, 1)
+		check("drapeau du royaume planté (%s)" % str(w.home_cell), w.has_home())
 		var vn = get_first_node_in_group("village_needs")
 		times["habitant"] = t + vn.ARRIVAL_EVERY
 		print("   %-28s %5.1f min   (un voyageur arrive au plus tard 3 min après l'abri)" % ["1er habitant possible", times.habitant / 60.0])
