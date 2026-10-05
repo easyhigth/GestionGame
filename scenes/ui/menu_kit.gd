@@ -32,6 +32,19 @@ static func style(bg: Color, border: Color = C_FRAME, width := 2, radius := 4, m
 	return s
 
 
+## Fond sombre arrondi derrière les textes de la colonne de droite (sous la mini-carte) :
+## lisibles même sur la neige ou le sable en plein midi.
+static func text_backing() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.04, 0.06, 0.62)
+	sb.set_corner_radius_all(5)
+	sb.content_margin_left = 7
+	sb.content_margin_right = 7
+	sb.content_margin_top = 1
+	sb.content_margin_bottom = 2
+	return sb
+
+
 static func label(text: String, size := 13, color := C_TEXT) -> Label:
 	var l := Label.new()
 	l.text = KeyBindings.fmt(text)

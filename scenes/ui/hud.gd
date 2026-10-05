@@ -85,6 +85,7 @@ var _breath_fill: ColorRect
 var _underwater: ColorRect
 var _weather_label: Label
 var _quest_box: VBoxContainer
+var _quest_panel: PanelContainer
 var _quest_refresh := 0.0
 var _hotbar: VBoxContainer
 var _hotbar_row: HBoxContainer
@@ -803,6 +804,18 @@ func _outlined(text: String, size: int) -> Label:
 	return l
 
 
+## Texte de la colonne de droite : calé à droite, sur fond sombre, aussi large que son texte.
+func _right_text(l: Label, top: float) -> void:
+	l.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	l.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	l.offset_left = -12
+	l.offset_right = -12
+	l.offset_top = top
+	l.offset_bottom = top
+	l.add_theme_stylebox_override("normal", MenuKit.text_backing())
+
+
 func _update_health() -> void:
 	if player == null or _hp_fill == null:
 		return
@@ -866,8 +879,8 @@ func _process(delta: float) -> void:
 	if _quest_refresh <= 0.0:
 		_quest_refresh = 1.0
 		_update_quests()
-		if _quest_box and player:
-			_quest_box.visible = not player.building
+		if _quest_panel and player:
+			_quest_panel.visible = not player.building and _quest_box.get_child_count() > 0
 	# horloge et météo : 4 fois par seconde suffisent (la météo cherche la région du village)
 	_clock_timer -= delta
 	if _clock and day_cycle and day_cycle.is_inside_tree() and _clock_timer <= 0.0:
@@ -1083,24 +1096,12 @@ func _build_day_and_guide() -> void:
 	get_parent().add_child.call_deferred(board)
 	board.changed.connect(_update_quests)
 	_clock = _outlined("", 12)
-	_clock.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_clock.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_clock.offset_left = -300
-	_clock.offset_right = -12
-	_clock.offset_top = 244
-	_clock.offset_bottom = 262
+	_right_text(_clock, 246)
 	add_child(_clock)
 	# météo (et marchand au village) sous l'horloge
 	_weather_label = _outlined("", 11)
-	_weather_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	_weather_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_weather_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_weather_label.offset_left = -420
-	_weather_label.offset_right = -12
-	_weather_label.offset_top = 261
-	_weather_label.offset_bottom = 295
-	_weather_label.add_theme_color_override("font_color", Color("d8e4f0"))
+	_right_text(_weather_label, 268)
+	_weather_label.add_theme_color_override("font_color", Color("e4eef8"))
 	add_child(_weather_label)
 	guide = GuidePanel.new()
 	guide.player = player
@@ -1155,15 +1156,21 @@ func _build_day_and_guide() -> void:
 	add_child(quest_dialog)
 	player.quest_talk.connect(func(v): quest_dialog.open(v))
 	# suivi des quêtes en cours, sous l'horloge
+	# (sur un fond sombre, comme l'horloge : lisible sur la neige et le sable)
+	_quest_panel = PanelContainer.new()
+	_quest_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_quest_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_quest_panel.offset_left = -12
+	_quest_panel.offset_right = -12
+	_quest_panel.offset_top = 334
+	_quest_panel.add_theme_stylebox_override("panel", MenuKit.text_backing())
+	_quest_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_quest_panel.visible = false
+	add_child(_quest_panel)
 	_quest_box = VBoxContainer.new()
-	_quest_box.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	_quest_box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_quest_box.offset_left = -300
-	_quest_box.offset_right = -12
-	_quest_box.offset_top = 314
 	_quest_box.add_theme_constant_override("separation", 1)
 	_quest_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_quest_box)
+	_quest_panel.add_child(_quest_box)
 
 
 ## Double barre du bas, toujours affichée : en haut la construction façon Minecraft (Ctrl+1 à Ctrl+0),
@@ -1328,6 +1335,7 @@ func _update_quests() -> void:
 	for c in _quest_box.get_children():
 		_quest_box.remove_child(c)
 		c.queue_free()
+	_quest_panel.visible = false
 	# l'histoire principale en premier
 	var st := get_tree().get_first_node_in_group("story") as Story
 	if st and not st.is_done():
@@ -1342,6 +1350,7 @@ func _update_quests() -> void:
 		sl.custom_minimum_size.x = 288
 		sl.add_theme_color_override("font_color", Color("f0e6c8"))
 		_quest_box.add_child(sl)
+		_quest_panel.visible = true
 	var qb := get_tree().get_first_node_in_group("quests") as QuestBoard
 	if qb == null:
 		return
@@ -1356,19 +1365,17 @@ func _update_quests() -> void:
 		p.custom_minimum_size.x = 288
 		p.add_theme_color_override("font_color", Color("d8ccb0"))
 		_quest_box.add_child(p)
+		_quest_panel.visible = true
 
 
 func _place_help() -> void:
-	# sous la mini-carte, en haut à droite
-	info.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	info.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	info.offset_left = -300
-	info.offset_right = -12
-	info.offset_top = 294
-	info.offset_bottom = 310
-	info.add_theme_font_size_override("font_size", 10)
-	info.modulate = Color(1, 1, 1, 0.7)
+	# sous la mini-carte, en haut à droite (sur fond sombre : lisible sur la neige et le sable)
+	_right_text(info, 308)
+	info.add_theme_font_size_override("font_size", 11)
+	info.add_theme_color_override("font_color", Color("e8e0d0"))
+	info.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.06))
+	info.add_theme_constant_override("outline_size", 3)
+	info.modulate = Color.WHITE
 
 
 var _camp_msg_at := -100000
