@@ -122,9 +122,9 @@ func knockback_strength() -> float:
 	return data.knockback if data else 4.0
 
 
-func _start_attack() -> void:
+func _start_attack(ranged := false) -> void:
 	var moves := data.attack_moves if data and not data.attack_moves.is_empty() else PackedStringArray(["enemy_chop"])
-	var m: String = moves[randi() % moves.size()]
+	var m: String = data.ranged_move if ranged else moves[randi() % moves.size()]
 	if not perform(m, data.attack_speed if data else 1.0):
 		return
 	# avertissement : il prend la pose de préparation en clignotant de sa couleur
@@ -139,6 +139,10 @@ func _start_attack() -> void:
 func _telegraph_attack(m: String, windup: float) -> void:
 	var big := (data.model_scale if data else 1.0) >= 1.4
 	var reach := attack_reach()
+	if data and m == data.ranged_move:
+		# tir : une bande rouge le long de la trajectoire (on l'évite en sortant de côté)
+		SkillFX.telegraph(self, global_position, 0.3, windup + 0.1, SkillFX.TELEGRAPH, facing, data.ranged_range)
+		return
 	match m:
 		"charge_ram":
 			var lunge: Array = MoveLibrary.get_move(m).get("lunge", [0, 0, 3.0])
@@ -323,22 +327,58 @@ func _fight(delta: float, speed: float) -> void:
 	if dist > 0.01:
 		facing = to / dist
 	var reach := attack_reach() + _target.body_radius * 0.5
+	var shooter := can_shoot()
 	if _attack_cooldown <= 0.0 and (_has_token or Combat.take_token(_target, self)):
 		_has_token = true
-		if dist > reach:
-			velocity = facing * speed
-		else:
+		if dist <= reach:
 			_start_attack()
+		elif shooter and dist >= MIN_SHOT and dist <= data.ranged_range:
+			_start_attack(true)
+		else:
+			velocity = facing * speed
 		return
 	# pas son tour : il tourne autour de sa cible en gardant ses distances
 	_orbit_timer -= delta
 	if _orbit_timer <= 0.0:
 		_orbit_timer = randf_range(1.5, 3.0)
 		_orbit_dir = -_orbit_dir if randf() < 0.4 else _orbit_dir
-	var ring := reach + 1.6
+	# les tireurs gardent leurs distances
+	var ring := clampf(data.ranged_range * 0.6, reach + 1.6, 7.0) if shooter else reach + 1.6
 	var side := facing.cross(Vector3.UP) * _orbit_dir
 	var radial := facing * clampf(dist - ring, -1.0, 1.0)
 	velocity = (side * 0.55 + radial).normalized() * speed * 0.45 if (side * 0.55 + radial).length() > 0.05 else Vector3.ZERO
+
+
+## Monstre qui tire de loin (harpie, fée, squelette...) : voir EnemyData.ranged_move.
+func can_shoot() -> bool:
+	return data != null and data.ranged_move != "" and data.ranged_range > MIN_SHOT
+
+
+## En deçà, il préfère frapper (ou s'approcher pour frapper).
+const MIN_SHOT := 3.5
+
+
+## Tir : un projectile de sa couleur (ou une flèche) part tout droit devant lui.
+func _cast(h: Dictionary) -> void:
+	if not can_shoot():
+		super(h)
+		return
+	var count := maxi(1, int(h.get("spread", data.ranged_spread)))
+	var holder: Node = get_tree().current_scene if get_tree().current_scene else get_tree().root
+	for i in count:
+		var bolt := MagicBolt.new()
+		bolt.shooter = self
+		bolt.direction = Vector3(facing.x, 0, facing.z).normalized().rotated(Vector3.UP, (i - (count - 1) / 2.0) * 0.3)
+		bolt.arrow = data.projectile == "arrow"
+		bolt.color = data.projectile_color
+		bolt.damage = roundi(attack_power() * data.ranged_damage * float(h.get("dmg", 1.0)) * _move_damage)
+		bolt.knockback = 2.0
+		bolt.range_left = data.ranged_range + 2.0
+		holder.add_child(bolt)
+		# plus lents que ceux du héros : on a le temps de les voir venir
+		bolt.speed = 15.0 if bolt.arrow else 10.0
+		bolt.global_position = global_position + Vector3(0, minf(1.1 * visual.scale.y, 1.4), 0) + bolt.direction * (body_radius + 0.4)
+	Sound.play("swing", global_position + Vector3(0, 1, 0), -6.0)
 
 
 func _wander(delta: float, speed: float) -> void:

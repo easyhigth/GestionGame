@@ -48,3 +48,16 @@ extends Resource
 ## Objets qu'il peut laisser tomber ; loot_chances[i] = chance (0 à 1) de lâcher loot[i].
 @export var loot: Array[ItemData] = []
 @export var loot_chances: PackedFloat32Array = PackedFloat32Array()
+
+@export_group("Tir à distance")
+## Attaque à distance (animation de MoveLibrary : enemy_shoot, enemy_spell, spit) ; vide = corps à corps seulement.
+@export var ranged_move: String = ""
+## Il tire quand sa cible est à plus de 3,5 m et à moins de cette distance (au contact, il frappe).
+@export var ranged_range: float = 0.0
+## Projectile : « bolt » (orbe lumineux de sa couleur) ou « arrow » (flèche).
+@export var projectile: String = "bolt"
+@export var projectile_color: Color = Color(1.0, 0.6, 0.3)
+## Dégâts d'un tir (× attaque).
+@export var ranged_damage: float = 0.8
+## Nombre de projectiles par tir (en éventail).
+@export var ranged_spread: int = 1

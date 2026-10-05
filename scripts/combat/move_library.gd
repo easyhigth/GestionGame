@@ -426,3 +426,34 @@ static func _build() -> void:
 		"hits": [{"t": 0.62, "arc": 100, "reach": 1.3, "kb": 2.0}, {"t": 0.75, "arc": 100, "reach": 1.3, "kb": 2.0}],
 		"lunge": [0.45, 0.85, 3.2], "windup": 0.45,
 	}
+	# tirs des monstres (voir EnemyData.ranged_move) : longue préparation, puis le projectile part tout droit
+	_moves["enemy_shoot"] = {  # bras armé tiré en arrière, puis lancé vers l'avant (flèche, plume)
+		"duration": 1.0, "cancel": 0.95,
+		"keys": [
+			_k(0.0, GUARD),
+			_k(0.5, {"ArmL": Vector3(-100, 0, 40), "HandL": H, "ArmR": Vector3(-90, 0, -10), "Torso": Vector3(-6, 35, 0), "Head": Vector3(0, -20, 0)}, Vector3(0, 0, -0.08)),
+			_k(0.62, {"ArmL": Vector3(-88, 0, -10), "HandL": H, "ArmR": Vector3(-40, 0, -20), "Torso": Vector3(8, -15, 0)}, Vector3(0, 0, 0.1)),
+			_k(0.8, {"ArmL": Vector3(-70, 0, -10), "HandL": H, "Torso": Vector3(6, -10, 0)}, Vector3(0, 0, 0.08)),
+		],
+		"hits": [{"t": 0.6, "cast": true}], "windup": 0.5,
+	}
+	_moves["enemy_spell"] = {  # les deux bras levés pour concentrer le sort, puis poussés vers l'avant
+		"duration": 1.05, "cancel": 1.0,
+		"keys": [
+			_k(0.0, GUARD),
+			_k(0.52, {"ArmL": Vector3(-165, 0, 25), "HandL": H, "ArmR": Vector3(-165, 0, -25), "Torso": Vector3(-12, 0, 0), "Head": Vector3(-15, 0, 0)}, Vector3(0, 0.08, -0.06)),
+			_k(0.64, {"ArmL": Vector3(-90, 0, 8), "HandL": H, "ArmR": Vector3(-90, 0, -8), "Torso": Vector3(12, 0, 0), "Head": Vector3(5, 0, 0)}, Vector3(0, 0, 0.12)),
+			_k(0.85, {"ArmL": Vector3(-75, 0, 8), "HandL": H, "ArmR": Vector3(-75, 0, -8), "Torso": Vector3(8, 0, 0)}, Vector3(0, 0, 0.1)),
+		],
+		"hits": [{"t": 0.62, "cast": true}], "windup": 0.52,
+	}
+	_moves["spit"] = {  # créatures : tête rejetée en arrière, puis crachat
+		"duration": 0.95, "cancel": 0.9,
+		"keys": [
+			_k(0.0, {}),
+			_k(0.48, {"Head": Vector3(-40, 0, 0), "ArmL": Vector3(15, 0, 0), "ArmR": Vector3(15, 0, 0), "LegL": Vector3(-15, 0, 0), "LegR": Vector3(-15, 0, 0)}, Vector3(0, 0.12, -0.2)),
+			_k(0.58, {"Head": Vector3(35, 0, 0), "ArmL": Vector3(-20, 0, 0), "ArmR": Vector3(-20, 0, 0)}, Vector3(0, -0.05, 0.15)),
+			_k(0.78, {"Head": Vector3(10, 0, 0)}, Vector3(0, 0, 0.05)),
+		],
+		"hits": [{"t": 0.56, "cast": true}], "windup": 0.48,
+	}
