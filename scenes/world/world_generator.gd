@@ -110,9 +110,10 @@ var small_decor_range := 60.0
 @export var pickup_scene: PackedScene
 ## Objets posés autour du feu au départ.
 @export var starting_loot: Array[ItemData] = []
-## Équipements rares qu'on peut trouver dans la nature.
+## Équipements qu'on peut (très rarement) trouver dans la nature : l'équipement vient surtout des monstres
+## vaincus (RareDrops.roll_gear).
 @export var wild_loot: Array[ItemData] = []
-@export_range(0.0, 0.01, 0.0001) var wild_loot_chance: float = 0.0006
+@export_range(0.0, 0.01, 0.0001) var wild_loot_chance: float = 0.0001
 @export var wood_item: ItemData
 @export var stone_item: ItemData
 @export var iron_ore_item: ItemData

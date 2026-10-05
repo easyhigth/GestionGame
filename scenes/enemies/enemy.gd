@@ -588,6 +588,16 @@ func _drop_loot() -> void:
 		n += 1
 	if not rare.is_empty():
 		RareDrops.announce(player as Player, rare)
+	# équipement : c'est surtout en battant des monstres qu'on en trouve
+	var gear := RareDrops.roll_gear(self, mult)
+	if gear:
+		var a := TAU * n / 5.0 + randf() * 0.5
+		var pos := global_position + Vector3(cos(a), 0, sin(a)) * 1.2
+		world.spawn_pickup(gear, pos, 1, get_parent())
+		if gear.rarity >= ItemData.Rarity.RARE:
+			VoxelBurst.spawn(world, pos + Vector3(0, 0.5, 0), gear.rarity_color(), 24, 3.0, 0.1, 1.0, "up", -1.0)
+		if gear.rarity >= ItemData.Rarity.EPIC and player is Player:
+			(player as Player).feat.emit("Butin : %s" % gear.display_name, gear.rarity_color())
 
 
 ## Matière qui sonne sous les coups, d'après le monstre.

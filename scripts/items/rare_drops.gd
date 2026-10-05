@@ -73,6 +73,32 @@ static func roll_enemy(e: Enemy, mult := 1.0) -> Array:
 	return out.filter(func(x): return x[0] != null)
 
 
+## Pièce d'équipement lâchée par un monstre vaincu (butin de niveau, voir Loot) : c'est la principale façon
+## d'en trouver, l'équipement posé au sol étant devenu très rare. Chance selon la robustesse du monstre
+## (5 % pour les plus faibles, 14 % au plus) ; un boss en lâche toujours une, au moins rare.
+const GEAR_CHANCE_MIN := 0.05
+const GEAR_CHANCE_MAX := 0.14
+const GEAR_BOSS_LUCK := 0.25
+
+
+static func gear_chance(e: Enemy) -> float:
+	if e.data == null:
+		return 0.0
+	if e is Boss:
+		return 1.0
+	return clampf(GEAR_CHANCE_MIN + e.data.max_health / 4000.0, GEAR_CHANCE_MIN, GEAR_CHANCE_MAX)
+
+
+## [ItemData] ou null. Les monstres des failles et les titans ont leur propre butin (Endgame).
+static func roll_gear(e: Enemy, mult := 1.0) -> ItemData:
+	if e.data == null or e.has_meta("rift") or e.has_meta("titan"):
+		return null
+	if randf() >= minf(1.0, gear_chance(e) * mult):
+		return null
+	var boss := e is Boss
+	return Loot.roll(maxi(1, e.level), GEAR_BOSS_LUCK if boss else 0.0, 0, ItemData.Rarity.RARE if boss else 0)
+
+
 ## Butin rare d'un coffre.
 static func roll_chest(kind: String) -> Array:
 	var out := []
