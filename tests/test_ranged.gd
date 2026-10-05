@@ -7,7 +7,7 @@ var p; var w
 var ok := true
 var game_ms := 0.0
 var out := (OS.get_environment("TEST_SHOTS") if OS.get_environment("TEST_SHOTS") != "" else OS.get_user_data_dir()) + "/rg_"
-var ids := ["fee_sauvage", "squelette", "harpie", "salamandre", "dryade_corrompue", "esprit_follet", "serpent"]
+var ids := ["fee_sauvage", "squelette", "harpie", "salamandre", "dryade_corrompue", "esprit_follet", "serpent", "elementaire_glace"]
 var idx := -1
 var e
 var at := 0.0
