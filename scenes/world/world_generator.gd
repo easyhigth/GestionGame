@@ -1867,8 +1867,8 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 		_trunk_shape.radius = 0.35
 		_trunk_shape.height = 3.0
 		_bush_shape = CylinderShape3D.new()
-		_bush_shape.radius = 0.5
-		_bush_shape.height = 1.0
+		_bush_shape.radius = 0.4
+		_bush_shape.height = 0.8
 		_rock_shape = BoxShape3D.new()
 		_rock_shape.size = Vector3(1.0, 1.0, 0.9)
 	var holder := Node3D.new()
@@ -1900,6 +1900,9 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 					jitter = 0.3
 				D_ROCK:
 					s = drng.randf_range(0.8, 1.3)
+				D_BUSH:
+					# plus bas que le regard : un buisson ne bouche plus le bas de l'écran
+					s = drng.randf_range(0.65, 0.85)
 			var pos := cell_center(cell) + Vector3(drng.randf_range(-jitter, jitter), 0, drng.randf_range(-jitter, jitter))
 			var basis := Basis(Vector3.UP, drng.randi_range(0, 3) * PI * 0.5).scaled(Vector3.ONE * s)
 			if not groups.has(scene):
@@ -1915,7 +1918,7 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 					shape_y = 1.5
 				D_BUSH:
 					shape = _bush_shape
-					shape_y = 0.5
+					shape_y = 0.4
 				D_ROCK, D_IRON, D_GOLD:
 					shape = _rock_shape
 					shape_y = 0.5
@@ -3425,17 +3428,32 @@ void vertex() {
 	float ph = origin.x * 0.37 + origin.z * 0.23;
 	vec3 sway = vec3(sin(TIME * 1.7 + ph) + 0.4 * sin(TIME * 4.1 + ph * 2.0), 0.0, cos(TIME * 1.3 + ph)) * 0.035 * h * leafy * wind;
 	VERTEX += sway;
+	// en bas de l'écran, entre la caméra et le héros : le décor entier s'efface (buisson, rocher,
+	// arbre planté là) plutôt que d'être coupé en coquille vide ; la zone s'ouvre comme le champ de
+	// vision (jusqu'aux coins de l'écran) et se referme avant le héros
+	if (see_radius > 0.0 && origin.y < see_to.y) {
+		vec2 dh = see_to.xz - see_from.xz;
+		float th = dot(origin.xz - see_from.xz, dh) / max(dot(dh, dh), 0.001);
+		float wide = (2.0 + 1.2 * th * length(dh)) * (1.0 - smoothstep(0.55, 0.85, th));
+		if (th > -0.1 && distance(origin.xz, see_from.xz + dh * th) < wide) {
+			VERTEX = vec3(0.0);
+		}
+	}
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
 void fragment() {
-	// les feuillages entre la caméra et le héros deviennent transparents
-	vec3 d = see_to - see_from;
-	float t = dot(wpos - see_from, d) / max(dot(d, d), 0.001);
-	if (see_radius > 0.0 && t > 0.0 && t < 0.97 && wpos.y > see_to.y + 0.2) {
-		float r = distance(wpos, see_from + d * t) / (see_radius * 1.25);
-		float dither = fract(sin(dot(floor(FRAGCOORD.xy), vec2(12.9898, 78.233))) * 43758.5453);
-		if (r < 0.7 + 0.3 * dither) { discard; }
+	// les feuillages qui cachent encore le héros s'ouvrent par petits cubes nets de 25 cm (dans le
+	// style du monde) plutôt qu'en nuage de points : entre la caméra et le héros, et contre la caméra
+	if (see_radius > 0.0) {
+		vec3 q = (floor(wpos * 4.0) + 0.5) * 0.25;
+		vec3 d = see_to - see_from;
+		float t = dot(q - see_from, d) / max(dot(d, d), 0.001);
+		bool cut = distance(q, see_from) < 1.6;
+		if (q.y > see_to.y + 0.2) {
+			cut = cut || (t > 0.0 && t < 0.97 && distance(q, see_from + d * t) < see_radius * 1.1);
+		}
+		if (cut) { discard; }
 	}
 	vec3 col = albedo.rgb * texture(tex, UV).rgb;
 	// saisons : les feuillages (couleurs vertes) jaunissent, rougissent ou se couvrent de neige
