@@ -44,7 +44,7 @@ func reset_colors() -> void:
 	hair_color = Color(pal["hair"][0])
 	eye_color = Color(pal["eye"][0])
 	style = 0
-	beard = false
+	beard = pal.get("beard_default", false)
 
 
 static var _palettes := {}

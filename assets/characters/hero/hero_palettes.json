@@ -30,6 +30,7 @@
    "Crête"
   ],
   "beard": true,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "elf": {
@@ -64,6 +65,7 @@
    "Crête"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "goblin": {
@@ -97,6 +99,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "orc": {
@@ -131,6 +134,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "lizard": {
@@ -167,6 +171,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "lycan": {
@@ -203,6 +208,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Fourrure"
  },
  "vampire": {
@@ -236,6 +242,7 @@
    "Crête"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "demon": {
@@ -272,6 +279,7 @@
    "Cornes dorées"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "dragonoid": {
@@ -308,6 +316,7 @@
    "Cornes dorées"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "fairy": {
@@ -342,6 +351,7 @@
    "Crête"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux et ailes"
  },
  "slime": {
@@ -376,6 +386,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "dwarf": {
@@ -408,7 +419,8 @@
    "Cheveux longs",
    "Cheveux courts (variante)"
   ],
-  "beard": false,
+  "beard": true,
+  "beard_default": true,
   "hair_label": "Cheveux"
  },
  "hobgoblin": {
@@ -440,6 +452,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "ogre": {
@@ -475,6 +488,7 @@
    "Trois cornes"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "kijin": {
@@ -507,6 +521,7 @@
    "Deux cornes, cheveux courts"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "beastfolk": {
@@ -540,6 +555,7 @@
    "Renard"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "harpy": {
@@ -573,6 +589,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Plumes"
  },
  "spirit": {
@@ -608,6 +625,7 @@
    "Lumière"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "angel": {
@@ -641,6 +659,7 @@
    "Ange déchu"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "dryad": {
@@ -673,6 +692,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Feuillage"
  },
  "insectoid": {
@@ -709,6 +729,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  },
  "undead": {
@@ -745,6 +766,7 @@
    "Style 3"
   ],
   "beard": false,
+  "beard_default": false,
   "hair_label": "Cheveux"
  }
 }
