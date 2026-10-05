@@ -37,12 +37,13 @@ var _night := false
 var _spawn_timer := 3.0
 var _night_monsters: Array = []
 var _sun: DirectionalLight3D
-## Lumière d'appoint, bleutée et sans ombre, venue du côté opposé au soleil : les faces à l'ombre
+## Lumière d'appoint sans ombre, venue du côté opposé au soleil : les faces à l'ombre
 ## gardent leur relief au lieu de tourner au noir.
 var _fill: DirectionalLight3D
+var _fill_day := Color(1.0, 0.93, 0.84)
 var _env: Environment
 var _day_sun := [Color(1, 0.96, 0.88), 0.95]
-var _day_env := [Color(0.53, 0.74, 0.9), Color(0.74, 0.8, 0.98), 0.8]
+var _day_env := [Color(0.53, 0.74, 0.9), Color(0.82, 0.84, 0.9), 0.88]
 var _sky_bg := Color(-1, -1, -1)
 
 
@@ -55,6 +56,8 @@ func _ready() -> void:
 	_env = env_node.environment if env_node else null
 	if _sun:
 		_day_sun = [_sun.light_color, _sun.light_energy]
+	if _fill:
+		_fill_day = _fill.light_color
 	if _env:
 		_day_env = [_env.background_color, _env.ambient_light_color, _env.ambient_light_energy]
 	# une partie chargée avant que le cycle n'existe
@@ -186,16 +189,20 @@ func _sync_sky() -> void:
 	mat.ground_bottom_color = bg.darkened(0.6)
 
 
-## La lumière d'appoint suit le soleil (ou la lune) : en face de lui, plongeante, à 40 % de sa force.
+## La lumière d'appoint suit le soleil (ou la lune) : en face de lui, rasante, à 40 % de sa force ;
+## chaude le jour (la lumière renvoyée par le sol), bleutée la nuit.
 ## Les donjons et les grottes baissent le soleil, elle baisse avec.
 func _sync_fill() -> void:
 	if _fill == null or _sun == null:
 		return
 	var d := -_sun.global_basis.z
 	var fill_dir := Vector3(-d.x, 0.0, -d.z)
-	fill_dir = (fill_dir.normalized() * 0.6 + Vector3.DOWN).normalized() if fill_dir.length() > 0.01 else Vector3.DOWN
+	# presque à l'horizontale : elle éclaire les faces à l'ombre (le visage du héros, les flancs) sans
+	# s'ajouter au soleil sur le dessus des blocs, qui virait au blanc à midi (neige, peau claire)
+	fill_dir = (fill_dir.normalized() + Vector3.DOWN * 0.45).normalized() if fill_dir.length() > 0.01 else Vector3.DOWN
 	_fill.global_basis = Basis.looking_at(fill_dir, Vector3.FORWARD if absf(fill_dir.y) > 0.99 else Vector3.UP)
 	_fill.light_energy = _sun.light_energy * 0.4
+	_fill.light_color = MOON_COLOR.lerp(_fill_day, daylight())
 
 
 ## 1 en plein jour, 0 la nuit, entre les deux à l'aube et au crépuscule.
