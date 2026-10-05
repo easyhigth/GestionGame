@@ -91,7 +91,8 @@ func _process(_d: float) -> bool:
 			return false
 		_vp.add_child(vc)
 		vc.set_equipment_library(race.equipment)
-		vc.set_model(race.villager_models[0] if not race.villager_models.is_empty() else race.model)
+		var own = load("res://scripts/story/story_data.gd").npc_model(_id.substr(4), race_path) if _id.begins_with("npc_") else null
+		vc.set_model(own if own else (race.villager_models[0] if not race.villager_models.is_empty() else race.model))
 		for it_id in info.get("kit", []):
 			var it = root.get_node("Items").get_item(it_id)
 			if it:

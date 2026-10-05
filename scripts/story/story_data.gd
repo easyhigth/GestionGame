@@ -202,6 +202,17 @@ const NPCS := {
 		"kit": ["staff", "mage_robe", "cape_blue"], "color": Color("b8c8ff"), "talents": {"mage": 1.0}, "near": ["sanctuaire", Vector3(0, 0, 0)]},
 }
 
+## Modèle propre d'un personnage (tools/voxel_story_generator.py) : le corps de sa race avec un trait à lui
+## (couronne, masque, bannière...) ; « _alt » pour sa seconde race (Pip hobgobelin). null s'il n'y en a pas.
+const MODEL_DIR := "res://assets/characters/story/"
+static func npc_model(id: String, race_path := "") -> PackedScene:
+	var info: Dictionary = NPCS.get(id, {})
+	if info.is_empty():
+		return null
+	var path := MODEL_DIR + id + ("_alt" if race_path != "" and race_path == info.get("race_alt", "") else "") + ".glb"
+	return load(path) if ResourceLoader.exists(path) else null
+
+
 ## Lieux réels où vivent certains personnages : [« city », nation, « hall » | « stall »] (dans une capitale),
 ## [« cave_city », nation] (une entrée de grotte au pied de la capitale), [« castle », abandonné ?] (un château lointain),
 ## [« cave_near », lieu] (une grotte près d'un autre lieu). Sans ce lieu (petit monde), le personnage campe comme avant.

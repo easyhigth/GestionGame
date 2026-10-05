@@ -1383,6 +1383,7 @@ func import_state(d: Dictionary) -> void:
 		var id := _story_id_of(v)
 		if id != "":
 			v.set_meta("story", id)
+			v._refresh_model()
 			npc_nodes[id] = v
 			npc_state[id] = "village"
 	_sync_shards()

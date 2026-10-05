@@ -179,10 +179,15 @@ func set_race(new_race: RaceData) -> void:
 
 
 ## Le modèle de sa race (sa variante de couleur), ou de son évolution s'il existe (<race>_base_evoN.glb),
-## sinon la tenue de son métier s'il travaille (<race>_<métier>.glb).
+## sinon la tenue de son métier s'il travaille (<race>_<métier>.glb). Un personnage de l'histoire garde
+## toujours son modèle à lui (StoryData.npc_model).
 func _model_scene() -> PackedScene:
 	if race == null:
 		return null
+	if has_meta("story"):
+		var sm := StoryData.npc_model(str(get_meta("story")), race.resource_path)
+		if sm:
+			return sm
 	if race.villager_models.is_empty():
 		return race.model
 	if model_variant < 0 or model_variant >= race.villager_models.size():
