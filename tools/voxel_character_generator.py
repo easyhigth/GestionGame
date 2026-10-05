@@ -123,24 +123,36 @@ CLOTH = {
     'forgeron': [0x7a6a58, 0x9c4a3a, 0x4a6a8a, 0x6a7a4a, 0x8a5a3a],
     'marchand': [0x8e44ad, 0xc0392b, 0x1f8a8a, 0xd98a2b, 0x2e6f4e],
     'garde': [0x8a94a6, 0x6a7a8a, 0x9a8a6a, 0x5a6a5a, 0x6a5a7a],
-    'mage': [0x4b3ca8, 0x1f7a7a, 0xa0303a, 0x2a5a9a, 0x7a3a8a]}
+    'mage': [0x4b3ca8, 0x1f7a7a, 0xa0303a, 0x2a5a9a, 0x7a3a8a],
+    'fermier': [0xd8c8a0, 0xa8b878, 0xc89a6a, 0x9ab0c8, 0xe0d0b0],
+    'mineur': [0x6a5a4a, 0x5a5a5a, 0x7a6248, 0x4a4a52],
+    'aubergiste': [0xe8dcc0, 0xb85a4a, 0x6a8a5a, 0xd0b080, 0x5a7a9a],
+    'chasseur': [0x5a6a3a, 0x6a5238, 0x4a5a48, 0x7a6a48]}
 PANTS = {
     'forgeron': [0x3a2e28, 0x2f3a4a, 0x4a3a2a, 0x3a4a3a],
     'marchand': [0x4a3a30, 0x2a3a5a, 0x5a2a3a, 0x3a3a3a],
     'garde': [0x3d4350, 0x4a3a30, 0x2f3a2f],
-    'mage': [0x2f2a5a, 0x1a3a4a, 0x4a1f2a]}
+    'mage': [0x2f2a5a, 0x1a3a4a, 0x4a1f2a],
+    'fermier': [0x3a5a8a, 0x5a4a32, 0x4a6a8a, 0x6a5a3a],
+    'mineur': [0x3a342e, 0x2e2e34, 0x4a3a2a],
+    'aubergiste': [0x4a3a30, 0x3a3a3a, 0x5a3a28],
+    'chasseur': [0x4a3a28, 0x3a4a2a, 0x5a4a32]}
 ACC = {
     'forgeron': [0x5a3a28, 0x3a3a3a, 0x7a4a2a, 0x2f4a5a],
     'marchand': [0x7a3f8f, 0xa8322a, 0x2a5f8a, 0xc9a13a, 0x2f7a4a],
     'garde': [0xb03a3a, 0x2a5f9a, 0x2f7a4a, 0xd4a12a],
-    'mage': [0x3b2f8a, 0x145a5a, 0x7a1f2a, 0x1f3f7a]}
+    'mage': [0x3b2f8a, 0x145a5a, 0x7a1f2a, 0x1f3f7a],
+    'fermier': [0xd8b860, 0xe0c878, 0xc8a050],
+    'mineur': [0xd0a020, 0xc06a20, 0x9a9a9a],
+    'aubergiste': [0xf2eee4, 0xe8e0cc, 0xf0e8d8],
+    'chasseur': [0x3f5a2a, 0x5a4026, 0x2f4a3a, 0x6a3a24]}
 TRIM = [0x7a1f2a, 0x1f3f7a, 0x2f5a3a, 0x5a3a28, 0x8a6a2a, 0x3a3a3a]
 BOOT = [0x3a2a1e, 0x2a2a2a, 0x5a3a28, 0x6a4a2a]
 ORB = [0x7fe0ff, 0xff8a5a, 0xa0ff8a, 0xff7ad0]
 BELT = [0x3a2a1e, 0x5a3a28, 0x2a2a2a, 0x7a2f2a]
 SACK = [0x8a6238, 0x6a4a38, 0x5a6a48, 0x7a5a7a]
 FUR = [0x6a4a34, 0x8a8a8a, 0x3a2a22, 0xa88a5a]
-JOBS = ['forgeron', 'marchand', 'garde', 'mage']
+JOBS = ['forgeron', 'marchand', 'garde', 'mage', 'fermier', 'mineur', 'aubergiste', 'chasseur']
 
 def gen(race, k, rnd):
     P = lambda a: a[int(math.floor(rnd() * len(a)))]
@@ -275,7 +287,7 @@ def hair(b, st, c, long_):
             V(1.5, 5, 1.6, c, s * (hw / 2 + 0.8), -hh * 0.4, hd / 2 - 1.4, h)
 
 def cape(b, k):
-    if not b['p']['cape'] or k == 'marchand': return
+    if not b['p']['cape'] or k in ('marchand', 'fermier', 'mineur', 'aubergiste'): return
     o = b['o']; p = b['p']; tH = o['tH']; T = b['T']; cw = T[2]['w']; top = b['top']
     V(cw + 0.6, tH * 1.25, 0.9, p['trim'], 0, tH * 0.42, -(T[2]['d'] / 2 + 0.8), top, rx=0.05)
     for i in range(4):
@@ -405,6 +417,95 @@ def dress(b, k):
         VG(2.8, 2.8, 2.8, p['orb'], 0, 28, 0, hp, rx=0.6, rz=0.6)
         VG(1.4, 1.4, 1.4, 0xffffff, 0, 28, 0, hp, rx=0.6, rz=0.6)
         VG(1.2, 1.2, 1.2, shade(p['orb'], 0.8), 2.2, 26.6, 0, hp, rz=0.8)
+    if k == 'fermier':
+        # chapeau de paille, salopette, fourche
+        straw = p['acc']
+        V(hw + 7, 0.8, hd + 7, straw, 0, HT + 0.2, 0, head)
+        V(hw + 1.2, 2.6, hd + 1.2, shade(straw, 0.95), 0, HT + 1.8, 0, head)
+        V(hw + 1.4, 0.8, hd + 1.4, 0x9a3a2a, 0, HT + 0.9, 0, head)
+        for i in range(6):
+            V(1.2, 0.6, 0.5, shade(straw, 0.8), -hw / 2 - 3 + i * (hw + 6) / 5, HT - 0.2, hd / 2 + 3.4, head)
+        V(ch['w'] * 0.62, ch['h'] + wa['h'], 0.8, p['pants'], 0, wa['y0'] + (ch['h'] + wa['h']) / 2, ch['d'] / 2 + 0.5, top)
+        V(ch['w'] * 0.4, 2.6, 0.5, shade(p['pants'], 0.85), 0, ch['cy'], ch['d'] / 2 + 1, top)
+        for s in (-1, 1):
+            V(1.2, sh['h'] + 1, sh['d'] + 0.9, p['pants'], s * ch['w'] * 0.24, tH - 1, 0, top)
+            V(1, 1, 0.6, gold, s * ch['w'] * 0.24, ch['y0'] + ch['h'] - 0.4, ch['d'] / 2 + 1, top)
+        for a in arms:
+            V(aw + 0.8, 1.4, ad + 0.8, shade(p['cloth'], 0.9), 0, -al * 0.42, 0, a)
+        V(1, 26, 1, wood, 0, 8, 0, hp)
+        V(5.4, 1, 1, 0x7d838c, 0, 21.4, 0, hp)
+        for x in (-2.2, 0, 2.2):
+            V(0.6, 4.2, 0.6, 0x9aa0ab, x, 24, 0, hp)
+        V(2.6, 3.2, 2.6, 0xd8b860, wa['w'] / 2 + 1.6, -0.6, 0.6, top)
+        V(2.8, 0.6, 2.8, 0x9a3a2a, wa['w'] / 2 + 1.6, 0.4, 0.6, top)
+    if k == 'mineur':
+        # casque à lampe, sac de minerai, pioche
+        V(hw + 1.4, 3, hd + 1.4, p['acc'], 0, HT + 0.2, 0, head)
+        V(hw + 2.4, 0.7, hd + 2.4, shade(p['acc'], 0.85), 0, HT - 1.2, 0, head)
+        V(2.6, 2.4, 1, 0x3a3a3a, 0, HT + 0.2, hd / 2 + 1.2, head)
+        VG(1.8, 1.6, 0.6, 0xffe08a, 0, HT + 0.2, hd / 2 + 1.8, head)
+        V(hw * 0.9, 1.4, hd * 0.9, 0x3a342e, 0, -HT - o['neck'] + 0.4, 0, head)
+        V(ch['w'] + 0.6, 1.4, ch['d'] + 0.6, p['belt'], 0, ch['y0'] + ch['h'] - 1.4, 0, top)
+        for s in (-1, 1):
+            V(1.4, tH * 0.9, 0.6, p['belt'], s * ch['w'] * 0.28, tH * 0.55, ch['d'] / 2 + 0.4, top, rz=s * 0.25)
+        bz = -(ch['d'] / 2 + 2.2)
+        V(7.6, 8, 3.4, p['sack'], 0, tH * 0.48, bz, top)
+        V(7.8, 1.2, 3.6, shade(p['sack'], 0.8), 0, tH * 0.48 + 4, bz, top)
+        for q in ((-2, 0x7d838c), (0.4, 0xd8b04a), (2.2, 0x8a6a5a)):
+            V(2, 1.8, 2, q[1], q[0], tH * 0.48 + 5.2, bz, top)
+        VG(1.2, 1.2, 1.2, 0x7fe0ff, 1.2, tH * 0.48 + 6, bz + 0.6, top)
+        for a in arms:
+            V(aw + 1, aw + 0.9, ad + 1, 0x5a4a3a, 0, -al + aw * 0.35, 0.2, a)
+        for l in legs:
+            V(o['lw'] + 0.8, o['legH'] * 0.18, o['ld'] + 0.8, shade(p['pants'], 0.8), 0, -o['legH'] * 0.6, 0.1, l)
+        V(1, 20, 1, wood, 0, 6, 0, hp)
+        V(1.6, 1.6, 1.6, 0x555b63, 0, 16, 0, hp)
+        for s in (-1, 1):
+            V(5, 1.4, 1.4, 0x7d838c, s * 3, 16.4, 0, hp, rz=-s * 0.25)
+            V(1.6, 1, 1, 0x9aa0ab, s * 6, 15.2, 0, hp, rz=-s * 0.7)
+    if k == 'aubergiste':
+        # grand tablier, torchon sur l'épaule, chope de bière
+        ap_ = p['acc']
+        V(ch['w'] * 0.7, ch['h'] * 0.9, 0.7, ap_, 0, ch['y0'] + ch['h'] * 0.45, ch['d'] / 2 + 0.5, top)
+        V(wa['w'] + 1, 10, 0.8, ap_, 0, wa['y0'] - 3.4, wa['d'] / 2 + 0.8, top)
+        V(wa['w'] + 1.2, 1.2, 0.9, shade(ap_, 0.88), 0, wa['y0'] - 8, wa['d'] / 2 + 0.85, top)
+        V(3, 2.4, 0.6, shade(ap_, 0.9), 1.8, wa['y0'] - 2, wa['d'] / 2 + 1.3, top)
+        V(wa['w'] + 1.2, 1, wa['d'] + 1.2, ap_, 0, wa['y0'] + wa['h'] - 0.6, 0, top)
+        V(3.2, 1, sh['d'] + 1.2, 0xc8b89a, -sh['w'] * 0.32, tH + 0.1, 0, top)
+        V(3.2, 4, 0.7, 0xc8b89a, -sh['w'] * 0.32, tH - 2, sh['d'] / 2 + 0.7, top)
+        V(3.2, 3.4, 0.7, 0xa8987a, -sh['w'] * 0.32, tH - 1.6, -sh['d'] / 2 - 0.7, top)
+        for a in arms:
+            V(aw + 1.2, 2, ad + 1.2, shade(p['cloth'], 0.92), 0, -al * 0.4, 0, a)
+        V(hw + 1.2, 1.6, hd + 1.2, 0xa83a2a, 0, HT - 0.6, 0, head)
+        V(2, 2.4, 1.6, 0xa83a2a, -hw / 2 + 0.4, HT - 1.8, -hd / 2 - 0.6, head)
+        V(3.6, 4.6, 3.6, 0x8a6238, 0, 2.6, 0, hp)
+        V(3.8, 0.6, 3.8, 0x7d838c, 0, 1.2, 0, hp)
+        V(3.8, 0.6, 3.8, 0x7d838c, 0, 4.2, 0, hp)
+        V(3.8, 1.4, 3.8, 0xf6f0de, 0, 5.4, 0, hp)
+        V(1, 3, 1.2, 0x6a4a2a, 2.3, 2.8, 0, hp)
+    if k == 'chasseur':
+        # capuche, pelisse, carquois et arc
+        hood = p['acc']; hh = o['hh']
+        V(hw + 1.6, hh * 0.6, hd + 1.6, hood, 0, HT - hh * 0.2, -0.3, head)
+        for s in (-1, 1):
+            V(1, hh * 0.7, hd * 0.8, hood, s * (hw / 2 + 0.7), -0.4, -0.6, head)
+        V(hw * 0.7, hh * 0.6, 1.6, shade(hood, 0.9), 0, -0.6, -hd / 2 - 0.6, head)
+        V(2.4, 2.6, 2, shade(hood, 0.85), 0, HT - 1, -hd / 2 - 1.6, head)
+        V(ch['w'] + 2.4, 2.6, sh['d'] + 2.2, p['fur'], 0, tH - 0.6, 0, top)
+        for i in range(5):
+            V(1.8, 1.6 + (i % 2), 1, shade(p['fur'], 0.9), -ch['w'] / 2 + i * ch['w'] / 4, tH - 2.4, sh['d'] / 2 + 1.1, top)
+        V(1.4, tH * 1.1, 0.6, 0x5a3a24, 0, tH * 0.5, ch['d'] / 2 + 0.4, top, rz=0.7)
+        qz = -(ch['d'] / 2 + 1.6)
+        V(3.2, 10, 2.8, 0x6a4026, 2.2, tH * 0.55, qz, top, rz=-0.3)
+        V(3.4, 1, 3, 0x8a6a3a, 2.2 + 1.4, tH * 0.55 + 4.6, qz, top, rz=-0.3)
+        for x, c in ((2.6, 0xd04a3a), (3.8, 0xf0f0f0), (5, 0xd04a3a)):
+            V(0.8, 3, 0.8, c, x + 0.6, tH * 0.55 + 6.4, qz, top, rz=-0.3)
+        V(3, 3, 2, 0x8a6a4a, -(wa['w'] / 2 + 1.4), -0.4, 0.4, top)
+        for a in arms:
+            V(aw + 1, al * 0.32, ad + 1, 0x6a4a34, 0, -al * 0.74, 0, a)
+        for i, (y, z) in enumerate(((-9, -1.6), (-6, -0.6), (-3, 0), (0, 0.2), (3, 0), (6, -0.6), (9, -1.6))):
+            V(1, 3.4, 1, wood if i != 3 else 0x3a2a1e, 0, y + 6, z + 2, hp)
+        V(0.3, 18, 0.3, 0xf0eee0, 0, 6, -2.2 + 2, hp)
     cape(b, k)
 
 # ---------------------------------------------------------------- races
@@ -1130,7 +1231,7 @@ RACE_ORDER = ['human', 'elf', 'goblin', 'orc', 'lizard', 'lycan', 'vampire', 'de
               'hobgoblin', 'ogre', 'kijin', 'beastfolk', 'harpy', 'spirit', 'angel', 'dryad', 'insectoid', 'undead']
 
 def make_character(race, job, seed=1):
-    """job = forgeron | marchand | garde | mage | base (base = nu, sans métier ni équipement)."""
+    """job = forgeron | marchand | garde | mage | fermier | mineur | aubergiste | chasseur | base (base = nu, sans métier ni équipement)."""
     i = RACE_ORDER.index(race)
     naked = (job == 'base')
     p = gen(race, 'forgeron' if naked else job, mk(seed * 97 + i * 13 + 1))
