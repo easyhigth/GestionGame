@@ -61,3 +61,10 @@ extends Resource
 @export var ranged_damage: float = 0.8
 ## Nombre de projectiles par tir (en éventail).
 @export var ranged_spread: int = 1
+
+@export_group("Boss")
+## Attaque spéciale propre à ce boss (voir Boss._special) : « ronces », « eboulement », « blizzard », « plumes »,
+## « toile », « ruee », « dard », « eruption », « acide ». Vide = pas d'attaque spéciale.
+@export var special_attack: String = ""
+## Nom annoncé à l'écran quand il la lance.
+@export var special_name: String = ""

@@ -36,3 +36,5 @@ knockback = 12.0
 body_radius = 1.1
 loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r10"), ExtResource("r11"), ExtResource("r11")])
 loot_chances = PackedFloat32Array(0.6, 0.6, 1.0, 1.0, 1.0)
+special_attack = "eruption"
+special_name = "Sillon de lave"

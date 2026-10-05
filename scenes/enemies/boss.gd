@@ -7,8 +7,11 @@ extends Enemy
 ##   "pluie"      : des projectiles tombent sur le héros et autour de lui
 ##   "invocation" : il appelle des monstres de sa région
 ##   "charge"     : il fonce sur le héros
+## Une fois sur deux, il lance à la place son attaque spéciale, propre à chaque boss (EnemyData.special_attack).
 
 signal phase_changed(phase: int)
+## Émis à chaque attaque spéciale (nom technique, voir EnemyData.special_attack).
+signal special_used(kind: String)
 
 const TELEGRAPH := Color(1.0, 0.25, 0.15)
 
@@ -22,6 +25,7 @@ var awake := false
 var phase := 1
 var _power_timer := 4.0
 var _power_index := 0
+var _turn := 0
 var _adds: Array[Enemy] = []
 
 
@@ -86,6 +90,13 @@ func _on_move_ended(n: String, interrupted: bool) -> void:
 ## Enchaîne ses pouvoirs dans l'ordre (en phase 2, il peut en lancer deux à la suite).
 func _use_power() -> void:
 	if powers.is_empty():
+		return
+	# une fois sur deux, son attaque spéciale (voir EnemyData.special_attack)
+	_turn += 1
+	if data and data.special_attack != "" and _turn % 2 == 0:
+		_special(data.special_attack)
+		if phase == 3:
+			_after(2.6, func(): if is_alive(): _cross_blades())
 		return
 	var pw := powers[_power_index % powers.size()]
 	_power_index += 1
@@ -301,6 +312,259 @@ func _charge() -> void:
 	telegraph(self, global_position + facing * 3.5, 1.2, 0.6)
 	if not perform("charge_ram", 0.9, 1.4):
 		_shockwave()
+
+
+# ---------------------------------------------------------------- attaques spéciales
+
+## L'attaque propre à chaque boss. Toutes sont annoncées : bande rouge au sol le long des tirs,
+## disque rouge là où quelque chose va tomber.
+func _special(kind: String) -> void:
+	var col := data.color if data else Color(1, 0.5, 0.2)
+	var label := data.special_name if data and data.special_name != "" else "!!"
+	Combat.popup(self, global_position + Vector3(0, name_label.position.y + 0.5, 0), label + " !", col.lightened(0.35), true)
+	Sound.play("boss_roar", global_position + Vector3(0, 2, 0), -4.0)
+	match kind:
+		"ronces":
+			_sp_ronces()
+		"eboulement":
+			_sp_eboulement()
+		"blizzard":
+			_sp_blizzard()
+		"plumes":
+			_sp_plumes()
+		"toile":
+			_sp_toile()
+		"ruee":
+			_sp_ruee()
+		"dard":
+			_sp_dard()
+		"eruption":
+			_sp_eruption()
+		"acide":
+			_sp_acide()
+		_:
+			_shockwave()
+	special_used.emit(kind)
+
+
+## Direction (à plat) vers sa cible.
+func _aim() -> Vector3:
+	if _target == null or not is_instance_valid(_target):
+		return facing
+	var to := _target.global_position - global_position
+	to.y = 0.0
+	return to.normalized() if to.length() > 0.05 else facing
+
+
+## Hauteur d'où partent ses projectiles.
+func _muzzle_height() -> float:
+	return clampf(0.9 * (data.model_scale if data else 1.0), 1.0, 2.0)
+
+
+## Annonce (bande rouge) puis tire un projectile dans `dir` après `wind` secondes.
+func _volley(dirs: Array, wind: float, color: Color, mult: float, speed: float, length: float,
+		on_hit := Callable(), width := 0.35, size := 1.0) -> void:
+	var from := global_position
+	for d in dirs:
+		SkillFX.telegraph(self, from, width, wind + 0.05, TELEGRAPH, d, length)
+	_after(wind, func():
+		if not is_alive():
+			return
+		for d in dirs:
+			_bolt(global_position, d, color, mult, speed, length, on_hit, size))
+
+
+## Un projectile du boss (même système que les monstres qui tirent : MagicBolt).
+func _bolt(from: Vector3, dir: Vector3, color: Color, mult: float, speed: float, length: float,
+		on_hit := Callable(), size := 1.0) -> MagicBolt:
+	var holder: Node = get_tree().current_scene if get_tree().current_scene else get_tree().root
+	var b := MagicBolt.new()
+	b.shooter = self
+	b.direction = Vector3(dir.x, 0, dir.z).normalized()
+	b.color = color
+	b.damage = roundi(attack_power() * mult)
+	b.knockback = 4.0
+	b.range_left = length + 1.0
+	b.on_hit = on_hit
+	holder.add_child(b)
+	b.speed = speed
+	b.scale = Vector3.ONE * size
+	b.global_position = from + Vector3(0, _muzzle_height(), 0) + b.direction * (body_radius + 0.3)
+	# il vise la poitrine du héros : le tir monte ou descend avec le terrain (marches, pentes)
+	if _target and is_instance_valid(_target):
+		var tp := _target.global_position + Vector3(0, 0.9, 0)
+		var flat := Vector2(tp.x - b.global_position.x, tp.z - b.global_position.z).length()
+		if flat > 0.5:
+			b.direction.y = clampf((tp.y - b.global_position.y) / flat, -0.5, 0.5)
+			b.direction = b.direction.normalized()
+	return b
+
+
+## Éventail de directions centré sur `center` (angles en degrés).
+static func _fan(center: Vector3, count: int, step_deg: float) -> Array:
+	var r := []
+	for i in count:
+		r.append(center.rotated(Vector3.UP, deg_to_rad((i - (count - 1) / 2.0) * step_deg)))
+	return r
+
+
+## Sylvaëlle : un éventail de ronces qui accrochent (ralentissent) ; en phase 2, une seconde vague décalée.
+func _sp_ronces() -> void:
+	var col := Color(0.55, 0.85, 0.3)
+	var slow := func(c: Combatant): c.apply_slow(0.55, 1.6)
+	var n := 5 if phase == 1 else 7
+	visual.play_move("cast_1", 0.8)
+	_volley(_fan(_aim(), n, 22.0), 0.9, col, 0.8, 11.0, 14.0, slow)
+	if phase >= 2:
+		_after(1.3, func():
+			if is_alive():
+				_volley(_fan(_aim().rotated(Vector3.UP, deg_to_rad(11.0)), n - 1, 22.0), 0.7, col, 0.8, 11.0, 14.0, slow))
+
+
+## Brisemonts : il arrache des rochers et les lance ; ils tombent l'un après l'autre sur la ligne qui mène au héros.
+func _sp_eboulement() -> void:
+	var col := Color(0.6, 0.5, 0.4)
+	var d := _aim()
+	var n := 4 if phase == 1 else 6
+	visual.play_move("heavy_1", 0.6)
+	SkillFX.telegraph(self, global_position, 1.6, 0.5 + n * 0.3, TELEGRAPH, d, 3.0 * n + 1.5)
+	for i in n:
+		var pos := global_position + d * (3.0 + 3.0 * i)
+		if _world:
+			pos.y = _world.ground_height_at(pos)
+		var delay := 0.9 + i * 0.3
+		telegraph(self, pos, 1.8, delay, col)
+		_after(delay - 0.55, func():
+			if not is_alive():
+				return
+			SkillFX.meteor(self, pos, col, 1.1, func():
+				VoxelBurst.spawn(self, pos + Vector3(0, 0.3, 0), col, 24, 5.0, 0.14, 0.6)
+				var hero := get_tree().get_first_node_in_group("player")
+				if hero and hero.has_method("shake"):
+					hero.shake(0.2)
+				_hit_area(pos, 1.8, 1.2, 9.0), 0.55))
+
+
+## Givrecroc : souffle glacé, un large cône d'éclats de glace qui ralentissent fort ; deux souffles en phase 2.
+func _sp_blizzard() -> void:
+	var col := Color(0.7, 0.92, 1.0)
+	var slow := func(c: Combatant): c.apply_slow(0.4, 2.5)
+	visual.play_move("heavy_1", 0.6)
+	_volley(_fan(_aim(), 9, 9.0), 1.0, col, 0.55, 12.0, 12.0, slow, 0.3, 0.8)
+	if phase >= 2:
+		_after(1.4, func():
+			if is_alive():
+				_volley(_fan(_aim(), 9, 9.0), 0.8, col, 0.55, 12.0, 12.0, slow, 0.3, 0.8))
+
+
+## Xochitl : tempête de plumes, des cercles de plumes tranchantes partent tout autour de lui (on se glisse entre).
+func _sp_plumes() -> void:
+	var col := Color(0.35, 0.95, 0.65)
+	var waves := 2 if phase == 1 else 3
+	visual.play_move("cast_1", 0.8)
+	for w in waves:
+		var dirs := []
+		var off := deg_to_rad(15.0 * w)
+		for i in 12:
+			dirs.append(Vector3(cos(off + i * TAU / 12.0), 0, sin(off + i * TAU / 12.0)))
+		_after(w * 1.1 + 0.01, func():
+			if is_alive():
+				_volley(dirs, 0.8, col if w % 2 == 0 else Color(1.0, 0.85, 0.3), 0.6, 10.0, 13.0, Callable(), 0.25))
+
+
+## Tissombre : trois boules de toile qui collent le héros sur place, puis un jet de venin sur lui.
+func _sp_toile() -> void:
+	var web := Color(0.92, 0.92, 0.95)
+	var stick := func(c: Combatant): c.apply_slow(0.25, 3.0)
+	visual.play_move("cast_1", 0.8)
+	_volley(_fan(_aim(), 3, 20.0), 0.8, web, 0.4, 9.0, 14.0, stick, 0.4, 1.4)
+	_after(1.7, func():
+		if is_alive():
+			var venom := Color(0.85, 0.2, 0.55)
+			_volley([_aim()], 0.6, venom, 1.2, 14.0, 14.0, func(c: Combatant): c.apply_dot(maxf(2.0, attack_power() * 0.08), 4.0, self, venom), 0.45, 1.3))
+
+
+## Grondebois : trois charges d'affilée, il se retourne vers le héros entre chacune (bande rouge avant chaque ruée).
+func _sp_ruee() -> void:
+	var n := 3 if phase == 1 else 4
+	for i in n:
+		_after(i * 1.45 + 0.01, func():
+			if not is_alive() or _target == null:
+				return
+			facing = _aim()
+			SkillFX.telegraph(self, global_position, 1.3, 0.55, TELEGRAPH, facing, 8.0)
+			_after(0.55, func():
+				if is_alive() and can_act():
+					perform("charge_ram", 1.1, 1.2)
+					VoxelBurst.spawn(self, global_position + Vector3(0, 0.2, 0), Color(0.7, 0.6, 0.45), 20, 3.0, 0.12, 0.5)))
+
+
+## Ankhar : son dard crache trois traits de venin coup sur coup, chacun visé sur le héros (poison).
+func _sp_dard() -> void:
+	var col := Color(0.75, 1.0, 0.25)
+	var poison := func(c: Combatant): c.apply_dot(maxf(2.0, attack_power() * 0.06), 5.0, self, Color(0.5, 0.9, 0.2))
+	var n := 3 if phase == 1 else 5
+	for i in n:
+		_after(i * 0.55 + 0.01, func():
+			if is_alive():
+				visual.play_move("cast_1", 1.2)
+				_volley([_aim()], 0.6, col, 0.7, 16.0, 16.0, poison, 0.3))
+
+
+## Ignarok : un sillon de lave file du boss vers le héros, la terre se fend case après case (brûlure) ;
+## en phase 2, trois sillons en éventail.
+func _sp_eruption() -> void:
+	var col := Color(1.0, 0.35, 0.1)
+	var center := _aim()
+	var dirs := [center] if phase == 1 else _fan(center, 3, 28.0)
+	visual.play_move("heavy_1", 0.6)
+	var origin := global_position
+	for d in dirs:
+		SkillFX.telegraph(self, origin, 1.2, 0.8, TELEGRAPH, d, 15.0)
+		for i in 7:
+			var pos: Vector3 = origin + d * (2.5 + 2.0 * i)
+			if _world:
+				pos.y = _world.ground_height_at(pos)
+			_after(0.8 + i * 0.12, func():
+				if not is_alive():
+					return
+				SkillFX.pillar(self, pos, col, 4.0, 0.9, 0.5)
+				VoxelBurst.spawn(self, pos + Vector3(0, 0.3, 0), col, 14, 5.0, 0.1, 0.5)
+				for n in get_tree().get_nodes_in_group(hostile_group()):
+					var c := n as Combatant
+					if c and c.is_alive() and Vector2(c.global_position.x - pos.x, c.global_position.z - pos.z).length() < 1.2 + c.body_radius:
+						if c.receive_hit(roundi(attack_power() * 0.9), self, 6.0, 2.0):
+							c.apply_dot(maxf(2.0, attack_power() * 0.05), 3.0, self, col)
+						else:
+							c.notify_near_miss(self))
+
+
+## Le Slime Primordial : il crache des boules d'acide en cloche ; à l'impact, chacune éclate en gouttes qui filent.
+func _sp_acide() -> void:
+	var col := Color(0.6, 1.0, 0.3)
+	if _target == null:
+		return
+	var n := 4 if phase == 1 else 6
+	visual.play_move("cast_1", 0.8)
+	for i in n:
+		var off := Vector3.ZERO if i == 0 else Vector3(randf_range(-5.0, 5.0), 0, randf_range(-5.0, 5.0))
+		var pos := _target.global_position + off
+		if _world:
+			pos.y = _world.ground_height_at(pos)
+		var delay := 1.0 + i * 0.25
+		telegraph(self, pos, 1.6, delay, col)
+		_after(delay - 0.55, func():
+			if not is_alive():
+				return
+			SkillFX.meteor(self, pos, col, 0.9, func():
+				VoxelBurst.spawn(self, pos + Vector3(0, 0.3, 0), col, 18, 4.0, 0.1, 0.5)
+				_hit_area(pos, 1.6, 0.8, 4.0)
+				# éclaboussures : quatre gouttes qui partent en croix depuis l'impact
+				var rot := randf() * TAU
+				for k in 4:
+					var d := Vector3(cos(rot + k * PI / 2.0), 0, sin(rot + k * PI / 2.0))
+					_bolt(pos - Vector3(0, _muzzle_height() - 0.5, 0) - d * (body_radius + 0.3), d, col, 0.35, 8.0, 5.0,
+						Callable(), 0.6), 0.55))
 
 
 func _on_died() -> void:
