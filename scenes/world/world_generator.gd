@@ -1336,7 +1336,7 @@ func _process(delta: float) -> void:
 			if holder:
 				var n := holder.get_node_or_null("Obelisque")
 				if n:
-					VoxelBurst.spawn(n, ob + Vector3(0, 2.5, 0), Color("8af0ff"), 40, 6.0, 0.1, 0.8, "sphere", 8.0, false)
+					VoxelBurst.spawn(n, ob + Vector3(0, 2.5, 0), _obelisk_glow(z), 40, 6.0, 0.1, 0.8, "sphere", 8.0, false)
 
 
 func _chunk_of(cell: Vector2i) -> Vector2i:
@@ -2272,10 +2272,13 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	cs.shape = box
 	cs.position.y = 1.5
 	body.add_child(cs)
-	if obelisk_model:
-		body.add_child(obelisk_model.instantiate())
+	# chaque région a son obélisque (glace, lave, nacre...) ; à défaut, l'obélisque commun
+	var r: RegionData = z.type
+	var model: PackedScene = r.obelisk if r and r.obelisk else obelisk_model
+	if model:
+		body.add_child(model.instantiate())
 	var light := OmniLight3D.new()
-	light.light_color = Color("8af0ff")
+	light.light_color = _obelisk_glow(z)
 	light.light_energy = 1.2
 	light.omni_range = 5.0
 	light.position.y = 3.2
@@ -2292,6 +2295,11 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	body.add_child(label)
 	holder.add_child(body)
 	body.global_position = cell_center(z.obelisk)
+
+
+func _obelisk_glow(z: Dictionary) -> Color:
+	var r: RegionData = z.type
+	return r.obelisk_glow if r else Color("8af0ff")
 
 
 ## Hauteur du seuil de l'arche par rapport au sol de la case de la porte (fondations comprises).

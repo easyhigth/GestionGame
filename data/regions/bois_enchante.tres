@@ -32,6 +32,7 @@
 [ext_resource type="Resource" path="res://data/races/esprit.tres" id="r29"]
 [ext_resource type="Resource" path="res://data/races/dryade.tres" id="r30"]
 [ext_resource type="Resource" path="res://data/races/ange.tres" id="r31"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_bois_enchante.tscn" id="obelisk"]
 
 [resource]
 script = ExtResource("1")
@@ -77,3 +78,5 @@ camp_density = 0.5
 resources = Array[ExtResource("3")]([ExtResource("r24"), ExtResource("r25"), ExtResource("r26"), ExtResource("r27")])
 resource_chance = 0.01
 recruit_races = Array[ExtResource("4")]([ExtResource("r28"), ExtResource("r29"), ExtResource("r30"), ExtResource("r31")])
+obelisk = ExtResource("obelisk")
+obelisk_glow = Color(1.000, 0.690, 0.925, 1)
