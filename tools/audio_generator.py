@@ -5,14 +5,15 @@ Générateur des sons et des musiques du jeu (synthèse en Python pur, sans bibl
 Tout est fabriqué par programme : bruitages courts (coups, pas, récolte, magie, interface),
 ambiances en boucle (jour, nuit, feu) et musiques (titre, jour, nuit, combat, régions, donjon, boss),
 chacune avec deux variantes (<nom>_2, <nom>_3) que le jeu enchaîne au hasard.
-Les fichiers vont dans assets/audio/sfx/ et assets/audio/music/ (WAV 16 bits mono).
+Les fichiers vont dans assets/audio/sfx/ (WAV 16 bits mono) et assets/audio/music/ (OGG Vorbis mono,
+bien plus léger ; il faut ffmpeg, sinon les musiques restent en WAV).
 Pour remplacer un son par un vrai enregistrement : garde le même nom de fichier (.wav ou .ogg).
 
 Usage :
     python audio_generator.py            (tout)
     python audio_generator.py --only hit,swing
 """
-import argparse, math, os, random, struct, wave
+import argparse, math, os, random, shutil, struct, subprocess, wave
 
 SR = 22050
 TAU = math.pi * 2
@@ -140,6 +141,19 @@ def write(path, sig, peak=0.9):
         w.setsampwidth(2)
         w.setframerate(SR)
         w.writeframes(b''.join(struct.pack('<h', int(max(-1.0, min(1.0, v)) * 32000)) for v in sig))
+
+
+def write_music(base, sig, peak=0.8):
+    """Écrit une musique en OGG Vorbis (qualité 5, sans perte audible) ; en WAV si ffmpeg manque."""
+    if not shutil.which('ffmpeg'):
+        write(base + '.wav', sig, peak)
+        return
+    write(base + '.tmp.wav', sig, peak)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', base + '.tmp.wav', '-c:a', 'libvorbis', '-q:a', '5', base + '.ogg'], check=True)
+    os.remove(base + '.tmp.wav')
+    # un ancien WAV du même nom passerait après l'OGG, mais alourdirait le jeu pour rien
+    if os.path.exists(base + '.wav'):
+        os.remove(base + '.wav')
 
 
 def note(n):
@@ -1078,10 +1092,10 @@ def main():
     for name, fn in MUSIC.items():
         if only and name not in only:
             continue
-        write(os.path.join(a.out, 'music', name + '.wav'), fn(), 0.8)
+        write_music(os.path.join(a.out, 'music', name), fn())
         n += 1
         for v in range(1, VARIANTS + 1):
-            write(os.path.join(a.out, 'music', '%s_%d.wav' % (name, v + 1)), fn(v), 0.8)
+            write_music(os.path.join(a.out, 'music', '%s_%d' % (name, v + 1)), fn(v))
             n += 1
     print('%d son(s) écrit(s) dans %s' % (n, a.out))
 

@@ -73,7 +73,8 @@ func _process(_d) -> bool:
 			var sec := 0.0
 			for k in pl.stream_count:
 				var part = pl.get_list_stream(k)
-				if not (part is AudioStreamWAV and part.loop_mode == AudioStreamWAV.LOOP_DISABLED and part.get_length() > 10.0):
+				# chaque partie se joue une fois (c'est la liste qui boucle) ; la musique est en OGG pour rester légère
+				if not (part is AudioStreamOggVorbis and not part.loop and part.get_length() > 10.0):
 					short.append("%s[%d]" % [n, k])
 				sec += part.get_length() if part else 0.0
 			total += sec
@@ -100,7 +101,7 @@ func _process(_d) -> bool:
 		var keep: Vector3 = p.global_position
 		var target_zone := {}
 		for z in w.zones:
-			if z.type and z.type.id != "prairie" and ResourceLoader.exists(snd.MUSIC_DIR + "region_" + z.type.id + ".wav"):
+			if z.type and z.type.id != "prairie" and snd.has_music("region_" + z.type.id):
 				target_zone = z
 				break
 		if not target_zone.is_empty():
