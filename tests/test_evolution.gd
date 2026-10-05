@@ -113,8 +113,8 @@ func _process(_d) -> bool:
 		check("loup en pleine forme : pas de Pacte", not fam.can_tame(wolf))
 		wolf.health.current = roundi(wolf.health.max_health * 0.2)
 		wolf._pact_hint(2.0)
-		check("loup affaibli : « [E] Pacte »", fam.can_tame(wolf) and wolf.name_label.text.contains("[E] Pacte"))
-		check("E : il est apprivoisé", fam.try_interact(p) and fam.list.size() == 1)
+		check("loup affaibli : « [F] Pacte »", fam.can_tame(wolf) and wolf.name_label.text.contains("[F] Pacte"))
+		check("F : il est apprivoisé", fam.try_interact(p) and fam.list.size() == 1)
 		start("c")
 	if later("c", 300):
 		var e = fam.list[0].node

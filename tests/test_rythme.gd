@@ -138,7 +138,8 @@ func _process(_d) -> bool:
 		get_first_node_in_group("raids").enabled = false
 		spawn = p.global_position
 		print("== départ seul, à mains nues")
-		check("sac vide, pas d'arme, aucun habitant", p.inventory.entries.is_empty() and p.weapon() == null and get_nodes_in_group("villagers").is_empty())
+		var only_flag: bool = p.inventory.entries.size() == 1 and p.inventory.entries[0].item.id == "drapeau_royaume"
+		check("sac vide (seulement le drapeau du royaume), pas d'arme, aucun habitant", only_flag and p.weapon() == null and get_nodes_in_group("villagers").is_empty())
 		print("== les premiers pas, chronométrés (temps de jeu estimé)")
 		gather("wood", 4, [w.D_OAK, w.D_PINE])
 		mark("4 bois à mains nues")

@@ -130,7 +130,7 @@ func _process(_d) -> bool:
 		start("gr1")
 	if later("gr1", 1500):
 		shot("04_griffon.png")
-		check("E : en selle", mo.try_interact(p) and mo.is_flying())
+		check("F : en selle", mo.try_interact(p) and mo.is_flying())
 		t0 = p.global_position
 		p.global_position.y += 30.0
 		start("gr2")

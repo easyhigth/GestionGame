@@ -3,6 +3,8 @@ var f := 0
 var p; var w; var items; var hud; var cities; var idx := 0; var cam: Camera3D
 var ok := true
 var game_ms := 0.0
+## Le bandeau de chaque ville vu au moins une fois (les grands titres passent l'un après l'autre).
+var seen_banner := {}
 var out := (OS.get_environment("TEST_SHOTS") if OS.get_environment("TEST_SHOTS") != "" else OS.get_user_data_dir()) + "/ci_"
 
 func _initialize():
@@ -114,12 +116,20 @@ func _process(_d) -> bool:
 		shot("%02d_%s_rue.png" % [idx * 2 + 2, c.nation])
 		var cl = get_first_node_in_group("city_life")
 		check("%s s'anime (%d habitants autour du héros)" % [c.name, cl.active_count(c.nation)], cl.active_count(c.nation) >= 40)
-		check("bandeau « %s »" % hud._zone_title.text, hud._zone_title.text == c.name)
-		idx += 1
-		if idx < cities.size():
-			start("go")
-		else:
-			start("shop")
+		start("banner")
+	if has_meta("banner") and not has_meta("banner_done"):
+		var c = cities[idx]
+		if hud._zone_title.text == c.name:
+			seen_banner[idx] = true
+		# le bandeau de la ville peut attendre que celui de la région ait fini (8 s au plus)
+		if seen_banner.has(idx) or game_ms - float(get_meta("banner")) > 8000.0:
+			set_meta("banner_done", true)
+			check("bandeau « %s »" % c.name, seen_banner.has(idx))
+			idx += 1
+			if idx < cities.size():
+				start("go")
+			else:
+				start("shop")
 	if later("shop", 300):
 		var c = cities[cities.size() - 1]
 		var m = get_nodes_in_group("townsfolk").filter(func(t): return t.role == "merchant" and t.shop != null)
@@ -132,7 +142,7 @@ func _process(_d) -> bool:
 		p.inventory.add(items.get_item("piece_or"), 600)
 		var ev := InputEventAction.new(); ev.action = "interact"; ev.pressed = true
 		p._unhandled_input(ev)
-		check("E : la boutique du marchand s'ouvre", hud.shop_dialog.visible and hud.shop_dialog.city == mer.shop)
+		check("F : la boutique du marchand s'ouvre", hud.shop_dialog.visible and hud.shop_dialog.city == mer.shop)
 		var entry: Dictionary = mer.shop.stock[0]
 		var it = items.get_item(entry.id)
 		var n0: int = p.inventory.count(it)

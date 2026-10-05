@@ -84,7 +84,7 @@ func _process(_d) -> bool:
 	if later("a", 2000):
 		check("bouche de grotte affichée", mc._entrance_nodes.has(ent.id))
 		shot("01_entree.png")
-		check("E : on entre", mc.try_interact(p))
+		check("F : on entre", mc.try_interact(p))
 		start("b")
 	if later("b", 1500):
 		check("dans la grotte (niveau 1)", mc.active and mc.level == 1 and p.global_position.y < -200.0)
@@ -130,7 +130,7 @@ func _process(_d) -> bool:
 		# descendre
 		var down = mc._interactables.filter(func(i): return i.kind == "down")[0]
 		p.global_position = down.pos
-		check("E : descendre", mc.try_interact(p))
+		check("F : descendre", mc.try_interact(p))
 		start("d")
 	if later("d", 1500):
 		check("niveau 2", mc.active and mc.level == 2)

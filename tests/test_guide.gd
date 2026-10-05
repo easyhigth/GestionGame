@@ -57,7 +57,7 @@ func _process(_d) -> bool:
 		print("== chapitres de l'aventure et des voisins")
 		check("%d étapes, %d chapitres" % [g.STEPS.size(), g.CHAPTERS.size()], g.STEPS.size() == 51 and g.CHAPTERS.size() == 12)
 		check("le guide commence par les bases (%s)" % g.current_id(), g.current_id() == "bouger" or g.step > 0)
-		check("touches du joueur dans les conseils : %s" % g.with_keys("{inventory} / {attack}"), g.with_keys("{inventory} / {attack}") == "I / clic gauche")
+		check("touches du joueur dans les conseils : %s" % g.with_keys("{inventory} / {attack}"), g.with_keys("{inventory} / {attack}") == "E / clic gauche")
 		g.step = 35
 		g.progress = 0
 		g._refresh()

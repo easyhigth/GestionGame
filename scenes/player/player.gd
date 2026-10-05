@@ -2455,7 +2455,7 @@ func nearby_stations() -> Array:
 	# « feu » pour cuisiner : le feu de camp du village, ou un four / une forge posés
 	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
 	if out.has("four") or out.has("four_pain") or out.has("foyer_forge") or out.has("feu_de_camp") \
-			or (world and not GameState.bare_start and global_position.distance_to(world.home_center()) < 4.5):
+			or (world and not GameState.bare_start and global_position.distance_to(world.cell_center(world.spawn_cell)) < 4.5):
 		out.append("feu")
 	return out
 

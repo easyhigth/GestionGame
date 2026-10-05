@@ -119,7 +119,7 @@ func _process(_d) -> bool:
 		p.global_position += Vector3(3, 0, 0)
 		mo._process(0.05)
 		check("le loup reste sous le héros", n.global_position.distance_to(p.global_position) < 0.2)
-		check("E : on descend", mo.try_interact(p) and not mo.is_riding() and not n.has_meta("ridden"))
+		check("F : on descend", mo.try_interact(p) and not mo.is_riding() and not n.has_meta("ridden"))
 		print("== village")
 		for i in 3: tame("loup")
 		check("4 familiers : le 4e part au village", fam.list.size() == 4 and fam.team().size() == 3 and fam.village_list().size() == 1)

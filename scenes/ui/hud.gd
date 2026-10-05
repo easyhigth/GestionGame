@@ -646,7 +646,7 @@ func _on_zone_entered(z: Dictionary) -> void:
 	var t: RegionData = z.type
 	if t == null or _zone_title == null:
 		return
-	show_banner(z.name, "%s  ·  Niveau %d à %d\n%s" % [t.display_name, z.level.x, z.level.y, t.description], t.map_color.lightened(0.55))
+	show_banner(z.name, "%s  ·  Niveau %d à %d\n%s" % [t.display_name, z.level.x, z.level.y, t.description], t.map_color.lightened(0.55), true)
 
 
 ## E près d'un marchand de capitale : sa boutique.
@@ -657,11 +657,18 @@ func open_city_shop(t: Node) -> void:
 
 ## Grand titre au centre-haut de l'écran, qui s'efface après quelques secondes.
 ## Deux grands titres ne se chevauchent jamais (région, acte de l'histoire, événement...) : le suivant attend.
-func show_banner(title: String, sub: String, color: Color) -> void:
-	if UiTheme.banner_busy(self, _zone_title):
-		get_tree().create_timer(0.3).timeout.connect(show_banner.bind(title, sub, color))
+## `region` : bandeau de région (en traversant plusieurs régions, le nouveau remplace l'ancien) ; les autres (ville,
+## acte de l'histoire, événement...) ne sont jamais écrasés : le suivant attend son tour.
+func show_banner(title: String, sub: String, color: Color, region := false) -> void:
+	var own_busy := _zone_title.modulate.a > 0.03 and not (region and _banner_is_region)
+	if UiTheme.banner_busy(self, _zone_title) or own_busy:
+		get_tree().create_timer(0.3).timeout.connect(show_banner.bind(title, sub, color, region))
 		return
+	_banner_is_region = region
 	_show_banner_now(title, sub, color)
+
+
+var _banner_is_region := false
 
 
 func _show_banner_now(title: String, sub: String, color: Color) -> void:
