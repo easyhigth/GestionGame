@@ -27,6 +27,7 @@
 [ext_resource type="Resource" path="res://data/races/gobelin.tres" id="r24"]
 [ext_resource type="Resource" path="res://data/races/slime.tres" id="r25"]
 [ext_resource type="Resource" path="res://data/races/insectoide.tres" id="r26"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_marais.tscn" id="obelisk"]
 
 [resource]
 script = ExtResource("1")
@@ -76,3 +77,5 @@ resource_chance = 0.012
 recruit_races = Array[ExtResource("4")]([ExtResource("r23"), ExtResource("r24"), ExtResource("r25"), ExtResource("r26")])
 weather_weights = {"clair": 2, "nuageux": 3, "pluie": 3, "orage": 1, "brouillard": 4}
 precipitation = "pluie"
+obelisk = ExtResource("obelisk")
+obelisk_glow = Color(0.753, 1.000, 0.439, 1)

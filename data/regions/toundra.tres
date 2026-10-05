@@ -26,6 +26,7 @@
 [ext_resource type="Resource" path="res://data/races/oni.tres" id="r23"]
 [ext_resource type="Resource" path="res://data/races/lycan.tres" id="r24"]
 [ext_resource type="Resource" path="res://data/races/nain.tres" id="r25"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_toundra.tscn" id="r26"]
 
 [resource]
 script = ExtResource("1")
@@ -73,3 +74,5 @@ resource_chance = 0.008
 recruit_races = Array[ExtResource("4")]([ExtResource("r22"), ExtResource("r23"), ExtResource("r24"), ExtResource("r25")])
 weather_weights = {"clair": 3, "nuageux": 3, "pluie": 3, "orage": 1, "brouillard": 2}
 precipitation = "neige"
+obelisk = ExtResource("r26")
+obelisk_glow = Color(0.910, 0.980, 1.000, 1)

@@ -35,6 +35,7 @@
 [ext_resource type="Resource" path="res://data/races/homme_bete.tres" id="r32"]
 [ext_resource type="Resource" path="res://data/races/elfe.tres" id="r33"]
 [ext_resource type="Resource" path="res://data/races/hobgobelin.tres" id="r34"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_prairie.tscn" id="obelisk"]
 
 [resource]
 script = ExtResource("1")
@@ -80,3 +81,5 @@ camp_density = 0.35
 resources = Array[ExtResource("3")]([ExtResource("r26"), ExtResource("r27"), ExtResource("r28"), ExtResource("r29"), ExtResource("r30")])
 resource_chance = 0.01
 recruit_races = Array[ExtResource("4")]([ExtResource("r31"), ExtResource("r32"), ExtResource("r33"), ExtResource("r34")])
+obelisk = ExtResource("obelisk")
+obelisk_glow = Color(0.541, 0.941, 1.000, 1)

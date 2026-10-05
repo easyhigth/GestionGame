@@ -9,6 +9,8 @@ import os
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 ENV = 'res://scenes/decor/%s.tscn'
+# obélisque de chaque région (scenes/decor/obelisk_<région>.tscn) et couleur de sa lueur
+OBELISK_GLOW = {'bois_enchante': 'ffb0ec', 'desert': 'ffd060', 'foret': '9aff8a', 'jungle': '60ffb0', 'marais': 'c0ff70', 'montagnes': 'b0d0ff', 'prairie': '8af0ff', 'toundra': 'e8faff', 'volcan': 'ffa030'}
 
 
 def color(h):
@@ -324,6 +326,8 @@ def write_regions():
         if 'weather' in d:
             props += [('weather_weights', '{%s}' % ', '.join('"%s": %d' % (k, v) for k, v in d['weather'].items())),
                       ('precipitation', '"%s"' % d.get('precip', 'pluie'))]
+        if d['id'] in OBELISK_GLOW:
+            props += [('obelisk', r.ref('PackedScene', ENV % ('obelisk_' + d['id']))), ('obelisk_glow', color(OBELISK_GLOW[d['id']]))]
         r.write(os.path.join(out, d['id'] + '.tres'), props)
     print('%d régions' % len(REGIONS))
 
