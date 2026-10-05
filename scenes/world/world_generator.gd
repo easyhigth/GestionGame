@@ -3357,7 +3357,6 @@ func reveal_rows(y0: int, y1: int) -> void:
 	_map_dirty = true
 
 
-## Téléporte le héros près d'un obélisque activé (ou au village).
 ## Retour au drapeau du royaume (carte, Pierre de rappel) : d'où que soit le héros, même d'un donjon, d'une grotte
 ## ou d'une faille (on en sort par leur propre sortie, qui mène alors au camp).
 func travel_home() -> bool:
@@ -3381,6 +3380,7 @@ func travel_home() -> bool:
 	return true
 
 
+## Téléporte le héros près d'un obélisque activé (ou au village).
 func travel_to(z: Dictionary) -> bool:
 	if player == null or z.is_empty() or not z.obelisk_on:
 		return false
