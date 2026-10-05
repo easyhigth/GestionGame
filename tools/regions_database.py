@@ -8,7 +8,7 @@ Usage :
 import os
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-ENV = 'res://assets/environment/models/%s.glb'
+ENV = 'res://scenes/decor/%s.tscn'
 
 
 def color(h):

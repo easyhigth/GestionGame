@@ -22,7 +22,7 @@ const SAIL_SEAT := 0.5
 ## En griffon : la selle, et la vitesse en vol (multipliée par celle du vol).
 const GRIFFON_SEAT := 1.78
 const GRIFFON_SPEED := 1.6
-const BOAT_MODEL := preload("res://assets/environment/models/boat.glb")
+const BOAT_MODEL := preload("res://scenes/decor/boat.tscn")
 const CHEST_MODEL := preload("res://assets/furniture/coffre.glb")
 
 var world: WorldGenerator

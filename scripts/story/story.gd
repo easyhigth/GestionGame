@@ -16,7 +16,7 @@ const RAIDS := StoryData.RAIDS
 const DUELS := StoryData.DUELS
 const NATIONS := StoryData.NATIONS
 const DIALOGS := StoryDialogs.DIALOGS
-const OBELISK := preload("res://assets/environment/models/obelisk.glb")
+const OBELISK := preload("res://scenes/decor/obelisk.tscn")
 const BOSS_SCENE := "res://scenes/enemies/boss.tscn"
 ## Où se placent les personnages de passage au village (autour du feu de camp).
 const VISIT_SPOTS := {"morvain": Vector3(-3.0, 0, 2.5), "kaia": Vector3(3.5, 0, 3.0), "gorvak": Vector3(8, 0, 8),

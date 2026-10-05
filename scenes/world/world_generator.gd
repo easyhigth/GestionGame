@@ -133,9 +133,9 @@ var small_decor_range := 60.0
 
 @export_group("Lieux")
 ## Obélisque de téléportation (un par zone).
-@export var obelisk_model: PackedScene = preload("res://assets/environment/models/obelisk.glb")
+@export var obelisk_model: PackedScene = preload("res://scenes/decor/obelisk.tscn")
 ## Entrée de donjon (une par zone, hors zone de départ).
-@export var dungeon_gate_model: PackedScene = preload("res://assets/environment/models/dungeon_gate.glb")
+@export var dungeon_gate_model: PackedScene = preload("res://scenes/decor/dungeon_gate.tscn")
 
 # types de sol
 const DEEP := 0
@@ -1853,7 +1853,7 @@ func _vein_models(kind: String) -> Array[PackedScene]:
 	if not _veins.has(kind):
 		var list: Array[PackedScene] = []
 		for n in (["iron_vein_1", "iron_vein_2"] if kind == "iron" else ["gold_vein_1"]):
-			var sc := load("res://assets/environment/models/%s.glb" % n) as PackedScene
+			var sc := load("res://scenes/decor/%s.tscn" % n) as PackedScene
 			if sc:
 				list.append(sc)
 		_veins[kind] = list

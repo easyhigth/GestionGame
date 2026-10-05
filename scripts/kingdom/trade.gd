@@ -180,7 +180,7 @@ func _spawn() -> void:
 		_cart_pos = _find_spot()
 	cart = Node3D.new()
 	cart.name = "Charrette"
-	var model := load("res://assets/environment/models/merchant_cart.glb") as PackedScene
+	var model := load("res://scenes/decor/merchant_cart.tscn") as PackedScene
 	if model:
 		cart.add_child(model.instantiate())
 	var sign := Label3D.new()
