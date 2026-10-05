@@ -3025,6 +3025,13 @@ func _find_coast(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
 				continue
 			if not city_at(Vector3(c.x, 0, c.y), 10.0).is_empty():
 				continue
+			# pas sur l'obélisque ni la porte de la zone : l'épave (une douzaine de cases) recouvrirait ses piliers
+			var near_site := false
+			for other in [zones[zone_id].obelisk, zones[zone_id].gate]:
+				if (other as Vector2i).x >= 0 and Vector2(c + Vector2i(2, 6) - (other as Vector2i)).length() < 14.0:
+					near_site = true
+			if near_site:
+				continue
 			for d in [Vector2i(3, 0), Vector2i(-3, 0), Vector2i(0, 3), Vector2i(0, -3)]:
 				var t := _type(c + d)
 				if t == WATER or t == DEEP:

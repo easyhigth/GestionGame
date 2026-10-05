@@ -22,16 +22,17 @@ func check(name: String, cond: bool) -> void:
 func _process(_d):
 	f += 1
 	match f:
-		1: lab.global_position = Vector3(0, 0, -10)
+		# distances tirées de la taille du texte à l'écran (une petite étiquette s'efface plus tôt que fade_start / fade_end)
+		1: lab.global_position = Vector3(0, 0, -lab.fade_range().x * 0.5)
 		3:
 			check("de près : visible et opaque", lab.visible and is_equal_approx(lab.modulate.a, 1.0))
-			lab.global_position = Vector3(0, 0, -(lab.fade_start + lab.fade_end) * 0.5)
+			lab.global_position = Vector3(0, 0, -(lab.fade_range().x + lab.fade_range().y) * 0.5)
 		5:
 			check("à mi-chemin : en fondu (alpha %.2f)" % lab.modulate.a, lab.visible and lab.modulate.a > 0.2 and lab.modulate.a < 0.8 and is_equal_approx(lab.outline_modulate.a, lab.modulate.a))
-			lab.global_position = Vector3(0, 0, -(lab.fade_end + 30.0))
+			lab.global_position = Vector3(0, 0, -(lab.fade_range().y + 30.0))
 		7:
 			check("au loin : cachée", not lab.visible)
-			lab.global_position = Vector3(0, 0, -5)
+			lab.global_position = Vector3(0, 0, -lab.fade_range().x * 0.5)
 		9:
 			check("on se rapproche : elle revient", lab.visible and is_equal_approx(lab.modulate.a, 1.0))
 			print("RÉSULTAT : " + ("tout est bon" if ok else "des échecs"))

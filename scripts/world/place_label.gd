@@ -26,14 +26,18 @@ static func distance_for(l: Label3D, px: float) -> float:
 	return h * REF_HEIGHT / (2.0 * tan(deg_to_rad(REF_FOV) * 0.5) * px)
 
 
+## Distances (m) où le fondu commence (x) et où l'étiquette est cachée (y), selon sa taille à l'écran.
+func fade_range() -> Vector2:
+	return Vector2(minf(fade_start, distance_for(self, FULL_PX)), minf(fade_end, distance_for(self, MIN_PX)))
+
+
 func _process(_delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return
 	var d := cam.global_position.distance_to(global_position)
-	var end := minf(fade_end, distance_for(self, MIN_PX))
-	var start := minf(fade_start, distance_for(self, FULL_PX))
-	var a := clampf((end - d) / maxf(end - start, 0.01), 0.0, 1.0)
+	var r := fade_range()
+	var a := clampf((r.y - d) / maxf(r.y - r.x, 0.01), 0.0, 1.0)
 	if a <= 0.0:
 		if visible:
 			visible = false
