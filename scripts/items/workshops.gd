@@ -106,7 +106,7 @@ static func station_near(p: Player, radius := 2.4) -> String:
 	# le feu de camp du village de départ
 	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
 	if world and not GameState.bare_start:
-		var d3 := world.cell_center(world.spawn_cell).distance_to(p.global_position)
+		var d3 := world.home_center().distance_to(p.global_position)
 		if d3 < minf(best_d, 2.6):
 			best = "feu"
 	return best

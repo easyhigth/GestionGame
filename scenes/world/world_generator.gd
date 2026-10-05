@@ -182,6 +182,13 @@ const GRAIN_SCALE := 1.0 / 0.8
 const GRAIN := preload("res://assets/environment/voxel_grain.png")
 
 var spawn_cell: Vector2i
+## Drapeau du royaume : là où le joueur le plante, c'est le centre de son camp (habitants, raids, carte,
+## marchand, quêtes...). Pas de drapeau planté : pas de camp, donc pas de raids. Voir has_home / home_center.
+const FLAG_ID := "drapeau_royaume"
+signal home_changed
+var home_cell := Vector2i(-1, -1)
+## Dernier endroit où le drapeau était planté (les habitants y restent si on l'arrache).
+var _last_home := Vector2i(-1, -1)
 ## Zones du monde : {id, type (RegionData), name, site, level, obelisk, gate, discovered, obelisk_on}
 var zones: Array = []
 var region_types: Array[RegionData] = []
@@ -3119,6 +3126,54 @@ func refresh_map(cells: Array) -> void:
 
 # ---------------------------------------------------------------- sauvegarde
 
+## Un drapeau du royaume est planté quelque part.
+func has_home() -> bool:
+	return home_cell.x >= 0
+
+
+## Case du centre du camp : le drapeau ; arraché, le dernier endroit où il était ; jamais planté, l'arrivée.
+func home_cell_or_spawn() -> Vector2i:
+	if has_home():
+		return home_cell
+	if _last_home.x >= 0:
+		return _last_home
+	return spawn_cell
+
+
+## Centre du camp en 3D (voir home_cell_or_spawn).
+func home_center() -> Vector3:
+	return cell_center(home_cell_or_spawn())
+
+
+## Le drapeau vient d'être planté dans cette case (BuildGrid l'appelle).
+func set_home(c: Vector2i) -> void:
+	if c == home_cell:
+		return
+	home_cell = c
+	_last_home = c
+	home_changed.emit()
+
+
+## Le drapeau vient d'être arraché : plus de camp (ni de raids) tant qu'il n'est pas replanté.
+func clear_home() -> void:
+	if not has_home():
+		return
+	home_cell = Vector2i(-1, -1)
+	home_changed.emit()
+
+
+## Ancienne sauvegarde (avant le drapeau) : le village était à l'arrivée, on y plante le drapeau.
+func plant_legacy_flag() -> void:
+	var it := Items.get_item(FLAG_ID) as ItemData
+	for r in range(2, 8):
+		for i in 12:
+			var a := TAU * i / 12.0
+			var c := spawn_cell + Vector2i(roundi(cos(a) * r), roundi(sin(a) * r))
+			if it and village_prop_at(c, terrain_height(c)) == null and build.place_furniture(c, terrain_height(c), it, 0):
+				return
+	set_home(spawn_cell)
+
+
 ## État du monde qui ne se recalcule pas à partir de la graine.
 func export_state() -> Dictionary:
 	var edits := []
@@ -3133,6 +3188,7 @@ func export_state() -> Dictionary:
 		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0))])
 	return {
 		"seed": world_seed, "size": [world_size.x, world_size.y], "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
+		"flag_v": 1, "last_home": [_last_home.x, _last_home.y],
 		"removed_props": removed_props.keys(), "chests": opened_chests.keys(),
 		"revealed": Marshalls.raw_to_base64(_revealed.compress(FileAccess.COMPRESSION_ZSTD)),
 		"map": Marshalls.raw_to_base64(map_image.save_png_to_buffer()),
@@ -3140,6 +3196,10 @@ func export_state() -> Dictionary:
 
 
 func import_state(d: Dictionary) -> void:
+	# le drapeau se replante avec les meubles (BuildGrid rappelle set_home)
+	home_cell = Vector2i(-1, -1)
+	var lh: Array = d.get("last_home", [-1, -1])
+	_last_home = Vector2i(int(lh[0]), int(lh[1]))
 	opened_chests.clear()
 	for id in d.get("chests", []):
 		opened_chests[str(id)] = true
@@ -3591,7 +3651,7 @@ func _build_village() -> void:
 		_spawn(campfire_scene, Vector2(0, 0))
 	# pas de cabanes toutes faites : le campement n'a que des meubles posés comme ceux du joueur
 	# (ils se cassent et se ramassent pareil) ; les maisons, c'est au joueur de les bâtir
-	for f in [["etabli", Vector2(-8.5, 3.5)], ["ratelier", Vector2(9.0, 2.5)], ["tonneau", Vector2(-3.8, -5.8)],
+	for f in [["drapeau_royaume", Vector2(0.5, -3.5)], ["etabli", Vector2(-8.5, 3.5)], ["ratelier", Vector2(9.0, 2.5)], ["tonneau", Vector2(-3.8, -5.8)],
 			["tonneau", Vector2(-3.0, -6.6)], ["coffre", Vector2(3.6, -6.4)]]:
 		if not bare:
 			_place_camp_furniture(f[0], f[1])

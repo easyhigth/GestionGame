@@ -118,8 +118,11 @@ func _draw() -> void:
 			if rect.has_point(q):
 				draw_rect(Rect2(q - Vector2(5, 4), Vector2(10, 8)), Color("ffd24a"))
 				draw_string(UiTheme.font("body"), q + Vector2(-40, -10), city.name, HORIZONTAL_ALIGNMENT_CENTER, 80, 10, col.lightened(0.4))
-	var v := (Vector2(world.spawn_cell) + Vector2(0.5, 0.5) - src.position) * s
-	if rect.has_point(v):
+	# le camp (drapeau du royaume) : rien tant qu'il n'est pas planté
+	var v := (Vector2(world.home_cell) + Vector2(0.5, 0.5) - src.position) * s
+	if not world.has_home():
+		pass
+	elif rect.has_point(v):
 		draw_rect(Rect2(v - Vector2(4, 4), Vector2(8, 8)), Color("f2c86a"))
 	else:
 		# flèche vers le village au bord de la mini-carte

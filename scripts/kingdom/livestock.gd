@@ -109,7 +109,7 @@ func spawn(sp: String, pos: Vector3, tame := false, index := -1) -> FarmAnimal:
 func _starter_flock() -> void:
 	if world == null:
 		return
-	var c := world.cell_center(world.spawn_cell)
+	var c := world.home_center()
 	for i in 24:
 		var a := randf() * TAU
 		var pos := c + Vector3(cos(a), 0, sin(a)) * randf_range(16.0, 22.0)

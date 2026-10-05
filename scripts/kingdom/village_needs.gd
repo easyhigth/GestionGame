@@ -78,7 +78,7 @@ func bed_spots() -> Array:
 				else:
 					var p: Vector3 = lits[i % lits.size()]
 					out.append([p + Vector3(0.22 * (i / lits.size()), 0, 0), "lit"])
-	var center := world.cell_center(world.spawn_cell)
+	var center := world.home_center()
 	for id in ["hut_1", "hut_2", "hut_3"]:
 		var hut := world.village_prop(id)
 		if hut == null:
@@ -322,7 +322,7 @@ func _arrivals(dt: float, list: Array, p: Player) -> void:
 	v.wander_radius = 2.0
 	world.get_node("Village").add_child(v)
 	var a := randf() * TAU
-	var pos := world.cell_center(world.spawn_cell) + Vector3(cos(a), 0, sin(a)) * 11.0
+	var pos := world.home_center() + Vector3(cos(a), 0, sin(a)) * 11.0
 	pos.y = world.ground_height_at(pos + Vector3(0, 3, 0))
 	v.global_position = pos
 	v.home = pos

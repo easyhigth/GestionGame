@@ -325,8 +325,24 @@ func place_furniture(col: Vector2i, base: float, item: ItemData, rot: int) -> bo
 	var arr: Array = _furn_cols.get(col, [])
 	arr.append(key)
 	_furn_cols[col] = arr
+	if item.id == WorldGenerator.FLAG_ID:
+		_flag_planted(key)
 	changed.emit()
 	return true
+
+
+## Le drapeau du royaume planté ici devient le centre du camp ; un autre drapeau déjà planté revient au sac.
+func _flag_planted(key: Vector3i) -> void:
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator if is_inside_tree() else null
+	if world == null:
+		return
+	for k in furniture.keys():
+		if k != key and (furniture[k].item as ItemData).id == WorldGenerator.FLAG_ID:
+			var old := remove_furniture(k)
+			var p := get_tree().get_first_node_in_group("player")
+			if old and p:
+				p.inventory.add(old, 1)
+	world.set_home(furniture[key].col)
 
 
 func remove_furniture(key: Vector3i) -> ItemData:
@@ -337,6 +353,10 @@ func remove_furniture(key: Vector3i) -> ItemData:
 		f.node.queue_free()
 	furniture.erase(key)
 	(_furn_cols.get(f.col, []) as Array).erase(key)
+	if (f.item as ItemData).id == WorldGenerator.FLAG_ID and is_inside_tree():
+		var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+		if world and world.home_cell == f.col:
+			world.clear_home()
 	changed.emit()
 	return f.item
 

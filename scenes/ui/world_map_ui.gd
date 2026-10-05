@@ -253,12 +253,13 @@ func _draw() -> void:
 			if z.id == selected or z.id == _hover:
 				_text_center("Voyager : %s" % z.name, q + Vector2(0, -r - 10), 12, C_OBELISK.lightened(0.4))
 	_draw_places()
-	# village
-	var v := cell_to_screen(Vector2(world.spawn_cell) + Vector2(0.5, 0.5))
-	draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color("f2c86a"))
-	draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color.BLACK, false, 2.0)
-	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
-	_text_center(k.title() if k else "Village", v + Vector2(0, 30), 11, Color("f2c86a"))
+	# le camp : là où le drapeau du royaume est planté
+	if world.has_home():
+		var v := cell_to_screen(Vector2(world.home_cell) + Vector2(0.5, 0.5))
+		draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color("f2c86a"))
+		draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color.BLACK, false, 2.0)
+		var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+		_text_center(k.title() if k else "Village", v + Vector2(0, 30), 11, Color("f2c86a"))
 	# fin de partie : le Portail des Failles et le titan éveillé
 	var eg := get_tree().get_first_node_in_group("endgame") as Endgame
 	if eg:

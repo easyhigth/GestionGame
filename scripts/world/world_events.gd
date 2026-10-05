@@ -206,7 +206,7 @@ func _drop_stars() -> void:
 	var w := _world()
 	if w == null:
 		return
-	var center := w.cell_center(w.spawn_cell)
+	var center := w.home_center()
 	for i in 4:
 		var pos := center
 		for t in 20:
@@ -261,7 +261,7 @@ func _on_raid_ended(r: Dictionary, repelled: bool, _text: String) -> void:
 
 func arena_pos() -> Vector3:
 	var w := _world()
-	return w.cell_center(w.spawn_cell) + Vector3(6, 0, 6) if w else Vector3.ZERO
+	return w.home_center() + Vector3(6, 0, 6) if w else Vector3.ZERO
 
 
 func _make_arena() -> void:

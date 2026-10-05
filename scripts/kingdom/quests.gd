@@ -155,7 +155,7 @@ func _generate(type: String, v: Node) -> Dictionary:
 			q.need = ed.resource_path
 			q.spot = spot
 			q.title = "Chasser : %s rôdeur" % ed.display_name
-			q.text = "Un %s rôde %s du village et fait peur à tout le monde. Débarrasse-nous-en !" % [ed.display_name.to_lower(), _direction(world.cell_center(world.spawn_cell), spot)]
+			q.text = "Un %s rôde %s du village et fait peur à tout le monde. Débarrasse-nous-en !" % [ed.display_name.to_lower(), _direction(world.home_center(), spot)]
 			q.gold = 8 + lv * 3
 			q.xp = 60 + lv * 12
 		"explorer":
@@ -164,7 +164,7 @@ func _generate(type: String, v: Node) -> Dictionary:
 				return {}
 			var best := {}
 			var best_d := INF
-			var center := world.cell_center(world.spawn_cell)
+			var center := world.home_center()
 			for z in world.zones:
 				if (z.obelisk as Vector2i).x < 0 or z.obelisk_on:
 					continue
@@ -209,7 +209,7 @@ func _generate(type: String, v: Node) -> Dictionary:
 
 ## Un endroit praticable à 25-45 m du village, pour la bête à chasser.
 func _hunt_spot(world: WorldGenerator) -> Vector3:
-	var center := world.cell_center(world.spawn_cell)
+	var center := world.home_center()
 	for i in 20:
 		var a := randf() * TAU
 		var p := center + Vector3(cos(a), 0, sin(a)) * randf_range(25.0, 45.0)

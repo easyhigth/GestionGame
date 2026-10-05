@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/props/banner_pole.gd" id="1"]
+
+[node name="DrapeauRoyaume" type="Node3D"]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 0, 0, 0)
+script = ExtResource("1")

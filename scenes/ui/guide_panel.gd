@@ -81,6 +81,7 @@ const CHAPTER_ICONS := {"LES BASES": "compass", "PREMIERS PAS": "compass", "L'Â
 var _icon: TextureRect
 ## Astuces affichées une seule fois, la première fois que la situation se présente : [identifiant, texte].
 const TIPS := [
+	["drapeau", "Tu portes le drapeau du royaume. Quand un endroit te plaît, prends-le en main ({hand_toggle}) et plante-le (clic droit) : ton camp sera là, tes habitants s'y installeront. Tant qu'il n'est pas planté, pas de raids : explore autant que tu veux."],
 	["gemme", "Une gemme ! Sertis-la à l'enclume ({interact} devant elle → Forge) sur une arme ou une armure."],
 	["rune", "Une rune ! Grave-la sur une arme ou une armure à l'enclume (onglet Forge)."],
 	["potion", "Une potion ! Touche {potion} pour la boire : soin si tu es blessé, sinon un renfort de 90 secondes."],
@@ -479,6 +480,9 @@ func _check_tips() -> void:
 			continue
 		var show_it := false
 		match id:
+			"drapeau":
+				var wd := tree.get_first_node_in_group("world") as WorldGenerator
+				show_it = wd != null and not wd.has_home() and player.inventory.count(Items.get_item(WorldGenerator.FLAG_ID)) > 0
 			"gemme", "rune", "potion":
 				show_it = _has_prefix(id + ("_" if id != "gemme" else ""))
 			"orichalque":
