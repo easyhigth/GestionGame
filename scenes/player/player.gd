@@ -233,6 +233,8 @@ func apply_profile(hero: HeroProfile, new_game := true) -> void:
 		skill_changed.emit(skill)
 	if new_game:
 		_give_class_talent()
+		if GameState.bare_start:
+			inventory.add(Items.get_item(WorldGenerator.FLAG_ID), 1)
 	if new_game and not GameState.bare_start:
 		if hero.hero_class:
 			for it in hero.hero_class.starting_equipment:
@@ -1897,7 +1899,7 @@ func _respawn() -> void:
 	swimming = false
 	breath = BREATH_MAX
 	if _world:
-		var home := _world.cell_center(_world.spawn_cell) + Vector3(0, 0, 3)
+		var home := _world.home_center() + Vector3(0, 0, 3)
 		_world.load_area(home)
 		global_position = home
 	health.revive(1.0)
@@ -2453,7 +2455,7 @@ func nearby_stations() -> Array:
 	# « feu » pour cuisiner : le feu de camp du village, ou un four / une forge posés
 	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
 	if out.has("four") or out.has("four_pain") or out.has("foyer_forge") or out.has("feu_de_camp") \
-			or (world and not GameState.bare_start and global_position.distance_to(world.cell_center(world.spawn_cell)) < 4.5):
+			or (world and not GameState.bare_start and global_position.distance_to(world.home_center()) < 4.5):
 		out.append("feu")
 	return out
 

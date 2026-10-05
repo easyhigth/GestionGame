@@ -515,7 +515,7 @@ func _make_npc(id: String, where: String) -> Node3D:
 	world.load_area(pos)
 	world.get_node("Village").add_child(v)
 	if village and id != "maelle":
-		v.join_village(world.cell_center(world.spawn_cell))
+		v.join_village(world.home_center())
 	else:
 		v.global_position = pos
 		v.home = pos
@@ -584,7 +584,7 @@ func _recruit(race_path: String, n: int, level: int, near: Vector3) -> void:
 		v.level = level
 		world.get_node("Village").add_child(v)
 		v.global_position = near
-		v.join_village(world.cell_center(world.spawn_cell))
+		v.join_village(world.home_center())
 
 
 # ---------------------------------------------------------------- dialogues
@@ -780,7 +780,36 @@ func nation_name() -> String:
 
 # ---------------------------------------------------------------- avancement
 
+## Voie de l'aventurier : les étapes de gestion (bâtir une pièce, rassembler des habitants) peuvent aussi se
+## franchir en combattant (vaincre des monstres depuis le début de l'étape). La gestion n'est jamais obligatoire.
+const ADV_UNSET := -1000000000
+var _adv_base := ADV_UNSET
+
+
+func _kills() -> int:
+	var ach := get_tree().get_first_node_in_group("achievements") if is_inside_tree() else null
+	return int(ach.counters.get("kills", 0)) if ach else 0
+
+
+## Étape de gestion (pièce à bâtir, habitants à rassembler) ?
+static func is_build_step(s: Array) -> bool:
+	return not s.is_empty() and str(s[4]) in ["room", "pop"]
+
+
+## Monstres à vaincre pour franchir une étape de gestion en aventurier.
+static func adventure_need(s: Array) -> int:
+	return 12 + 4 * int(s[1])
+
+
+## Monstres déjà vaincus depuis le début de l'étape.
+func adventure_done() -> int:
+	if _adv_base == ADV_UNSET:
+		_adv_base = _kills()
+	return _kills() - _adv_base
+
+
 func _advance() -> void:
+	_adv_base = _kills()
 	var before_act: int = current()[1] if not is_done() else 0
 	var reward: Dictionary = _opts(current()).get("reward", {})
 	if current()[4] == "visit":
@@ -861,10 +890,10 @@ func _check() -> void:
 			ok = shards.size() >= _shards_needed(s)
 		"room":
 			var parts := str(s[5]).split(":")
-			ok = _room_count(parts[0]) >= (int(parts[1]) if parts.size() > 1 else 1)
+			ok = _room_count(parts[0]) >= (int(parts[1]) if parts.size() > 1 else 1) or adventure_done() >= adventure_need(s)
 		"pop":
 			var vn := get_tree().get_first_node_in_group("village_needs")
-			ok = vn != null and vn.members().size() >= int(s[5])
+			ok = (vn != null and vn.members().size() >= int(s[5])) or adventure_done() >= adventure_need(s)
 		"pack":
 			ok = pack_left == 0
 		"have_any":
@@ -1227,6 +1256,9 @@ func tracker_text() -> String:
 		"pop":
 			var vn := get_tree().get_first_node_in_group("village_needs")
 			t += " (%d / %d)" % [vn.members().size() if vn else 0, int(s[5])]
+	if is_build_step(s):
+		t += "  ·  ou en aventurier : %d / %d monstres" % [mini(adventure_done(), adventure_need(s)), adventure_need(s)]
+	match s[4]:
 		"talk":
 			var o := _opts(s)
 			if o.has("item") and player:
@@ -1300,7 +1332,7 @@ const VERSION := 3
 
 
 func export_state() -> Dictionary:
-	return {"v": VERSION, "step": step, "step_id": current_id(), "choices": choices.duplicate(), "shards": shards.keys(), "pack_left": pack_left,
+	return {"v": VERSION, "step": step, "step_id": current_id(), "choices": choices.duplicate(), "shards": shards.keys(), "pack_left": pack_left, "adv_base": _adv_base,
 		"gone": npc_state.keys().filter(func(id): return npc_state[id] == "gone"),
 		"sanctuary": [sanctuary.x, sanctuary.y, sanctuary.z] if sanctuary != Vector3.INF else []}
 
@@ -1332,6 +1364,7 @@ func import_state(d: Dictionary) -> void:
 	step = 0 if old else _step_index(d)
 	choices = {} if old else (d.get("choices", {}) as Dictionary).duplicate()
 	pack_left = -1 if old else int(d.get("pack_left", -1))
+	_adv_base = int(d.get("adv_base", ADV_UNSET))
 	shards = {}
 	for id in d.get("shards", []):
 		shards[str(id)] = true

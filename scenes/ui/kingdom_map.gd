@@ -79,7 +79,7 @@ func _build_terrain() -> void:
 	if w == null:
 		return
 	var half := Vector2i(56, 40)
-	_tex_origin = w.spawn_cell - half
+	_tex_origin = w.home_cell_or_spawn() - half
 	var size_c := half * 2
 	var img := Image.create(size_c.x, size_c.y, false, Image.FORMAT_RGB8)
 	for z in size_c.y:
@@ -131,8 +131,8 @@ func fit() -> void:
 	var w := _w()
 	if w == null:
 		return
-	var mn := Vector2(w.spawn_cell) - Vector2(10, 10)
-	var mx := Vector2(w.spawn_cell) + Vector2(10, 10)
+	var mn := Vector2(w.home_cell_or_spawn()) - Vector2(10, 10)
+	var mx := Vector2(w.home_cell_or_spawn()) + Vector2(10, 10)
 	var k := _k()
 	if k:
 		for r in k.rooms:
@@ -143,7 +143,7 @@ func fit() -> void:
 				mx = Vector2(maxf(mx.x, c.x), maxf(mx.y, c.y))
 	for v in get_tree().get_nodes_in_group("villagers"):
 		var c := Vector2(v.global_position.x, v.global_position.z)
-		if c.distance_to(Vector2(w.spawn_cell)) < 50.0:
+		if c.distance_to(Vector2(w.home_cell_or_spawn())) < 50.0:
 			mn = Vector2(minf(mn.x, c.x), minf(mn.y, c.y))
 			mx = Vector2(maxf(mx.x, c.x), maxf(mx.y, c.y))
 	mn -= Vector2(3, 3)
@@ -198,7 +198,7 @@ func _draw() -> void:
 	_draw_rooms(font)
 	_draw_plans(view)
 	# feu de camp
-	var fire := _to_screen(Vector2(w.spawn_cell) + Vector2(0.5, 0.5))
+	var fire := _to_screen(Vector2(w.home_cell_or_spawn()) + Vector2(0.5, 0.5))
 	draw_circle(fire, maxf(6.0, px * 1.1), Color(1.0, 0.55, 0.15, 0.18))
 	draw_circle(fire, maxf(4.0, px * 0.5), Color("ff8a3a"))
 	draw_circle(fire, maxf(2.0, px * 0.25), Color("ffe08a"))

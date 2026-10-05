@@ -90,7 +90,7 @@ func _process(delta: float) -> void:
 		return
 	if not _built:
 		_built = true
-		var center := w.cell_center(w.spawn_cell)
+		var center := w.home_center()
 		for s in BANNER_SPOTS:
 			var b := BannerPole.new()
 			b.name = "Etendard"
@@ -116,7 +116,7 @@ func _update_trophies(w: WorldGenerator) -> void:
 		if r == null or r.boss == null or r.boss.model == null:
 			continue
 		var a := TAU * float(i) / float(TROPHY_SLOTS.size()) + 0.35
-		var pos := w.cell_center(w.spawn_cell) + Vector3(cos(a), 0, sin(a)) * TROPHY_RADIUS
+		var pos := w.home_center() + Vector3(cos(a), 0, sin(a)) * TROPHY_RADIUS
 		statues[id] = _make_statue(r, _ground(w, pos), a)
 
 

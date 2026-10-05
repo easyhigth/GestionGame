@@ -554,7 +554,7 @@ func _cmd_tp(args: Array) -> bool:
 	var label := ""
 	match q:
 		"village", "royaume", "maison":
-			dest = world.cell_center(world.spawn_cell + Vector2i(0, 4))
+			dest = world.home_center() + Vector3(0, 0, 4)
 			label = "ton village"
 		"chateau", "chateau abandonne", "chateau habite":
 			var list := _sites("castle")

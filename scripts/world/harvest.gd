@@ -273,6 +273,11 @@ static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Pla
 	var got: ItemData = grid.remove_block(key) if t.has("block") else grid.remove_furniture(key)
 	if got and got.has_meta("stair_base"):
 		got = Items.get_item(got.get_meta("stair_base"))
+	if got and got.id == WorldGenerator.FLAG_ID:
+		# le drapeau revient directement au sac (on ne le perd pas) : plus de camp tant qu'il n'est pas replanté
+		p.inventory.add(got, 1)
+		p.notify.emit("Drapeau du royaume repris : plus de camp (ni de raids) tant que tu ne l'as pas replanté.")
+		return
 	if got:
 		_drop(world, got, 1, at - Vector3(0, 0.4, 0))
 

@@ -230,7 +230,7 @@ func region_music(player: Node3D) -> String:
 	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
 	if w == null:
 		return "day"
-	if player.global_position.distance_to(w.cell_center(w.spawn_cell)) < VILLAGE_RADIUS:
+	if w.has_home() and player.global_position.distance_to(w.home_center()) < VILLAGE_RADIUS:
 		return "day"
 	var z := w.zone_at(player.global_position)
 	if z.is_empty() or z.type == null:

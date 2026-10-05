@@ -376,6 +376,9 @@ func place() -> bool:
 	if not done:
 		return false
 	player.inventory.remove(it, 1)
+	if it.id == WorldGenerator.FLAG_ID:
+		player.feat.emit("Ton camp est fondé ici !", Color("ffd24a"))
+		player.notify.emit("Le drapeau du royaume est planté : tes habitants s'installeront autour, et les pillards sauront où frapper. Frappe-le pour le déplacer.")
 	Sound.play("door" if it.furniture_door else "place", Vector3(k.x + 0.5, float(k.y) + 0.5, k.z + 0.5))
 	var at := Vector3(k.x + 0.5, float(_target.get("base", k.y)) + 0.5, k.z + 0.5)
 	VoxelBurst.spawn(player, at, BuildMode.it_color(it) if it.is_block() else Color(0.75, 0.6, 0.4), 8, 1.8, 0.07, 0.3, "up", 6.0, false)

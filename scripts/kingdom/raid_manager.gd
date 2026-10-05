@@ -45,8 +45,15 @@ func _ready() -> void:
 	_timer = first_delay * SaveGame.raid_delay_mult()
 
 
+## Ce que les pillards attaquent : le camp (drapeau du royaume). Sans drapeau, seuls les raids de l'histoire
+## ont lieu, et ils tombent sur le héros là où il est.
 func village_center() -> Vector3:
-	return world.cell_center(world.spawn_cell)
+	if raid.has("center"):
+		return raid.center
+	if world.has_home():
+		return world.home_center()
+	var p := _player()
+	return p.global_position if p else world.cell_center(world.spawn_cell)
 
 
 func _player() -> Player:
@@ -66,6 +73,9 @@ func _process(delta: float) -> void:
 			# pas de raid pendant que le héros est dans un donjon : on attend qu'il en sorte
 			if p and p.global_position.y < WorldGenerator.UNDERGROUND:
 				_timer = 20.0
+			# pas de drapeau du royaume planté : pas de camp, donc rien à piller
+			elif not world.has_home():
+				_timer = 30.0
 			# pas de village à piller tant que le héros est seul (départ à mains nues)
 			elif get_tree().get_nodes_in_group("villagers").filter(func(v): return not v.get("stranger") and not v.get("companion")).is_empty():
 				_timer = 60.0
@@ -111,7 +121,7 @@ func announce(story := {}) -> void:
 		spot.y = world.ground_height_at(spot + Vector3(0, 3, 0))
 	raid = {"state": "warning", "name": tier[1], "types": tier[2], "leader": tier[3], "base": tier[4],
 		"count": count, "level": lv, "dir_text": DIRECTIONS[dir_i], "spawn": spot, "timer": warning_time,
-		"raiders": [], "broken": 0, "angle": angle, "story": story.get("key", "")}
+		"raiders": [], "broken": 0, "angle": angle, "story": story.get("key", ""), "center": center}
 	if not story.is_empty():
 		raid.timer = 30.0
 	raid_warning.emit(raid)

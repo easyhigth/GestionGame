@@ -194,7 +194,7 @@ func _spawn() -> void:
 	cart.add_child(sign)
 	world.get_node("Village").add_child(cart)
 	cart.global_position = _cart_pos
-	var to_fire := world.cell_center(world.spawn_cell) - _cart_pos
+	var to_fire := world.home_center() - _cart_pos
 	cart.rotation.y = atan2(to_fire.x, to_fire.z) + PI * 0.5
 	var v := world.villager_scene.instantiate() as Villager
 	v.stranger = true
@@ -230,7 +230,7 @@ func _despawn() -> void:
 ## Une place libre et praticable près du feu de camp pour la charrette.
 func _find_spot() -> Vector3:
 	var fm := get_tree().get_first_node_in_group("farming") as Farming
-	var center := world.spawn_cell
+	var center := world.home_cell_or_spawn()
 	for r in range(6, 14):
 		for i in 24:
 			var a := TAU * i / 24.0 + 0.3

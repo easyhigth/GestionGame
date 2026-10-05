@@ -321,7 +321,7 @@ func _bring_traveler(members: Array) -> void:
 	v.set_meta("attracted", true)
 	v.wander_radius = 2.0
 	world.get_node("Village").add_child(v)
-	var pos := world.cell_center(world.spawn_cell) + Vector3(2.5, 0, 2.5)
+	var pos := world.home_center() + Vector3(2.5, 0, 2.5)
 	pos.y = world.ground_height_at(pos + Vector3(0, 3, 0))
 	v.global_position = pos
 	v.home = pos

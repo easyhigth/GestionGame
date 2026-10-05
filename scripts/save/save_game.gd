@@ -604,6 +604,9 @@ func apply_pending(world: WorldGenerator) -> void:
 		var it := Items.get_item(f[3])
 		if it:
 			grid.place_furniture(Vector2i(int(f[0]), int(f[1])), float(f[2]), it, int(f[4]))
+	# sauvegarde d'avant le drapeau du royaume : le village était à l'arrivée, on y plante le drapeau
+	if not (d.world as Dictionary).has("flag_v"):
+		world.plant_legacy_flag()
 	# héros
 	var p := _player()
 	var pd: Dictionary = d.player

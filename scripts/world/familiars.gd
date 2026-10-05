@@ -174,7 +174,7 @@ func village_list() -> Array:
 
 ## La place d'un familier au village (en cercle autour du feu de camp).
 func village_spot(i: int) -> Vector3:
-	var c := world.cell_center(world.spawn_cell) if world else Vector3.ZERO
+	var c := world.home_center() if world else Vector3.ZERO
 	var a := TAU * i / 5.0 + 0.8
 	var p := c + Vector3(cos(a), 0, sin(a)) * 7.0
 	if world:

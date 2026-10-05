@@ -185,12 +185,17 @@ func _recruit() -> void:
 	if v == null or not is_instance_valid(v):
 		close()
 		return
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+	# il faut un camp où l'accueillir : le drapeau du royaume
+	if world and not world.has_home():
+		player.notify.emit("Plante d'abord le drapeau du royaume : c'est là que tes habitants s'installeront.")
+		close()
+		return
 	for pair in v.recruit_offer.get("items", []):
 		player.inventory.remove(pair[0], int(pair[1]))
-	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
 	if world:
 		world.mark_recruited(v)
-		v.join_village(world.cell_center(world.spawn_cell))
+		v.join_village(world.home_center())
 	VoxelBurst.spawn(player, player.global_position + Vector3(0, 1, 0), C_GOLD, 30, 4.0, 0.08, 0.8, "up", 4.0)
 	player.feat.emit("%s te rejoint !" % v.villager_name, C_GOLD)
 	player.notify.emit("%s part pour ton village. Donne-lui un poste ({interact} près de lui) ou emmène-le en expédition." % v.villager_name)

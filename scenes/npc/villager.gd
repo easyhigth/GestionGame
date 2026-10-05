@@ -328,7 +328,7 @@ func set_companion(on: bool) -> void:
 	else:
 		var world := get_tree().get_first_node_in_group("world") as WorldGenerator
 		if world:
-			var v := world.cell_center(world.spawn_cell)
+			var v := world.home_center()
 			home = v + Vector3(randf_range(-4, 4), 0, randf_range(-4, 4))
 			_target = home
 
@@ -515,7 +515,7 @@ func _pick_spot(act: String) -> Vector3:
 		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
 		if _world == null:
 			return Vector3.INF
-	var center := _world.cell_center(_world.spawn_cell)
+	var center := _world.home_center()
 	var seed := float(hash(villager_name) % 1000) / 1000.0
 	match act:
 		"sommeil":
@@ -655,7 +655,7 @@ func _routine_step(delta: float) -> bool:
 
 
 func _face_center() -> void:
-	var center := _world.cell_center(_world.spawn_cell)
+	var center := _world.home_center()
 	var d := center - global_position
 	d.y = 0.0
 	if d.length() > 0.1:

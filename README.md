@@ -1163,3 +1163,27 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
   (bois → planches, dalles, rondins...), **◀ ▶** à côté du résultat change de recette.
 - Fermer le sac (ou changer d'atelier) **rend au sac** tout ce qui est dans la grille ; la sauvegarde le compte
   avec le sac.
+
+## Drapeau du royaume : fonder son camp où on veut (RPG et gestion, dans l'ordre qu'on veut)
+
+- Au début d'une partie, le héros arrive seul avec le **drapeau du royaume** dans le sac. Rien n'est imposé :
+  on peut d'abord **explorer, suivre l'histoire et se battre** (le côté RPG / hack and slash), et fonder son
+  royaume plus tard, ou tout de suite.
+- **Planter le drapeau** : le prendre en main ({hand_toggle}, ou glisser dans la barre) puis **clic droit** au sol.
+  Là où il est planté, c'est **le centre du camp** : les habitants recrutés s'y installent, les pillards y
+  viennent, le marchand, les quêtes du village, les fêtes, les trophées, les animaux, la carte du royaume et le
+  repère de la mini-carte s'y rattachent.
+- **Le déplacer** : frapper le drapeau le reprend (il revient directement dans le sac, on ne peut pas le perdre),
+  puis on le replante ailleurs. Drapeau arraché : **plus de camp, plus de raids** ; les habitants restent au
+  dernier endroit en attendant. Un drapeau perdu se refait sur soi (2 bois, 2 fibres) ; un seul peut être planté
+  à la fois.
+- **Tant qu'aucun drapeau n'est planté : aucun raid.** Les raids de l'histoire, nécessaires pour avancer, tombent
+  alors sur le héros là où il se trouve.
+- **Recruter** un habitant demande un camp (« Plante d'abord le drapeau du royaume »).
+- **L'histoire n'oblige plus à gérer** : chaque étape de gestion (« Construis 2 maisons », « Construis une forge »,
+  « Rassemble 10 habitants »...) peut aussi se franchir **en aventurier**, en vainquant des monstres (12 + 4 par
+  acte, depuis le début de l'étape). Le suivi à l'écran affiche les deux voies.
+- Les deux moitiés s'aident : un royaume développé donne équipement, potions, bonus des pièces, artisans,
+  expéditions ; l'aventure donne des niveaux, du butin et des ressources rares pour tenir face aux raids.
+- Anciennes sauvegardes : le drapeau est planté automatiquement près de l'ancien village. Départ classique (avec
+  campement) : le drapeau est déjà planté au campement.

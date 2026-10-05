@@ -373,7 +373,7 @@ func _settler(id: String) -> void:
 	v.set_meta("province", id)
 	w.get_node("Village").add_child(v)
 	var a := randf() * TAU
-	var pos := w.cell_center(w.spawn_cell) + Vector3(cos(a), 0, sin(a)) * 10.0
+	var pos := w.home_center() + Vector3(cos(a), 0, sin(a)) * 10.0
 	pos.y = w.ground_height_at(pos + Vector3(0, 3, 0))
 	v.global_position = pos
 	v.home = pos
@@ -467,7 +467,7 @@ func _deliver(id: String, goods: Array, text: String) -> void:
 			continue
 		parts.append("%d %s" % [int(pair[1]), it.display_name])
 		if w:
-			var c := w.cell_center(w.spawn_cell) + Vector3(randf_range(-2, 2), 0, randf_range(2, 3.5))
+			var c := w.home_center() + Vector3(randf_range(-2, 2), 0, randf_range(2, 3.5))
 			w.spawn_pickup(it, c, int(pair[1]))
 		elif player:
 			player.inventory.add(it, int(pair[1]))

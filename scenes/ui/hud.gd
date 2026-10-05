@@ -730,6 +730,12 @@ func _update_kingdom() -> void:
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	if k == null or _kingdom_text == null:
 		return
+	# pas de drapeau du royaume planté : pas encore de camp
+	var wd := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if wd and not wd.has_home():
+		_kingdom_text.text = "Pas encore de camp · plante le drapeau du royaume là où tu veux fonder ton royaume"
+		_kingdom_text.add_theme_color_override("font_color", Color("c8b88a"))
+		return
 	var n := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
 	if n:
 		var m := n.members().size()

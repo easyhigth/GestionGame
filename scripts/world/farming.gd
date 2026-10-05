@@ -102,7 +102,7 @@ func can_till(cell: Vector2i) -> bool:
 		return false
 	if world.village_prop_at(cell, h) != null:
 		return false
-	return absf(h - world.cell_center(world.spawn_cell).y) < 30.0
+	return absf(h - world.home_center().y) < 30.0
 
 
 ## Laboure une case. Vrai si c'est fait (ou si elle l'était déjà).

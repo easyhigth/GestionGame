@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/props/drapeau_royaume.tscn" id="m"]
+
+[resource]
+script = ExtResource("1")
+id = "drapeau_royaume"
+display_name = "Drapeau du royaume"
+description = "Plante-le (clic droit, objet en main) là où tu veux fonder ton camp : c'est là que s'installeront tes habitants et que viendront les pillards. Frappe-le pour le reprendre et le replanter ailleurs. Tant qu'il n'est pas planté, pas de camp : pas de raids."
+rarity = 2
+max_stack = 1
+furniture_model = ExtResource("m")
+furniture_solid = false

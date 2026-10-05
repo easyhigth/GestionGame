@@ -169,7 +169,7 @@ func _festival_step() -> void:
 
 func _give_gifts() -> void:
 	var f: Array = FESTIVALS[season()]
-	var c := world.cell_center(world.spawn_cell)
+	var c := world.home_center()
 	var i := 0
 	for g in f[2]:
 		var it := Items.get_item(g[0])
@@ -188,7 +188,7 @@ func _make_decor() -> void:
 	_decor = Node3D.new()
 	_decor.name = "DecorFete"
 	world.get_node("Village").add_child(_decor)
-	var c := world.cell_center(world.spawn_cell)
+	var c := world.home_center()
 	_decor.global_position = c
 	var cols: Array = FESTIVALS[season()][3]
 	var n := 10
