@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
-[ext_resource type="PackedScene" path="res://assets/characters/creatures/feathered_serpent.glb" id="r2"]
+[ext_resource type="PackedScene" path="res://assets/characters/bosses/quetzal.glb" id="r2"]
 [ext_resource type="Resource" path="res://data/items/lingot_or.tres" id="r3"]
 [ext_resource type="Resource" path="res://data/items/or_brut.tres" id="r4"]
 [ext_resource type="Resource" path="res://data/items/piece_or.tres" id="r5"]
