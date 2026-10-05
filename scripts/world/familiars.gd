@@ -20,7 +20,7 @@ static func max_team(tree: SceneTree) -> int:
 const ORDERS := ["suivre", "attendre", "attaquer"]
 const ORDER_TEXT := {"suivre": "Suivez-moi !", "attendre": "Attendez ici !", "attaquer": "Attaquez ma cible !"}
 ## Familiers que l'on peut monter (E près de lui) : vitesse selon l'évolution.
-const RIDEABLE := ["loup", "loup_alpha", "loup_givre", "sanglier", "ours_neige", "araignee", "scorpion", "panthere"]
+const RIDEABLE := ["loup", "loup_alpha", "loup_givre", "sanglier", "ours_neige", "araignee", "scorpion", "panthere", "mammouth"]
 const SCALE := [1.0, 1.18, 1.38]
 const POWER := [1.1, 1.45, 1.95]
 ## Victoires pour évoluer (1re et 2e évolution) ; un niveau toutes les LEVEL_KILLS victoires.
@@ -43,6 +43,8 @@ const TITLES := {
 	"dryade_corrompue": ["Dryade", "Dryade ancienne"],
 	"panthere": ["Panthère des ombres", "Reine panthère"], "grenouille": ["Grenouille royale", "Crapaud-roi"],
 	"serpent": ["Serpent ailé", "Grand naga"], "serpent_roi": ["Naga royal", "Serpent céleste"],
+	"yeti": ["Yéti des cimes", "Roi des neiges"], "elementaire_glace": ["Élémentaire de givre", "Colosse de glace"],
+	"mammouth": ["Mammouth de guerre", "Mammouth ancestral"],
 }
 
 var world: WorldGenerator

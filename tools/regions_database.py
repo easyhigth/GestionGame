@@ -146,6 +146,15 @@ ENEMIES.update({
                      1000, 46, 12, 4.0, 3.0, ['bite', 'charge_ram'], 0.85, 800, 10.0, 1.4,
                      [('lingot_or', 1.0), ('or_brut', 1.0), ('piece_or', 1.0)]),
 })
+# toundra gelée
+ENEMIES.update({
+    'yeti': ('Yéti', CREA % 'yeti', None, [], 'b8e8ff', 1.0,
+             230, 26, 5, 3.8, 2.1, ['enemy_chop', 'enemy_sweep'], 0.85, 70, 7.5, 0.6, [('leather', 0.9), ('fiber', 0.5)]),
+    'elementaire_glace': ('Élémentaire de glace', CREA % 'ice_elemental', None, [], 'e0faff', 1.0,
+                          150, 24, 9, 3.4, 1.9, ['enemy_chop', 'enemy_sweep'], 0.9, 50, 5.0, 0.5, [('stone', 0.6), ('gemme_saphir', 0.04)]),
+    'mammouth': ('Mammouth laineux', CREA % 'mammoth', None, [], 'd8b080', 1.0,
+                 300, 28, 7, 3.2, 2.4, ['charge_ram', 'bite'], 0.7, 110, 9.0, 0.95, [('leather', 1.0), ('leather', 0.7), ('fiber', 0.4)]),
+})
 ENEMIES.update(BOSSES)
 
 
@@ -227,14 +236,15 @@ REGIONS = [
          res=['iron_ore', 'stone', 'marbre_brut', 'piece_or'], resc=0.016),
     dict(id='toundra', races=['humain', 'oni', 'lycan', 'nain'], soul={'defense': 3, 'regen': 1.0}, soulname="Fourrure de Givrecroc : +3 défense, +1 vie/s", boss='boss_ours_ancien', title='Un froid mortel envahit la salle...', powers=['charge', 'onde', 'pluie'], dfloor='bloc_marbre', dwall='bloc_pierre_polie', daccent='bloc_verre', dlight='a0e0ff', damb='101820', name='Toundra gelée', map='e8f0f8', temp=-1.0, moist=0.3, dist=0.55, lv=(8, 13),
          names=['Toundra de Blanchegivre', 'Steppes Hurlantes', 'Glacis du Nord', 'Plaine des Aurores', 'Fjords de Givrecœur'],
-         desc="Neige éternelle, loups de givre et ours gigantesques.",
+         desc="Neige éternelle, loups de givre, yétis, mammouths et élémentaires de glace.",
          grass=('eef2f6', 'dce4ec'), dirt='8a8a92', sand='d0d8e0', stone='b0b4bc', water_floor='a8c0d0',
          relief=1.1,
          trees=['pine_snow_1', 'pine_snow_2'], forest=0.3, scattered=0.03,
          bushes=[], bush=0.0, rocks=['snow_rock_1', 'snow_rock_2'], rock=0.05,
          plants=['dry_grass_1'], plant=0.03,
-         enemies=['loup_givre', 'loup_givre', 'ours_neige'], elite=['ours_neige'], camps=0.5,
-         res=['stone', 'leather', 'iron_ore', 'piece_or'], resc=0.008),
+         enemies=['loup_givre', 'loup_givre', 'ours_neige', 'yeti', 'elementaire_glace', 'mammouth'], elite=['ours_neige', 'mammouth'], camps=0.5,
+         res=['stone', 'leather', 'iron_ore', 'piece_or'], resc=0.008,
+         weather={'clair': 3, 'nuageux': 3, 'pluie': 3, 'orage': 1, 'brouillard': 2}, precip='neige'),
     dict(id='bois_enchante', races=['fee', 'esprit', 'dryade', 'ange'], soul={'magic': 0.15, 'xp': 0.1}, soulname="Sève de Sylvaëlle : +15 % magie, +10 % d'expérience", boss='boss_dryade_mere', title='La forêt pleure...', powers=['pluie', 'invocation', 'onde'], dfloor='bloc_marbre', dwall='bloc_marbre_noir', daccent='bloc_marbre_dore', dlight='d0a0ff', damb='18101e', name='Bois enchanté', map='5ad0c0', temp=0.3, moist=0.4, dist=0.6, lv=(10, 15),
          names=['Bois de Lunécume', 'Sylve des Fées', 'Vallée Cristalline', 'Jardins de Nacre', 'Clairière des Songes'],
          desc="Cerisiers, champignons géants et cristaux. Les fées n'aiment pas les intrus.",

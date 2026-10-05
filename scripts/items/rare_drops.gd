@@ -16,6 +16,7 @@ const ENEMY := {
 	"ogre": [["mithril_brut", 0.05]], "orc_brute": [["mithril_brut", 0.02]], "loup_alpha": [["mithril_brut", 0.02]],
 	"grenouille": [["larme_esprit", 0.03]], "serpent": [["ecaille_dragon", 0.02]], "panthere": [["mithril_brut", 0.02]],
 	"serpent_roi": [["ecaille_dragon", 0.15], ["gemme_emeraude", 0.1]],
+	"yeti": [["os", 0.4], ["mithril_brut", 0.02]], "mammouth": [["os", 0.6]], "elementaire_glace": [["larme_esprit", 0.03]],
 }
 ## Tous les boss : [objet, chance, minimum, maximum].
 const BOSS := [["mithril_brut", 0.7, 2, 3], ["fragment_brume", 0.4, 1, 2], ["orichalque", 0.06, 1, 1],

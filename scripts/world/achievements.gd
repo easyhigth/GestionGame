@@ -13,7 +13,7 @@ signal changed
 const BESTIARY := ["slime_bleu", "slime_acide", "slime_magma", "gobelin_pillard", "loup", "loup_alpha", "loup_givre", "sanglier",
 	"araignee", "scorpion", "homme_lezard", "orc_brute", "ogre", "harpie", "ours_neige", "salamandre", "esprit_follet",
 	"fee_sauvage", "dryade_corrompue", "squelette", "seigneur_squelette", "demon", "seigneur_demon",
-	"panthere", "grenouille", "serpent", "serpent_roi"]
+	"panthere", "grenouille", "serpent", "serpent_roi", "yeti", "elementaire_glace", "mammouth"]
 const BOSSES := {"prairie": "Grondebois", "foret": "Tissombre", "marais": "le Slime Primordial", "desert": "Ankhar",
 	"montagnes": "Brisemonts", "toundra": "Givrecroc", "bois_enchante": "Sylvaëlle", "volcan": "Ignarok", "jungle": "Xochitl"}
 ## Récompenses selon les points : [points, titre, couleur de l'aura (ou null)].
