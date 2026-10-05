@@ -109,6 +109,8 @@ func _world_card(w: Dictionary) -> Control:
 		flags.append("nuits paisibles")
 	if not bool(opts.get("hunger", true)):
 		flags.append("sans faim")
+	if not bool(opts.get("tutorial", true)):
+		flags.append("sans tutoriel")
 	var l2 := MenuKit.label("%s · %s" % [str(info.get("date", "")).replace("T", " ").substr(0, 16), " · ".join(PackedStringArray(flags))], 10, MenuKit.C_DIM)
 	l2.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(l2)

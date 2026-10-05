@@ -160,7 +160,7 @@ func _process(_d) -> bool:
 		check("épée en fer forgée à l'enclume", craft("sword_iron"))
 		p.inventory.add(items.get_item("iron_ingot"), 3)
 		check("pioche en fer forgée", craft("pioche_fer"))
-		check("guide : chapitre 3 « Le village » commence", gd.step == 19)
+		check("guide : chapitre 3 « Le village » commence (%s)" % gd.current_id(), gd.step >= 19 and gd.step <= 20)
 		p.cam_yaw = deg_to_rad(160.0); p.cam_pitch = deg_to_rad(34.0); p.camera_zoom = 0.9
 		p.snap_camera()
 		set_meta("t4", Time.get_ticks_msec())

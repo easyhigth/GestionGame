@@ -135,6 +135,19 @@ func _page_overview(page: VBoxContainer, k: Kingdom, n: VillageNeeds) -> void:
 		goal.custom_minimum_size.x = 690
 		pv.add_child(goal)
 		page.add_child(prog)
+	# les deux moitiés du jeu s'aident : faveurs (royaume → héros) et trophées (héros → royaume)
+	if k:
+		var wd := get_tree().get_first_node_in_group("world") as WorldGenerator
+		var fav := MenuKit.card_box(false, 10.0, 2)
+		var fv: VBoxContainer = fav.get_child(0)
+		fv.add_child(MenuKit.bold("Faveurs du royaume (pour le héros)", 12, MenuKit.C_GOLD))
+		for f in KingdomFavors.FAVORS:
+			var on: bool = k.rank >= int(f[0])
+			fv.add_child(MenuKit.label("%s %s — %s  (%s)" % ["✔" if on else "·", f[1], f[2], Kingdom.RANK_NAMES[int(f[0])]], 10, MenuKit.C_OK if on else MenuKit.C_DIM))
+		var t := KingdomFavors.trophies(wd)
+		fv.add_child(MenuKit.label("Trophées du héros : %d boss vaincus → bonheur +%d, voyageurs %d %% plus fréquents." % [t, roundi(KingdomFavors.trophy_happiness(wd)),
+			roundi((1.0 / KingdomFavors.arrival_mult(wd) - 1.0) * 100.0)], 10, Color("e0b860")))
+		page.add_child(fav)
 	# actions rapides
 	var acts := HBoxContainer.new()
 	acts.alignment = BoxContainer.ALIGNMENT_CENTER

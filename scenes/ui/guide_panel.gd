@@ -30,6 +30,7 @@ const STEPS := [
 	["enclume", "Fabrique et pose une enclume", "4 lingots de fer, près d'un établi. Toutes les pièces en fer se forgent à côté d'elle.", 1],
 	["pioche_fer", "Forge une pioche en fer", "{interact} devant l'enclume → Outils : 2 lingots et 2 bois. Elle mine l'or et le marbre.", 1],
 	# chapitre 3 : le village
+	["drapeau", "Plante le drapeau du royaume", "Choisis l'endroit de ton village : prends le drapeau en main ({hand_toggle}) et plante-le ({place_click}). Tes habitants s'installeront autour et les raids viendront là. Rien ne presse : explore d'abord si tu préfères (« Passer » sous ce conseil).", 1],
 	["reserve", "Remplis la réserve du village", "Ouvre le royaume ({kingdom}) et dépose de la nourriture. Une boulangerie ou une grange la remplissent aussi.", 1],
 	["lits", "Recrute un habitant et loge-le", "Seul au début, tu attires des voyageurs dès que tu as bâti un abri : parle-leur ({interact}) pour les recruter. Une maison (porte, un lit, un coffre) donne 2 lits ; un dortoir (4 lits, un coffre) en donne 6.", 1],
 	["bonheur", "Rends ton village heureux", "Bonheur moyen de 70 % : nourriture, lits, taverne, temple... Le royaume ({kingdom}) dit ce qui manque.", 1],
@@ -67,14 +68,14 @@ const STEPS := [
 	["enchanter", "Enchante une arme ou une armure", "{interact} devant un autel → Enchantement. La poussière arcanique tombe des monstres, ou s'obtient en réduisant un objet.", 1],
 	["catalogue", "Fabrique un bloc du catalogue", "Construction : choisis une forme (bloc, dalle, escalier...), puis une matière. Les pierres taillées se font à la table du tailleur ({interact} devant elle). Les pierres et les bois changent selon les régions.", 1],
 	# chapitre 11 : la fin de partie
-	["palier", "Monte le palier du monde", "Au niveau 60, au Portail des Failles (près du village, E) : des monstres plus forts, plus d'expérience et du butin de niveau.", 1],
+	["palier", "Monte le palier du monde", "Au niveau 60, au Portail des Failles (près de ton point d'arrivée, {interact}) : des monstres plus forts, plus d'expérience et du butin de niveau.", 1],
 	["faille", "Vaincs le gardien d'une faille", "Au Portail des Failles : trois vagues puis le gardien. Dès le rang 3, des modificateurs pimentent l'arène.", 1],
 	["titan", "Abats un titan", "Dès le niveau 30, un titan s'éveille tous les 2 ou 3 jours : il est marqué sur la carte ({world_map}).", 1],
 ]
 ## Chapitres : [titre, première étape, étape suivant la dernière].
-const CHAPTERS := [["LES BASES", 0, 4], ["PREMIERS PAS", 4, 14], ["L'ÂGE DU FER", 14, 19], ["LE VILLAGE", 19, 22], ["LES CHAMPS", 22, 26],
-	["LE COMMERCE", 26, 29], ["L'ÉLEVAGE", 29, 32], ["L'EAU", 32, 35], ["L'AVENTURE", 35, 39], ["LES VOISINS", 39, 44], ["L'ARTISAN", 44, 48],
-	["LA FIN DE PARTIE", 48, 51]]
+const CHAPTERS := [["LES BASES", 0, 4], ["PREMIERS PAS", 4, 14], ["L'ÂGE DU FER", 14, 19], ["LE VILLAGE", 19, 23], ["LES CHAMPS", 23, 27],
+	["LE COMMERCE", 27, 30], ["L'ÉLEVAGE", 30, 33], ["L'EAU", 33, 36], ["L'AVENTURE", 36, 40], ["LES VOISINS", 40, 45], ["L'ARTISAN", 45, 49],
+	["LA FIN DE PARTIE", 49, 52]]
 ## Icône de chaque chapitre (assets/ui/icon_*.png).
 const CHAPTER_ICONS := {"LES BASES": "compass", "PREMIERS PAS": "compass", "L'ÂGE DU FER": "sword", "LE VILLAGE": "house", "LES CHAMPS": "food",
 	"LE COMMERCE": "coin", "L'ÉLEVAGE": "people", "L'EAU": "gem", "L'AVENTURE": "skull", "LES VOISINS": "shield", "L'ARTISAN": "sword", "LA FIN DE PARTIE": "skull"}
@@ -102,7 +103,7 @@ const TIPS := [
 	["faim", "Tu as faim : mange avec {eat} (baies, viande cuite, pain...). Le ventre vide, tu ne regagnes plus de vie."],
 ]
 ## Version de la liste des étapes (pour convertir les anciennes sauvegardes).
-const VERSION := 3
+const VERSION := 4
 
 var player: Player
 var step := 0
@@ -152,6 +153,31 @@ func _ready() -> void:
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint.custom_minimum_size = Vector2(236, 0)
 	v.add_child(_hint)
+	# le guide ne bloque jamais : on peut passer une étape (ex. fonder son village plus tard et partir à l'aventure)
+	_skip = Button.new()
+	_skip.text = "Passer cette étape ›"
+	_skip.flat = true
+	_skip.focus_mode = Control.FOCUS_NONE
+	_skip.mouse_filter = Control.MOUSE_FILTER_STOP
+	_skip.tooltip_text = "L'objectif suivant du guide s'affiche (Alt maintenu libère la souris)."
+	_skip.add_theme_font_size_override("font_size", 9)
+	_skip.add_theme_color_override("font_color", Color("a89878"))
+	_skip.pressed.connect(skip_step)
+	_skip_all = Button.new()
+	_skip_all.text = "Passer tout le tutoriel"
+	_skip_all.flat = true
+	_skip_all.focus_mode = Control.FOCUS_NONE
+	_skip_all.mouse_filter = Control.MOUSE_FILTER_STOP
+	_skip_all.tooltip_text = "Le guide disparaît pour de bon (le journal et l'aide-mémoire restent là). Un deuxième clic confirme."
+	_skip_all.add_theme_font_size_override("font_size", 9)
+	_skip_all.add_theme_color_override("font_color", Color("a89878"))
+	_skip_all.pressed.connect(_on_skip_all)
+	var srow := HBoxContainer.new()
+	srow.add_theme_constant_override("separation", 6)
+	srow.add_child(_skip)
+	srow.add_child(_skip_all)
+	_skip_row = srow
+	v.add_child(srow)
 	var bar_bg := ColorRect.new()
 	bar_bg.color = Color(0, 0, 0, 0.5)
 	bar_bg.custom_minimum_size = Vector2(236, 4)
@@ -188,6 +214,9 @@ func _ready() -> void:
 	if not SaveGame.guide_state.is_empty():
 		import_state(SaveGame.guide_state)
 		SaveGame.guide_state = {}
+	elif not SaveGame.world_flag("tutorial"):
+		# monde créé sans tutoriel
+		skip_all(true)
 	_refresh()
 
 
@@ -257,6 +286,49 @@ func current_id() -> String:
 
 func is_done() -> bool:
 	return step >= STEPS.size()
+
+
+var _skip: Button
+var _skip_all: Button
+var _skip_row: Control
+var _skip_all_armed := 0.0
+
+
+func _on_skip_all() -> void:
+	# deux clics (le premier demande confirmation pendant 4 s)
+	if Time.get_ticks_msec() / 1000.0 > _skip_all_armed:
+		_skip_all_armed = Time.get_ticks_msec() / 1000.0 + 4.0
+		_skip_all.text = "Sûr ? Clique encore"
+		get_tree().create_timer(4.0).timeout.connect(func():
+			if is_instance_valid(_skip_all):
+				_skip_all.text = "Passer tout le tutoriel")
+		return
+	skip_all()
+
+
+## Passe tout le guide des premiers pas (bouton, ou option du monde « Tutoriel » décochée).
+func skip_all(quiet := false) -> void:
+	step = STEPS.size()
+	progress = 0
+	_hide_timer = 0.1
+	if player and not quiet:
+		player.notify.emit("Tutoriel passé. L'aide-mémoire des touches (F1) et le journal restent là si besoin.")
+	_refresh()
+
+
+## Passe l'objectif en cours (le guide ne bloque jamais le joueur).
+func skip_step() -> void:
+	if is_done():
+		return
+	if player:
+		player.notify.emit("Objectif passé : %s. Tu pourras le faire quand tu voudras." % STEPS[step][1])
+	step += 1
+	progress = 0
+	if is_done():
+		_hide_timer = 8.0
+	else:
+		_check_state()
+	_refresh()
 
 
 func _advance(id: String, amount := 1) -> void:
@@ -336,6 +408,10 @@ func _check_state() -> void:
 				if it and player.inventory.count(it) > 0:
 					_advance("outil")
 					return
+		"drapeau":
+			var wd := get_tree().get_first_node_in_group("world") as WorldGenerator
+			if wd and wd.has_home():
+				_advance("drapeau")
 		"abri":
 			var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 			if k:
@@ -583,6 +659,8 @@ func show_hint(secs := HINT_TIME) -> void:
 	_hint_left = secs
 	_hint_remind = HINT_REMIND
 	_hint.visible = true
+	if _skip_row:
+		_skip_row.visible = not is_done()
 	reset_size()
 
 
@@ -597,6 +675,8 @@ func _update_hint(delta: float) -> void:
 		_hint_left -= delta
 		if _hint_left <= 0.0:
 			_hint.visible = false
+			if _skip_row:
+				_skip_row.visible = false
 			reset_size()
 	else:
 		# petit rappel de temps en temps tant que l'objectif n'est pas atteint
@@ -631,5 +711,8 @@ func import_state(d: Dictionary) -> void:
 	# version 2 : ni « les bases », ni « établi », ni « arme » (arbre, rocher, outil, planches...)
 	if int(d.get("v", 1)) < 3 and step < 99:
 		step = 4 if step == 0 else (step + 5 if step <= 2 else step + 6)
+	# version 3 : pas d'étape « drapeau » (20e étape, en tête du village)
+	if int(d.get("v", 1)) < 4 and step >= 19 and step < 99:
+		step += 1
 	_hide_timer = -1.0
 	_refresh()

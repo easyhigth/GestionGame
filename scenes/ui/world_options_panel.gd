@@ -48,7 +48,9 @@ func _ready() -> void:
 	_diff.selected = clampi(int(opts.get("difficulty", 1)), 0, 2)
 	dr.add_child(_diff)
 	box.add_child(dr)
-	for f in FLAGS:
+	# le tutoriel (guide des premiers pas) ne se choisit qu'à la création du monde
+	var flags: Array = FLAGS + ([["tutorial", "Tutoriel : le guide des premiers pas (décoche pour le passer)"]] if creating else [])
+	for f in flags:
 		var cb := CheckBox.new()
 		cb.text = f[1]
 		cb.button_pressed = bool(opts.get(f[0], true))

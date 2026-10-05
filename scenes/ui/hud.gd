@@ -119,6 +119,12 @@ func _ready() -> void:
 	_build_hotbar()
 	if player:
 		player.feat.connect(show_feat)
+		# entrer dans la zone du camp : un mot (au plus une fois par minute)
+		player.camp_changed.connect(func(inside: bool):
+			var now := Time.get_ticks_msec()
+			if inside and now - _camp_msg_at > 60000:
+				_camp_msg_at = now
+				show_message("Au camp : refuge (pas de monstres la nuit), vie +%d/s." % roundi(Player.CAMP_REGEN)))
 		player.lock_changed.connect(func(t): _target = t)
 		player.notify.connect(show_message)
 		player.health.changed.connect(func(_c, _m): _update_health())
@@ -1363,6 +1369,9 @@ func _place_help() -> void:
 	info.offset_bottom = 310
 	info.add_theme_font_size_override("font_size", 10)
 	info.modulate = Color(1, 1, 1, 0.7)
+
+
+var _camp_msg_at := -100000
 
 
 func show_message(text: String) -> void:

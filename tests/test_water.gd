@@ -251,11 +251,11 @@ func _process(_d) -> bool:
 	if later("j", 1600):
 		check("remonté au-dessus de l'entrée", not cv.active and p.global_position.y > -10.0 and p.global_position.distance_to(entrance.pos) < 6.0)
 		print("== guide")
-		gd.step = 32; gd.progress = 0; gd._refresh()
+		gd.step = 33; gd.progress = 0; gd._refresh()
 		gd._check_state()
 		for i in 3: fi.caught.emit("gardon")
 		cv.chest_opened.emit("x")
-		check("chapitre 7 « L'eau » fini", gd.step >= 29 and gd.current_id() == "donjon")
+		check("chapitre 7 « L'eau » fini", gd.step >= 30 and gd.current_id() == "donjon")
 		root.get_node("SaveGame").save_game("3")
 		set_meta("opened", cv.opened.duplicate(true))
 		root.get_node("SaveGame").load_game("3")

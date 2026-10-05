@@ -63,6 +63,23 @@ func _ready() -> void:
 	_labels_root = Node3D.new()
 	_labels_root.name = "Etiquettes"
 	add_child(_labels_root)
+	_connect_morning.call_deferred()
+
+
+## Chaque matin, les faveurs du royaume (cadeaux selon le rang).
+func _connect_morning() -> void:
+	var dc := get_tree().get_first_node_in_group("day_cycle") as DayCycle
+	if dc and not dc.day_started.is_connected(_on_morning):
+		dc.day_started.connect(_on_morning)
+
+
+func _on_morning(_day: int) -> void:
+	if world == null or not world.has_home():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	var txt := KingdomFavors.morning(p, rank)
+	if txt != "" and p:
+		p.notify.emit("Faveurs du royaume (%s) : %s." % [RANK_NAMES[rank], txt])
 
 
 ## Montre aussi les pièces non terminées (en mode construction).
@@ -442,7 +459,8 @@ func _produce(delta: float) -> void:
 ## Bonus des pièces pour le héros (un seul par type de pièce).
 func hero_bonus(key: String) -> float:
 	var seen := {}
-	var total := 0.0
+	# faveurs du royaume (selon son rang, seulement avec un camp)
+	var total := KingdomFavors.hero_bonus(rank, key) if world and world.has_home() else 0.0
 	for r in rooms:
 		if r.type and not seen.has(r.type.id):
 			seen[r.type.id] = true

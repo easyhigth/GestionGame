@@ -1201,3 +1201,30 @@ Les anciennes sauvegardes gardent toutes leurs recettes connues.
   Son rayon grandit avec le rang : 16 m (Campement), 20, 26, 32, 40, 50, jusqu'à 62 m (Capitale d'empire) ; un
   message l'annonce quand elle s'étend. Elle apparaît aussi sur la carte du monde et la mini-carte (cercle doré).
 - Pendant un raid, les gardes défendent toute la zone, et les pillards arrivent toujours de l'extérieur.
+
+## Le camp et l'aventure s'aident
+
+- **Guide** : une étape « Plante le drapeau du royaume » ouvre le chapitre du village. Sous chaque conseil, un
+  bouton **« Passer cette étape »** (Alt pour libérer la souris) : le guide ne bloque jamais, on peut partir à
+  l'aventure d'abord et fonder son village plus tard.
+- **Retour au camp** :
+  - sur la **carte du monde** ({world_map}), cliquer sur le camp (le carré doré) y ramène, comme un obélisque ;
+  - la **pierre de rappel** (établi → Outils : 6 cailloux, 2 fibres → 2 pierres) : un clic dans le sac ramène au
+    drapeau **d'où que l'on soit, même du fond d'un donjon, d'une grotte ou d'une faille**. Elle se brise.
+- **Zone du camp = refuge** : aucun monstre n'y apparaît la nuit, et le héros y récupère **+3 PV/s** (un message
+  le rappelle en entrant, au plus une fois par minute).
+- **Faveurs du royaume (royaume → héros)**, selon le rang du royaume (panneau du royaume, vue d'ensemble) :
+  - Hameau : chaque matin, 2 pains ;
+  - Village : chaque matin, une potion de soin ;
+  - Bourg : chaque matin, une pierre de rappel ;
+  - Ville : attaque et défense du héros +2 par rang ;
+  - Cité : chaque matin, 40 pièces d'or par rang ;
+  - Capitale d'empire : expérience +10 %.
+- **Trophées (héros → royaume)** : chaque région dont le héros a vaincu le boss (sa statue se dresse au camp)
+  rend les habitants plus fiers (**bonheur +3** par trophée, jusqu'à +20) et fait venir les **voyageurs plus
+  souvent** (−12 % d'attente par trophée, jusqu'à deux fois plus vite).
+- Les voyageurs n'arrivent qu'auprès d'un camp (drapeau planté).
+- **Passer le tutoriel** : à la création d'un monde, la case **« Tutoriel »** (cochée par défaut) peut être
+  décochée : pas de guide des premiers pas. En jeu, sous le conseil du guide, **« Passer tout le tutoriel »**
+  (deux clics pour confirmer) le fait disparaître pour de bon. L'intro animée se passe toujours avec Espace ou
+  Échap.

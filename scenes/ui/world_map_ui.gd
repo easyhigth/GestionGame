@@ -177,7 +177,7 @@ func _gui_input(event: InputEvent) -> void:
 			queue_redraw()
 		elif mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
-				if _hover >= 0:
+				if _hover >= 0 or _hover == HOVER_HOME:
 					_travel(_hover)
 				else:
 					_dragging = true
@@ -190,13 +190,24 @@ func _gui_input(event: InputEvent) -> void:
 		if _dragging:
 			center -= mm.relative / _scale()
 		_hover = -1
+		if world.has_home() and cell_to_screen(Vector2(world.home_cell) + Vector2(0.5, 0.5)).distance_to(mm.position) < 12.0:
+			_hover = HOVER_HOME
 		for z in _travel_points():
 			if cell_to_screen(Vector2(z.obelisk) + Vector2(0.5, 0.5)).distance_to(mm.position) < 12.0:
 				_hover = z.id
 		queue_redraw()
 
 
+## Survol du camp (le drapeau du royaume) : on y voyage d'un clic, comme vers un obélisque.
+const HOVER_HOME := -2
+
+
 func _travel(id: int) -> void:
+	if id == HOVER_HOME:
+		close()
+		if world.travel_home():
+			player.notify.emit("Retour au camp.")
+		return
 	if id < 0:
 		return
 	var z: Dictionary = world.zones[id]
@@ -263,6 +274,8 @@ func _draw() -> void:
 		draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color.BLACK, false, 2.0)
 		var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 		_text_center(k.title() if k else "Village", v + Vector2(0, 30), 11, Color("f2c86a"))
+		if _hover == HOVER_HOME:
+			_text_center("Voyager : ton camp", v + Vector2(0, -20), 12, Color("f2c86a").lightened(0.3))
 	# fin de partie : le Portail des Failles et le titan éveillé
 	var eg := get_tree().get_first_node_in_group("endgame") as Endgame
 	if eg:
