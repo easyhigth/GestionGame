@@ -99,6 +99,19 @@ func _process(_d) -> bool:
 			for y in range(-2, 5):
 				if w.build.block_at(Vector3i(ob.x + c.x, roundi(w.terrain_height(ob)) + y, ob.y + c.y)) != null: pil += 1
 		check("piliers autour de l'obélisque (%d)" % pil, pil >= 2)
+		# les piliers sont dans la pierre de la région (sable au désert, marbre noir au volcan...)
+		var tinted := 0
+		var tinted_total := 0
+		for z in w.zones:
+			if (z.obelisk as Vector2i).x < 0 or z.type == null or not WorldStructures.OBELISK_PILLARS.has(z.type.id):
+				continue
+			tinted_total += 1
+			var cc: Vector2i = (z.obelisk as Vector2i) + Vector2i(-2, -2)
+			for b in w.build.column(cc):
+				if (b[3] as ItemData).id == WorldStructures.OBELISK_PILLARS[z.type.id][1]:
+					tinted += 1
+					break
+		check("piliers d'obélisque teintés selon la région (%d / %d)" % [tinted, tinted_total], tinted_total > 0 and tinted == tinted_total)
 		var k = get_first_node_in_group("kingdom")
 		k.recompute()
 		check("les constructions du monde ne comptent pas comme pièces du royaume (%d)" % k.typed_rooms().size(), k.typed_rooms().size() == 0)
