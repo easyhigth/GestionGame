@@ -79,7 +79,7 @@ La touche d'un menu le referme aussi.
 
 ## Création du héros
 - **Race** : 22 races, chacune avec ses caractéristiques (vie, force, agilité, magie, vitesse) dans `data/races/*.tres`. L'agilité accélère les coups.
-- **Apparence** : style propre à la race (coiffure, cornes, espèce de l'homme-bête, élément de l'esprit, type d'ange...), barbe (humain), couleurs de peau, de cheveux (ou plumes, fourrure, feuillage) et d'yeux (pastilles de la race ou couleur libre), taille et carrure.
+- **Apparence** : style propre à la race (coiffure, cornes, espèce de l'homme-bête, élément de l'esprit, type d'ange...), barbe (humain ; longue et tressée pour le nain), couleurs de peau, de cheveux (ou plumes, fourrure, feuillage) et d'yeux (pastilles de la race ou couleur libre), taille et carrure.
 - **Classe** (`data/classes/`, 13 classes) : Guerrier, Paladin, Barbare, Rôdeur, Assassin, Mage, Moine, Nécromancien, Druide, Chevalier, Barde, Clerc, Cryomancien. Donne l'équipement de départ, des bonus, le gain de caractéristiques à chaque niveau et un talent offert dans l'arbre (ex. Nécromancien : Soif, Druide et Chevalier : Enraciné, Cryomancien : Sang-froid, Clerc : Foi, Moine et Barde : Étincelle).
 - **Métier** (`data/jobs/`, 14 métiers) : Forgeron, Chasseur, Bûcheron, Mineur, Herboriste, Marchand, Tisserand, Pêcheur, Alchimiste, Cuisinier, Fermier, Joaillier, Enchanteur, Architecte. Donne des objets de départ (sauf départ à mains nues), un avantage (vie, défense, magie, vitesse, régénération, butin...) et deux métiers d'artisanat qui commencent au niveau 10 (`Crafts.JOB_START`).
 - **Niveaux** : les monstres vaincus donnent de l'expérience ; chaque niveau augmente la vie, l'attaque, la défense et la magie selon la classe (barre bleue sous la vie).

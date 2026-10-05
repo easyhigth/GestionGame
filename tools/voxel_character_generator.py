@@ -810,13 +810,19 @@ def dwarf(k, p):
     ex = hw * 0.27; ey = hh * 0.02
     V(2.6, 2.8, 2.4, shade(S, 1.04), 0, -hh * 0.1, hd / 2 + 1.3, h)
     V(1.6, 1, 1.6, shade(S, 0.95), 0, -hh * 0.2, hd / 2 + 2.4, h)
+    # barbe : longue et tressée (par défaut), ou courte (héros nain sans l'option « Barbe »)
+    short = p.get('short_beard', False)
     V(hw * 0.95, 2.6, 2.2, c, 0, -hh / 2 - 0.2, hd / 2 + 0.3, h)
-    V(hw * 0.9, 3.2, 2, shade(c, 0.95), 0, -hh / 2 - 2.6, hd / 2 + 0.4, h)
-    V(hw * 0.75, 3.2, 1.8, shade(c, 0.9), 0, -hh / 2 - 5.4, hd / 2 + 0.5, h)
-    V(hw * 0.55, 3, 1.6, shade(c, 0.86), 0, -hh / 2 - 8, hd / 2 + 0.6, h)
+    if short:
+        V(hw * 0.7, 1.8, 1.8, shade(c, 0.93), 0, -hh / 2 - 2.2, hd / 2 + 0.3, h)
+    else:
+        V(hw * 0.9, 3.2, 2, shade(c, 0.95), 0, -hh / 2 - 2.6, hd / 2 + 0.4, h)
+        V(hw * 0.75, 3.2, 1.8, shade(c, 0.9), 0, -hh / 2 - 5.4, hd / 2 + 0.5, h)
+        V(hw * 0.55, 3, 1.6, shade(c, 0.86), 0, -hh / 2 - 8, hd / 2 + 0.6, h)
     for s in (-1, 1):
-        V(1.4, 3.6, 1.4, shade(c, 0.9), s * 2.8, -hh / 2 - 5.2, hd / 2 + 1.6, h)
-        V(1.9, 0.6, 1.9, 0xd8b04a, s * 2.8, -hh / 2 - 6.6, hd / 2 + 1.6, h)
+        if not short:
+            V(1.4, 3.6, 1.4, shade(c, 0.9), s * 2.8, -hh / 2 - 5.2, hd / 2 + 1.6, h)
+            V(1.9, 0.6, 1.9, 0xd8b04a, s * 2.8, -hh / 2 - 6.6, hd / 2 + 1.6, h)
         V(2.6, 1, 1.4, c, s * 2.2, -hh * 0.22, hd / 2 + 0.9, h, rz=s * 0.25)
         V(3, 1.1, 1.2, c, s * ex, ey + 1.6, hd / 2 + 0.5, h, rz=s * 0.2)
         V(2, 1.4, 0.4, 0xe89a90, s * hw * 0.36, -hh * 0.18, hd / 2 + 0.55, h)

@@ -18,7 +18,7 @@ const AUTO := "auto"
 const MAX_WORLDS := 100
 ## Options d'un monde (choisies à sa création, modifiables ensuite dans la liste des mondes).
 const WORLD_DEFAULTS := {"name": "Nouveau monde", "cheats": false, "difficulty": 1, "raids": true, "night_monsters": true, "hunger": true, "tutorial": true}
-const VERSION := 1
+const VERSION := 2
 const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const GAME_SCENE := "res://scenes/main.tscn"
 const CREATOR_SCENE := "res://scenes/ui/character_creator.tscn"
@@ -516,6 +516,9 @@ func load_game(slot: String) -> bool:
 	h.race = load(pd.race) if pd.race != "" else null
 	h.style = int(pd.style)
 	h.beard = bool(pd.beard)
+	# avant la version 2, le nain avait toujours la barbe longue (devenue l'option « Barbe »)
+	if int(d.get("version", 1)) < 2 and h.race and h.race.model_id == "dwarf":
+		h.beard = true
 	h.skin_color = Color(pd.skin)
 	h.hair_color = Color(pd.hair)
 	h.eye_color = Color(pd.eye)
