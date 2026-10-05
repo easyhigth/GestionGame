@@ -206,6 +206,8 @@ func _update(dt: float) -> void:
 	var wev := get_tree().get_first_node_in_group("world_events") as WorldEvents
 	if wev:
 		comfort += wev.happiness_bonus()
+	# les trophées des boss vaincus par le héros font la fierté du village
+	comfort += KingdomFavors.trophy_happiness(get_tree().get_first_node_in_group("world") as WorldGenerator)
 	if _safety_left > 0.0:
 		_safety_left -= dt
 		if _safety_left <= 0.0:
@@ -293,10 +295,11 @@ func _arrivals(dt: float, list: Array, p: Player) -> void:
 	_arrival -= dt
 	if _arrival > 0.0:
 		return
-	_arrival = ARRIVAL_EVERY
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
-	if world == null or world.villager_scene == null:
+	# les exploits du héros (trophées) attirent les voyageurs plus souvent
+	_arrival = ARRIVAL_EVERY * KingdomFavors.arrival_mult(world)
+	if world == null or world.villager_scene == null or not world.has_home():
 		return
 	# seul au monde (départ à mains nues) : le premier voyageur vient dès qu'un abri est bâti
 	if list.is_empty() and (k == null or k.rooms.is_empty()):

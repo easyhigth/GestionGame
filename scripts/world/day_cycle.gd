@@ -240,6 +240,9 @@ func _spawn_spot() -> Vector3:
 
 ## Vrai près d'une lumière : torche ou lanterne posée, feu de camp, établi du village.
 func near_light(pos: Vector3) -> bool:
+	# la zone du camp (autour du drapeau du royaume) est un refuge : pas de monstres la nuit
+	if world.in_home_zone(pos):
+		return true
 	# le feu du campement de départ (départ à mains nues : il n'y en a pas, ce sont tes torches et ton feu)
 	if not GameState.bare_start and pos.distance_to(world.cell_center(world.spawn_cell)) < LIGHT_SAFE + 2.0:
 		return true

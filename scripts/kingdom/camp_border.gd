@@ -71,6 +71,11 @@ func refresh() -> void:
 		var x := c.x + cos(a) * r
 		var z := c.z + sin(a) * r
 		var cell := world.cell_at(Vector3(x, 0, z))
+		# (une borne hors du monde, au bord de la carte : cachée sous le sol)
+		if not world._inside(cell):
+			_posts.multimesh.set_instance_transform(i, Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), Vector3(x, -1000, z)))
+			_flags.multimesh.set_instance_transform(i, Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), Vector3(x, -1000, z)))
+			continue
 		world._ensure_chunk_of(cell)
 		var y := world.terrain_height(cell)
 		var basis := Basis(Vector3.UP, -a)

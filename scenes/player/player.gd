@@ -274,6 +274,9 @@ func _update_max_health(refill := false) -> void:
 		regen += skill.p("regen")
 		parry_window = _base_parry_window + skill.p("parry")
 	regen += hunger_regen_bonus()
+	# au camp (dans la zone du drapeau) : on récupère plus vite
+	if in_camp:
+		regen += CAMP_REGEN
 	health.regen_per_second = regen + _kingdom_bonus("regen") if is_inside_tree() else regen
 	if hunger < HUNGRY:
 		health.regen_per_second = 0.0
@@ -1056,11 +1059,27 @@ func _make_crosshair() -> void:
 
 # ---------------------------------------------------------------- boucle
 
+## Le héros est dans la zone de son camp (autour du drapeau) : il y récupère plus vite.
+var in_camp := false
+var _camp_check := 0.0
+const CAMP_REGEN := 3.0
+signal camp_changed(inside: bool)
+
+
 func _physics_process(delta: float) -> void:
 	_update_aim()
 	_combat_step(delta)
 	_footsteps(delta)
 	_update_hunger(delta)
+	_camp_check -= delta
+	if _camp_check <= 0.0:
+		_camp_check = 0.5
+		var wd := _world if _world else get_tree().get_first_node_in_group("world") as WorldGenerator
+		var inside := wd != null and wd.in_home_zone(global_position)
+		if inside != in_camp:
+			in_camp = inside
+			_update_max_health()
+			camp_changed.emit(in_camp)
 	_update_tool(delta)
 	# aura des évolutions supérieures
 	if hero_evo >= 2 and is_alive():

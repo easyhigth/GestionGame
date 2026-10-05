@@ -17,7 +17,7 @@ const AUTO := "auto"
 ## Nombre de mondes au plus (un monde = un emplacement « 1 » à « 100 »).
 const MAX_WORLDS := 100
 ## Options d'un monde (choisies à sa création, modifiables ensuite dans la liste des mondes).
-const WORLD_DEFAULTS := {"name": "Nouveau monde", "cheats": false, "difficulty": 1, "raids": true, "night_monsters": true, "hunger": true}
+const WORLD_DEFAULTS := {"name": "Nouveau monde", "cheats": false, "difficulty": 1, "raids": true, "night_monsters": true, "hunger": true, "tutorial": true}
 const VERSION := 1
 const TITLE_SCENE := "res://scenes/ui/title_screen.tscn"
 const GAME_SCENE := "res://scenes/main.tscn"

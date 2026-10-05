@@ -1166,6 +1166,17 @@ func _show_bar_choice(item: ItemData) -> void:
 
 
 func _use_item(item: ItemData) -> void:
+	if item.id == "pierre_rappel" and target == player:
+		var wd := get_tree().get_first_node_in_group("world") as WorldGenerator
+		if wd == null or not wd.has_home():
+			player.notify.emit("La pierre de rappel ramène au drapeau du royaume : plante-le d'abord.")
+			return
+		close()
+		player.inventory.remove(item, 1)
+		wd.travel_home()
+		Sound.ui("ui_open")
+		player.notify.emit("La pierre de rappel se brise : te voilà au camp.")
+		return
 	if item.is_food() and target == player:
 		player.eat(item)
 		_refresh()

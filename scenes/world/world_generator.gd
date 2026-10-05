@@ -591,6 +591,8 @@ func region_at(pos: Vector3) -> RegionData:
 # ---------------------------------------------------------------- génération par morceaux
 
 func _ensure_chunk_of(cell: Vector2i) -> void:
+	if not _inside(cell):
+		return
 	var ci := (cell.y / CHUNK) * _chunks.x + (cell.x / CHUNK)
 	if _chunk_ready[ci] == 0:
 		_gen_chunk_data(Vector2i(cell.x / CHUNK, cell.y / CHUNK))
@@ -3356,6 +3358,29 @@ func reveal_rows(y0: int, y1: int) -> void:
 
 
 ## Téléporte le héros près d'un obélisque activé (ou au village).
+## Retour au drapeau du royaume (carte, Pierre de rappel) : d'où que soit le héros, même d'un donjon, d'une grotte
+## ou d'une faille (on en sort par leur propre sortie, qui mène alors au camp).
+func travel_home() -> bool:
+	if player == null or not has_home():
+		return false
+	var c := home_cell + Vector2i(0, 2)
+	_ensure_chunk_of(c)
+	var dest := cell_center(c)
+	dest.y = support_height(dest, terrain_height(c) + 0.5)
+	for g in ["dungeons", "mountain_caves", "caves", "endgame"]:
+		var n := get_tree().get_first_node_in_group(g)
+		if n and n.get("active"):
+			n.set("_return_pos", dest)
+			n.leave()
+			return true
+	_stream(dest, true)
+	player.global_position = dest
+	if player.has_method("snap_camera"):
+		player.snap_camera()
+	Villager.bring_companions(get_tree(), dest)
+	return true
+
+
 func travel_to(z: Dictionary) -> bool:
 	if player == null or z.is_empty() or not z.obelisk_on:
 		return false
