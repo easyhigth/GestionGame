@@ -6,6 +6,7 @@ extends Node3D
 
 const SPEED := 1.5
 const ACTIVE_DISTANCE := 70.0
+const CITIZEN_JOBS := ["fermier", "fermier", "mineur", "chasseur", "forgeron", "mage"]
 
 var race: RaceData
 var kit: Array = []
@@ -40,12 +41,19 @@ func _ready() -> void:
 	visual = VoxelCharacter.new()
 	visual.name = "Visual"
 	add_child(visual)
+	var dressed: PackedScene = null
 	if race:
 		visual.set_equipment_library(race.equipment)
-		visual.set_model(race.villager_models[_rng.randi() % race.villager_models.size()] if not race.villager_models.is_empty() else race.model)
+		var variant := _rng.randi() % maxi(race.villager_models.size(), 1)
+		dressed = race.job_model(_job(), variant)
+		if dressed:
+			visual.set_model(dressed)
+		else:
+			visual.set_model(race.villager_models[variant] if not race.villager_models.is_empty() else race.model)
 	for id in kit:
 		var it := Items.get_item(id) as ItemData
-		if it:
+		# la tenue de métier porte déjà son casque, son armure et son outil : seule la cape s'ajoute
+		if it and (dressed == null or it.slot == ItemData.Slot.BACK):
 			visual.show_equipment(it.slot, it.model_id())
 	_label = Label3D.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -75,6 +83,18 @@ func _ready() -> void:
 	_mark.visible = false
 	add_child(_mark)
 	_wait = _rng.randf_range(0.0, 3.0)
+
+
+## Métier dont il porte la tenue (« » : habits de base). Un citadin sur deux exerce un métier des champs, de la mine ou de la forge.
+func _job() -> String:
+	match role:
+		"guard": return "garde"
+		"merchant": return "marchand"
+		"innkeeper": return "aubergiste"
+		"citizen":
+			if kit.is_empty() and _rng.randf() < 0.5:
+				return CITIZEN_JOBS[_rng.randi() % CITIZEN_JOBS.size()]
+	return ""
 
 
 ## Marque au-dessus de la tête (« » : aucune).
