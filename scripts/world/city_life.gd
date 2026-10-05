@@ -308,7 +308,7 @@ func _spawn(city: Dictionary) -> void:
 		inn.display_name = "Aubergiste"
 		inn.trade_name = "« %s »" % tv.name
 		inn.color = Color("ffb870")
-		var plate := Label3D.new()
+		var plate := PlaceLabel.new()
 		plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		plate.text = "Taverne\n« %s »" % tv.name
 		plate.font_size = 40
