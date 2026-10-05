@@ -22,7 +22,7 @@ signal raid_ended(raid: Dictionary, repelled: bool, text: String)
 @export var spawn_distance: float = 34.0
 @export var enabled := true
 
-## Bandes de pillards selon le niveau du héros : [niveau min, nom, monstres, chef, niveau de base].
+## Bandes de pillards selon la menace du royaume (voir threat_level) : [menace min, nom, monstres, chef, niveau de base].
 const TIERS := [
 	[1, "Gobelins pillards", ["gobelin_pillard", "gobelin_pillard", "loup"], "loup_alpha", 1],
 	[5, "Horde d'orcs", ["gobelin_pillard", "orc_brute", "homme_lezard"], "orc_brute", 4],
@@ -54,6 +54,20 @@ func village_center() -> Vector3:
 		return world.home_center()
 	var p := _player()
 	return p.global_position if p else world.cell_center(world.spawn_cell)
+
+
+## Menace du royaume : ce qui attire les pillards et fixe leur force, d'après la taille du royaume (habitants,
+## rang, âge, provinces) et non d'après le niveau du héros. L'aventure rend donc les raids plus faciles : un héros
+## de haut niveau balaie les pillards d'un petit camp ; un grand royaume attire des bandes redoutables.
+func threat_level() -> int:
+	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
+	var vn := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
+	var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
+	var pop: int = vn.members().size() if vn else 0
+	var rank: int = k.rank if k else 0
+	var age: int = k.age if k else 0
+	var prov: int = dip.provinces().size() if dip else 0
+	return maxi(1, 1 + pop / 2 + rank * 3 + age * 2 + prov * 3)
 
 
 func _player() -> Player:
@@ -95,7 +109,8 @@ func _process(delta: float) -> void:
 ## `story` : raid de l'histoire {key, name, types, leader, extra} (bande imposée, plus nombreuse).
 func announce(story := {}) -> void:
 	var p := _player()
-	var lv := p.power_level() if p else 1
+	# raid ordinaire : la force vient du royaume ; raid de l'histoire : de l'aventure (niveau du héros)
+	var lv := threat_level() if story.is_empty() else (p.power_level() if p else 1)
 	var tier: Array = TIERS[0]
 	for t in TIERS:
 		if lv >= int(t[0]):
@@ -104,7 +119,9 @@ func announce(story := {}) -> void:
 		tier = [0, story.name, story.types, story.leader, maxi(1, lv - 1)]
 	var k := get_tree().get_first_node_in_group("kingdom") as Kingdom
 	var rank := k.rank if k else 0
-	var count := clampi(3 + rank + lv / 4, 3, 10) + int(story.get("extra", 0))
+	var vn := get_tree().get_first_node_in_group("village_needs") as VillageNeeds
+	var pop: int = vn.members().size() if vn else 0
+	var count := clampi(3 + rank + pop / 6, 3, 10) + int(story.get("extra", 0))
 	# les alliés (voir Diplomacy) gardent les routes : moins de pillards
 	var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
 	if dip and story.is_empty():
@@ -112,7 +129,7 @@ func announce(story := {}) -> void:
 	var angle := randf() * TAU
 	var dir_i := posmod(roundi(angle / (TAU / 8.0)), 8)
 	var center := village_center()
-	var spot := center + Vector3(cos(angle), 0, sin(angle)) * spawn_distance
+	var spot := center + Vector3(cos(angle), 0, sin(angle)) * maxf(spawn_distance, world.home_radius() + 16.0)
 	var cell := world._find_site(world.cell_at(spot), -1, 14)
 	if cell.x >= 0:
 		spot = world.cell_center(cell)
@@ -155,7 +172,7 @@ func _start() -> void:
 	# les gardes défendent tout le village
 	for v in get_tree().get_nodes_in_group("villagers"):
 		if _is_guard(v):
-			v.set("defend_radius", 45.0)
+			v.set("defend_radius", world.home_radius() + 10.0)
 			v.set("alert_radius", 16.0)
 			v.set("guard_bonus", 0.35)
 	raid_started.emit(raid)

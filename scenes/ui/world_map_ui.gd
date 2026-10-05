@@ -256,6 +256,9 @@ func _draw() -> void:
 	# le camp : là où le drapeau du royaume est planté
 	if world.has_home():
 		var v := cell_to_screen(Vector2(world.home_cell) + Vector2(0.5, 0.5))
+		var zr := (cell_to_screen(Vector2(world.home_cell) + Vector2(0.5 + world.home_radius(), 0.5)) - v).length()
+		draw_circle(v, zr, Color(0.95, 0.78, 0.4, 0.12))
+		draw_arc(v, zr, 0, TAU, 48, Color("f2c86a"), 1.5)
 		draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color("f2c86a"))
 		draw_rect(Rect2(v - Vector2(7, 7), Vector2(14, 14)), Color.BLACK, false, 2.0)
 		var k := get_tree().get_first_node_in_group("kingdom") as Kingdom

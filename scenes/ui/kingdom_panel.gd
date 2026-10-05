@@ -377,6 +377,11 @@ func _page_people(page: VBoxContainer, n: VillageNeeds) -> void:
 	var away := get_tree().get_nodes_in_group("away_villagers").size()
 	if away > 0:
 		sum.add_child(MenuKit.chip("%d en expédition" % away, Color("8ac8ff")))
+	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
+	if rm:
+		var chip := MenuKit.chip("menace %d" % rm.threat_level(), Color("e07050"))
+		chip.tooltip_text = "Menace du royaume : la force des pillards dépend de la taille du royaume (habitants, rang, âge, provinces), pas du niveau du héros. Plus le héros est fort, plus les raids sont faciles à repousser."
+		sum.add_child(chip)
 	sum.add_child(MenuKit.label("  {interact} près d'un habitant : équipement et poste", 10, MenuKit.C_DIM))
 	page.add_child(sum)
 	if members.is_empty():
