@@ -67,7 +67,7 @@ func _ready() -> void:
 func _model(crop: String, stage: int) -> PackedScene:
 	var key := "%s_%d" % [crop, stage]
 	if not _models.has(key):
-		_models[key] = load("res://assets/environment/models/crop_%s.glb" % key)
+		_models[key] = load("res://scenes/decor/crop_%s.tscn" % key)
 	return _models[key]
 
 

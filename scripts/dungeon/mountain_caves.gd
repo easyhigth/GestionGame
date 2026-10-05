@@ -19,7 +19,7 @@ const WALL_H := 4
 const ENTRANCE_CHANCE := 0.3
 const MIN_CLIFF := 1.5
 const CHEST_MODEL := preload("res://assets/furniture/coffre.glb")
-const ROCK := preload("res://assets/environment/models/rock_big.glb")
+const ROCK := preload("res://scenes/decor/rock_big.tscn")
 ## Ce que rend un bloc de minerai : [objet, minimum, maximum].
 const ORE_DROPS := {"bloc_minerai_fer": ["iron_ore", 1, 2], "bloc_minerai_or": ["or_brut", 1, 1],
 	"bloc_minerai_cristal": ["", 1, 1], "bloc_minerai_mithril": ["mithril_brut", 1, 1]}
