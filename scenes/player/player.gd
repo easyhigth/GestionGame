@@ -134,6 +134,11 @@ const TOOL_HOLD := 3.0
 var camera_zoom := 1.0
 ## Point de vue (F5) : 3e personne (par défaut), vue de dessus (l'ancienne caméra), 1re personne.
 enum CamMode { THIRD, TOP, FIRST }
+## 3e personne : distance de la caméra derrière le héros (avant le zoom), champ de vision, et rayon
+## de la « bulle » de la caméra (elle s'arrête devant un obstacle au lieu d'y entrer).
+const THIRD_DISTANCE := 6.2
+const THIRD_FOV := 55.0
+const CAMERA_RADIUS := 0.35
 const CAM_NAMES := ["3e personne", "Vue de dessus", "1re personne"]
 var cam_mode := CamMode.THIRD
 var _crosshair: CanvasLayer
@@ -772,13 +777,14 @@ func snap_camera() -> void:
 ## Change de point de vue (`announce` : petit message à l'écran).
 func set_camera_mode(m: int, announce := true) -> void:
 	cam_mode = posmod(m, 3) as CamMode
-	cam_pitch = clamp_pitch(cam_pitch if cam_mode == CamMode.TOP else (deg_to_rad(16.0) if cam_mode == CamMode.THIRD else 0.0))
+	cam_pitch = clamp_pitch(cam_pitch if cam_mode == CamMode.TOP else (deg_to_rad(20.0) if cam_mode == CamMode.THIRD else 0.0))
 	if cam_mode == CamMode.TOP:
 		cam_pitch = deg_to_rad(45.0)
 	if visual:
 		visual.visible = cam_mode != CamMode.FIRST
 	_update_viewmodel()
 	Villager.label_scale = [0.45, 1.0, 0.32][cam_mode]
+	camera.fov = THIRD_FOV if cam_mode == CamMode.THIRD else 40.0
 	_apply_view_range()
 	if is_inside_tree():
 		snap_camera()
@@ -2301,62 +2307,79 @@ func _update_camera(delta: float) -> void:
 	_apply_shake(delta)
 
 
-## 3e personne : derrière l'épaule du héros, assez près ; la caméra ne passe pas sous le sol.
+## 3e personne : derrière l'épaule du héros, avec du recul ; la caméra s'arrête devant le sol, les murs
+## et les décors au lieu d'y entrer, et se rapproche quand un obstacle cache le héros.
 func _update_camera_third(delta: float) -> void:
-	var focus := global_position + Vector3(0, 1.45 * visual.scale.y, 0)
+	var head := global_position + Vector3(0, 1.45 * visual.scale.y, 0)
+	var focus := head
 	if lock_target and is_instance_valid(lock_target):
 		focus = focus.lerp(lock_target.global_position + Vector3(0, 1.0, 0), 0.3)
 	var dir := Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch))
-	var want := 4.6 * camera_zoom
+	var want := THIRD_DISTANCE * camera_zoom
 	# au-dessus de l'épaule droite : le viseur au centre ne cache pas le héros
-	var shoulder := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw)) * 0.7
-	var dist := _camera_free_distance(focus + shoulder, dir, want)
+	var shoulder := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw)) * 0.75
+	# la place derrière l'épaule, et derrière la tête (un pilier à côté du héros ne doit pas le cacher)
+	var dist := minf(_camera_free_distance(focus + shoulder, dir, want), _camera_free_distance(head, dir, want) + 0.6)
 	# caméra coincée contre un mur : on revient derrière la tête, et le héros s'efface s'il la touche presque
 	shoulder *= clampf((dist - 0.8) / (want - 0.8), 0.0, 1.0)
 	focus += shoulder
 	visual.visible = dist > 1.1
 	var target := focus + dir * dist
-	# un mur entre le héros et la caméra : elle s'en rapproche tout de suite (sinon, elle glisse)
+	# un obstacle entre le héros et la caméra : elle s'en rapproche tout de suite (sinon, elle glisse)
 	if dist < want - 0.05 and camera.global_position.distance_to(focus) > dist:
 		camera.global_position = target
 	else:
-		camera.global_position = camera.global_position.lerp(target, clampf(14.0 * delta, 0.0, 1.0))
+		camera.global_position = camera.global_position.lerp(target, clampf(10.0 * delta, 0.0, 1.0))
 	if camera.global_position.distance_to(focus) > 0.05:
 		camera.look_at(focus)
 	_apply_shake(delta)
 
 
 ## Jusqu'où la caméra peut reculer depuis `focus` dans la direction `dir` sans entrer dans le sol,
-## un bloc construit ou un décor solide (murs des donjons, rochers...).
+## un bloc construit ou un décor solide (murs des donjons, rochers...). La caméra est une petite bulle
+## (CAMERA_RADIUS) : elle ne frôle pas un mur au point de voir à travers.
 func _camera_free_distance(focus: Vector3, dir: Vector3, want: float) -> float:
 	var best := want
-	# décors et murs avec collision
+	# décors et murs avec collision : on lance une sphère, pas un simple rayon
 	var space := get_world_3d().direct_space_state
 	if space:
-		var q := PhysicsRayQueryParameters3D.create(focus, focus + dir * (want + 0.3))
+		var q := PhysicsShapeQueryParameters3D.new()
+		var ball := SphereShape3D.new()
+		ball.radius = CAMERA_RADIUS
+		q.shape = ball
+		q.transform = Transform3D(Basis.IDENTITY, focus)
+		q.motion = dir * (want + 0.2)
 		q.exclude = [get_rid()]
 		q.collide_with_areas = false
-		var hit := space.intersect_ray(q)
-		if not hit.is_empty():
-			best = minf(best, focus.distance_to(hit.position) - 0.3)
-	# relief et blocs posés (pas de collision physique : on les lit dans la grille)
+		var frac := space.cast_motion(q)
+		if frac.size() == 2 and frac[0] > 0.0 and frac[0] < 1.0:
+			best = minf(best, (want + 0.2) * frac[0] - 0.1)
+	# relief et blocs posés (pas de collision physique : on les lit dans la grille), au centre de la
+	# bulle et sur ses côtés
 	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
 	if w and global_position.y > WorldGenerator.UNDERGROUND:
+		var side := dir.cross(Vector3.UP)
+		side = side.normalized() * CAMERA_RADIUS if side.length() > 0.01 else Vector3.ZERO
 		var t := 0.4
 		while t <= best:
 			var p := focus + dir * t
-			var cell := w.cell_at(p)
-			var solid := p.y < w.terrain_height(cell) + 0.25
-			if not solid and w.build:
-				for b in w.build.column(cell):
-					if p.y > float(b[1]) - 0.15 and p.y < float(b[2]) + 0.15:
-						solid = true
-						break
-			if solid:
+			if _camera_cell_solid(w, p) or _camera_cell_solid(w, p + side) or _camera_cell_solid(w, p - side) \
+					or _camera_cell_solid(w, p + Vector3(0, -CAMERA_RADIUS, 0)):
 				best = maxf(0.6, t - 0.3)
 				break
 			t += 0.2
 	return clampf(best, 0.6, want)
+
+
+func _camera_cell_solid(w: WorldGenerator, p: Vector3) -> bool:
+	var cell := w.cell_at(p)
+	if p.y < w.terrain_height(cell) + 0.25:
+		return true
+	if w.build:
+		for b in w.build.column(cell):
+			if p.y > float(b[1]) - 0.15 and p.y < float(b[2]) + 0.15:
+				return true
+	return false
 
 
 func _apply_shake(delta: float) -> void:

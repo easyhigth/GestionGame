@@ -93,13 +93,24 @@ fractal_octaves = 4
 frequency = 0.04
 fractal_octaves = 3
 
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_main"]
+sky_top_color = Color(0.36, 0.56, 0.82, 1)
+sky_horizon_color = Color(0.72, 0.84, 0.94, 1)
+ground_bottom_color = Color(0.3, 0.33, 0.36, 1)
+ground_horizon_color = Color(0.72, 0.84, 0.94, 1)
+sun_angle_max = 20.0
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("SkyMat_main")
+
 [sub_resource type="Environment" id="Environment_main"]
-background_mode = 1
+background_mode = 2
 background_color = Color(0.53, 0.74, 0.9, 1)
+sky = SubResource("Sky_main")
 ambient_light_source = 2
-ambient_light_color = Color(0.74, 0.78, 0.95, 1)
-ambient_light_energy = 0.45
-tonemap_mode = 0
+reflected_light_source = 1
+ambient_light_color = Color(0.74, 0.8, 0.98, 1)
+ambient_light_energy = 0.8
 
 [node name="Main" type="Node3D"]
 
@@ -112,6 +123,12 @@ light_color = Color(1, 0.96, 0.88, 1)
 light_energy = 0.95
 shadow_enabled = true
 directional_shadow_max_distance = 45.0
+
+[node name="Remplissage" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866, 0.2, -0.4579, 0, 0.9165, 0.4003, 0.5, 0.3464, -0.7931, 0, 20, 0)
+light_color = Color(0.7, 0.8, 1, 1)
+light_energy = 0.38
+light_specular = 0.0
 
 [node name="World" type="Node3D" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("1")

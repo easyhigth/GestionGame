@@ -37,15 +37,20 @@ var _night := false
 var _spawn_timer := 3.0
 var _night_monsters: Array = []
 var _sun: DirectionalLight3D
+## Lumière d'appoint, bleutée et sans ombre, venue du côté opposé au soleil : les faces à l'ombre
+## gardent leur relief au lieu de tourner au noir.
+var _fill: DirectionalLight3D
 var _env: Environment
 var _day_sun := [Color(1, 0.96, 0.88), 0.95]
-var _day_env := [Color(0.53, 0.74, 0.9), Color(0.74, 0.78, 0.95), 0.45]
+var _day_env := [Color(0.53, 0.74, 0.9), Color(0.74, 0.8, 0.98), 0.8]
+var _sky_bg := Color(-1, -1, -1)
 
 
 func _ready() -> void:
 	add_to_group("day_cycle")
 	var root := get_parent()
 	_sun = root.get_node_or_null("Soleil") as DirectionalLight3D
+	_fill = root.get_node_or_null("Remplissage") as DirectionalLight3D
 	var env_node := root.get_node_or_null("Ambiance") as WorldEnvironment
 	_env = env_node.environment if env_node else null
 	if _sun:
@@ -58,6 +63,7 @@ func _ready() -> void:
 		SaveGame.day_state = {}
 	_night = is_night()
 	_apply_light()
+	_sync_sky()
 
 
 func is_night() -> bool:
@@ -72,6 +78,7 @@ func clock_text() -> String:
 
 
 func _process(delta: float) -> void:
+	_sync_sky()
 	if player == null or world == null:
 		return
 	var rate := (DUSK - DAWN) / DAY_SECONDS if not is_night() else (24.0 - DUSK + DAWN) / NIGHT_SECONDS
@@ -157,6 +164,38 @@ func _apply_light() -> void:
 		# la brume de distance prend la couleur du ciel (bleutée le jour, dorée au crépuscule, sombre la nuit)
 		_env.fog_light_color = _env.background_color.lerp(Color(0.85, 0.88, 0.95), 0.15 * d)
 		_env.fog_light_energy = lerpf(0.35, 1.0, d)
+
+
+## Le ciel en dégradé suit la couleur de fond que règlent le cycle, la météo, les donjons et les grottes :
+## plus soutenu en haut, plus clair à l'horizon, le sol plus sombre.
+func _sync_sky() -> void:
+	_sync_fill()
+	if _env == null or _env.sky == null:
+		return
+	var mat := _env.sky.sky_material as ProceduralSkyMaterial
+	if mat == null:
+		return
+	var bg := _env.background_color
+	if bg.is_equal_approx(_sky_bg):
+		return
+	_sky_bg = bg
+	var horizon := bg.lerp(Color(0.95, 0.95, 0.95), 0.3 * bg.get_luminance())
+	mat.sky_top_color = bg.darkened(0.3)
+	mat.sky_horizon_color = horizon
+	mat.ground_horizon_color = horizon
+	mat.ground_bottom_color = bg.darkened(0.6)
+
+
+## La lumière d'appoint suit le soleil (ou la lune) : en face de lui, plongeante, à 40 % de sa force.
+## Les donjons et les grottes baissent le soleil, elle baisse avec.
+func _sync_fill() -> void:
+	if _fill == null or _sun == null:
+		return
+	var d := -_sun.global_basis.z
+	var fill_dir := Vector3(-d.x, 0.0, -d.z)
+	fill_dir = (fill_dir.normalized() * 0.6 + Vector3.DOWN).normalized() if fill_dir.length() > 0.01 else Vector3.DOWN
+	_fill.global_basis = Basis.looking_at(fill_dir, Vector3.FORWARD if absf(fill_dir.y) > 0.99 else Vector3.UP)
+	_fill.light_energy = _sun.light_energy * 0.4
 
 
 ## 1 en plein jour, 0 la nuit, entre les deux à l'aube et au crépuscule.
