@@ -34,3 +34,5 @@ knockback = 9.0
 body_radius = 1.0
 loot = Array[ExtResource("2")]([ExtResource("r4"), ExtResource("r5"), ExtResource("r8"), ExtResource("r9")])
 loot_chances = PackedFloat32Array(0.7, 0.6, 1.0, 1.0)
+special_attack = "ronces"
+special_name = "Ronces furieuses"

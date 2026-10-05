@@ -27,3 +27,5 @@ knockback = 8.0
 body_radius = 1.3
 loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r3"), ExtResource("r4")])
 loot_chances = PackedFloat32Array(1.0, 1.0, 0.7)
+special_attack = "toile"
+special_name = "Toile collante"

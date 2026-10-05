@@ -28,3 +28,5 @@ knockback = 11.0
 body_radius = 1.4
 loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r3"), ExtResource("r4"), ExtResource("it_viande"), ExtResource("it_viande"), ExtResource("it_viande")])
 loot_chances = PackedFloat32Array(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+special_attack = "blizzard"
+special_name = "Souffle du blizzard"
