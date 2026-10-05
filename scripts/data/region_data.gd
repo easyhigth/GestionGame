@@ -51,6 +51,12 @@ extends Resource
 @export var small_plants: Array[PackedScene] = []
 @export_range(0.0, 1.0, 0.005) var small_plant_chance: float = 0.1
 
+@export_group("Obélisque")
+## Modèle de l'obélisque de téléportation de la région (vide : obélisque commun).
+@export var obelisk: PackedScene
+## Couleur de sa lumière et de l'éclat quand on l'active.
+@export var obelisk_glow: Color = Color("8af0ff")
+
 @export_group("Monstres")
 @export var enemies: Array[EnemyData] = []
 ## Monstres plus rares et plus forts (gardiens, chefs de meute).

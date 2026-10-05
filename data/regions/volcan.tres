@@ -24,6 +24,7 @@
 [ext_resource type="Resource" path="res://data/races/oni.tres" id="r21"]
 [ext_resource type="Resource" path="res://data/races/dragonide.tres" id="r22"]
 [ext_resource type="Resource" path="res://data/races/vampire.tres" id="r23"]
+[ext_resource type="PackedScene" path="res://scenes/decor/obelisk_volcan.tscn" id="obelisk"]
 
 [resource]
 script = ExtResource("1")
@@ -73,3 +74,5 @@ resource_chance = 0.012
 recruit_races = Array[ExtResource("4")]([ExtResource("r20"), ExtResource("r21"), ExtResource("r22"), ExtResource("r23")])
 weather_weights = {"clair": 3, "nuageux": 3, "pluie": 2, "orage": 2, "brouillard": 1}
 precipitation = "cendres"
+obelisk = ExtResource("obelisk")
+obelisk_glow = Color(1.000, 0.627, 0.188, 1)
