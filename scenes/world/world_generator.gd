@@ -3062,7 +3062,7 @@ func _build_structures() -> void:
 			_clear_decor_under(gp, z.gate)
 			WorldStructures.build(self, gp, z.gate, rng, 0.0, {})
 		if (z.obelisk as Vector2i).x >= 0:
-			var op := WorldStructures.obelisk_plan()
+			var op := WorldStructures.obelisk_plan((z.type as RegionData).id if z.type else "")
 			_clear_decor_under(op, z.obelisk)
 			WorldStructures.build(self, op, z.obelisk, rng)
 	build.generating = false
@@ -3391,14 +3391,46 @@ func travel_home() -> bool:
 	return true
 
 
+## Le côté d'un obélisque (sud, est, nord ou ouest) où le terrain et les constructions s'élèvent le moins
+## derrière le point d'arrivée : la caméra s'y place sans buter sur une butte ou un mur.
+func _open_side(cell: Vector2i) -> Vector2i:
+	var best := Vector2i(0, 1)
+	var best_rise := INF
+	for side in [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]:
+		var base := _h(cell + side * 3)
+		var rise := 0.0
+		# pas d'arrivée dans l'eau
+		var t := _type(cell + side * 3)
+		if t == WATER or t == DEEP:
+			rise = 50.0
+		for k in range(4, 10):
+			var c: Vector2i = cell + side * k
+			if not _inside(c):
+				rise = maxf(rise, 99.0)
+				continue
+			var top := _h(c)
+			if build:
+				for b in build.column(c):
+					top = maxf(top, float(b[2]))
+			rise = maxf(rise, top - base)
+		if rise < best_rise - 0.25:
+			best_rise = rise
+			best = side
+	return best
+
+
 ## Téléporte le héros près d'un obélisque activé (ou au village).
 func travel_to(z: Dictionary) -> bool:
 	if player == null or z.is_empty() or not z.obelisk_on:
 		return false
 	var cell: Vector2i = z.obelisk
-	var dest := cell_center(cell + Vector2i(0, 2))
+	# on arrive hors du carré de piliers, du côté le plus dégagé, la caméra derrière soi face à l'obélisque
+	var side := _open_side(cell)
+	var dest := cell_center(cell + side * 3)
 	_stream(dest, true)
 	player.global_position = dest
+	if "cam_yaw" in player:
+		player.cam_yaw = atan2(float(side.x), float(side.y))
 	if player.has_method("snap_camera"):
 		player.snap_camera()
 	Villager.bring_companions(get_tree(), dest)

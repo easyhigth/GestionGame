@@ -139,6 +139,8 @@ enum CamMode { THIRD, TOP, FIRST }
 const THIRD_DISTANCE := 6.2
 const THIRD_FOV := 55.0
 const CAMERA_RADIUS := 0.35
+## En dessous de cette part du recul voulu, la caméra 3e personne monte pour passer au-dessus de l'obstacle.
+const CAMERA_LIFT_MIN := 0.75
 const CAM_NAMES := ["3e personne", "Vue de dessus", "1re personne"]
 var cam_mode := CamMode.THIRD
 var _crosshair: CanvasLayer
@@ -146,6 +148,8 @@ var _crosshair: CanvasLayer
 var cam_yaw := 0.0
 ## Hauteur de la caméra (angle au-dessus de l'horizon, en radians).
 var cam_pitch := deg_to_rad(45.0)
+## Hauteur ajoutée à la caméra 3e personne pour passer au-dessus d'un obstacle bas (radians).
+var _cam_lift := 0.0
 var _orbiting := false
 var _orbit_moved := 0.0
 var _orbit_pressed_at := 0
@@ -2314,12 +2318,30 @@ func _update_camera_third(delta: float) -> void:
 	var focus := head
 	if lock_target and is_instance_valid(lock_target):
 		focus = focus.lerp(lock_target.global_position + Vector3(0, 1.0, 0), 0.3)
-	var dir := Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch))
 	var want := THIRD_DISTANCE * camera_zoom
 	# au-dessus de l'épaule droite : le viseur au centre ne cache pas le héros
 	var shoulder := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw)) * 0.75
-	# la place derrière l'épaule, et derrière la tête (un pilier à côté du héros ne doit pas le cacher)
-	var dist := minf(_camera_free_distance(focus + shoulder, dir, want), _camera_free_distance(head, dir, want) + 0.6)
+	# un rocher ou un mur contre l'épaule : la caméra se recentre derrière la tête au lieu de s'y coller
+	shoulder *= _shoulder_room(head, shoulder)
+	var dir := _third_dir(cam_pitch)
+	var dist := _third_free_distance(focus, head, shoulder, dir, want)
+	# un obstacle bas juste derrière (butte, muret, piliers d'obélisque) : plutôt que de se coller au héros,
+	# la caméra monte par-dessus, d'un cran à la fois, jusqu'à retrouver du recul
+	var lift := 0.0
+	if dist < want * CAMERA_LIFT_MIN:
+		var best := dist
+		for k in range(1, 6):
+			var lp := minf(cam_pitch + deg_to_rad(10.0 * k), deg_to_rad(70.0))
+			var d := _third_free_distance(focus, head, shoulder, _third_dir(lp), want)
+			if d > best + 0.3:
+				best = d
+				lift = lp - cam_pitch
+			if d >= want * CAMERA_LIFT_MIN:
+				break
+	_cam_lift = lerpf(_cam_lift, lift, clampf(6.0 * delta, 0.0, 1.0))
+	if _cam_lift > 0.005:
+		dir = _third_dir(cam_pitch + _cam_lift)
+		dist = _third_free_distance(focus, head, shoulder, dir, want)
 	# caméra coincée contre un mur : on revient derrière la tête, et le héros s'efface s'il la touche presque
 	shoulder *= clampf((dist - 0.8) / (want - 0.8), 0.0, 1.0)
 	focus += shoulder
@@ -2333,6 +2355,38 @@ func _update_camera_third(delta: float) -> void:
 	if camera.global_position.distance_to(focus) > 0.05:
 		camera.look_at(focus)
 	_apply_shake(delta)
+
+
+## Direction du héros vers la caméra en 3e personne, pour une hauteur d'angle donnée.
+func _third_dir(pitch: float) -> Vector3:
+	return Vector3(sin(cam_yaw) * cos(pitch), sin(pitch), cos(cam_yaw) * cos(pitch))
+
+
+## Part (0 à 1) du décalage d'épaule libre de tout obstacle, depuis la tête.
+func _shoulder_room(head: Vector3, shoulder: Vector3) -> float:
+	var room := 1.0
+	var space := get_world_3d().direct_space_state
+	if space:
+		var q := PhysicsShapeQueryParameters3D.new()
+		var ball := SphereShape3D.new()
+		ball.radius = CAMERA_RADIUS
+		q.shape = ball
+		q.transform = Transform3D(Basis.IDENTITY, head)
+		q.motion = shoulder
+		q.exclude = [get_rid()]
+		var frac := space.cast_motion(q)
+		if frac.size() == 2:
+			room = frac[0]
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if w and global_position.y > WorldGenerator.UNDERGROUND and _camera_cell_solid(w, head + shoulder * room):
+		room = 0.0
+	return room
+
+
+## Recul libre de la caméra 3e personne : la place derrière l'épaule, et derrière la tête
+## (un pilier à côté du héros ne doit pas le cacher).
+func _third_free_distance(focus: Vector3, head: Vector3, shoulder: Vector3, dir: Vector3, want: float) -> float:
+	return minf(_camera_free_distance(focus + shoulder, dir, want), _camera_free_distance(head, dir, want) + 0.6)
 
 
 ## Jusqu'où la caméra peut reculer depuis `focus` dans la direction `dir` sans entrer dans le sol,
