@@ -9,9 +9,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# sur une pull request, un nouvel envoi annule la vérification précédente ; sur main, chaque fusion va au bout
+# (sinon des fusions rapprochées s'annulent et main n'est plus jamais vérifié)
 concurrency:
-  group: tests-${{ github.ref }}
-  cancel-in-progress: true
+  group: tests-${{ github.ref }}-${{ github.event_name == 'push' && github.sha || 'pr' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   GODOT_VERSION: "4.7-stable"

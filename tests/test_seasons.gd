@@ -104,7 +104,7 @@ func _process(_d) -> bool:
 		check("jour 2 : fête des semailles", se.is_festival() and se._decor != null)
 		var gifts := 0
 		for n in w.get_node("Village").get_children():
-			if n.has_method("is_taken") and n.item and n.item.id in ["graines_ble", "carotte", "pomme_de_terre"] and n.global_position.distance_to(w.cell_center(w.spawn_cell)) < 4.0:
+			if n.has_method("is_taken") and n.item and n.item.id in ["graines_ble", "carotte", "pomme_de_terre"] and n.global_position.distance_to(w.hearth_center()) < 4.0:
 				gifts += 1
 		check("cadeaux près du feu (%d)" % gifts, gifts == 3)
 		var ss: int = se._gifts.size()

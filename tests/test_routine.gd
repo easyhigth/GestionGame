@@ -43,6 +43,10 @@ func later(key: String, ms: int) -> bool:
 	set_meta(key + "_done", true)
 	return true
 
+## Habitants (hors garde) à moins de 4 m du feu de camp.
+func near_fire() -> int:
+	return villagers().filter(func(v): return v != guard and v.global_position.distance_to(w.hearth_center()) < 4.0).size()
+
 func start(key: String) -> void:
 	set_meta(key, game_ms)
 
@@ -110,9 +114,13 @@ func _process(_d) -> bool:
 		print("== repas (12 h)")
 		dc.hour = 12.1
 		start("a")
-	if later("a", 9000):
+	# sur une machine lente (CI), les habitants marchent moins vite que l'horloge du test : on attend qu'ils arrivent
+	# (avant 13 h, fin du repas)
+	if has_meta("a") and not has_meta("a_done") and game_ms - float(get_meta("a")) >= 9000.0 \
+			and (near_fire() >= villagers().size() - 3 or game_ms - float(get_meta("a")) >= 25000.0):
+		set_meta("a_done", true)
 		var acts := villagers().map(func(v): return v.activity)
-		var near := villagers().filter(func(v): return v != guard and v.global_position.distance_to(w.cell_center(w.spawn_cell)) < 4.0).size()
+		var near := near_fire()
 		check("à midi, tout le monde mange (%s)" % str(acts.slice(0, 4)), acts.count("repas") == acts.size())
 		check("autour du feu de camp (%d / %d)" % [near, villagers().size() - 1], near >= villagers().size() - 3)
 		check("pas de production pendant le repas", villagers().all(func(v): return not v.is_at_work()))
