@@ -594,6 +594,10 @@ func _ensure_chunk_of(cell: Vector2i) -> void:
 	if not _inside(cell):
 		return
 	var ci := (cell.y / CHUNK) * _chunks.x + (cell.x / CHUNK)
+	# garde-fou : sur la CI, une partie d'un monde de 1536 m rechargée en 640 m (test_boot) a demandé des morceaux
+	# hors de la grille ; on n'a rien à calculer
+	if ci >= _chunk_ready.size():
+		return
 	if _chunk_ready[ci] == 0:
 		_gen_chunk_data(Vector2i(cell.x / CHUNK, cell.y / CHUNK))
 
