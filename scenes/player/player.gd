@@ -141,6 +141,8 @@ const THIRD_FOV := 55.0
 const CAMERA_RADIUS := 0.35
 ## En dessous de cette part du recul voulu, la caméra 3e personne monte pour passer au-dessus de l'obstacle.
 const CAMERA_LIFT_MIN := 0.75
+## Écart de côté maximal (m) de la caméra 3e personne pour s'éloigner d'une falaise qui la longe.
+const CAMERA_SIDE_MAX := 1.8
 const CAM_NAMES := ["3e personne", "Vue de dessus", "1re personne"]
 var cam_mode := CamMode.THIRD
 var _crosshair: CanvasLayer
@@ -150,6 +152,8 @@ var cam_yaw := 0.0
 var cam_pitch := deg_to_rad(45.0)
 ## Hauteur ajoutée à la caméra 3e personne pour passer au-dessus d'un obstacle bas (radians).
 var _cam_lift := 0.0
+## Écart de côté actuel de la caméra 3e personne (m, positif vers la droite).
+var _cam_side := 0.0
 var _orbiting := false
 var _orbit_moved := 0.0
 var _orbit_pressed_at := 0
@@ -2347,6 +2351,8 @@ func _update_camera_third(delta: float) -> void:
 	focus += shoulder
 	visual.visible = dist > 1.1
 	var target := focus + dir * dist
+	# une falaise ou un mur juste à côté de la caméra bouche la moitié de l'écran : elle s'en écarte de côté
+	target = _third_side_clear(focus, target, delta)
 	# un obstacle entre le héros et la caméra : elle s'en rapproche tout de suite (sinon, elle glisse)
 	if dist < want - 0.05 and camera.global_position.distance_to(focus) > dist:
 		camera.global_position = target
@@ -2355,6 +2361,25 @@ func _update_camera_third(delta: float) -> void:
 	if camera.global_position.distance_to(focus) > 0.05:
 		camera.look_at(focus)
 	_apply_shake(delta)
+
+
+## Décale la caméra 3e personne de côté (jusqu'à CAMERA_SIDE_MAX) quand un obstacle la longe de près,
+## vers le côté le plus dégagé, sans traverser d'obstacle entre elle et le héros.
+func _third_side_clear(focus: Vector3, target: Vector3, delta: float) -> Vector3:
+	var right := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw))
+	var reach := CAMERA_SIDE_MAX + 1.5
+	var r := _camera_free_distance(target, right, reach)
+	var l := _camera_free_distance(target, -right, reach)
+	var want_side := 0.0
+	if minf(r, l) < reach - 0.05:
+		want_side = clampf((r - l) * 0.5, -CAMERA_SIDE_MAX, CAMERA_SIDE_MAX)
+	_cam_side = lerpf(_cam_side, want_side, clampf(4.0 * delta, 0.0, 1.0))
+	if absf(_cam_side) < 0.02:
+		return target
+	var moved := target + right * _cam_side
+	var to := moved - focus
+	var free := _camera_free_distance(focus, to.normalized(), to.length())
+	return focus + to.normalized() * free
 
 
 ## Direction du héros vers la caméra en 3e personne, pour une hauteur d'angle donnée.

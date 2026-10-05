@@ -889,6 +889,23 @@ func _flatten_spot(cell: Vector2i, radius: int) -> void:
 				_heights[i] = base
 
 
+## Abaisse le terrain qui domine une place : à niveau jusqu'à `inner` cases du centre, puis en pente douce
+## jusqu'à `outer` : pas de falaise collée à l'obélisque, où la caméra viendrait buter.
+func _lower_around(cell: Vector2i, inner: int, outer: int) -> void:
+	var base := _h(cell)
+	for y in range(-outer, outer + 1):
+		for x in range(-outer, outer + 1):
+			var r := maxi(absi(x), absi(y))
+			var c := cell + Vector2i(x, y)
+			if not _inside(c):
+				continue
+			_ensure_chunk_of(c)
+			var i := _idx(c)
+			var top := snappedf(base + maxi(r - inner, 0) * 0.75, step_height)
+			if _heights[i] > top and _types[i] != WATER and _types[i] != DEEP:
+				_heights[i] = top
+
+
 ## Cherche une case sèche et plate près de `from` (en spirale).
 func _find_site(from: Vector2i, zone_id: int, max_r: int) -> Vector2i:
 	for r in range(0, max_r, 2):
@@ -934,6 +951,7 @@ func _place_sites() -> void:
 			z.obelisk = ob
 			if not start:
 				_flatten_spot(ob, 2)
+				_lower_around(ob, 2, 6)
 			else:
 				_ensure_chunk_of(ob)
 				_decor[_idx(ob)] = D_NONE

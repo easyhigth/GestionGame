@@ -19,7 +19,7 @@ const STYLES := {
 }
 const FOUNDATION := "bloc_pierre_brute"
 ## Matériaux des châteaux selon la région : [murs, créneaux].
-const CASTLE_MATS := {"desert": ["bloc_sable", "bloc_pierre_polie"], "volcan": ["bloc_marbre_noir", "bloc_briques"],
+const CASTLE_MATS := {"desert": ["bloc_sable", "bloc_pierre_polie"], "volcan": ["bloc_marbre_noir", "bloc_tuiles"],
 	"toundra": ["bloc_pierre_brute", "bloc_pierre_polie"], "bois_enchante": ["bloc_marbre", "bloc_pierre_polie"],
 	"marais": ["bloc_pierre_brute", "bloc_briques"]}
 ## Niveau du rez-de-chaussée de la dernière construction posée.
@@ -97,19 +97,19 @@ static func gate_plan() -> Dictionary:
 
 ## Pierre des piliers d'obélisque selon la région : [bas, chapiteau]. Ailleurs : pierre polie.
 const OBELISK_PILLARS := {
-	"foret": ["bloc_pierre_brute", "bloc_rondins"],
+	"foret": ["bloc_rondins", "bloc_rondins"],
 	"bois_enchante": ["bloc_marbre", "bloc_marbre"],
-	"marais": ["bloc_pierre_brute", "bloc_rondins"],
+	"marais": ["bloc_terre", "bloc_rondins"],
 	"desert": ["bloc_sable", "bloc_sable"],
 	"montagnes": ["bloc_pierre_brute", "bloc_ardoise"],
 	"toundra": ["bloc_marbre", "bloc_verre"],
-	"volcan": ["bloc_marbre_noir", "bloc_briques"],
-	"jungle": ["bloc_pierre_brute", "bloc_rondins"],
+	"volcan": ["bloc_marbre_noir", "bloc_tuiles"],
+	"jungle": ["bloc_planches", "bloc_chaume"],
 }
 
 
 ## Quatre piliers aux coins d'un obélisque (repère local, centré sur l'obélisque), dans la pierre
-## de la région (sable au désert, marbre et glace en toundra, marbre noir et briques au volcan...).
+## de la région (sable au désert, marbre et glace en toundra, marbre noir et tuiles rouges au volcan, troncs en forêt...).
 static func obelisk_plan(region_id := "") -> Dictionary:
 	var mats: Array = OBELISK_PILLARS.get(region_id, ["bloc_pierre_polie", "bloc_pierre_polie"])
 	var out := {}
