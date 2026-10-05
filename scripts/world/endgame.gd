@@ -23,7 +23,7 @@ const RIFT_FLOOR := -200
 const RIFT_R := 16
 const WAVES := 3
 const RIFT_MOBS := ["squelette", "demon", "orc_brute", "loup_givre", "araignee", "esprit_follet", "salamandre", "ogre",
-	"homme_lezard", "slime_magma", "panthere", "seigneur_squelette"]
+	"homme_lezard", "slime_magma", "panthere", "seigneur_squelette", "yeti"]
 const RIFT_BOSSES := ["boss_ogre_roi", "boss_seigneur_ignarok", "boss_reine_araignee", "boss_scorpion_empereur", "boss_ours_ancien",
 	"boss_slime_primordial", "seigneur_demon", "boss_quetzal"]
 const TITANS := [["boss_ours_ancien", "Ursok, Titan des glaces"], ["boss_seigneur_ignarok", "Ignarok, Titan de lave"],

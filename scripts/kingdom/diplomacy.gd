@@ -57,7 +57,7 @@ const NATIONS := {
 		"text": "Des clans rudes des montagnes gelées, fidèles à leur parole.",
 		"likes": ["manteau_laine", 1], "wants": [["laine", 12], ["pain", 10], ["iron_ingot", 8]],
 		"goods": [["laine", 8], ["saumon", 4], ["croc_meute", 2]],
-		"army": {"name": "Meute des Jarls", "types": ["loup_givre", "ours_neige", "loup_givre"], "leader": "loup_alpha"}},
+		"army": {"name": "Meute des Jarls", "types": ["loup_givre", "ours_neige", "yeti", "loup_givre"], "leader": "loup_alpha"}},
 	"cendres": {"name": "Principauté des Cendres", "people": "démons des volcans", "color": Color("e0705a"), "base": -45.0, "start": -50.0,
 		"text": "Une cour démoniaque ambitieuse, qui guette la moindre faiblesse.",
 		"likes": ["sang_demon", 1], "wants": [["fragment_brume", 2], ["lingot_or", 4], ["ecaille_dragon", 1]],

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://assets/characters/creatures/yeti.glb" id="r2"]
+[ext_resource type="Resource" path="res://data/items/leather.tres" id="r3"]
+[ext_resource type="Resource" path="res://data/items/fiber.tres" id="r4"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Yéti"
+model = ExtResource("r2")
+model_scale = 1.0
+color = Color(0.722, 0.910, 1.000, 1)
+max_health = 230
+attack = 26
+defense = 5
+move_speed = 3.8
+aggro_range = 10
+leash_range = 20
+attack_range = 2.1
+attack_moves = PackedStringArray("enemy_chop", "enemy_sweep")
+attack_speed = 0.85
+poise = 70
+attack_cooldown = 1.0
+knockback = 7.5
+body_radius = 0.6
+loot = Array[ExtResource("2")]([ExtResource("r3"), ExtResource("r4")])
+loot_chances = PackedFloat32Array(0.9, 0.5)
