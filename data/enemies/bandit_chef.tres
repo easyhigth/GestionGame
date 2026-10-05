@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/item_data.gd" id="2"]
-[ext_resource type="PackedScene" path="res://assets/characters/models/base/human_base_v2.glb" id="model"]
+[ext_resource type="PackedScene" path="res://assets/characters/named/bandit_chef.glb" id="model"]
 [ext_resource type="PackedScene" path="res://assets/equipment/human_equipment.glb" id="lib"]
 [ext_resource type="Resource" path="res://data/items/axe.tres" id="it_dagger"]
 [ext_resource type="Resource" path="res://data/items/leather_cap.tres" id="it_cap"]
