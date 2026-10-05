@@ -2099,7 +2099,7 @@ func _add_travelers(holder: Node3D, cell: Vector2i, z: Dictionary, trng: RandomN
 	if campfire_scene:
 		var fire := campfire_scene.instantiate() as Node3D
 		node.add_child(fire)
-	var plate := Label3D.new()
+	var plate := PlaceLabel.new()
 	plate.text = "Campement de voyageurs"
 	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	plate.font_size = 44
@@ -2160,7 +2160,7 @@ func _add_structure_content(holder: Node3D, st: Dictionary, center: Vector2i) ->
 		var mid := pos
 		_add_chest(holder, st.id, "sunken", pos + Vector3(0, 1.0, 0))
 		# une bouée et son nom, à la surface : on la voit depuis le bateau
-		var buoy := Label3D.new()
+		var buoy := PlaceLabel.new()
 		buoy.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		buoy.text = "≈ %s ≈\ncité engloutie" % st.get("name", "Cité engloutie")
 		buoy.font_size = 44
@@ -2286,7 +2286,7 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	light.omni_range = 5.0
 	light.position.y = 3.2
 	body.add_child(light)
-	var label := Label3D.new()
+	var label := PlaceLabel.new()
 	label.text = "Obélisque\n%s" % z.name
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.font_size = 40
@@ -2331,7 +2331,7 @@ func _add_gate(holder: Node3D, z: Dictionary) -> void:
 	veil.material_override = vm
 	veil.position = Vector3(0, 1.3 + _gate_floor_offset(z.gate), 0)
 	body.add_child(veil)
-	var label := Label3D.new()
+	var label := PlaceLabel.new()
 	var dm := get_node_or_null("Donjons") as DungeonManager
 	var gt: Array = dm.gate_text(z) if dm else [("Donjon de %s\nVaincu ✔" if z.get("cleared", false) else "Donjon de %s\nF : entrer") % z.name, Color("b0ffb0") if z.get("cleared", false) else Color("ffb0a0")]
 	label.text = gt[0]
@@ -2730,7 +2730,7 @@ func _add_hamlet_content(holder: Node3D, st: Dictionary) -> void:
 	rng.seed = int(st.seed)
 	var races: Array = CityPlans.CITIES.get(st.nation, {}).get("races", ["humain"])
 	var cl := get_tree().get_first_node_in_group("city_life")
-	var plate := Label3D.new()
+	var plate := PlaceLabel.new()
 	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	var ravaged: bool = st.get("ravaged", false)
 	plate.text = "Hameau de %s%s" % [st.name, "\n(ravagé par les morts)" if ravaged else ("\n" + str(Diplomacy.NATIONS.get(st.nation, {}).get("name", "")) if st.has("born") else "")]

@@ -244,7 +244,7 @@ func _make_portal() -> void:
 	l.omni_range = 8.0
 	l.position.y = 2.0
 	_portal.add_child(l)
-	var lab := Label3D.new()
+	var lab := PlaceLabel.new()
 	lab.text = "Portail des Failles\nF : entrer"
 	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lab.font_size = 36

@@ -27,7 +27,7 @@ func _ready() -> void:
 	add_to_group("world_chests")
 	var m := MODEL.instantiate() as Node3D
 	add_child(m)
-	_label = Label3D.new()
+	_label = PlaceLabel.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_label.font_size = 32
 	_label.pixel_size = 0.006
