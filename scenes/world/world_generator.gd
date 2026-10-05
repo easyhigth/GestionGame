@@ -223,7 +223,7 @@ var _taken := {}           # objets déjà ramassés (case -> true)
 var _camp_cells: Array[Vector2i] = []
 var _terrain_mat: ShaderMaterial
 var _liquid_mat: StandardMaterial3D
-var _lava_mat: StandardMaterial3D
+var _lava_mat: ShaderMaterial
 var _trunk_shape: CylinderShape3D
 var _bush_shape: CylinderShape3D
 var _rock_shape: BoxShape3D
@@ -1554,14 +1554,11 @@ func _ensure_materials() -> void:
 	_liquid_mat.albedo_texture = GRAIN
 	_liquid_mat.roughness = 0.2
 	_liquid_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
-	_lava_mat = StandardMaterial3D.new()
-	_lava_mat.vertex_color_use_as_albedo = true
-	_lava_mat.vertex_color_is_srgb = true
-	_lava_mat.albedo_texture = GRAIN
-	_lava_mat.emission_enabled = true
-	_lava_mat.emission = Color(1.0, 0.4, 0.1)
-	_lava_mat.emission_energy_multiplier = 0.55
-	_lava_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+	_lava_mat = ShaderMaterial.new()
+	var lava_sh := Shader.new()
+	lava_sh.code = LAVA_SHADER
+	_lava_mat.shader = lava_sh
+	_lava_mat.set_shader_parameter("grain", GRAIN)
 
 
 func _build_terrain_chunk(ch: Vector2i) -> void:
@@ -1591,8 +1588,6 @@ func _build_terrain_chunk(ch: Vector2i) -> void:
 					var target := lava if r.liquid_glow else liquid
 					if not r.liquid_glow:
 						c.a = 0.82
-					else:
-						c = c.darkened(0.3)
 					_quad(target, Vector3(x, yy, y + 1), Vector3(x + 1, yy, y + 1), Vector3(x + 1, yy, y), Vector3(x, yy, y),
 						Vector3.UP, c.darkened(_rand(x, y, 11) * 0.15), Vector2(x, y), true)
 					if r.liquid_glow:
@@ -3484,6 +3479,39 @@ void fragment() {
 }
 """
 
+## Lave : une croûte sombre qui dérive lentement sur une coulée incandescente (veines jaunes qui
+## pulsent) ; la lumière dépasse le seuil du halo, la coulée rayonne. Motif en petits carrés (voxels).
+const LAVA_SHADER := """
+shader_type spatial;
+uniform sampler2D grain : source_color, filter_nearest_mipmap, repeat_enable;
+varying vec3 wpos;
+void vertex() {
+	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
+float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float vnoise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(hash2(i), hash2(i + vec2(1.0, 0.0)), f.x), mix(hash2(i + vec2(0.0, 1.0)), hash2(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+void fragment() {
+	vec2 p = floor(wpos.xz * 4.0) / 4.0;
+	float n = vnoise(p * 0.45 + vec2(TIME * 0.06, TIME * 0.035)) * 0.65 + vnoise(p * 1.3 - vec2(TIME * 0.11, -TIME * 0.07)) * 0.35;
+	// croûte refroidie là où le bruit est bas, veines vives là où il est haut
+	float heat = smoothstep(0.38, 0.72, n);
+	float pulse = 0.85 + 0.15 * sin(TIME * 1.6 + n * 9.0);
+	vec3 base = lin(COLOR.rgb);
+	vec3 hot = mix(base, vec3(1.0, 0.62, 0.14), heat * heat);
+	vec3 crust = vec3(0.12, 0.035, 0.02);
+	vec3 g = texture(grain, UV).rgb;
+	ALBEDO = mix(crust, hot, smoothstep(0.1, 0.45, heat)) * g;
+	EMISSION = hot * g * (0.35 + 1.7 * heat) * pulse * smoothstep(0.05, 0.4, heat);
+	ROUGHNESS = mix(1.0, 0.5, heat);
+}
+"""
+
 ## Sol : couleurs des sommets (sRGB) et grain, avec la teinte de la saison sur l'herbe et la neige l'hiver.
 const TERRAIN_SHADER := """
 shader_type spatial;
@@ -3492,6 +3520,8 @@ uniform sampler2D grain : source_color, filter_nearest_mipmap, repeat_enable;
 uniform float water_y = -0.2;
 uniform sampler2D water_mask : filter_linear;
 uniform vec2 world_size = vec2(1536.0);
+const float FLANK = 1.9;
+const float FOOT = 0.2;
 global uniform vec4 season_ground;
 global uniform float season_snow;
 varying vec3 wpos;
@@ -3519,10 +3549,15 @@ void fragment() {
 		c = mix(c, c * vec3(1.04, 1.0, 0.9), green * big * 0.5);
 		// ombrage des coins au pied des talus
 		c *= clamp(shade.x, 0.55, 1.0);
-	} else if (shade.y > 0.0) {
-		// talus : plus sombre vers le pied, d'autant plus que le talus est haut
-		float depth = clamp(shade.y / 2.5, 0.0, 1.0);
-		c *= mix(1.0 - 0.38 * depth, 1.0, smoothstep(0.0, 0.85, shade.x));
+	} else {
+		// flancs : le soleil passe au nord, ceux qu'on voit en marchant vers le nord ne reçoivent que
+		// l'ambiance ; plus clairs, pour qu'une colline de pierre ne fasse pas un trou noir en plein jour
+		c *= FLANK;
+		if (shade.y > 0.0) {
+			// talus : plus sombre vers le pied, d'autant plus que le talus est haut
+			float depth = clamp(shade.y / 2.5, 0.0, 1.0);
+			c *= mix(1.0 - FOOT * depth, 1.0, smoothstep(0.0, 0.85, shade.x));
+		}
 	}
 	// sol mouillé au bord de l'eau
 	float wet = 1.0 - smoothstep(water_y + 0.02, water_y + 0.35, wpos.y);
