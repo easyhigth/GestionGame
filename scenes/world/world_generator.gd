@@ -1359,6 +1359,7 @@ func _process(delta: float) -> void:
 			if holder:
 				var n := holder.get_node_or_null("Obelisque")
 				if n:
+					_obelisk_light(n.get_node_or_null("Lueur"), true)
 					VoxelBurst.spawn(n, ob + Vector3(0, 2.5, 0), _obelisk_glow(z), 40, 6.0, 0.1, 0.8, "sphere", 8.0, false)
 
 
@@ -2298,9 +2299,9 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	if model:
 		body.add_child(model.instantiate())
 	var light := OmniLight3D.new()
+	light.name = "Lueur"
 	light.light_color = _obelisk_glow(z)
-	light.light_energy = 1.2
-	light.omni_range = 5.0
+	_obelisk_light(light, z.obelisk_on)
 	light.position.y = 3.2
 	body.add_child(light)
 	var label := PlaceLabel.new()
@@ -2315,6 +2316,21 @@ func _add_obelisk(holder: Node3D, z: Dictionary) -> void:
 	body.add_child(label)
 	holder.add_child(body)
 	body.global_position = cell_center(z.obelisk)
+
+
+## Activé, l'obélisque éclaire plus fort et plus loin : c'est un refuge la nuit (DayCycle.near_obelisk).
+func _obelisk_light(light: OmniLight3D, on: bool) -> void:
+	if light == null:
+		return
+	light.light_energy = 2.2 if on else 1.2
+	light.omni_range = 9.0 if on else 5.0
+
+
+## Le niveau de la zone dépasse de beaucoup celui du héros : le nom de la région passe en rouge.
+const DANGER_LEVELS := 5
+
+static func zone_too_strong(z: Dictionary, hero_level: int) -> bool:
+	return not z.is_empty() and (z.level as Vector2i).x - hero_level >= DANGER_LEVELS
 
 
 func _obelisk_glow(z: Dictionary) -> Color:

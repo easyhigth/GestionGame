@@ -153,6 +153,30 @@ func _process(_d) -> bool:
 			min_d = minf(min_d, e.global_position.distance_to(p.global_position))
 		check("apparus à plus de 14 m (%.1f)" % min_d, min_d > 14.0)
 		check("pas d'apparition près du feu de camp", dc.near_light(w.cell_center(w.spawn_cell) + Vector3(3, 0, 0)))
+		# un obélisque activé est un refuge : pas d'apparition, et ses lueurs dissipent les monstres de la nuit
+		var oz: Dictionary = {}
+		for z in w.zones:
+			if (z.obelisk as Vector2i).x >= 0 and not w.in_home_zone(w.cell_center(z.obelisk)):
+				oz = z
+				break
+		if not oz.is_empty():
+			var ob: Vector3 = w.cell_center(oz.obelisk)
+			var was: bool = oz.obelisk_on
+			oz.obelisk_on = false
+			check("obélisque éteint : pas un refuge", not dc.near_obelisk(ob + Vector3(4, 0, 0)))
+			oz.obelisk_on = true
+			check("obélisque activé : refuge la nuit", dc.near_light(ob + Vector3(4, 0, 0)))
+			if not mons.is_empty():
+				var m: Node3D = mons[0]
+				m.global_position = ob + Vector3(3, 0, 0)
+				dc._spawn_timer = 0.0
+				dc._night_spawns(0.1)
+				check("monstre de la nuit dissipé près de l'obélisque", not dc.night_monsters().has(m))
+			oz.obelisk_on = was
+		# prévenir quand une région est bien plus forte que le héros
+		check("région trop forte signalée", w.zone_too_strong({"level": Vector2i(12, 15)}, 5)
+			and not w.zone_too_strong({"level": Vector2i(6, 9)}, 5))
+		mons = dc.night_monsters()
 		check("dormir refusé avec des monstres tout près", true if mons.is_empty() else (func():
 			mons[0].global_position = p.global_position + Vector3(2, 0, 0)
 			return dc.sleep().begins_with("Impossible")).call())
