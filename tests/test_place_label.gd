@@ -35,6 +35,15 @@ func _process(_d):
 			lab.global_position = Vector3(0, 0, -lab.fade_range().x * 0.5)
 		9:
 			check("on se rapproche : elle revient", lab.visible and is_equal_approx(lab.modulate.a, 1.0))
+			# tout en haut de l'écran : elle descend pour rester sous la bande du HUD
+			lab.global_position = Vector3(0, 3.2, -5.0)
+		11:
+			var vh := root.get_visible_rect().size.y
+			var y := cam.unproject_position(lab.global_position + Vector3.UP * lab.offset.y * lab.pixel_size).y
+			check("en haut de l'écran : descendue sous le HUD (y %.0f, alpha %.2f)" % [y, lab.modulate.a], lab.visible and y > vh * PlaceLabel.TOP_MARGIN and lab.offset.y < 0.0)
+			lab.global_position = Vector3(0, 0, -5.0)
+		13:
+			check("au milieu de l'écran : pas déplacée", is_zero_approx(lab.offset.y) and is_equal_approx(lab.modulate.a, 1.0))
 			print("RÉSULTAT : " + ("tout est bon" if ok else "des échecs"))
 			quit(0 if ok else 1)
 	return false
