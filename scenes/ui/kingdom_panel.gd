@@ -111,8 +111,20 @@ func _page_overview(page: VBoxContainer, k: Kingdom, n: VillageNeeds) -> void:
 		MenuKit.C_OK if beds >= members.size() else MenuKit.C_BAD, float(beds) / maxf(1.0, members.size()), 175))
 	tiles.add_child(MenuKit.stat_tile("food", "%d repas" % n.meals(), "Réserve de nourriture", MenuKit.C_OK if n.meals() >= members.size() else MenuKit.C_BAD,
 		float(n.meals()) / maxf(1.0, members.size() * 2.0), 175))
-	tiles.add_child(MenuKit.stat_tile("heart", "%d %%" % roundi(avg), "Bonheur · " + VillageNeeds.mood_name(avg), VillageNeeds.mood_color(avg), avg / 100.0, 175))
+	# sans habitant, il n'y a pas de bonheur à mesurer : pas de « Malheureux 0 % » en rouge
+	if members.is_empty():
+		tiles.add_child(MenuKit.stat_tile("heart", "—", "Bonheur · aucun habitant", MenuKit.C_DIM, 0.0, 175))
+	else:
+		tiles.add_child(MenuKit.stat_tile("heart", "%d %%" % roundi(avg), "Bonheur · " + VillageNeeds.mood_name(avg), VillageNeeds.mood_color(avg), avg / 100.0, 175))
 	page.add_child(tiles)
+	# à faire maintenant
+	page.add_child(MenuKit.section("À faire maintenant", "compass", 14))
+	var tips := _tips(k, n)
+	if tips.is_empty():
+		page.add_child(MenuKit.empty_state("star", "Tout va bien : ton royaume prospère !"))
+	for t in tips.slice(0, 3):
+		var plan_id: String = t[2]
+		page.add_child(MenuKit.tip_card(t[0], t[1], "Construire ▸" if plan_id != "" else "", (func(): _build(plan_id)) if plan_id != "" else Callable(), t[3]))
 	# progression du royaume
 	if k:
 		var prog := MenuKit.card_box(false, 10.0, 4)
@@ -175,15 +187,6 @@ func _page_overview(page: VBoxContainer, k: Kingdom, n: VillageNeeds) -> void:
 			_refresh())
 		acts.add_child(cure_b)
 	page.add_child(acts)
-	# à faire maintenant
-	page.add_child(MenuKit.section("À faire maintenant", "compass", 14))
-	var tips := _tips(k, n)
-	if tips.is_empty():
-		page.add_child(MenuKit.empty_state("star", "Tout va bien : ton royaume prospère !"))
-	for t in tips.slice(0, 3):
-		var plan_id: String = t[2]
-		page.add_child(MenuKit.tip_card(t[0], t[1], "Construire ▸" if plan_id != "" else "", (func(): _build(plan_id)) if plan_id != "" else Callable(), t[3]))
-
 
 ## Conseils : [icône, texte, plan à ouvrir ("" = aucun), urgent].
 func _tips(k: Kingdom, n: VillageNeeds) -> Array:
