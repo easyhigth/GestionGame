@@ -1897,6 +1897,7 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 	holder.add_child(obstacles)
 	var groups := {}  # scène -> transforms
 	var small := {}   # scènes de petite végétation
+	var low := {}     # scènes plus basses que le regard (tout sauf les arbres)
 	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
 		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
 			var cell := Vector2i(x, y)
@@ -1928,6 +1929,8 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 			if not groups.has(scene):
 				groups[scene] = []
 			groups[scene].append(Transform3D(basis, pos))
+			if kind != D_OAK and kind != D_PINE:
+				low[scene] = true
 			if kind == D_FLOWERS or kind == D_GRASS:
 				small[scene] = true
 			var shape: Shape3D = null
@@ -1955,9 +1958,13 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = info[0]
+		# donnée par instance : 1 = décor bas (buisson, rocher, plante), effacé au premier plan
+		mm.use_custom_data = true
 		mm.instance_count = list.size()
+		var custom := Color(1.0 if low.has(scene) else 0.0, 0, 0, 0)
 		for i in list.size():
 			mm.set_instance_transform(i, (list[i] as Transform3D) * (info[1] as Transform3D))
+			mm.set_instance_custom_data(i, custom)
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		if small.has(scene):
@@ -3511,6 +3518,18 @@ void vertex() {
 		float wide = (2.0 + 1.2 * th * length(dh)) * (1.0 - smoothstep(0.55, 0.85, th));
 		if (th > -0.1 && distance(origin.xz, see_from.xz + dh * th) < wide) {
 			VERTEX = vec3(0.0);
+		}
+		// premier plan : les décors bas (buissons, rochers, plantes, roseaux) plus près de la caméra que
+		// le héros s'effacent sur toute la largeur de l'écran, coins du bas compris ; les arbres restent
+		float len_h = length(dh);
+		if (INSTANCE_CUSTOM.r > 0.5 && len_h > 1.5 && len_h < 13.0) {
+			vec2 fwd = dh / len_h;
+			vec2 rel = origin.xz - see_from.xz;
+			float depth = dot(rel, fwd);
+			float side = abs(dot(rel, vec2(-fwd.y, fwd.x)));
+			if (depth > -1.5 && depth < len_h - 0.4 && side < 2.0 + 1.1 * max(depth, 0.0)) {
+				VERTEX = vec3(0.0);
+			}
 		}
 	}
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
