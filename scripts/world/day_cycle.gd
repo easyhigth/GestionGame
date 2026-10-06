@@ -23,6 +23,8 @@ const SPAWN_MIN := 15.0
 const SPAWN_MAX := 24.0
 ## Pas d'apparition à moins de cette distance d'une lumière (torche, feu de camp...).
 const LIGHT_SAFE := 8.0
+## Rayon du refuge autour d'un obélisque activé (pas de monstres de la nuit).
+const OBELISK_SAFE := 10.0
 
 const NIGHT_BG := Color(0.05, 0.07, 0.16)
 const NIGHT_AMBIENT := Color(0.4, 0.48, 0.8)
@@ -221,6 +223,12 @@ func _night_spawns(delta: float) -> void:
 		return
 	_spawn_timer = SPAWN_EVERY
 	_night_monsters = _night_monsters.filter(func(e): return is_instance_valid(e) and e.is_alive())
+	# la lumière d'un obélisque activé dissipe les créatures de la nuit qui s'en approchent
+	for e in _night_monsters.duplicate():
+		if near_obelisk(e.global_position):
+			VoxelBurst.spawn(e.get_parent(), e.global_position + Vector3(0, 0.8, 0), Color(1.0, 0.85, 0.5), 18, 3.0, 0.1, 0.6, "up", 6.0, false)
+			_night_monsters.erase(e)
+			e.queue_free()
 	# ils marchent vers le héros
 	for e in _night_monsters:
 		if not e.get("_target"):
@@ -284,7 +292,7 @@ func _spawn_spot() -> Vector3:
 	return Vector3.INF
 
 
-## Vrai près d'une lumière : torche ou lanterne posée, feu de camp, établi du village.
+## Vrai près d'une lumière : torche ou lanterne posée, feu de camp, établi du village, obélisque activé.
 func near_light(pos: Vector3) -> bool:
 	# la zone du camp (autour du drapeau du royaume) est un refuge : pas de monstres la nuit
 	if world.in_home_zone(pos):
@@ -295,6 +303,17 @@ func near_light(pos: Vector3) -> bool:
 	for k in world.build.furniture:
 		var f: Dictionary = world.build.furniture[k]
 		if (f.item as ItemData).furniture_light and Vector3(f.col.x + 0.5, f.base, f.col.y + 0.5).distance_to(pos) < LIGHT_SAFE:
+			return true
+	return near_obelisk(pos)
+
+
+## Vrai près d'un obélisque activé : un refuge pour la nuit sur les longs voyages.
+func near_obelisk(pos: Vector3) -> bool:
+	for z in world.zones:
+		if not z.obelisk_on or (z.obelisk as Vector2i).x < 0:
+			continue
+		var ob := world.cell_center(z.obelisk)
+		if Vector2(ob.x - pos.x, ob.z - pos.z).length() < OBELISK_SAFE:
 			return true
 	return false
 

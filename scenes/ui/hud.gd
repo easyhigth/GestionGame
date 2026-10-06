@@ -645,13 +645,16 @@ func _build_maps() -> void:
 			show_message("Ton héros absorbe l'âme du boss : " + soul))
 	if world:
 		world.zone_entered.connect(_on_zone_entered)
-		world.obelisk_activated.connect(func(z): show_feat("Obélisque activé !", Color("8af0ff")); show_message("Obélisque de %s activé : voyage rapide depuis la carte ({world_map})." % z.name))
+		world.obelisk_activated.connect(func(z): show_feat("Obélisque activé !", Color("8af0ff")); show_message("Obélisque de %s activé : voyage rapide depuis la carte ({world_map}), et refuge la nuit près de sa lumière." % z.name))
 
 
 ## Bandeau quand on entre dans une zone : son nom, sa région et son niveau.
 func _on_zone_entered(z: Dictionary) -> void:
 	var t: RegionData = z.type
 	if t == null or _zone_title == null:
+		return
+	if player and WorldGenerator.zone_too_strong(z, int(player.level)):
+		show_banner(z.name, "%s  ·  Niveau %d à %d\n⚠ Région bien plus forte que toi (niveau %d) : prudence !" % [t.display_name, z.level.x, z.level.y, int(player.level)], Color("ff7a6a"), true)
 		return
 	show_banner(z.name, "%s  ·  Niveau %d à %d\n%s" % [t.display_name, z.level.x, z.level.y, t.description], t.map_color.lightened(0.55), true)
 

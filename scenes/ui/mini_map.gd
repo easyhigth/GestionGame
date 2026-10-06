@@ -168,13 +168,15 @@ func _draw() -> void:
 	var z := world.zone_at(player.global_position)
 	if not z.is_empty() and z.type:
 		var t: RegionData = z.type
-		var lines := [z.name, KeyBindings.fmt("Nv %d-%d  ·  {world_map} : carte" % [z.level.x, z.level.y])]
+		var danger := WorldGenerator.zone_too_strong(z, int(player.level))
+		var lines := [z.name, KeyBindings.fmt("Nv %d-%d  ·  %s" % [z.level.x, z.level.y, "Trop fort pour toi !" if danger else "{world_map} : carte"])]
 		# fond sombre sous les deux lignes : lisibles sur la neige ou le sable en plein midi
 		var w := maxf(_font.get_string_size(lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x, _font.get_string_size(lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
 		var back := MenuKit.text_backing()
 		back.draw(get_canvas_item(), Rect2(SIZE / 2.0 - w / 2.0 - 7.0, SIZE + 3, w + 14.0, 30))
-		_text(lines[0], Vector2(SIZE / 2.0, SIZE + 15), 12, t.map_color.lightened(0.6))
-		_text(lines[1], Vector2(SIZE / 2.0, SIZE + 29), 11, Color("e0d4b8"))
+		# région bien plus forte que le héros : son nom passe en rouge
+		_text(lines[0], Vector2(SIZE / 2.0, SIZE + 15), 12, Color("ff6a5a") if danger else t.map_color.lightened(0.6))
+		_text(lines[1], Vector2(SIZE / 2.0, SIZE + 29), 11, Color("ffb0a0") if danger else Color("e0d4b8"))
 
 
 func _star(p: Vector2, r: float, col: Color) -> void:
