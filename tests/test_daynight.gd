@@ -174,8 +174,8 @@ func _process(_d) -> bool:
 				check("monstre de la nuit dissipé près de l'obélisque", not dc.night_monsters().has(m))
 			oz.obelisk_on = was
 		# prévenir quand une région est bien plus forte que le héros
-		check("région trop forte signalée", WorldGenerator.zone_too_strong({"level": Vector2i(12, 15)}, 5)
-			and not WorldGenerator.zone_too_strong({"level": Vector2i(6, 9)}, 5))
+		check("région trop forte signalée", w.zone_too_strong({"level": Vector2i(12, 15)}, 5)
+			and not w.zone_too_strong({"level": Vector2i(6, 9)}, 5))
 		mons = dc.night_monsters()
 		check("dormir refusé avec des monstres tout près", true if mons.is_empty() else (func():
 			mons[0].global_position = p.global_position + Vector3(2, 0, 0)
