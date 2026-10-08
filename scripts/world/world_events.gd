@@ -18,6 +18,7 @@ const EVENTS := {
 	"invasion": {"name": "Invasion de la Brume", "color": Color("b48cff"), "text": "Une horde brumeuse marche sur le village !"},
 	"tournoi": {"name": "Grand tournoi", "color": Color("ffb04a"), "text": "Trois champions te défient au feu de camp : approche-toi pour combattre."},
 	"fete": {"name": "Fête du royaume", "color": Color("ffe08a"), "text": "Tout le royaume fait la fête : habitants plus heureux, et le marchand arrive."},
+	"bete": {"name": "Bête rôdeuse", "color": Color("e0764a"), "text": "Une grande bête rôde loin du village et terrorise les voyageurs. Pars à sa recherche : plus tu tardes, plus les habitants s'inquiètent."},
 	"epidemie": {"name": "Épidémie", "color": Color("9ad06a"), "text": "Des habitants sont malades : soigne-les depuis le panneau du royaume ({kingdom}) avec une soupe ou une potion."},
 }
 const STAR_LOOT := [["mithril_brut", 2], ["cristal_aube", 1], ["gemme_saphir", 1], ["gemme_topaze", 1], ["lingot_or", 2], ["orichalque", 1]]
@@ -34,6 +35,9 @@ var _day := -1
 var _stars: Array = []
 var _challenger: Enemy
 var _arena_label: Label3D
+## Bête rôdeuse (événement) : un grand monstre loin du village, à abattre avant la fin du jour suivant.
+var _beast: Enemy
+const BEASTS := ["sanglier", "loup_alpha", "orc_brute", "ogre"]
 
 
 func _ready() -> void:
@@ -79,6 +83,8 @@ func status_text() -> String:
 			return "⚔ %s : champion %d / %d" % [ev.name, mini(int(current.get("round", 0)) + 1, CHAMPIONS.size()), CHAMPIONS.size()]
 		"epidemie":
 			return "✚ %s : %d malade(s)" % [ev.name, sick().size()]
+		"bete":
+			return "☠ %s : %s" % [ev.name, beast_hint()]
 	return "✦ " + ev.name
 
 
@@ -114,7 +120,7 @@ func _process(delta: float) -> void:
 func new_day(d: int) -> void:
 	# fin de l'événement en cours
 	if not current.is_empty() and d > int(current.day) + 1:
-		_finish(current.id == "fete", "")
+		_finish(current.id == "fete", "La bête a disparu dans les bois, mais elle reviendra peut-être..." if current.id == "bete" else "")
 	if current.is_empty() and d >= next_day:
 		var choices := EVENTS.keys()
 		choices.erase(history.get("_last", ""))
@@ -146,6 +152,10 @@ func start(id: String) -> void:
 			var tr := get_tree().get_first_node_in_group("trade")
 			if tr and not tr.is_here():
 				tr.arrive()
+		"bete":
+			if not _spawn_beast():
+				current = {}
+				return
 		"epidemie":
 			var vs := get_tree().get_nodes_in_group("villagers").filter(func(v): return not v.get("stranger") and not v.get("companion"))
 			vs.shuffle()
@@ -180,6 +190,9 @@ func _finish(success: bool, text: String) -> void:
 	_arena_label = null
 	for v in sick():
 		v.remove_meta("malade")
+	if _beast and is_instance_valid(_beast) and _beast.is_alive():
+		_beast.queue_free()
+	_beast = null
 	if text == "":
 		text = "%s : c'est terminé." % EVENTS[ev.id].name
 	if player:
@@ -323,6 +336,55 @@ func _tournament_step() -> void:
 	e.home = at
 	_challenger = e
 	player.notify.emit("%s entre dans l'arène !" % c[1])
+
+
+# ---------------------------------------------------------------- bête rôdeuse
+
+## Fait apparaître la bête à 60-90 m du camp. Elle ne vient pas au village : c'est au héros d'aller la chasser.
+func _spawn_beast() -> bool:
+	var w := _world()
+	if w == null or player == null:
+		return false
+	var center := w.home_center()
+	var angle := randf() * TAU
+	var spot := center + Vector3(cos(angle), 0, sin(angle)) * randf_range(60.0, 90.0)
+	var cell := w._find_site(w.cell_at(spot), -1, 14)
+	if cell.x >= 0:
+		spot = w.cell_center(cell)
+	w.load_area(spot)
+	spot.y = w.ground_height_at(spot + Vector3(0, 3, 0))
+	var scene := load("res://scenes/enemies/enemy.tscn") as PackedScene
+	var e := scene.instantiate() as Enemy
+	var id: String = BEASTS[mini(player.power_level() / 15, BEASTS.size() - 1)]
+	e.data = load("res://data/enemies/%s.tres" % id)
+	e.level = maxi(2, player.power_level() + 2)
+	e.power = 1.6 + 0.04 * e.level
+	w.add_child(e)
+	e.global_position = spot
+	e.set_meta("event_beast", true)
+	e.name_label.text = "☠ Bête rôdeuse · Nv %d" % e.level
+	e.died_at.connect(_on_beast_died)
+	_beast = e
+	return true
+
+
+func beast_hint() -> String:
+	if _beast == null or not is_instance_valid(_beast) or player == null:
+		return "introuvable"
+	var d := _beast.global_position - player.global_position
+	var dirs := ["à l'est", "au sud-est", "au sud", "au sud-ouest", "à l'ouest", "au nord-ouest", "au nord", "au nord-est"]
+	var i := posmod(roundi(atan2(d.z, d.x) / (TAU / 8.0)), 8)
+	return "%d m %s" % [roundi(Vector2(d.x, d.z).length()), dirs[i]]
+
+
+func _on_beast_died(_pos: Vector3) -> void:
+	if not is_active("bete"):
+		return
+	var lv := player.power_level() if player else 1
+	_give([["piece_or", 60 + 8 * lv], ["leather", 3 + lv / 10], ["viande_crue", 4]], "Bête abattue")
+	if player:
+		player.gain_xp(60 + 12 * lv)
+	_finish(true, "La bête est abattue : les routes sont sûres et les habitants soulagés.")
 
 
 # ---------------------------------------------------------------- épidémie

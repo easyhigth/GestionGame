@@ -70,6 +70,14 @@ func threat_level() -> int:
 	return maxi(1, 1 + pop / 2 + rank * 3 + age * 2 + prov * 3)
 
 
+## Défense du camp bâtie par le joueur (voir CampDefense).
+func defense() -> Dictionary:
+	if world == null:
+		return {"walls": 0, "towers": 0, "lights": 0, "guards": 0, "points": 0}
+	var guards := get_tree().get_nodes_in_group("villagers").filter(func(v): return _is_guard(v)).size()
+	return CampDefense.compute(world, village_center(), world.home_radius() + 6.0, guards)
+
+
 func _player() -> Player:
 	return get_tree().get_first_node_in_group("player") as Player
 
@@ -126,6 +134,10 @@ func announce(story := {}) -> void:
 	var dip := get_tree().get_first_node_in_group("diplomacy") as Diplomacy
 	if dip and story.is_empty():
 		count = maxi(2, count - dip.raid_reduction())
+	# la défense bâtie du camp : moins de pillards, et un peu plus de temps pour se préparer
+	var def := defense() if story.is_empty() else {"points": 0}
+	var def_pts := int(def.points)
+	count = maxi(2, count - def_pts / 3)
 	var angle := randf() * TAU
 	var dir_i := posmod(roundi(angle / (TAU / 8.0)), 8)
 	var center := village_center()
@@ -138,7 +150,9 @@ func announce(story := {}) -> void:
 		spot.y = world.ground_height_at(spot + Vector3(0, 3, 0))
 	raid = {"state": "warning", "name": tier[1], "types": tier[2], "leader": tier[3], "base": tier[4],
 		"count": count, "level": lv, "dir_text": DIRECTIONS[dir_i], "spawn": spot, "timer": warning_time,
-		"raiders": [], "broken": 0, "angle": angle, "story": story.get("key", ""), "center": center}
+		"raiders": [], "broken": 0, "angle": angle, "story": story.get("key", ""), "center": center,
+		"defense": def_pts}
+	raid.timer += 3.0 * def_pts
 	if not story.is_empty():
 		raid.timer = 30.0
 	raid_warning.emit(raid)
@@ -174,7 +188,7 @@ func _start() -> void:
 		if _is_guard(v):
 			v.set("defend_radius", world.home_radius() + 10.0)
 			v.set("alert_radius", 16.0)
-			v.set("guard_bonus", 0.35)
+			v.set("guard_bonus", 0.35 + minf(0.03 * int(raid.get("defense", 0)), 0.45))
 	raid_started.emit(raid)
 
 
@@ -288,6 +302,8 @@ func _end(repelled: bool) -> void:
 			VoxelBurst.spawn(e, e.global_position + Vector3(0, 0.8, 0), Color(0.3, 0.3, 0.3), 20, 3.0, 0.1, 0.5)
 			e.queue_free()
 		text = "Les pillards repartent avec leur butin : %s." % (", ".join(PackedStringArray(stolen)) if not stolen.is_empty() else "rien du tout")
+	if int(raid.get("defense", 0)) > 0:
+		text += " Défense du camp : %d point(s)." % int(raid.defense)
 	if int(raid.broken) > 0:
 		text += " (%d blocs détruits)" % raid.broken
 	for v in get_tree().get_nodes_in_group("villagers"):
@@ -317,5 +333,5 @@ func status_text() -> String:
 		return ""
 	var t := maxi(0, ceili(raid.timer))
 	if raid.state == "warning":
-		return "⚠ %s arrivent %s du village : %d:%02d" % [raid.name, raid.dir_text, t / 60, t % 60]
+		return "⚠ %s arrivent %s du village : %d:%02d%s" % [raid.name, raid.dir_text, t / 60, t % 60, ("  (défense %d)" % int(raid.defense)) if int(raid.get("defense", 0)) > 0 else ""]
 	return "⚔ Raid : %d pillards restants  ·  %d:%02d" % [alive_raiders().size(), t / 60, t % 60]
