@@ -75,7 +75,7 @@ static func cast(p: Player, origin: Vector3, dir: Vector3, max_t := 40.0) -> Dic
 		if cp.distance_to(origin) > max_t + 3.0:
 			continue
 		var r := c.body_radius + 0.2
-		var hgt := 1.9 * (c.visual.scale.y if c.visual else 1.0)
+		var hgt := 1.9 * (c.visual.height_scale() if c.visual else 1.0)
 		var hit := ray_box(origin, dir, cp + Vector3(-r, 0, -r), cp + Vector3(r, hgt, r), best.t)
 		if not hit.is_empty() and float(hit[0]) < float(best.t):
 			best = {"kind": "enemy", "t": hit[0], "point": origin + dir * float(hit[0]), "normal": hit[1], "node": c}
@@ -172,13 +172,13 @@ static func _column(world: WorldGenerator, grid: BuildGrid, fm: Farming, cell: V
 			if not hit.is_empty() and float(hit[0]) < best_t:
 				best_t = hit[0]
 				out = {"kind": "block", "t": hit[0], "point": o + d * float(hit[0]), "normal": hit[1], "key": key, "cell": cell}
-		for f in grid.furniture_in(cell):
+		for f in grid.furniture_touching(cell):
 			var base := float(f.base)
 			var hit := ray_box(o, d, lo2 + Vector3(0.08, base, 0.08), lo2 + Vector3(0.92, base + 1.0, 0.92), best_t)
 			if not hit.is_empty() and float(hit[0]) < best_t:
 				best_t = hit[0]
 				out = {"kind": "furniture", "t": hit[0], "point": o + d * float(hit[0]), "normal": hit[1],
-					"key": grid.furniture_key(cell, base), "cell": cell, "base": base}
+					"key": grid.furniture_key(f.col, base), "cell": cell, "base": base}
 	if under:
 		return out
 	var g := world.terrain_height(cell)

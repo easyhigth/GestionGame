@@ -14,7 +14,8 @@ const CHUNK := 16
 const DRAW_DISTANCE := 150.0
 ## Morceaux redessinés au plus par image (pas d'à-coups quand une ville apparaît).
 const REBUILDS_PER_FRAME := 6
-const BODY_HEIGHT := 1.6
+## Hauteur du corps d'un humain (2 cubes) pour savoir s'il passe : un peu moins de 2 m, il passe sous un plafond à 2 cubes.
+const BODY_HEIGHT := 1.85
 const SHADER_OPAQUE := """
 shader_type spatial;
 render_mode cull_back;
@@ -119,6 +120,8 @@ var blocks := {}
 var furniture := {}
 var _block_cols := {}   # Vector2i -> Array[int] (niveaux)
 var _furn_cols := {}    # Vector2i -> Array[Vector3i]
+## Cases couvertes par un grand meuble en plus de sa case (le pied du lit) : Vector2i -> Array[clé du meuble].
+var _furn_cover := {}
 var _chunk_nodes := {}  # Vector2i -> Node3D
 var _materials := {}    # "opaque" / "glass" -> ShaderMaterial
 ## Portillons ouverts (clé du bloc -> vrai).
@@ -164,6 +167,7 @@ func clear() -> void:
 	furniture.clear()
 	_block_cols.clear()
 	_furn_cols.clear()
+	_furn_cover.clear()
 	for c in _chunk_nodes:
 		if is_instance_valid(_chunk_nodes[c]):
 			_chunk_nodes[c].queue_free()
@@ -174,7 +178,10 @@ func clear() -> void:
 # ---------------------------------------------------------------- blocs
 
 static func block_height(item: ItemData) -> float:
-	return 0.5 if item.block_slab else 1.0
+	# une trappe fermée est une planche plate : on marche dessus (ouverte, elle ne bloque plus)
+	if item.block_slab:
+		return 0.5
+	return 0.19 if shape_of(item) == "trapdoor" else 1.0
 
 
 func block_at(key: Vector3i) -> ItemData:
@@ -188,7 +195,7 @@ func can_place_block(key: Vector3i, item: ItemData) -> bool:
 	var col := Vector2i(key.x, key.z)
 	var bottom := float(key.y)
 	var top := bottom + block_height(item)
-	for fk in _furn_cols.get(col, []):
+	for fk in _furn_cols.get(col, []) + _furn_cover.get(col, []):
 		var f: Dictionary = furniture[fk]
 		if f.base < top - 0.05 and f.base + 1.2 > bottom + 0.05:
 			return false
@@ -235,6 +242,7 @@ func clear_furniture() -> void:
 			n.queue_free()
 	furniture.clear()
 	_furn_cols.clear()
+	_furn_cover.clear()
 	changed.emit()
 
 
@@ -282,7 +290,7 @@ func body_blocked(col: Vector2i, feet: float) -> bool:
 	for b in column(col):
 		if b[1] < hi and b[2] > lo:
 			return true
-	for fk in _furn_cols.get(col, []):
+	for fk in _furn_cols.get(col, []) + _furn_cover.get(col, []):
 		var f: Dictionary = furniture[fk]
 		if (f.item as ItemData).furniture_solid and f.base < hi and f.base + 1.0 > lo:
 			return true
@@ -295,21 +303,72 @@ func furniture_key(col: Vector2i, base: float) -> Vector3i:
 	return Vector3i(col.x, roundi(base * 2.0), col.y)
 
 
-func can_place_furniture(col: Vector2i, base: float) -> bool:
-	if furniture.has(furniture_key(col, base)):
-		return false
-	for b in column(col):
+## Meubles plus longs qu'une case : identifiant -> nombre de cases, vers l'avant du meuble.
+## Le lit fait 2 cases (1 x 2 m) : la tête dans sa case, les pieds dans la case de devant.
+const LONG_FURNITURE := {"lit": 2}
+## Devant du meuble selon sa rotation (0 : +Z, 1 : +X, 2 : -Z, 3 : -X), comme `rotation.y = rot * PI / 2`.
+const ROT_DIRS := [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
+
+
+static func rot_dir(rot: int) -> Vector2i:
+	return ROT_DIRS[posmod(rot, 4)]
+
+
+## Cases occupées par un meuble posé en `col` avec la rotation `rot` (sa case d'abord).
+static func footprint(col: Vector2i, item: ItemData, rot: int) -> Array:
+	var out := [col]
+	var n := int(LONG_FURNITURE.get(item.id, 1)) if item else 1
+	for i in range(1, n):
+		out.append(col + rot_dir(rot) * i)
+	return out
+
+
+## Centre d'un meuble posé (au sol) : le milieu de toutes ses cases.
+func furniture_center(f: Dictionary) -> Vector3:
+	var cells: Array = f.get("cells", [f.col])
+	var s := Vector2.ZERO
+	for c in cells:
+		s += Vector2(c.x + 0.5, c.y + 0.5)
+	s /= float(cells.size())
+	return Vector3(s.x, float(f.base), s.y)
+
+
+func _cell_free_for_furniture(c: Vector2i, base: float) -> bool:
+	for b in column(c):
 		if b[1] < base + 1.2 and b[2] > base + 0.05:
 			return false
-	for fk in _furn_cols.get(col, []):
+	for fk in _furn_cols.get(c, []) + _furn_cover.get(c, []):
 		if absf(furniture[fk].base - base) < 0.9:
 			return false
 	return true
 
 
-func place_furniture(col: Vector2i, base: float, item: ItemData, rot: int) -> bool:
-	if item == null or not item.is_furniture() or not can_place_furniture(col, base):
+## Vrai si le meuble tient ici (toutes ses cases libres). Sans objet : une seule case.
+func can_place_furniture(col: Vector2i, base: float, item: ItemData = null, rot: int = 0) -> bool:
+	if furniture.has(furniture_key(col, base)):
 		return false
+	var cells := footprint(col, item, rot)
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator if is_inside_tree() and register else null
+	for i in cells.size():
+		var c: Vector2i = cells[i]
+		if not _cell_free_for_furniture(c, base):
+			return false
+		# le pied d'un grand meuble ne flotte pas au-dessus d'un trou, ni ne rentre dans une marche de plus d'un demi-cube
+		if i > 0 and world:
+			var under := world.support_height(Vector3(c.x + 0.5, 0, c.y + 0.5), base + 0.6)
+			if under < base - 0.3 or world.terrain_height(c) > base + 0.55:
+				return false
+	return true
+
+
+## Pose un meuble. `force` : à un chargement, un grand meuble se pose même si son pied est gêné (il ne couvre
+## alors que les cases libres), pour ne jamais perdre un meuble d'une ancienne sauvegarde.
+func place_furniture(col: Vector2i, base: float, item: ItemData, rot: int, force := false) -> bool:
+	if item == null or not item.is_furniture():
+		return false
+	if not can_place_furniture(col, base, item, rot):
+		if not force or not can_place_furniture(col, base):
+			return false
 	var key := furniture_key(col, base)
 	var node := item.furniture_model.instantiate() as Node3D
 	node.position = Vector3(col.x + 0.5, base, col.y + 0.5)
@@ -321,7 +380,14 @@ func place_furniture(col: Vector2i, base: float, item: ItemData, rot: int) -> bo
 		var l := FlickerLight.make(Color(1.0, 0.7, 0.38), 1.5, 8.0)
 		l.position = Vector3(0, 1.3, 0)
 		node.add_child(l)
-	furniture[key] = {"item": item, "rot": rot, "base": base, "node": node, "col": col}
+	var cells := [col]
+	for c in footprint(col, item, rot).slice(1):
+		if _cell_free_for_furniture(c, base):
+			cells.append(c)
+			var cov: Array = _furn_cover.get(c, [])
+			cov.append(key)
+			_furn_cover[c] = cov
+	furniture[key] = {"item": item, "rot": rot, "base": base, "node": node, "col": col, "cells": cells}
 	var arr: Array = _furn_cols.get(col, [])
 	arr.append(key)
 	_furn_cols[col] = arr
@@ -353,6 +419,8 @@ func remove_furniture(key: Vector3i) -> ItemData:
 		f.node.queue_free()
 	furniture.erase(key)
 	(_furn_cols.get(f.col, []) as Array).erase(key)
+	for c in f.get("cells", []).slice(1):
+		(_furn_cover.get(c, []) as Array).erase(key)
 	if (f.item as ItemData).id == WorldGenerator.FLAG_ID and is_inside_tree():
 		var world := get_tree().get_first_node_in_group("world") as WorldGenerator
 		if world and world.home_cell == f.col:
@@ -361,7 +429,15 @@ func remove_furniture(key: Vector3i) -> ItemData:
 	return f.item
 
 
-## Meubles d'une colonne.
+## Meubles qui occupent cette case : posés dessus, ou dont le pied s'y trouve (lit).
+func furniture_touching(col: Vector2i) -> Array:
+	var out := furniture_in(col)
+	for fk in _furn_cover.get(col, []):
+		out.append(furniture[fk])
+	return out
+
+
+## Meubles d'une colonne (posés dans cette case ; voir furniture_touching pour les grands meubles).
 func furniture_in(col: Vector2i) -> Array:
 	var out := []
 	for fk in _furn_cols.get(col, []):
@@ -617,8 +693,16 @@ func _add_post(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
 	if sh == "gate":
 		_add_gate(st, key, p)
 		return
+	if sh == "trapdoor":
+		# fermée : une planche à plat ; ouverte : relevée contre le côté nord de la case
+		if open_gates.has(key):
+			_box(st, p + Vector3(0.0, 0.0, 0.0), p + Vector3(1.0, 0.95, 0.19))
+		else:
+			_box(st, p + Vector3(0.0, 0.0, 0.0), p + Vector3(1.0, 0.19, 1.0))
+		return
+	var pane := sh == "pane"
 	var wall := sh == "wall"
-	var r := 0.25 if wall else 0.125
+	var r := 0.0625 if pane else (0.25 if wall else 0.125)
 	_box(st, p + Vector3(0.5 - r, 0, 0.5 - r), p + Vector3(0.5 + r, 1.0, 0.5 + r))
 	for d in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
 		var o: ItemData = blocks.get(key + d)
@@ -628,14 +712,16 @@ func _add_post(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
 		var b := Vector3(0.5, 0, 0.5) + Vector3(d) * 0.5
 		var lo := Vector3(minf(a.x, b.x), 0, minf(a.z, b.z))
 		var hi := Vector3(maxf(a.x, b.x), 0, maxf(a.z, b.z))
-		var w := 0.19 if wall else 0.06
+		var w := 0.0625 if pane else (0.19 if wall else 0.06)
 		if d.x != 0:
 			lo.z = 0.5 - w
 			hi.z = 0.5 + w
 		else:
 			lo.x = 0.5 - w
 			hi.x = 0.5 + w
-		if wall:
+		if pane:
+			_box(st, p + Vector3(lo.x, 0, lo.z), p + Vector3(hi.x, 1.0, hi.z))
+		elif wall:
 			_box(st, p + Vector3(lo.x, 0, lo.z), p + Vector3(hi.x, 0.8, hi.z))
 		else:
 			for y in [0.35, 0.72]:
@@ -666,7 +752,7 @@ func toggle_gate_near(pos: Vector3, dist := 1.8) -> bool:
 		for dx in range(-2, 3):
 			for y in _block_cols.get(c + Vector2i(dx, dz), []):
 				var key := Vector3i(c.x + dx, y, c.y + dz)
-				if shape_of(blocks[key]) != "gate":
+				if not shape_of(blocks[key]) in ["gate", "trapdoor"]:
 					continue
 				if Vector3(key.x + 0.5, key.y + 0.5, key.z + 0.5).distance_to(pos + Vector3(0, 0.5, 0)) > dist:
 					continue

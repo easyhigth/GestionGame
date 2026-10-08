@@ -40,7 +40,7 @@ func _ready() -> void:
 	if shape and shape.shape is CapsuleShape3D and data:
 		var cap := (shape.shape as CapsuleShape3D).duplicate() as CapsuleShape3D
 		cap.radius = data.body_radius
-		cap.height = maxf(cap.radius * 2.0 + 0.1, 1.4 * data.model_scale * 0.7)
+		cap.height = maxf(cap.radius * 2.0 + 0.1, 1.4 * data.model_scale * 0.7 * VoxelCharacter.WORLD_SCALE)
 		shape.shape = cap
 		shape.position.y = cap.height * 0.5
 	name_label.font_size = 34

@@ -28,6 +28,9 @@ const DIFFICULTY_NAMES := ["Facile", "Normal", "Difficile"]
 const ENEMY_HP := [0.75, 1.0, 1.35]
 const ENEMY_DMG := [0.7, 1.0, 1.35]
 const RAID_DELAY := [1.4, 1.0, 0.75]
+## Agressivité : temps de repos entre deux attaques (plus petit = plus agressif) et vitesse de déplacement.
+const ENEMY_COOLDOWN := [1.25, 1.0, 0.8]
+const ENEMY_SPEED := [0.92, 1.0, 1.08]
 
 var options := {
 	"difficulty": 1,
@@ -48,6 +51,13 @@ var options := {
 	"ui_scale": 1.0,
 	## la souris vise (comme dans Minecraft) ; sinon le héros frappe et pose devant lui
 	"mouse_aim": true,
+	## filtre daltonien (0 : aucun ; voir Access.MODES) et mouvement réduit (moins de secousses et de ralentis)
+	"colorblind": 0,
+	"reduce_motion": false,
+	## les menus avancés (talents, royaume) se débloquent au fil du jeu (départ à mains nues)
+	"progressive_menus": true,
+	## langue du jeu : "fr" ou "en" (voir I18n)
+	"language": "fr",
 	## touches du clavier changées par le joueur : action -> code physique (voir KeyBindings)
 	"keys": {},
 }
@@ -146,6 +156,8 @@ func apply_options() -> void:
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
 	get_tree().root.content_scale_factor = clampf(float(options.get("ui_scale", 1.0)), 0.6, 1.6)
+	Access.set_colorblind(int(options.get("colorblind", 0)))
+	I18n.set_language(str(options.get("language", "fr")))
 	var bus := AudioServer.get_bus_index("Master")
 	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(0.001, float(options.volume))))
 	Sound.set_volume("Music", float(options.get("music_volume", 0.6)))
@@ -171,6 +183,14 @@ func enemy_hp_mult() -> float:
 
 func enemy_dmg_mult() -> float:
 	return ENEMY_DMG[clampi(int(options.difficulty), 0, 2)]
+
+
+func enemy_cooldown_mult() -> float:
+	return ENEMY_COOLDOWN[clampi(int(options.difficulty), 0, 2)]
+
+
+func enemy_speed_mult() -> float:
+	return ENEMY_SPEED[clampi(int(options.difficulty), 0, 2)]
 
 
 func raid_delay_mult() -> float:
@@ -606,7 +626,7 @@ func apply_pending(world: WorldGenerator) -> void:
 	for f in d.build.furniture:
 		var it := Items.get_item(f[3])
 		if it:
-			grid.place_furniture(Vector2i(int(f[0]), int(f[1])), float(f[2]), it, int(f[4]))
+			grid.place_furniture(Vector2i(int(f[0]), int(f[1])), float(f[2]), it, int(f[4]), true)
 	# sauvegarde d'avant le drapeau du royaume : le village était à l'arrivée, on y plante le drapeau
 	if not (d.world as Dictionary).has("flag_v"):
 		world.plant_legacy_flag()

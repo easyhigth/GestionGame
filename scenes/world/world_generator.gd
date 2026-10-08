@@ -55,11 +55,12 @@ var small_decor_range := 60.0
 @export_range(-1.0, 1.0, 0.01) var land_bias: float = 0.30
 
 @export_group("Relief 3D")
-## Hauteur d'une marche de terrain (mètres).
-@export var step_height: float = 0.25
+## Hauteur d'une marche de terrain (mètres) : un demi-cube, pour que le sol s'aligne sur les blocs et les dalles
+## (un humain mesure 2 cubes). On la franchit à pied ; un cube entier se saute.
+@export var step_height: float = 0.5
 ## Écart d'altitude (bruit) entre deux marches : plus petit = plus de marches.
-@export_range(0.01, 0.5, 0.01) var terrace_size: float = 0.07
-## Les rochers montent plus vite (falaises).
+@export_range(0.01, 0.5, 0.01) var terrace_size: float = 0.14
+## Les rochers montent plus vite (falaises) : nombre de marches de roche pour une marche d'herbe.
 @export var stone_step_multiplier: float = 2.0
 ## Hauteur de marche maximale franchissable à pied (mètres).
 @export var max_step: float = 0.55
@@ -773,9 +774,9 @@ func _terrain_height(t: int, h: float) -> float:
 		SAND:
 			return 0.0
 		STONE:
-			# la roche monte deux fois plus vite par marches de 0,5 m (on peut gravir les pentes douces)
+			# la roche monte deux fois plus vite, toujours par demi-cubes (on peut gravir les pentes douces)
 			var top := step_height * (1.0 + floorf((stone_level - sand_level) / terrace_size))
-			return top + step_height * stone_step_multiplier * (1.0 + floorf((h - stone_level) / (terrace_size * 0.5)))
+			return top + step_height * (1.0 + floorf((h - stone_level) / (terrace_size / (2.0 * stone_step_multiplier))))
 	return step_height * (1.0 + floorf((h - sand_level) / terrace_size))
 
 
@@ -2990,7 +2991,7 @@ func _shape_city(city: Dictionary, plan: Dictionary) -> void:
 			length += 4
 			end_cell = ctr + Vector2i((gv + dir * length).round())
 		var start_h := base + float(plan.relief.get(g, 0.0))
-		var end_h := maxf(_h(end_cell), 0.25)
+		var end_h := maxf(_h(end_cell), 0.5)
 		for k in range(1, length + 1):
 			var hk := snappedf(lerpf(start_h, end_h, float(k) / length), step_height)
 			for w2 in range(-2, 3):
@@ -3000,7 +3001,7 @@ func _shape_city(city: Dictionary, plan: Dictionary) -> void:
 					continue
 				_ensure_chunk_of(c2)
 				var i2 := _idx(c2)
-				_heights[i2] = maxf(hk, 0.25)
+				_heights[i2] = maxf(hk, 0.5)
 				_types[i2] = PLAZA
 				_decor[i2] = D_NONE
 	# rues pavées : chaque point de passage et ses voisins
@@ -3288,7 +3289,7 @@ func export_state() -> Dictionary:
 		taken.append([c.x, c.y])
 	var zs := []
 	for z in zones:
-		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0))])
+		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0)), int(z.get("challenge", 0))])
 	return {
 		"seed": world_seed, "size": [world_size.x, world_size.y], "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
 		"flag_v": 1, "last_home": [_last_home.x, _last_home.y],
@@ -3336,6 +3337,7 @@ func import_state(d: Dictionary) -> void:
 		zones[i].obelisk_on = int(zs[i][1]) == 1
 		zones[i].cleared = int(zs[i][2]) == 1
 		zones[i].brume = int(zs[i][3]) if (zs[i] as Array).size() > 3 else 0
+		zones[i].challenge = int(zs[i][4]) if (zs[i] as Array).size() > 4 else 0
 	if d.has("revealed"):
 		var raw := Marshalls.base64_to_raw(d.revealed).decompress(_revealed.size(), FileAccess.COMPRESSION_ZSTD)
 		if raw.size() == _revealed.size():

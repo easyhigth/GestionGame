@@ -34,7 +34,7 @@ func shot(n):
 ## Regarder le centre de la case creusée (1re personne).
 func look_down() -> void:
 	var target := Vector3(cell.x + 0.5, w.terrain_height(cell), cell.y + 0.5)
-	var eye: Vector3 = p.global_position + Vector3(0, 1.5 * p.visual.scale.y, 0)
+	var eye: Vector3 = p.global_position + Vector3(0, 1.5 * p.visual.height_scale(), 0)
 	var d: Vector3 = (target - eye).normalized()
 	p.cam_pitch = p.clamp_pitch(asin(-d.y))
 	p.cam_yaw = atan2(-d.x, -d.z)

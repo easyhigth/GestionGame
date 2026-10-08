@@ -43,7 +43,7 @@ func go(ph: String) -> void:
 ## Tourne la caméra (1re ou 3e personne) jusqu'à mettre `target` sous le viseur. Vrai quand c'est fait.
 func steer() -> bool:
 	# 1re personne : la caméra est à l'œil du héros ; regarder vers `target`
-	var eye: Vector3 = p.global_position + Vector3(0, 1.5 * p.visual.scale.y, 0)
+	var eye: Vector3 = p.global_position + Vector3(0, 1.5 * p.visual.height_scale(), 0)
 	var d: Vector3 = (target - eye).normalized()
 	p.cam_pitch = p.clamp_pitch(asin(-d.y))
 	p.cam_yaw = atan2(-d.x, -d.z)
@@ -78,7 +78,8 @@ func _process(_d) -> bool:
 		p.set_camera_mode(2, false)
 		# un pilier de planches à 3 m du héros
 		var c := flat_cell_near(w.spawn_cell)
-		var hy := floori(w.terrain_height(c) + 0.45)
+		# sur le sol (une marche d'un demi-cube : le bloc commence au cube au-dessus, sa face reste visible)
+		var hy := ceili(w.terrain_height(c) - 0.01)
 		block_key = Vector3i(c.x, hy, c.y)
 		w.build.place_block(block_key, items.get_item("bloc_planches"))
 		w.build.place_block(block_key + Vector3i(0, 1, 0), items.get_item("bloc_planches"))

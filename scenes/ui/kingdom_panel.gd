@@ -203,6 +203,11 @@ func _tips(k: Kingdom, n: VillageNeeds) -> Array:
 				have[(r.type as RoomTypeData).id] = true
 	if n.average_happiness() < 25.0 and not members.is_empty():
 		tips.append(["skull", "Des habitants malheureux vont partir ! Regarde leur humeur dans l'onglet Habitants.", "", true])
+	var rm := get_tree().get_first_node_in_group("raids") as RaidManager
+	if rm and members.size() >= 3:
+		var def := rm.defense()
+		if int(def.points) * 2 < rm.threat_level():
+			tips.append(["shield", "Ton camp attire les pillards (menace %d) mais n'a que %d point(s) de défense : murets et barrières, tours de pierre, torches, gardes (caserne). Chaque 3 points = 1 pillard en moins." % [rm.threat_level(), int(def.points)], "caserne", false])
 	if beds < members.size():
 		tips.append(["house", "%d habitant(s) dorment par terre : une maison (1 lit, 1 coffre) ou un dortoir (4 lits, 1 coffre)." % (members.size() - beds), "maison", false])
 	if n.meals() < members.size():
@@ -694,7 +699,7 @@ func _build(type_id: String) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
-		if event.is_action_pressed("kingdom") and player and not player.ui_open and not player.building and player.is_alive():
+		if event.is_action_pressed("kingdom") and player and not player.ui_open and not player.building and player.is_alive() and Unlocks.allowed("kingdom"):
 			open()
 			get_viewport().set_input_as_handled()
 		return

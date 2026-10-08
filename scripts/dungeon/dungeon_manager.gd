@@ -91,6 +91,11 @@ var _lever_done: Array = []
 var _vault_seal: Array[Vector3i] = []
 var vault_open := false
 var miniboss: Enemy
+## Défi du donjon en cours (0 : aucun) : un donjon vaincu se refait avec des modificateurs (rapides, robustes,
+## enragés, explosifs, nombreux ; voir Endgame.AFFIXES) et un trésor plus riche. Le défi monte à chaque victoire.
+var challenge := 0
+var affixes: Array = []
+const CHALLENGE_MAX := 12
 const TRAP_CYCLE := 3.2
 const LEVER_SYMBOLS := ["◆", "●", "▲", "★"]
 
@@ -156,6 +161,68 @@ static func is_lord_tier(t: int) -> bool:
 	return BRUME_LORD_TIERS.has(t)
 
 
+## Défi qui attend dans ce donjon vaincu (0 : aucun, donjon pas encore vaincu).
+func next_challenge(z: Dictionary) -> int:
+	if not z.get("cleared", false):
+		return 0
+	return mini(int(z.get("challenge", 0)) + 1, CHALLENGE_MAX)
+
+
+## Nombre de modificateurs d'un défi : 1 dès le défi 1, 2 dès le 4, 3 dès le 8. Les paliers de la Brume
+## en ont un dès le palier 2 et deux dès le 4.
+static func affix_count(chal: int, brume: int) -> int:
+	if brume > 0:
+		return 0 if brume < 2 else (1 if brume < 4 else 2)
+	return 0 if chal < 1 else (1 if chal < 4 else (2 if chal < 8 else 3))
+
+
+## Les modificateurs d'un donjon (toujours les mêmes pour un donjon et un niveau de défi donnés).
+func pick_affixes(z: Dictionary, chal: int, brume: int) -> Array:
+	var n := affix_count(chal, brume)
+	var keys := Endgame.AFFIXES.keys()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector3i(world.world_seed, int(z.id), 4000 + chal * 31 + brume))
+	var out := []
+	while out.size() < n:
+		var k: String = keys[rng.randi() % keys.size()]
+		if not out.has(k):
+			out.append(k)
+	return out
+
+
+func affixes_text(list: Array) -> String:
+	return ", ".join(PackedStringArray(list.map(func(a): return Endgame.AFFIXES[a][0])))
+
+
+## Modificateurs qui jouent avant l'entrée du monstre dans le donjon (puissance, vitesse).
+func _affix_before(e: Enemy) -> void:
+	if "enrages" in affixes:
+		e.power *= 1.3
+	if "rapides" in affixes:
+		e.speed_mult = 1.35
+
+
+## Modificateurs qui jouent une fois le monstre prêt (vie, explosion à la mort).
+func _affix_after(e: Enemy) -> void:
+	if "robustes" in affixes:
+		e.health.set_max(roundi(e.health.max_health * 1.6), true)
+	if "explosifs" in affixes:
+		e.died_at.connect(_explode.bind(e.attack_power()))
+
+
+func _affix_enemy(n: Node) -> void:
+	if n is Enemy and not affixes.is_empty():
+		_affix_before(n)
+		n.ready.connect(_affix_after.bind(n), CONNECT_ONE_SHOT)
+
+
+func _explode(pos: Vector3, atk: int) -> void:
+	VoxelBurst.spawn(self, pos + Vector3(0, 0.6, 0), Color("ff6a2a"), 40, 7.0, 0.14, 0.6, "sphere", 4.0)
+	SkillFX.shockwave(self, pos, 3.0, Color("ff8a3a"), 1, 0.4)
+	if player and player.is_alive() and player.global_position.distance_to(pos) < 3.0:
+		player.receive_hit(roundi(atk * 1.5), self, 4.0)
+
+
 ## Texte et couleur de l'étiquette au-dessus de l'entrée.
 func gate_text(z: Dictionary) -> Array:
 	if not z.get("cleared", false):
@@ -163,6 +230,10 @@ func gate_text(z: Dictionary) -> Array:
 	var t := next_tier(z)
 	if t > 0:
 		return ["Donjon de %s\nBrume : palier %d%s\nF : entrer" % [z.name, t, "  ★ Seigneur" if is_lord_tier(t) else ""], BRUME_COLOR]
+	var ch := next_challenge(z)
+	if ch > 0:
+		var af := pick_affixes(z, ch, 0)
+		return ["Donjon de %s\nVaincu ✔ · Défi %d%s\nF : relever le défi" % [z.name, ch, ("  (" + affixes_text(af) + ")") if not af.is_empty() else ""], Color("ffd27a")]
 	return ["Donjon de %s\nVaincu ✔" % z.name, Color("b0ffb0")]
 
 
@@ -317,6 +388,8 @@ func _process(delta: float) -> void:
 func _build(z: Dictionary) -> void:
 	zone = z
 	brume_tier = next_tier(z)
+	challenge = next_challenge(z) if brume_tier == 0 else 0
+	affixes = pick_affixes(z, challenge, brume_tier)
 	active = true
 	_boss_state = 0
 	_sealed.clear()
@@ -534,7 +607,7 @@ func _add_chest(c: Vector2i, boss_chest := false) -> void:
 func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void:
 	var lv: Vector2i = z.level
 	# la Brume : +4 niveaux par palier (+4 de plus dès le premier)
-	var up := 4 * brume_tier + (4 if brume_tier > 0 else 0)
+	var up := 4 * brume_tier + (4 if brume_tier > 0 else 0) + 2 * challenge
 	var lord := is_lord_tier(brume_tier)
 	var middle := rooms.slice(1, rooms.size() - 1)
 	middle.shuffle()
@@ -547,6 +620,8 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 		camp.levels = Vector2i(lv.y + up, lv.y + 1 + up)
 		if brume_tier > 0:
 			camp.child_entered_tree.connect(_brumify)
+		if not affixes.is_empty():
+			camp.child_entered_tree.connect(_affix_enemy)
 		camp.base_level = r.level_range.x if r else 1
 		var pool: Array[EnemyData] = []
 		if r and not elite_done and not r.elite_enemies.is_empty() and i == 0:
@@ -557,6 +632,8 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 			pool.append(r.enemies[rng.randi() % r.enemies.size()])
 			pool.append(r.enemies[rng.randi() % r.enemies.size()])
 			camp.count = rng.randi_range(2, 4)
+			if "nombreux" in affixes:
+				camp.count = roundi(camp.count * 1.5)
 		camp.enemy_types = pool
 		_content.add_child(camp)
 		camp.global_position = _floor_pos(room.get_center())
@@ -575,6 +652,9 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 		boss.powers = r.boss_powers
 		boss.summons = r.enemies
 		boss.title = r.boss_title
+		if challenge > 0:
+			boss.title += " — défi %d" % challenge
+		_affix_before(boss)
 		if brume_tier > 0:
 			boss.brume = true
 			boss.title = ("Seigneur de Brume" if lord else "Écho de Brume") + " — palier %d" % brume_tier
@@ -587,6 +667,7 @@ func _populate(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> void
 			if lord:
 				boss.power *= 1.5
 		_content.add_child(boss)
+		_affix_after(boss)
 		if lord:
 			boss.visual.scale *= 1.3
 			var aura := OmniLight3D.new()
@@ -679,8 +760,12 @@ func _on_boss_died(_pos: Vector3) -> void:
 			player.gain_xp(150 + 40 * (zone.level as Vector2i).y + 120 * brume_tier)
 	elif r and player:
 		text = r.boss_soul_name
-		player.absorb_soul(r.id, r.boss_soul)
-		player.gain_xp(150 + 40 * (zone.level as Vector2i).y)
+		if challenge == 0:
+			player.absorb_soul(r.id, r.boss_soul)
+		player.gain_xp(150 + 40 * (zone.level as Vector2i).y + 90 * challenge)
+	if challenge > 0:
+		zone["challenge"] = maxi(int(zone.get("challenge", 0)), challenge)
+		text = "Défi %d relevé (%s)" % [challenge, affixes_text(affixes) if not affixes.is_empty() else "sans modificateur"]
 	boss_defeated.emit(zone, text)
 
 
@@ -699,6 +784,13 @@ func _open_chest(it: Dictionary, boss_chest: bool) -> void:
 		var rare_boss := RareDrops.roll_chest("donjon_boss")
 		loot.append_array(rare_boss)
 		RareDrops.announce(get_tree().get_first_node_in_group("player") as Player, rare_boss)
+		# chaque modificateur du défi ajoute un objet rare au trésor, et le défi lui-même de l'or
+		for a in affixes:
+			var extra := RareDrops.roll_chest("donjon_boss")
+			loot.append_array(extra)
+			RareDrops.announce(get_tree().get_first_node_in_group("player") as Player, extra)
+		if challenge > 0:
+			loot.append([Items.get_item("piece_or"), 20 * challenge])
 		if brume_tier > 0:
 			var bl := _brume_loot()
 			loot.append_array(bl)
@@ -786,6 +878,8 @@ func _cleanup() -> void:
 		if not won:
 			siege_ended.emit(s, false)
 	brume_tier = 0
+	challenge = 0
+	affixes = []
 	_set_lighting(false, null)
 	grid.clear()
 	for c in _content.get_children():
@@ -831,6 +925,8 @@ func _build_siege(id: String) -> void:
 	zone = {"name": "Capitale de " + n.name, "siege": id}
 	active = true
 	brume_tier = 0
+	challenge = 0
+	affixes = []
 	_boss_state = 2
 	boss = null
 	_sealed.clear()
@@ -1313,7 +1409,7 @@ func _add_miniboss(rng: RandomNumberGenerator, z: Dictionary, r: RegionData) -> 
 	var d := (pool[rng.randi() % pool.size()] as EnemyData).duplicate() as EnemyData
 	d.display_name = "Gardien · " + d.display_name
 	e.data = d
-	var up := 4 * brume_tier + (4 if brume_tier > 0 else 0)
+	var up := 4 * brume_tier + (4 if brume_tier > 0 else 0) + 2 * challenge
 	e.level = (z.level as Vector2i).y + 2 + up
 	e.power = (1.0 + 0.09 * maxi(0, e.level - r.level_range.x)) * 1.4
 	e.brume = brume_tier > 0

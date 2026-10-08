@@ -72,6 +72,8 @@ const STEPS := [
 	["faille", "Vaincs le gardien d'une faille", "Au Portail des Failles : trois vagues puis le gardien. Dès le rang 3, des modificateurs pimentent l'arène.", 1],
 	["titan", "Abats un titan", "Dès le niveau 30, un titan s'éveille tous les 2 ou 3 jours : il est marqué sur la carte ({world_map}).", 1],
 ]
+## Les 14 premières étapes (LES BASES et PREMIERS PAS) forment le vrai tutoriel ; ensuite, ce sont des défis facultatifs.
+const CORE_STEPS := 14
 ## Chapitres : [titre, première étape, étape suivant la dernière].
 const CHAPTERS := [["LES BASES", 0, 4], ["PREMIERS PAS", 4, 14], ["L'ÂGE DU FER", 14, 19], ["LE VILLAGE", 19, 23], ["LES CHAMPS", 23, 27],
 	["LE COMMERCE", 27, 30], ["L'ÉLEVAGE", 30, 33], ["L'EAU", 33, 36], ["L'AVENTURE", 36, 40], ["LES VOISINS", 40, 45], ["L'ARTISAN", 45, 49],
@@ -345,6 +347,8 @@ func _complete() -> void:
 		player.feat.emit("Objectif : %s ✔" % STEPS[step][1], Color("f2c86a"))
 	step += 1
 	progress = 0
+	if step == CORE_STEPS and player:
+		player.notify.emit("Les bases sont acquises ! Les chapitres suivants sont des défis facultatifs : ils te guident, sans rien t'imposer.")
 	if not is_done() and player:
 		for c in CHAPTERS:
 			if step == int(c[1]):
@@ -643,7 +647,7 @@ func _refresh() -> void:
 			ch = c
 	var first := int(ch[1])
 	var total := int(ch[2]) - first
-	_title.text = "%s · %d / %d" % [ch[0], step - first + 1, total]
+	_title.text = "%s · %d / %d%s" % [ch[0], step - first + 1, total, " · défi" if step >= CORE_STEPS else ""]
 	_icon.texture = UiTheme.tex("icon_" + str(CHAPTER_ICONS.get(ch[0], "compass")))
 	var n := int(s[3])
 	_task.text = s[1] + ("  (%d / %d)" % [progress, n] if n > 1 else "")

@@ -764,7 +764,7 @@ func _update_kingdom() -> void:
 
 ## Grand message au centre de l'écran (« Parade ! », « Esquive parfaite ! »...).
 func show_feat(text: String, color: Color) -> void:
-	_feat.text = text
+	_feat.text = I18n.msg(text)
 	_feat.add_theme_color_override("font_color", color)
 	_feat.modulate.a = 1.0
 	_feat.scale = Vector2.ONE * 1.6
@@ -1386,7 +1386,7 @@ var _camp_msg_at := -100000
 
 func show_message(text: String) -> void:
 	var l := Label.new()
-	l.text = KeyBindings.fmt(text)
+	l.text = KeyBindings.fmt(I18n.msg(text))
 	l.add_theme_font_size_override("font_size", 13)
 	l.add_theme_color_override("font_color", Color("fff2c8"))
 	l.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.1))

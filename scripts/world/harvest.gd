@@ -217,9 +217,9 @@ static func _built_target(p: Player, world: WorldGenerator) -> Dictionary:
 	if col == here:
 		col = world.cell_at(p.global_position + fwd * 1.6)
 	var fy := floori(p.global_position.y + 0.3)
-	for f in grid.furniture_in(col):
+	for f in grid.furniture_touching(col):
 		if absf(float(f.base) - p.global_position.y) < 1.3:
-			return {"furniture": grid.furniture_key(col, f.base)}
+			return {"furniture": grid.furniture_key(f.col, f.base)}
 	for y in [fy, fy + 1, fy + 2, fy - 1]:
 		var k := Vector3i(col.x, y, col.y)
 		if grid.block_at(k) != null:

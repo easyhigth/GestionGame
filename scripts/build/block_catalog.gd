@@ -11,7 +11,7 @@ extends RefCounted
 ## - des dalles (demi-blocs) pour les pierres et les bois.
 ## Chaque recette porte une « famille » (méta « family ») pour l'onglet Construction.
 
-const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles", "Escaliers", "Murets et barrières", "Toits en pente"]
+const FAMILIES := ["Classiques", "Pierres", "Bois", "Laine", "Béton", "Terre cuite", "Verre teinté", "Métaux et gemmes", "Nature", "Dalles", "Escaliers", "Murets et barrières", "Toits en pente", "Trappes et fenêtres"]
 
 ## Pierres : identifiant, nom, féminin, couleur, ressource brute.
 const STONES := [
@@ -485,6 +485,26 @@ static func _slopes(db: Node) -> void:
 		var g := _block(db, "portillon_" + w[0], "Portillon de %s" % w[1], "Une porte de barrière : {interact} pour l'ouvrir ou la fermer.", src.block_texture, 0)
 		g.set_meta("shape", "gate")
 		_recipe(db, g, 1, [["wood" if w[0] == "chene" else "bois_" + w[0], 2], ["fiber", 2]], "", "Murets et barrières")
+	for w in WOODS:
+		var src: ItemData = db.items.get("bloc_planches" if w[0] == "chene" else "bloc_%s_planches" % w[0])
+		if src == null:
+			continue
+		var t := _block(db, "trappe_" + w[0], "Trappe de %s" % w[1], "Une trappe : {interact} pour l'ouvrir ou la fermer. Fermée, on marche dessus ; ouverte, on passe (ou on grimpe contre elle).", src.block_texture, 0)
+		t.set_meta("shape", "trapdoor")
+		_recipe(db, t, 2, [["wood" if w[0] == "chene" else "bois_" + w[0], 3]], "", "Trappes et fenêtres")
+	# fenêtres : de fines vitres de verre qui se raccordent entre elles et aux murs
+	var plain: ItemData = db.items.get("bloc_verre")
+	if plain:
+		var pane := _block(db, "vitre_verre", "Vitre de verre", "Une fine vitre pour les fenêtres : elle se raccorde aux vitres et aux murs voisins.", plain.block_texture, 0, false, true)
+		pane.set_meta("shape", "pane")
+		_recipe(db, pane, 4, [["bloc_verre", 1]], "", "Trappes et fenêtres")
+	for c in COLORS:
+		var tinted: ItemData = db.items.get("bloc_verre_" + c[0])
+		if tinted == null:
+			continue
+		var tp := _block(db, "vitre_" + c[0], "Vitre %s" % c[1], "Une fine vitre teintée pour les fenêtres.", tinted.block_texture, 0, false, true)
+		tp.set_meta("shape", "pane")
+		_recipe(db, tp, 4, [["bloc_verre_" + c[0], 1]], "", "Trappes et fenêtres")
 	for src_id in ["bloc_tuiles", "bloc_ardoise", "bloc_chaume", "bloc_planches", "bloc_pierre_polie", "bloc_m_cuivre", "bloc_terre_cuite_rouge",
 			"bloc_terre_cuite_bleu", "bloc_sapin_planches", "bloc_ebene_planches", "bloc_quartz_polie", "bloc_obsidienne_briques"]:
 		var src: ItemData = db.items.get(src_id)
