@@ -105,7 +105,7 @@ func _build() -> void:
 	cb_mode.select(int(o.get("colorblind", 0)))
 	cb_mode.item_selected.connect(func(i): o.colorblind = i; _save())
 	_row("Filtre pour daltoniens", cb_mode)
-	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"], ["show_fps", "Afficher les images par seconde"], ["mouse_aim", "Viser à la souris (sinon : devant le héros)"], ["reduce_motion", "Mouvement réduit (moins de secousses et de ralentis)"]]:
+	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"], ["show_fps", "Afficher les images par seconde"], ["mouse_aim", "Viser à la souris (sinon : devant le héros)"], ["reduce_motion", "Mouvement réduit (moins de secousses et de ralentis)"], ["progressive_menus", "Menus débloqués au fil de la partie"]]:
 		var cb := CheckButton.new()
 		cb.button_pressed = bool(o.get(pair[0], false))
 		var key: String = pair[0]

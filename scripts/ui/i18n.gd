@@ -25,6 +25,7 @@ const LANGS := {
 		"Rappel du menu des commandes": "Controls reminder", "Sauvegarde automatique (5 min)": "Autosave (5 min)",
 		"Afficher les images par seconde": "Show frames per second",
 		"Viser à la souris (sinon : devant le héros)": "Aim with the mouse (otherwise: in front of the hero)",
+		"Menus débloqués au fil de la partie": "Menus unlocked as you play",
 		"Langue": "Language", "Filtre pour daltoniens": "Colorblind filter",
 		"Mouvement réduit (moins de secousses et de ralentis)": "Reduced motion (less shake and slow-motion)",
 		"Facile": "Easy", "Normal": "Normal", "Difficile": "Hard",

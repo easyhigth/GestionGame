@@ -54,6 +54,8 @@ var options := {
 	## filtre daltonien (0 : aucun ; voir Access.MODES) et mouvement réduit (moins de secousses et de ralentis)
 	"colorblind": 0,
 	"reduce_motion": false,
+	## les menus avancés (talents, royaume) se débloquent au fil du jeu (départ à mains nues)
+	"progressive_menus": true,
 	## langue du jeu : "fr" ou "en" (voir I18n)
 	"language": "fr",
 	## touches du clavier changées par le joueur : action -> code physique (voir KeyBindings)

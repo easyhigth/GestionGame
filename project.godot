@@ -21,6 +21,7 @@ Sound="*res://scripts/audio/sound.gd"
 SaveGame="*res://scripts/save/save_game.gd"
 UiStyle="*res://scripts/ui/ui_theme.gd"
 LabelLod="*res://scripts/ui/label_lod.gd"
+Unlocks="*res://scripts/ui/unlocks.gd"
 
 [display]
 

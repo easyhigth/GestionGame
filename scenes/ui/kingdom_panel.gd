@@ -694,7 +694,7 @@ func _build(type_id: String) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
-		if event.is_action_pressed("kingdom") and player and not player.ui_open and not player.building and player.is_alive():
+		if event.is_action_pressed("kingdom") and player and not player.ui_open and not player.building and player.is_alive() and Unlocks.allowed("kingdom"):
 			open()
 			get_viewport().set_input_as_handled()
 		return
