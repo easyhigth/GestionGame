@@ -3288,7 +3288,7 @@ func export_state() -> Dictionary:
 		taken.append([c.x, c.y])
 	var zs := []
 	for z in zones:
-		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0))])
+		zs.append([1 if z.discovered else 0, 1 if z.obelisk_on else 0, 1 if z.get("cleared", false) else 0, int(z.get("brume", 0)), int(z.get("challenge", 0))])
 	return {
 		"seed": world_seed, "size": [world_size.x, world_size.y], "edits": edits, "taken": taken, "recruited": _recruited.keys(), "zones": zs,
 		"flag_v": 1, "last_home": [_last_home.x, _last_home.y],
@@ -3336,6 +3336,7 @@ func import_state(d: Dictionary) -> void:
 		zones[i].obelisk_on = int(zs[i][1]) == 1
 		zones[i].cleared = int(zs[i][2]) == 1
 		zones[i].brume = int(zs[i][3]) if (zs[i] as Array).size() > 3 else 0
+		zones[i].challenge = int(zs[i][4]) if (zs[i] as Array).size() > 4 else 0
 	if d.has("revealed"):
 		var raw := Marshalls.base64_to_raw(d.revealed).decompress(_revealed.size(), FileAccess.COMPRESSION_ZSTD)
 		if raw.size() == _revealed.size():
