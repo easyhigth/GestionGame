@@ -535,6 +535,11 @@ func _on_died() -> void:
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.6, 0), Color("9ad08a"), 18, 2.5, 0.1, 0.8, "up", 2.0, false)
 		get_tree().create_timer(0.8, false).timeout.connect(queue_free)
 		return
+	if has_meta("townsfolk"):
+		# un citadin fâché ne meurt pas : mis K.O., il reprend sa place plus tard (voir Townsfolk.provoke)
+		VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color(1, 1, 0.9), 16, 3.0, 0.08, 0.5)
+		died_at.emit(global_position)
+		return
 	if tamed:
 		# un familier ne meurt pas : il tombe K.O. et revient plus tard
 		VoxelBurst.spawn(self, global_position + Vector3(0, 0.8, 0), Color("b8f0a0"), 24, 3.0, 0.1, 0.8, "up", 2.0, false)

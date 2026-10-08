@@ -1825,11 +1825,44 @@ func _move_on_ground(delta: float) -> void:
 	else:
 		if swimming:
 			swimming = false
+		var before := global_position
 		super(delta)
+		_push_out_of_people(before)
 		# on marche dans l'eau peu profonde : on avance moins vite (le sol est sous l'eau)
 		if top > -INF and not airborne:
 			global_position.y = floor_h
 	_update_breath(delta, top)
+
+
+## Les habitants, citadins, voyageurs et monstres sont solides : le héros ne passe pas au travers, il glisse
+## autour d'eux (sans jamais être poussé dans un mur).
+const PEOPLE_GROUPS := ["villagers", "townsfolk", "enemy_units", "familiars"]
+
+
+func _push_out_of_people(before: Vector3) -> void:
+	# en roulade, on passe entre les jambes (esquive)
+	if is_dashing():
+		return
+	var pos := global_position
+	var moved := false
+	for g in PEOPLE_GROUPS:
+		for n in get_tree().get_nodes_in_group(g):
+			var o := n as Node3D
+			if o == null or o == self or not o.is_visible_in_tree():
+				continue
+			if o is Combatant and not (o as Combatant).is_alive():
+				continue
+			var r := 0.3 + (float(o.get("body_radius")) if o.get("body_radius") != null else 0.3)
+			var off := Vector2(pos.x - o.global_position.x, pos.z - o.global_position.z)
+			var d := off.length()
+			if d >= r or absf(o.global_position.y - pos.y) > 1.6:
+				continue
+			var push := off / d if d > 0.001 else Vector2(facing.x, facing.z).normalized() * -1.0
+			pos.x = o.global_position.x + push.x * r
+			pos.z = o.global_position.z + push.y * r
+			moved = true
+	if moved and _world:
+		global_position = _world.constrain_move(before, Vector3(pos.x, global_position.y, pos.z), _can_swim())
 
 
 ## /vol : on traverse tout, à 2,5 fois la vitesse de marche ; jamais sous le sol.
