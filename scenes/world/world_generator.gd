@@ -1898,7 +1898,6 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 	holder.add_child(obstacles)
 	var groups := {}  # scène -> transforms
 	var small := {}   # scènes de petite végétation
-	var low := {}     # scènes plus basses que le regard (tout sauf les arbres)
 	for y in range(ch.y * CHUNK, mini((ch.y + 1) * CHUNK, world_size.y)):
 		for x in range(ch.x * CHUNK, mini((ch.x + 1) * CHUNK, world_size.x)):
 			var cell := Vector2i(x, y)
@@ -1930,8 +1929,6 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 			if not groups.has(scene):
 				groups[scene] = []
 			groups[scene].append(Transform3D(basis, pos))
-			if kind != D_OAK and kind != D_PINE:
-				low[scene] = true
 			if kind == D_FLOWERS or kind == D_GRASS:
 				small[scene] = true
 			var shape: Shape3D = null
@@ -1959,13 +1956,9 @@ func _build_decor_chunk(ch: Vector2i) -> void:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = info[0]
-		# donnée par instance : 1 = décor bas (buisson, rocher, plante), effacé au premier plan
-		mm.use_custom_data = true
 		mm.instance_count = list.size()
-		var custom := Color(1.0 if low.has(scene) else 0.0, 0, 0, 0)
 		for i in list.size():
 			mm.set_instance_transform(i, (list[i] as Transform3D) * (info[1] as Transform3D))
-			mm.set_instance_custom_data(i, custom)
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		if small.has(scene):
@@ -3511,41 +3504,19 @@ void vertex() {
 	float ph = origin.x * 0.37 + origin.z * 0.23;
 	vec3 sway = vec3(sin(TIME * 1.7 + ph) + 0.4 * sin(TIME * 4.1 + ph * 2.0), 0.0, cos(TIME * 1.3 + ph)) * 0.035 * h * leafy * wind;
 	VERTEX += sway;
-	// en bas de l'écran, entre la caméra et le héros : le décor entier s'efface (buisson, rocher,
-	// arbre planté là) plutôt que d'être coupé en coquille vide ; la zone s'ouvre comme le champ de
-	// vision (jusqu'aux coins de l'écran) et se referme avant le héros
-	if (see_radius > 0.0 && origin.y < see_to.y) {
-		vec2 dh = see_to.xz - see_from.xz;
-		float th = dot(origin.xz - see_from.xz, dh) / max(dot(dh, dh), 0.001);
-		float wide = (2.0 + 1.2 * th * length(dh)) * (1.0 - smoothstep(0.55, 0.85, th));
-		if (th > -0.1 && distance(origin.xz, see_from.xz + dh * th) < wide) {
-			VERTEX = vec3(0.0);
-		}
-		// premier plan : les décors bas (buissons, rochers, plantes, roseaux) plus près de la caméra que
-		// le héros s'effacent sur toute la largeur de l'écran, coins du bas compris ; les arbres restent
-		float len_h = length(dh);
-		if (INSTANCE_CUSTOM.r > 0.5 && len_h > 1.5 && len_h < 13.0) {
-			vec2 fwd = dh / len_h;
-			vec2 rel = origin.xz - see_from.xz;
-			float depth = dot(rel, fwd);
-			float side = abs(dot(rel, vec2(-fwd.y, fwd.x)));
-			if (depth > -1.5 && depth < len_h - 0.4 && side < 2.0 + 1.1 * max(depth, 0.0)) {
-				VERTEX = vec3(0.0);
-			}
-		}
-	}
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
 void fragment() {
-	// les feuillages qui cachent encore le héros s'ouvrent par petits cubes nets de 25 cm (dans le
-	// style du monde) plutôt qu'en nuage de points : entre la caméra et le héros, et contre la caméra
+	// on voit au travers de ce qui cache le héros (arbres, buissons, rochers), comme pour les blocs et le
+	// relief : seule la partie entre la caméra et le héros s'ouvre, par petits cubes nets de 25 cm (dans le
+	// style du monde) ; le décor reste en place, il ne disparaît jamais en entier
 	if (see_radius > 0.0) {
 		vec3 q = (floor(wpos * 4.0) + 0.5) * 0.25;
 		vec3 d = see_to - see_from;
 		float t = dot(q - see_from, d) / max(dot(d, d), 0.001);
 		bool cut = distance(q, see_from) < 1.6;
-		if (q.y > see_to.y + 0.2) {
+		if (q.y > see_to.y - 0.75) {
 			cut = cut || (t > 0.0 && t < 0.97 && distance(q, see_from + d * t) < see_radius * 1.1);
 		}
 		if (cut) { discard; }

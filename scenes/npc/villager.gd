@@ -385,6 +385,46 @@ func can_be_targeted() -> bool:
 	return is_alive() and _ko_left <= 0.0
 
 
+# ---------------------------------------------------------------- colère (le héros l'a frappé)
+
+## Un habitant frappé par le héros se fâche : il passe dans le camp adverse et se bat contre lui avec ses
+## armes et ses compétences de classe (à mains nues s'il n'a pas d'arme). Il se calme au bout de ANGER_TIME s
+## sans être frappé, quand le héros s'éloigne ou tombe, ou après avoir été mis K.O. (il ne meurt jamais).
+const ANGER_TIME := 40.0
+var angry_left := 0.0
+
+
+func provoke(by: Combatant) -> void:
+	if not is_alive() or by == null:
+		return
+	if angry_left <= 0.0:
+		_set_hostile(true)
+		_show_bubble("!", Color("ff5a4a"), 2.5)
+	angry_left = ANGER_TIME
+	_threat = by
+	_fetch = null
+	if _sleeping:
+		_wake()
+
+
+func is_angry() -> bool:
+	return angry_left > 0.0
+
+
+func calm_down() -> void:
+	if angry_left <= 0.0 and team == Team.ALLIES:
+		return
+	angry_left = 0.0
+	_set_hostile(false)
+	_threat = null
+
+
+func _set_hostile(on: bool) -> void:
+	remove_from_group("allies" if on else "enemies")
+	add_to_group("enemies" if on else "allies")
+	team = Team.ENEMIES if on else Team.ALLIES
+
+
 func _on_died() -> void:
 	super()
 	_ko_left = knockout_time
@@ -393,6 +433,10 @@ func _on_died() -> void:
 
 
 func _on_hurt(_amount: int, source: Node) -> void:
+	# frappé par le héros : il se fâche (et riposte, même sans arme)
+	if source is Player:
+		provoke(source)
+		return
 	# riposte si on a une arme
 	if source is Combatant and weapon() != null:
 		_threat = source
@@ -431,7 +475,16 @@ func _physics_process(delta: float) -> void:
 			health.revive(0.5)
 			visual.set_downed(false)
 			_invulnerable_left = 2.0
+			# mis K.O., il se calme
+			calm_down()
 		return
+	if angry_left > 0.0:
+		angry_left -= delta
+		var hero := get_tree().get_first_node_in_group("player") as Combatant
+		if angry_left <= 0.0 or hero == null or not hero.is_alive() or hero.global_position.distance_to(global_position) > 30.0:
+			calm_down()
+		else:
+			_threat = hero
 	_threat_timer -= delta
 	if _threat_timer <= 0.0:
 		_threat_timer = 0.4
@@ -1068,6 +1121,8 @@ func _choose_work_spot() -> void:
 
 ## Choisit le monstre à combattre (ou à fuir).
 func _update_threat() -> void:
+	if angry_left > 0.0:
+		return
 	# un compagnon défend le héros, un habitant défend sa maison
 	var center := home
 	var radius := defend_radius
@@ -1081,6 +1136,9 @@ func _update_threat() -> void:
 		_threat = null
 	if _threat == null:
 		var t := nearest_hostile(alert_radius + (4.0 if companion else 0.0))
+		# un voisin fâché contre le héros n'est pas un monstre : on ne s'en mêle pas
+		if t is Villager and (t as Villager).is_angry():
+			t = null
 		if t and t.global_position.distance_to(center) <= radius:
 			_threat = t
 			_fetch = null
@@ -1158,9 +1216,12 @@ func class_action(delta: float) -> bool:
 			var best: Combatant = null
 			var worst := 0.85 if role == "soin" else 0.95
 			var hurt := []
-			for g in ["player", "villagers", "familiars"]:
+			# fâché contre le héros : il ne soigne que lui-même
+			for g in (["player", "villagers", "familiars"] if not is_angry() else ["villagers"]):
 				for n in get_tree().get_nodes_in_group(g):
 					var c := n as Combatant
+					if is_angry() and c != self:
+						continue
 					if c and c.is_alive() and c.global_position.distance_to(global_position) < 9.0:
 						var r := c.health.ratio()
 						if r < 0.95:
@@ -1240,7 +1301,7 @@ func _fight_or_flee(delta: float) -> void:
 	var dist := to.length()
 	var speed := walk_speed * 2.2 * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier()
 	var w := weapon()
-	if w == null:
+	if w == null and angry_left <= 0.0:
 		# pas d'arme : on court se mettre à l'abri derrière sa maison
 		var away := (home - _threat.global_position)
 		away.y = 0.0
@@ -1256,7 +1317,7 @@ func _fight_or_flee(delta: float) -> void:
 		if dist > 0.01:
 			facing = to / dist
 		var reach := attack_reach()
-		var wanted := minf(reach * 0.85, 6.0) if w.projectile else reach * 0.8
+		var wanted := minf(reach * 0.85, 6.0) if w and w.projectile else reach * 0.8
 		if dist > wanted:
 			velocity = facing * speed
 		else:

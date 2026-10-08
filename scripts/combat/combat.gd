@@ -40,7 +40,41 @@ static func melee(attacker: Combatant, reach: float, arc_degrees: float, attack:
 			continue
 		if target.receive_hit(attack, attacker, knockback, poise):
 			hits += 1
+	# le héros qui ne touche aucun ennemi peut frapper un habitant ou un citadin devant lui : il se fâche
+	# et riposte (voir Villager.provoke, Townsfolk.provoke) ; en plein combat, on ne frappe pas ses voisins
+	if hits == 0 and attacker is Player:
+		var npc := _peaceful_in_arc(attacker, reach, arc_degrees, fwd)
+		if npc is Villager:
+			(npc as Villager).provoke(attacker)
+			if (npc as Villager).receive_hit(attack, attacker, knockback, poise):
+				hits += 1
+		elif npc and npc.has_method("provoke"):
+			npc.provoke(attacker, attack)
+			hits += 1
 	return hits
+
+
+## Le PNJ paisible (habitant, citadin, voyageur) le plus proche dans l'arc du coup, ou null.
+static func _peaceful_in_arc(attacker: Combatant, reach: float, arc_degrees: float, fwd: Vector2) -> Node3D:
+	var origin := attacker.global_position
+	var best: Node3D = null
+	var best_d := INF
+	for g in ["villagers", "townsfolk"]:
+		for n in attacker.get_tree().get_nodes_in_group(g):
+			var t := n as Node3D
+			if t == null or not t.is_visible_in_tree():
+				continue
+			if t is Villager and (not (t as Villager).can_be_targeted() or (t as Villager).is_angry()):
+				continue
+			var off := Vector2(t.global_position.x - origin.x, t.global_position.z - origin.z)
+			var dist := off.length()
+			if absf(t.global_position.y - origin.y) > 1.6 or dist > reach + 0.35 or dist >= best_d:
+				continue
+			if dist >= 0.3 and absf(rad_to_deg(fwd.angle_to(off.normalized()))) > arc_degrees * 0.5:
+				continue
+			best = t
+			best_d = dist
+	return best
 
 
 ## Demande le droit d'attaquer `target`. Renvoie vrai si accordé.
