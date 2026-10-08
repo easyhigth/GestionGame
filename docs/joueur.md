@@ -707,6 +707,12 @@ Comme dans Minecraft, **Entrée** (ou **/**) ouvre une ligne de commande en bas 
 
 La carte montre maintenant les **capitales** (avec leur enceinte et leur population), les **châteaux** (gris : abandonnés), les **épaves** et, en zoomant, les **entrées de grottes**. Sur le monde immense, les noms des zones apparaissent en zoomant.
 
+## Échelle du monde : un humain = 2 cubes
+- Un cube du monde fait 1 m et **un humain mesure exactement 2 cubes** (2 m). Les autres races et les monstres gardent leurs proportions (un nain est plus petit, un ogre plus grand).
+- Une porte fait 2 cubes de haut : on passe dessous sans se baisser. Un saut franchit un cube.
+- **Le lit fait 1 × 2 cubes** : posé à la main, il s'allonge devant toi (l'oreiller de ton côté) ; il lui faut deux cases libres au même niveau. Dans les plans prêts, il s'allonge vers la porte. Les habitants s'y couchent dans sa longueur.
+- **Le sol monte par demi-cubes** (marches de 50 cm, franchissables à pied) : il s'aligne sur les blocs et les dalles, ce qui rend la construction plus simple.
+
 ## Accessibilité et langues
 - **Options → Langue** : français (par défaut) ou anglais. Les menus, boutons et listes se traduisent tout seuls ; le reste du texte du jeu passera progressivement par `I18n.t("texte")` (voir `scripts/ui/i18n.gd` : pour une autre langue, ajoute un dictionnaire dans `LANGS`).
 - **Options → Filtre pour daltoniens** : protanopie, deutéranopie ou tritanopie (corrige les couleurs de toute l'image, interface comprise).

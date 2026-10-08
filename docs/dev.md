@@ -21,7 +21,7 @@ Ce qu'on peut modifier sans code, les outils, les optimisations, les tests et la
 - `scenes/main.tscn` > nœud **World** > groupe **Objets à ramasser** : objets posés autour du feu au départ, équipements rares dans la nature, fréquence des matériaux (bois, pierre, minerai de fer, cuir, fibre).
 
 ## Graphismes (3D voxel)
-- 1 case du monde = 1 mètre. Le sol est fait de colonnes de blocs en terrasses, avec le même grain que les personnages (`assets/environment/voxel_grain.png`).
+- 1 case du monde = 1 mètre ; un humain mesure 2 cases (voir « Échelle » plus bas). Le sol est fait de colonnes de blocs en terrasses d'un demi-cube, avec le même grain que les personnages (`assets/environment/voxel_grain.png`).
 - Personnages : `assets/characters/models/base/<race>_base.glb` (versions nues, `_v2`, `_v3` = autres palettes) ; les habitants tirent une palette au hasard. Les modèles avec métier (`models/<race>_<métier>.glb`) restent disponibles mais ne sont plus utilisés.
 - Équipement : `assets/equipment/<race>_equipment.glb` contient les 22 pièces taillées aux mesures de chaque race ; `materials.glb` contient les matériaux posés au sol.
 - Animation : `scripts/voxel_character.gd` balance bras et jambes en marchant, fait respirer au repos et gère la roulade.
@@ -109,3 +109,10 @@ Ajouts depuis : caméra libre à 360°, saut et double saut, construction à la 
 - `scenes/player/player.gd` reste le plus gros script (entrées, combat, caméra, nage). Ses sous-systèmes s'en détachent peu à peu dans `scripts/hero/` : la faim, la nourriture et les potions sont dans `player_needs.gd` (`PlayerNeeds`), le joueur garde l'état et des méthodes qui délèguent. Prochains candidats : la visée à la souris, la nage, la caméra.
 - Autoloads (`project.godot`) : `Items`, `TimeFX`, `Access` (daltonisme, mouvement réduit), `I18n` (langues), `GameState`, `Sound`, `SaveGame`, `UiStyle`, `LabelLod`, `Unlocks` (menus progressifs).
 - Dans les tests, ne pas citer de nom de classe du jeu au niveau du script (les autoloads ne sont pas encore là à la compilation) : charger avec `load()` dans `_process`, ou passer par `root.get_node("Items")`.
+
+## Échelle
+- 1 case = 1 m. Les personnages voxel (modèle humain : 1,806 m) sont agrandis par `VoxelCharacter.WORLD_SCALE` (2 / 1,806) : un humain mesure 2 cubes. Pour placer quelque chose au-dessus d'une tête, multiplier par `visual.height_scale()` (taille choisie × échelle du monde) plutôt que par `visual.scale.y`.
+- Corps : `BuildGrid.BODY_HEIGHT` = 1,85 m (passe sous un plafond à 2 cubes) ; capsules de collision de 1,8 m (habitants, héros) et 1,55 m (monstres).
+- Grands meubles : `BuildGrid.LONG_FURNITURE` (le lit : 2 cases). `footprint()` donne les cases, `furniture_touching()` les meubles qui couvrent une case (y compris leurs pieds), `furniture_center()` le milieu. Une ancienne sauvegarde repose ses lits avec `force` (jamais perdus).
+- Relief : `step_height` = 0,5 m (demi-cube), `terrace_size` = 0,14 ; la roche monte deux fois plus vite, toujours par demi-cubes. Le relief d'ensemble est le même qu'avec les anciennes marches de 25 cm.
+- Test : `tests/run_tests.sh scale`.
