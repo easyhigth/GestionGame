@@ -3637,6 +3637,9 @@ const float FLANK = 1.9;
 const float FOOT = 0.2;
 global uniform vec4 season_ground;
 global uniform float season_snow;
+global uniform vec3 see_from;
+global uniform vec3 see_to;
+global uniform float see_radius;
 varying vec3 wpos;
 varying float up;
 varying vec2 shade;
@@ -3648,6 +3651,17 @@ void vertex() {
 vec3 lin(vec3 c) { return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045))); }
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void fragment() {
+	// la caméra passe au travers du relief : une butte ou une falaise entre elle et le héros s'efface
+	// (en pointillé fondu sur le bord), comme les blocs posés ; le sol sous les pieds du héros reste
+	if (see_radius > 0.0 && wpos.y > see_to.y - 0.6) {
+		vec3 d = see_to - see_from;
+		float t = dot(wpos - see_from, d) / max(dot(d, d), 0.001);
+		if (t > 0.0 && t < 0.95) {
+			float r = distance(wpos, see_from + d * t) / (see_radius * 0.9);
+			float dither = hash2(floor(FRAGCOORD.xy));
+			if (r < 0.75 + 0.25 * dither) { discard; }
+		}
+	}
 	vec3 c = lin(COLOR.rgb);
 	vec2 cell = floor(wpos.xz);
 	if (up > 0.7 && wpos.y > water_y + 0.05) {
