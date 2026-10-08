@@ -25,6 +25,10 @@ extends Node3D
 ## Couleur de la traînée de l'arme.
 @export var trail_color: Color = Color(0.85, 0.95, 1.0)
 
+## Échelle de tous les personnages et créatures par rapport au monde : un humain mesure exactement 2 cubes
+## (2 m) ; les modèles voxel de l'humain mesurent 1,806 m. Les autres races et les monstres gardent leurs proportions.
+const WORLD_SCALE := 2.0 / 1.806
+
 ## Cache partagé : bibliothèque d'équipement -> { id_objet: [[nom_du_nœud, maillage], ...] }
 static var _library_cache := {}
 
@@ -104,6 +108,12 @@ func _ensure_pivot() -> void:
 		add_child(_pivot)
 
 
+## Échelle verticale réelle du personnage (taille choisie et échelle du monde) : multiplie les hauteurs
+## pensées pour un modèle de 1,80 m (tête, mains, bulles au-dessus de lui...).
+func height_scale() -> float:
+	return scale.y * WORLD_SCALE
+
+
 func set_model(scene: PackedScene) -> void:
 	model = scene
 	if not is_inside_tree():
@@ -119,6 +129,7 @@ func set_model(scene: PackedScene) -> void:
 	if scene == null:
 		return
 	_instance = scene.instantiate() as Node3D
+	_instance.scale *= WORLD_SCALE
 	_base_scale = _instance.scale
 	_squash = 0.0
 	_squash_v = 0.0

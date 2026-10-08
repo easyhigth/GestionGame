@@ -84,6 +84,8 @@ var unhappy_time := 0.0
 var mood_reasons: Array = []
 ## Vie quotidienne : lit attribué (VillageNeeds), activité du moment, bulle au-dessus de la tête.
 var bed_spot := Vector3.INF
+## Sens du lit (de la tête vers les pieds) : on s'y allonge dans sa longueur.
+var bed_dir := Vector3.ZERO
 ## « lit » (maison, dortoir), « cabane » (cabane du village) ou « » (par terre, près du feu).
 var bed_kind := ""
 ## « travail », « repas », « détente », « sommeil » ou « ronde » (gardes, la nuit).
@@ -153,7 +155,7 @@ func _ready() -> void:
 	_bubble.font_size = 56
 	_bubble.pixel_size = 0.008
 	_bubble.outline_size = 10
-	_bubble.position.y = 2.35
+	_bubble.position.y = 2.6
 	_bubble.visible = false
 	add_child(_bubble)
 	_mark = Label3D.new()
@@ -161,7 +163,7 @@ func _ready() -> void:
 	_mark.font_size = 96
 	_mark.pixel_size = 0.009
 	_mark.outline_size = 14
-	_mark.position.y = 2.9
+	_mark.position.y = 3.15
 	_mark.visible = false
 	add_child(_mark)
 
@@ -702,16 +704,18 @@ func _sleep() -> void:
 	else:
 		if bed_kind == "lit":
 			global_position = bed_spot
+			if bed_dir != Vector3.ZERO:
+				facing = bed_dir
 		visual.set_downed(true)
 	_show_bubble("Zzz", Color("b8c8ff"), 999.0)
 	if _mark:
-		_mark.position.y = 1.4 if bed_kind != "cabane" else 2.9
+		_mark.position.y = 1.4 if bed_kind != "cabane" else 3.15
 
 
 func _wake() -> void:
 	_sleeping = false
 	if _mark:
-		_mark.position.y = 2.9
+		_mark.position.y = 3.15
 	visual.visible = true
 	visual.set_downed(false)
 	_bubble.visible = false
@@ -752,7 +756,7 @@ func _bubble_tick(delta: float, _text: String, _col: Color) -> void:
 		if _bubble_left <= 0.0:
 			_bubble.visible = false
 	if _bubble.visible:
-		_bubble.position.y = 2.35 + sin(Time.get_ticks_msec() * 0.003) * 0.06
+		_bubble.position.y = 2.6 + sin(Time.get_ticks_msec() * 0.003) * 0.06
 
 
 ## Vrai quand l'habitant est à son poste (la pièce produit).

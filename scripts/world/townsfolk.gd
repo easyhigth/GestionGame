@@ -60,7 +60,7 @@ func _ready() -> void:
 	_label.font_size = 28
 	_label.pixel_size = 0.006
 	_label.outline_size = 8
-	_label.position.y = 2.3
+	_label.position.y = 2.55
 	_label.text = display_name + ("\n" + trade_name if trade_name != "" else "")
 	_label.modulate = color
 	_label.visible = false
@@ -70,7 +70,7 @@ func _ready() -> void:
 	_bubble.font_size = 30
 	_bubble.pixel_size = 0.006
 	_bubble.outline_size = 8
-	_bubble.position.y = 2.9
+	_bubble.position.y = 3.15
 	_bubble.modulate = Color("fff2c8")
 	_bubble.visible = false
 	add_child(_bubble)
@@ -79,7 +79,7 @@ func _ready() -> void:
 	_mark.font_size = 64
 	_mark.pixel_size = 0.01
 	_mark.outline_size = 12
-	_mark.position.y = 2.75
+	_mark.position.y = 3.0
 	_mark.visible = false
 	add_child(_mark)
 	_wait = _rng.randf_range(0.0, 3.0)

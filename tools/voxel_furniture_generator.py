@@ -45,13 +45,21 @@ def porte():
 
 
 def lit():
+    # Lit sur deux cases (1 x 2 m, pour un humain de 2 cubes) : la tête dans la case du meuble (z de -10 à +10),
+    # les pieds dans la case de devant (z de +10 à +30). Voir BuildGrid.footprint.
     g = Node('Lit')
-    V(16, 5, 19, WOOD, 0, 5, 0, g)
-    leg4(g, 16, 19, 4, WOOD_D)
-    V(15, 3, 14, 0xe8e0d0, 0, 9, 2, g)
-    V(15.4, 2, 11, CLOTH_R, 0, 10.5, 3.5, g)
-    V(10, 2.5, 4, 0xf4f0e8, 0, 11, -6.5, g)
-    V(16, 10, 2, WOOD_D, 0, 9, -9, g)
+    L, z0 = 39, 10          # longueur du cadre, centre du lit (entre les deux cases)
+    V(18, 5, L, WOOD, 0, 5, z0, g)
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            V(2, 4, 2, WOOD_D, sx * 8, 2, z0 + sz * (L / 2 - 1), g)
+    V(17, 3, L - 2, 0xe8e0d0, 0, 9, z0 + 0.5, g)             # matelas
+    V(17.4, 2, 24, CLOTH_R, 0, 10.5, z0 + 7, g)              # couverture
+    V(17.6, 1, 2, shade(CLOTH_R, 0.8), 0, 11.4, z0 - 5, g)    # rabat
+    V(12, 3, 6, 0xf4f0e8, 0, 11.5, -6, g)                    # oreiller
+    V(18, 13, 2, WOOD_D, 0, 10.5, -9.5, g)                   # tête de lit
+    V(18, 1.6, 2.6, WOOD_L, 0, 17, -9.5, g)
+    V(18, 7, 2, WOOD_D, 0, 7.5, z0 + L / 2 - 0.5, g)         # pied de lit
     return g
 
 

@@ -67,17 +67,21 @@ func bed_spots() -> Array:
 			if n <= 0:
 				continue
 			var lits := []
+			var dirs := []
 			for c in r.cells:
 				for f in world.build.furniture_in(c):
 					if (f.item as ItemData).id == "lit" and absf(float(f.base) - float(r.floor)) < 1.3:
-						lits.append(Vector3(c.x + 0.5, float(f.base) + 0.55, c.y + 0.5))
+						# au milieu du lit (il fait 2 cases), allongé de la tête vers les pieds
+						lits.append(world.build.furniture_center(f) + Vector3(0, 0.55, 0))
+						var d := BuildGrid.rot_dir(int(f.rot))
+						dirs.append(Vector3(d.x, 0, d.y))
 			for i in n:
 				if lits.is_empty():
 					var cell: Vector2i = r.cells.keys()[i % r.cells.size()]
 					out.append([Vector3(cell.x + 0.5, float(r.floor), cell.y + 0.5), "lit"])
 				else:
 					var p: Vector3 = lits[i % lits.size()]
-					out.append([p + Vector3(0.22 * (i / lits.size()), 0, 0), "lit"])
+					out.append([p + Vector3(0.22 * (i / lits.size()), 0, 0), "lit", dirs[i % lits.size()]])
 	var center := world.home_center()
 	for id in ["hut_1", "hut_2", "hut_3"]:
 		var hut := world.village_prop(id)
@@ -226,6 +230,7 @@ func _update(dt: float) -> void:
 		v.has_bed = i < beds
 		var spot: Vector3 = spots[i][0] if v.has_bed else Vector3.INF
 		var kind: String = spots[i][1] if v.has_bed else ""
+		v.bed_dir = spots[i][2] if v.has_bed and spots[i].size() > 2 else Vector3.ZERO
 		if spot != v.bed_spot or kind != v.bed_kind:
 			v.bed_spot = spot
 			v.bed_kind = kind

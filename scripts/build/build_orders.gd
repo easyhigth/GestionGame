@@ -231,7 +231,7 @@ func ready_to_build(o: Dictionary) -> bool:
 				return false
 			return _has_material(o) and _supported(o.key)
 		"furniture":
-			return _has_material(o) and grid.can_place_furniture(o.cell, o.base)
+			return _has_material(o) and grid.can_place_furniture(o.cell, o.base, o.item, int(o.rot))
 		"remove":
 			if o.what == "block":
 				# on démolit de haut en bas

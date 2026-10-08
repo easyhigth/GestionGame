@@ -184,6 +184,17 @@ func _process(_delta: float) -> void:
 	var k: Vector3i = _target.key
 	var base: float = _target.get("base", float(k.y))
 	_ghost.global_position = Vector3(k.x + 0.5, base + h * 0.5, k.z + 0.5)
+	# grand meuble (lit) : la case fantôme couvre toutes ses cases
+	if it.is_furniture() and BuildGrid.LONG_FURNITURE.has(it.id):
+		var cells := BuildGrid.footprint(Vector2i(k.x, k.z), it, _furniture_rot(it))
+		var lo := Vector2(INF, INF)
+		var hi := Vector2(-INF, -INF)
+		for c in cells:
+			lo = Vector2(minf(lo.x, c.x), minf(lo.y, c.y))
+			hi = Vector2(maxf(hi.x, c.x + 1), maxf(hi.y, c.y + 1))
+		h = 0.6
+		_ghost.scale = Vector3(hi.x - lo.x, h, hi.y - lo.y)
+		_ghost.global_position = Vector3((lo.x + hi.x) * 0.5, base + h * 0.5, (lo.y + hi.y) * 0.5)
 	_ghost_mat.albedo_color = C_OK if _target.ok else C_BAD
 
 
@@ -220,7 +231,7 @@ func find_spot(it: ItemData) -> Dictionary:
 	if it.is_furniture():
 		var base := world.support_height(Vector3(col.x + 0.5, 0, col.y + 0.5), feet + 1.2)
 		var key := Vector3i(col.x, floori(base), col.y)
-		var ok := absf(base - feet) < 1.3 and grid.can_place_furniture(col, base) and world.village_prop_at(col, base) == null
+		var ok := absf(base - feet) < 1.3 and grid.can_place_furniture(col, base, it, _furniture_rot(it)) and world.village_prop_at(col, base) == null
 		return {"key": key, "base": base, "ok": ok, "why": "" if ok else "Place occupée"}
 	var ground := world.terrain_height(col)
 	var ys: Array = []
@@ -261,7 +272,7 @@ func _aim_spot(world: WorldGenerator, it: ItemData) -> Dictionary:
 	var in_body := col == world.cell_at(player.global_position) and float(key.y) < feet + 1.8 and float(key.y) + 1.0 > feet + 0.05
 	if it.is_furniture():
 		var base := world.support_height(Vector3(col.x + 0.5, 0, col.y + 0.5), float(key.y) + 0.6)
-		var okf := not in_body and grid.can_place_furniture(col, base) and world.village_prop_at(col, base) == null \
+		var okf := not in_body and grid.can_place_furniture(col, base, it, _furniture_rot(it)) and world.village_prop_at(col, base) == null \
 			and grid.block_at(Vector3i(col.x, floori(base + 0.01), col.y)) == null
 		return {"key": Vector3i(col.x, floori(base), col.y), "base": base, "ok": okf, "why": "" if okf else "Place occupée"}
 	if grid.block_at(key) != null:
@@ -371,7 +382,7 @@ func place() -> bool:
 			placed = Items.get_item(it.get_meta("stair_variants")[dir])
 		done = world.build.place_block(k, placed)
 	else:
-		var rot := _rot_from_facing()
+		var rot := _furniture_rot(it)
 		done = world.build.place_furniture(Vector2i(k.x, k.z), float(_target.base), it, rot)
 	if not done:
 		return false
@@ -407,6 +418,15 @@ func _farm_use(it: ItemData, col: Vector2i) -> bool:
 
 
 ## Un meuble posé regarde le héros.
+## Rotation d'un meuble posé à la main : il regarde le héros ; un grand meuble (lit) s'allonge devant lui,
+## loin du héros (la tête du lit de son côté).
+func _furniture_rot(it: ItemData) -> int:
+	var rot := _rot_from_facing()
+	if it and BuildGrid.LONG_FURNITURE.has(it.id):
+		rot = posmod(rot + 2, 4)
+	return rot
+
+
 func _rot_from_facing() -> int:
 	var f := Vector2(-player.facing.x, -player.facing.z)
 	if absf(f.x) > absf(f.y):

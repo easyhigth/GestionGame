@@ -575,12 +575,25 @@ func _furnish(city: Dictionary, h: Array, tavern: bool) -> Node3D:
 		var it := Items.get_item(sp[1]) as ItemData
 		if it == null or it.furniture_model == null:
 			continue
+		var rot := rng.randi_range(0, 3)
+		# un lit fait deux cases : on le tourne pour que ses pieds restent dans la maison, sur une case libre
+		if BuildGrid.LONG_FURNITURE.has(it.id):
+			rot = -1
+			for r in 4:
+				var foot: Vector2i = c + BuildGrid.rot_dir(r)
+				if foot.x > o.x and foot.y > o.y and foot.x < o.x + w - 1 and foot.y < o.y + d - 1 and not used.has(foot) \
+						and foot.distance_to(door_in) >= 2.5:
+					rot = r
+					used[foot] = true
+					break
+			if rot < 0:
+				continue
 		used[c] = true
 		var n := it.furniture_model.instantiate() as Node3D
 		n.set_meta("furniture", sp[1])
 		root.add_child(n)
 		n.global_position = Vector3(c.x + 0.5, base, c.y + 0.5)
-		n.rotation.y = rng.randi_range(0, 3) * PI * 0.5
+		n.rotation.y = rot * PI * 0.5
 	return root
 
 

@@ -76,7 +76,7 @@ func _apply_data() -> void:
 		visual.scale = Vector3.ONE * data.model_scale * Familiars.SCALE[clampi(get_meta("evo", 0), 0, 2)]
 		name_label.text = "✦ %s · %s · Nv %d" % [familiar_name, familiar_title if familiar_title != "" else data.display_name, level]
 		name_label.modulate = Color("b8f0a0")
-	name_label.position.y = 2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale
+	name_label.position.y = (2.1 * data.model_scale if not visual.is_quadruped() else 1.5 * data.model_scale) * VoxelCharacter.WORLD_SCALE
 	bar.position.y = name_label.position.y - 0.22
 
 
@@ -377,7 +377,7 @@ func _cast(h: Dictionary) -> void:
 		holder.add_child(bolt)
 		# plus lents que ceux du héros : on a le temps de les voir venir
 		bolt.speed = 15.0 if bolt.arrow else 10.0
-		bolt.global_position = global_position + Vector3(0, minf(1.1 * visual.scale.y, 1.4), 0) + bolt.direction * (body_radius + 0.4)
+		bolt.global_position = global_position + Vector3(0, minf(1.1 * visual.height_scale(), 1.4), 0) + bolt.direction * (body_radius + 0.4)
 	Sound.play("swing", global_position + Vector3(0, 1, 0), -6.0)
 
 

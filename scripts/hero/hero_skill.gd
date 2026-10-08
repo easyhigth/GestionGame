@@ -660,7 +660,7 @@ func _a_stun(prm: Dictionary) -> void:
 			e.stagger(dur, true)
 			SkillFX.lightning(owner, c + Vector3(0, 1.0, 0), e.global_position + Vector3(0, 1.0, 0), data.color, 0.04, 0.22, 1)
 			var stars := SkillFX.orbit(e, Color(1.0, 0.95, 0.5), dur, 0.45, 5)
-			stars.position = Vector3(0, 2.0 * e.visual.scale.y, 0)
+			stars.position = Vector3(0, 2.0 * e.visual.height_scale(), 0)
 
 
 ## Tourbillon : les particules sont aspirées en spirale vers le centre, puis tout explose.

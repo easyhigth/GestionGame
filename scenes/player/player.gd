@@ -730,7 +730,7 @@ func gain_xp(amount: int) -> void:
 		return
 	amount = roundi(amount * (1.0 + (skill.p("xp") if skill else 0.0) + _kingdom_bonus("xp")) * xp_level_mult())
 	xp += amount
-	Combat.popup(self, global_position + Vector3(0, 2.3 * visual.scale.y, 0), "+%d XP" % amount, Color("9fe0ff"))
+	Combat.popup(self, global_position + Vector3(0, 2.3 * visual.height_scale(), 0), "+%d XP" % amount, Color("9fe0ff"))
 	while xp >= xp_to_next() and level < MAX_LEVEL:
 		xp -= xp_to_next()
 		level += 1
@@ -1644,8 +1644,8 @@ const SWIM_SPEED := 0.62
 ## Profondeur d'eau à partir de laquelle on nage (sinon on marche dans l'eau).
 const SWIM_DEPTH := 1.2
 ## Hauteur des yeux au-dessus des pieds, et des pieds sous la surface quand on nage en surface.
-const EYES := 1.55
-const FLOAT_DEPTH := 1.3
+const EYES := 1.72
+const FLOAT_DEPTH := 1.45
 signal breath_changed(value: float)
 var swimming := false
 var breath := BREATH_MAX
@@ -2138,7 +2138,7 @@ func _update_reticle(delta: float) -> void:
 	_reticle.visible = lock_target != null
 	if lock_target == null:
 		return
-	var s := lock_target.visual.scale.y
+	var s := lock_target.visual.height_scale()
 	_reticle.global_position = lock_target.global_position
 	var ring := _reticle.get_node("Ring") as Node3D
 	ring.position.y = 0.06
@@ -2207,7 +2207,7 @@ func _update_camera(delta: float) -> void:
 		return
 	if cam_mode == CamMode.FIRST:
 		_animate_viewmodel(delta)
-		var eye := global_position + Vector3(0, 1.5 * visual.scale.y, 0)
+		var eye := global_position + Vector3(0, 1.5 * visual.height_scale(), 0)
 		camera.global_position = eye
 		var look := -Vector3(sin(cam_yaw) * cos(cam_pitch), sin(cam_pitch), cos(cam_yaw) * cos(cam_pitch))
 		camera.look_at(eye + look)
@@ -2227,7 +2227,7 @@ func _update_camera(delta: float) -> void:
 ## 3e personne : derrière l'épaule du héros, avec du recul ; la caméra s'arrête devant le sol, les murs
 ## et les décors au lieu d'y entrer, et se rapproche quand un obstacle cache le héros.
 func _update_camera_third(delta: float) -> void:
-	var head := global_position + Vector3(0, 1.45 * visual.scale.y, 0)
+	var head := global_position + Vector3(0, 1.45 * visual.height_scale(), 0)
 	var focus := head
 	if lock_target and is_instance_valid(lock_target):
 		focus = focus.lerp(lock_target.global_position + Vector3(0, 1.0, 0), 0.3)

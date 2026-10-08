@@ -284,7 +284,11 @@ func plan_layout(t: RoomTypeData, c: Vector2i) -> Array:
 	for id in t.required:
 		for i in int(t.required[id]):
 			furn.append(id)
-	var area := maxi(t.min_cells, furn.size() + 3)
+	# un lit prend deux cases
+	var extra := 0
+	for id in furn:
+		extra += int(BuildGrid.LONG_FURNITURE.get(id, 1)) - 1
+	var area := maxi(t.min_cells, furn.size() + extra + 3)
 	var w := maxi(2, ceili(sqrt(float(area))))
 	var d := maxi(2, ceili(float(area) / float(w)))
 	if d > w:
@@ -327,8 +331,20 @@ func plan_layout(t: RoomTypeData, c: Vector2i) -> Array:
 		for x in range(r.position.x + 1, r.end.x - 1):
 			if Vector2i(x, z) != door + Vector2i(0, 1):
 				cells.append(Vector2i(x, z))
-	for i in mini(furn.size(), cells.size()):
-		out.append([Vector3i(cells[i].x, layer, cells[i].y), "furniture", furn[i]])
+	# les meubles regardent l'entrée (rotation 2) ; un lit s'allonge vers la porte et prend aussi la case devant lui
+	var used := {}
+	for id in furn:
+		for spot in cells:
+			if used.has(spot):
+				continue
+			var item := Items.get_item(id) as ItemData
+			var fp := BuildGrid.footprint(spot, item, 2)
+			if fp.any(func(q): return used.has(q) or not cells.has(q)):
+				continue
+			for q in fp:
+				used[q] = true
+			out.append([Vector3i(spot.x, layer, spot.y), "furniture", id])
+			break
 	return out
 
 

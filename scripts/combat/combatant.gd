@@ -250,7 +250,7 @@ func _do_hit(h: Dictionary) -> void:
 	if is_in_group("player") or is_in_group("bosses"):
 		var heavy := float(h.get("dmg", 1.0)) * _move_damage >= 1.4 or float(h.get("kb", 1.0)) >= 1.5
 		var col := visual.trail_color
-		var at := global_position + Vector3(0, 0.95 * visual.scale.y, 0)
+		var at := global_position + Vector3(0, 0.95 * visual.height_scale(), 0)
 		if arc >= 300.0:
 			SkillFX.slash(self, at, facing, col, reach * 0.95, 340.0, 0.0, 0.3, 0.6)
 		else:
@@ -359,7 +359,7 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 	var color := Color("ffe070") if team == Team.ENEMIES else Color("ff5a4a")
 	if crit:
 		color = Color("ff9a2a")
-	var top := global_position + Vector3(0, 1.9 * visual.scale.y, 0)
+	var top := global_position + Vector3(0, 1.9 * visual.height_scale(), 0)
 	Combat.popup(self, top, str(dmg) + ("!" if crit else ""), color, dmg >= 15 or crit)
 	_hit_sound(attacker, source, crit or dmg >= 15)
 	if is_in_group("player"):
@@ -367,7 +367,7 @@ func receive_hit(attack: int, source: Node3D, knockback := 3.0, poise_damage := 
 	if attacker:
 		attacker._on_damage_dealt(self, dmg)
 	# impact : éclat, étincelles dans le sens du coup ; critiques et gros coups : étoile, onde, lumière
-	var hit_at := global_position + Vector3(0, 1.0 * visual.scale.y, 0)
+	var hit_at := global_position + Vector3(0, 1.0 * visual.height_scale(), 0)
 	var hit_dir := Vector3.UP
 	if source:
 		hit_dir = (global_position - source.global_position) * Vector3(1, 0, 1)
@@ -514,7 +514,7 @@ func stagger(time: float, dizzy := false) -> void:
 ## Équilibre brisé : étourdi, et les coups reçus font 50 % de dégâts en plus.
 func break_poise() -> void:
 	stagger(2.0, true)
-	Combat.popup(self, global_position + Vector3(0, 2.4 * visual.scale.y, 0), "Étourdi", Color("ffd24a"))
+	Combat.popup(self, global_position + Vector3(0, 2.4 * visual.height_scale(), 0), "Étourdi", Color("ffd24a"))
 
 
 ## Petit sursaut qui interrompt le coup en cours (monstres légers).
@@ -597,7 +597,7 @@ func _update_states(delta: float) -> void:
 			d[4] -= n
 			health.take_damage(n, d[2] if is_instance_valid(d[2]) else null)
 			if randf() < 0.35:
-				Combat.popup(self, global_position + Vector3(0, 1.7 * visual.scale.y, 0), str(n), (d[3] as Color).lightened(0.3))
+				Combat.popup(self, global_position + Vector3(0, 1.7 * visual.height_scale(), 0), str(n), (d[3] as Color).lightened(0.3))
 				VoxelBurst.spawn(self, global_position + Vector3(0, 1.0, 0), d[3], 4, 1.5, 0.08, 0.5, "up", -3.0)
 		if d[1] <= 0.0:
 			_dots.remove_at(i)

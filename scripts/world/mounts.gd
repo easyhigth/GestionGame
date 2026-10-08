@@ -134,7 +134,7 @@ func ride_familiar(e: Enemy) -> void:
 	e.set_meta("ridden", true)
 	e.set("_target", null)
 	player.global_position = e.global_position
-	player.visual.position.y = 0.95 * e.visual.scale.y
+	player.visual.position.y = 0.95 * e.visual.height_scale()
 	Sound.play("step_grass", e.global_position)
 	player.notify.emit("Tu montes %s : {interact} pour descendre." % e.familiar_name)
 	boarded.emit("familier")
