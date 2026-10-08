@@ -78,7 +78,8 @@ func _process(_d) -> bool:
 		p.set_camera_mode(2, false)
 		# un pilier de planches à 3 m du héros
 		var c := flat_cell_near(w.spawn_cell)
-		var hy := floori(w.terrain_height(c) + 0.45)
+		# sur le sol (une marche d'un demi-cube : le bloc commence au cube au-dessus, sa face reste visible)
+		var hy := ceili(w.terrain_height(c) - 0.01)
 		block_key = Vector3i(c.x, hy, c.y)
 		w.build.place_block(block_key, items.get_item("bloc_planches"))
 		w.build.place_block(block_key + Vector3i(0, 1, 0), items.get_item("bloc_planches"))
