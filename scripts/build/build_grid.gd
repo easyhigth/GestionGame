@@ -174,7 +174,10 @@ func clear() -> void:
 # ---------------------------------------------------------------- blocs
 
 static func block_height(item: ItemData) -> float:
-	return 0.5 if item.block_slab else 1.0
+	# une trappe fermée est une planche plate : on marche dessus (ouverte, elle ne bloque plus)
+	if item.block_slab:
+		return 0.5
+	return 0.19 if shape_of(item) == "trapdoor" else 1.0
 
 
 func block_at(key: Vector3i) -> ItemData:
@@ -617,8 +620,16 @@ func _add_post(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
 	if sh == "gate":
 		_add_gate(st, key, p)
 		return
+	if sh == "trapdoor":
+		# fermée : une planche à plat ; ouverte : relevée contre le côté nord de la case
+		if open_gates.has(key):
+			_box(st, p + Vector3(0.0, 0.0, 0.0), p + Vector3(1.0, 0.95, 0.19))
+		else:
+			_box(st, p + Vector3(0.0, 0.0, 0.0), p + Vector3(1.0, 0.19, 1.0))
+		return
+	var pane := sh == "pane"
 	var wall := sh == "wall"
-	var r := 0.25 if wall else 0.125
+	var r := 0.0625 if pane else (0.25 if wall else 0.125)
 	_box(st, p + Vector3(0.5 - r, 0, 0.5 - r), p + Vector3(0.5 + r, 1.0, 0.5 + r))
 	for d in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
 		var o: ItemData = blocks.get(key + d)
@@ -628,14 +639,16 @@ func _add_post(st: SurfaceTool, key: Vector3i, it: ItemData) -> void:
 		var b := Vector3(0.5, 0, 0.5) + Vector3(d) * 0.5
 		var lo := Vector3(minf(a.x, b.x), 0, minf(a.z, b.z))
 		var hi := Vector3(maxf(a.x, b.x), 0, maxf(a.z, b.z))
-		var w := 0.19 if wall else 0.06
+		var w := 0.0625 if pane else (0.19 if wall else 0.06)
 		if d.x != 0:
 			lo.z = 0.5 - w
 			hi.z = 0.5 + w
 		else:
 			lo.x = 0.5 - w
 			hi.x = 0.5 + w
-		if wall:
+		if pane:
+			_box(st, p + Vector3(lo.x, 0, lo.z), p + Vector3(hi.x, 1.0, hi.z))
+		elif wall:
 			_box(st, p + Vector3(lo.x, 0, lo.z), p + Vector3(hi.x, 0.8, hi.z))
 		else:
 			for y in [0.35, 0.72]:
@@ -666,7 +679,7 @@ func toggle_gate_near(pos: Vector3, dist := 1.8) -> bool:
 		for dx in range(-2, 3):
 			for y in _block_cols.get(c + Vector2i(dx, dz), []):
 				var key := Vector3i(c.x + dx, y, c.y + dz)
-				if shape_of(blocks[key]) != "gate":
+				if not shape_of(blocks[key]) in ["gate", "trapdoor"]:
 					continue
 				if Vector3(key.x + 0.5, key.y + 0.5, key.z + 0.5).distance_to(pos + Vector3(0, 0.5, 0)) > dist:
 					continue

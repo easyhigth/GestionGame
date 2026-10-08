@@ -25,7 +25,7 @@ const ALSO := {"four": ["feu"], "foyer_forge": ["feu"]}
 const EXTRA_TABS := {"enclume": ["Forge"], "autel": ["Enchantement"]}
 ## Formes des blocs de construction (préfixe de l'identifiant → nom), dans l'ordre affiché.
 const SHAPES := [["bloc", "Blocs"], ["dalle", "Dalles"], ["escalier", "Escaliers"], ["muret", "Murets"],
-	["barriere", "Barrières"], ["portillon", "Portillons"], ["pente", "Toits en pente"], ["autre", "Autres"]]
+	["barriere", "Barrières"], ["portillon", "Portillons"], ["trappe", "Trappes"], ["vitre", "Fenêtres"], ["pente", "Toits en pente"], ["autre", "Autres"]]
 
 
 static func station_name(id: String) -> String:
