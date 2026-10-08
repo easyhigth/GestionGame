@@ -43,7 +43,7 @@ func go(ph: String) -> void:
 ## Tourne la caméra (1re ou 3e personne) jusqu'à mettre `target` sous le viseur. Vrai quand c'est fait.
 func steer() -> bool:
 	# 1re personne : la caméra est à l'œil du héros ; regarder vers `target`
-	var eye: Vector3 = p.global_position + Vector3(0, 1.5 * p.visual.scale.y, 0)
+	var eye: Vector3 = p.global_position + Vector3(0, 1.5 * p.visual.height_scale(), 0)
 	var d: Vector3 = (target - eye).normalized()
 	p.cam_pitch = p.clamp_pitch(asin(-d.y))
 	p.cam_yaw = atan2(-d.x, -d.z)
