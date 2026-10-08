@@ -730,6 +730,25 @@ func _selection_from(a: Vector2i, b: Vector2i) -> void:
 					_selection.append([Vector2i(x, z), t])
 
 
+## Rotation d'un grand meuble (lit) : celle choisie si ses pieds tiennent, sinon la première dont la case des pieds
+## est libre (ni bloc, ni mur encore en plan, ni autre meuble).
+func _long_rot(col: Vector2i, base: float, it: ItemData, pref: int) -> int:
+	if it == null or not BuildGrid.LONG_FURNITURE.has(it.id):
+		return pref
+	for i in 4:
+		var r := posmod(pref + i, 4)
+		if not grid.can_place_furniture(col, base, it, r):
+			continue
+		var free := true
+		for c in BuildGrid.footprint(col, it, r).slice(1):
+			for o in orders.order_at_cell(c):
+				if (o.type == "block" and float(o.key.y) < base + 1.2 and float(o.key.y) + 1.0 > base + 0.05) or o.type == "furniture":
+					free = false
+		if free:
+			return r
+	return pref
+
+
 func _commit_selection() -> void:
 	if _selection.is_empty():
 		return
@@ -791,7 +810,7 @@ func _commit_selection() -> void:
 			for o in orders.order_at_cell(col):
 				if o.type == "block" and absf(o.key.y + 1 - base) < 0.3:
 					base = o.key.y + 1.0
-			if it and orders.furniture(col, base, it, rotation_step) > 0:
+			if it and orders.furniture(col, base, it, _long_rot(col, base, it, rotation_step)) > 0:
 				n += 1
 		"harvest":
 			for s in _selection:
