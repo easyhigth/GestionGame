@@ -99,12 +99,18 @@ func _process(_d) -> bool:
 		print("== casse")
 		stand(s, Vector3(1, 0, 0))
 		var pl := count("bloc_planches")
-		var hits := 0
-		while w.build.block_at(Vector3i(s.x + 1, H, s.y)) != null and hits < 10:
+		# un coup d'arme ne casse plus un bloc posé (en combat, on ne démolit rien par erreur)
+		for i in 3:
 			p._harvest_swing({"dmg": 1.0})
-			hits += 1
+		check("trois coups d'arme : le bloc tient", w.build.block_at(Vector3i(s.x + 1, H, s.y)) != null)
+		# attaque maintenue dessus : il se casse au bout du temps de minage, comme dans Minecraft
+		var held_t := 0.0
+		while w.build.block_at(Vector3i(s.x + 1, H, s.y)) != null and held_t < 6.0:
+			p.mine_step(0.05, true)
+			held_t += 0.05
+		p.mine_step(0.05, false)
 		collect()
-		check("bloc cassé en %d coups et rendu" % hits, hits == 2 and count("bloc_planches") == pl + 1)
+		check("bloc miné en %.2f s (attaque maintenue) et rendu" % held_t, held_t > 0.3 and held_t < 2.0 and count("bloc_planches") == pl + 1)
 		# un ennemi tout près : pas de casse
 		var scene := load("res://scenes/enemies/enemy.tscn") as PackedScene
 		var e = scene.instantiate()
@@ -119,6 +125,9 @@ func _process(_d) -> bool:
 		p.facing = Vector3(1, 0, 0)
 		for i in 4:
 			p._harvest_swing({"dmg": 1.0})
+		for i in 60:
+			p.mine_step(0.05, true)
+		p.mine_step(0.05, false)
 		check("avec un ennemi tout près, le mur ne casse pas", w.build.block_at(Vector3i(s.x + 1, H + 1, s.y)) != null)
 		(get_meta("e") as Node).queue_free()
 		# pose pour la capture

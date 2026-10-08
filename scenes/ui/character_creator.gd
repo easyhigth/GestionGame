@@ -62,6 +62,12 @@ var _aura: MeshInstance3D
 var _name_edit: LineEdit
 var _summary: RichTextLabel
 var _stat_bars := {}
+var _left_panel: PanelContainer
+var _right_panel: PanelContainer
+var _title_label: Label
+var _hint_label: Label
+## Marge autour des panneaux (px).
+const MARGIN := 10.0
 
 
 func _ready() -> void:
@@ -240,6 +246,7 @@ func _process(delta: float) -> void:
 	_hero.rotation.y = _angle
 	_hero.animate(delta, Vector3.ZERO, facing)
 	_hero.rotation.y = _angle
+	_layout_preview()
 	var eye := _cam_target + Vector3(0, _cam_dist * 0.16, _cam_dist)
 	_cam.global_position = _cam.global_position.lerp(eye, clampf(delta * 6.0, 0.0, 1.0))
 	_cam.look_at(_cam.global_position + (_cam_target - eye))
@@ -332,11 +339,24 @@ func _rich() -> RichTextLabel:
 	return r
 
 
-func _panel(pos: Vector2, size: Vector2) -> VBoxContainer:
+## Panneau sur toute la hauteur de l'écran, collé au bord gauche (`right` faux) ou droit, de largeur `width`.
+func _panel(right: bool, width: float) -> VBoxContainer:
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", UiTheme.frame(14))
-	p.position = pos
-	p.size = size
+	if right:
+		p.anchor_left = 1.0
+		p.anchor_right = 1.0
+		p.offset_left = -width - MARGIN
+		p.offset_right = -MARGIN
+		_right_panel = p
+	else:
+		p.offset_left = MARGIN
+		p.offset_right = MARGIN + width
+		_left_panel = p
+	p.anchor_top = 0.0
+	p.anchor_bottom = 1.0
+	p.offset_top = MARGIN
+	p.offset_bottom = -MARGIN
 	add_child(p)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 5)
@@ -346,21 +366,23 @@ func _panel(pos: Vector2, size: Vector2) -> VBoxContainer:
 
 func _build_ui() -> void:
 	# titre
-	var title := _label("Création du héros", 22, C_GOLD)
-	title.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.02))
-	title.add_theme_constant_override("outline_size", 6)
-	title.position = Vector2(356, 8)
-	add_child(title)
-	var hint := _label("Glisser pour faire tourner le héros", 10, Color(1, 1, 1, 0.7))
-	hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	hint.add_theme_constant_override("outline_size", 3)
-	hint.position = Vector2(390, 516)
-	add_child(hint)
+	# titre et aide : centrés au-dessus et au-dessous du héros, entre les deux panneaux (voir _layout_preview)
+	_title_label = _label("Création du héros", 22, C_GOLD)
+	_title_label.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.02))
+	_title_label.add_theme_constant_override("outline_size", 6)
+	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(_title_label)
+	_hint_label = _label("Glisser pour faire tourner le héros", 11, Color(1, 1, 1, 0.8))
+	_hint_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_hint_label.add_theme_constant_override("outline_size", 3)
+	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(_hint_label)
 
 	# panneau de gauche : onglets
-	var left := _panel(Vector2(10, 10), Vector2(326, 520))
+	var left := _panel(false, 340)
 	_tabs = TabContainer.new()
-	_tabs.custom_minimum_size = Vector2(310, 500)
+	_tabs.custom_minimum_size = Vector2(320, 0)
+	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(_tabs)
 	_tabs.add_child(_build_race_tab())
 	_tabs.add_child(_build_look_tab())
@@ -369,7 +391,7 @@ func _build_ui() -> void:
 	_tabs.add_child(_build_skill_tab())
 
 	# panneau de droite : nom, résumé, caractéristiques, boutons
-	var right := _panel(Vector2(700, 10), Vector2(250, 520))
+	var right := _panel(true, 270)
 	right.add_child(_title("Nom du héros"))
 	_name_edit = LineEdit.new()
 	_name_edit.max_length = 20
@@ -822,6 +844,27 @@ func _apply_scale() -> void:
 	_frame_camera.call_deferred()
 
 
+## Place le héros au milieu de l'espace libre entre les deux panneaux (et le titre, l'aide autour de lui) :
+## la caméra se décale de côté d'autant qu'il faut, quelle que soit la taille de la fenêtre.
+func _layout_preview() -> void:
+	if _left_panel == null or _right_panel == null:
+		return
+	var view := get_viewport_rect().size
+	var lo := _left_panel.get_rect().end.x
+	var hi := _right_panel.get_rect().position.x
+	var mid := (lo + hi) * 0.5
+	if _title_label:
+		_title_label.position = Vector2(lo, MARGIN)
+		_title_label.size = Vector2(hi - lo, 30)
+	if _hint_label:
+		_hint_label.position = Vector2(lo, view.y - 34)
+		_hint_label.size = Vector2(hi - lo, 20)
+	# largeur visible (en mètres) au niveau du héros, puis décalage de la caméra
+	var view_h := 2.0 * _cam_dist * tan(deg_to_rad(_cam.fov * 0.5))
+	var view_w := view_h * view.x / maxf(1.0, view.y)
+	_cam_target.x = -(mid - view.x * 0.5) / view.x * view_w
+
+
 ## Cadre la caméra selon la taille du héros (une fée et un ogre tiennent tous les deux dans l'image).
 func _frame_camera() -> void:
 	var top := 0.0
@@ -832,8 +875,9 @@ func _frame_camera() -> void:
 		var box := m.global_transform * m.get_aabb()
 		top = maxf(top, box.end.y)
 	var h := clampf(top - _hero.global_position.y, 1.0, 3.2)
-	_cam_dist = maxf(5.6, h * 3.2 + 1.8)
-	_cam_target = Vector3(-0.28 * _cam_dist / 8.0, _hero.global_position.y + h * 0.5, 0)
+	# le héros occupe environ 60 % de la hauteur de l'écran, une fée comme un ogre
+	_cam_dist = maxf(5.6, h * 3.6 + 1.6)
+	_cam_target = Vector3(_cam_target.x, _hero.global_position.y + h * 0.5 + 0.1, 0)
 
 
 func _skill_text() -> String:

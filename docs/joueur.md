@@ -147,7 +147,7 @@ La touche d'un menu le referme aussi.
 - **Panneau du royaume (U)** : un cadre **« À faire maintenant »** en haut donne les 3 actions les plus utiles (habitants sans lit, réserve vide, habitants sans poste, champs, élevage, marché, taverne, temple, prochain rang), avec un bouton **Construire ▸** qui ouvre directement le bon plan prêt.
 
 ### Finitions de la caméra et du départ en solo
-- **3e personne** : la caméra ne traverse plus le relief, les blocs posés ni les murs des donjons ; coincée contre un mur, elle revient derrière la tête du héros (qui s'efface s'il la touche presque). **Aide à la visée** : un coup, une flèche ou un sort part vers l'ennemi le plus proche du viseur (moins de 10°).
+- **3e personne** : la caméra garde toujours sa distance et **passe au travers des obstacles** (murs, blocs, arbres, collines) : ce qui la sépare du héros s'efface. Elle suit le héros en douceur (marches, sauts et atterrissages ne secouent plus l'image) et ne descend jamais sous le sol. **Aide à la visée** : un coup, une flèche ou un sort part vers l'ennemi le plus proche du viseur (moins de 10°).
 - **1re personne** : le bras du héros (couleur de sa peau, ou de son armure) et son arme sont visibles, se balancent quand il marche et partent quand il frappe.
 - **Barre de construction** : dans le sac, la fiche d'un bloc, d'un meuble ou de graines propose « Barre de construction : 1 … 0 » pour le ranger dans la case voulue (les deux objets s'échangent si la case est prise). À la manette : LB + croix gauche/droite parcourt la barre.
 - **Seul au début** : pas de raid tant que tu n'as aucun habitant ; la première nuit ne fait sortir que 2 monstres ; il n'y a plus de zone sûre invisible au point d'arrivée : ce sont tes torches et ton feu de camp qui protègent.
@@ -166,7 +166,7 @@ La touche d'un menu le referme aussi.
 - Sans passer par le mode construction : **C** (ou X pour revenir en arrière) choisit un bloc ou un meuble du sac, **V** le pose devant soi. Une barre d'objets s'affiche au-dessus de la compétence ; après le dernier objet, on revient aux mains nues (plus rien ne s'affiche).
 - Une case fantôme montre où l'objet ira : verte si c'est possible, rouge sinon. Un bloc se pose au niveau des pieds, puis au-dessus s'il y en a déjà un (jusqu'à 3 de haut) ; devant un trou ou de l'eau, il se pose un cran plus bas pour faire un pont. Il lui faut un appui : le sol, un bloc dessous ou à côté.
 - Les meubles (porte, lit, torche, coffre...) se posent pareil et regardent le héros.
-- **Casser** : frapper un bloc ou un meuble posé devant soi (quand aucun arbre, rocher ou décor n'est plus proche). Bois : 2 coups, pierre 3,5 coups, marbre 8, verre 1 ; la hache aide pour le bois et les meubles, la pioche pour la pierre. L'objet revient à ramasser. Les blocs ne se cassent pas si un ennemi est tout près (on ne démolit pas sa maison en se battant).
+- **Casser** (comme dans Minecraft) : **maintenir l'attaque** sur un bloc ou un meuble posé ; une fissure s'assombrit et le héros donne des coups d'outil, puis il casse. Un simple coup d'arme ne casse rien : en combat, on ne démolit pas ses murs par erreur. Temps à mains nues : bois 0,9 s, pierre 1,6 s, marbre 3,6 s, verre 0,45 s ; la hache (bois, meubles) et la pioche (pierre) divisent ce temps par 2 à 4. L'objet revient à ramasser. Rien ne se casse si un ennemi est tout près.
 - Code : `scripts/build/hand_build.gd` (pose), `scripts/world/harvest.gd` (casse).
 
 ## L'âge du fer
@@ -712,6 +712,11 @@ La carte montre maintenant les **capitales** (avec leur enceinte et leur populat
 - Une porte fait 2 cubes de haut : on passe dessous sans se baisser. Un saut franchit un cube.
 - **Le lit fait 1 × 2 cubes** : posé à la main, il s'allonge devant toi (l'oreiller de ton côté) ; il lui faut deux cases libres au même niveau. Dans les plans prêts, il s'allonge vers la porte. Les habitants s'y couchent dans sa longueur.
 - **Le sol monte par demi-cubes** (marches de 50 cm, franchissables à pied) : il s'aligne sur les blocs et les dalles, ce qui rend la construction plus simple.
+
+## Musique, création du héros et objets au sol
+- **Musique plus douce** : plus d'ondes carrées ni de sons « 8 bits » ; piano doux, nappes, flûte et cuivres feutrés, avec de la réverbération (`tools/audio_generator.py`).
+- **Création du héros** : les panneaux occupent toute la hauteur, collés aux bords ; le héros est toujours au centre de l'espace libre, cadré selon sa taille (d'une fée à un ogre).
+- **Objets au sol** : un objet lâché contre un mur (donjon, bloc, falaise) atterrit sur la case libre la plus proche : on peut toujours le ramasser.
 
 ## Accessibilité et langues
 - **Options → Langue** : français (par défaut) ou anglais. Les menus, boutons et listes se traduisent tout seuls ; le reste du texte du jeu passera progressivement par `I18n.t("texte")` (voir `scripts/ui/i18n.gd` : pour une autre langue, ajoute un dictionnaire dans `LANGS`).

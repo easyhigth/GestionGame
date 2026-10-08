@@ -463,13 +463,107 @@ def amb_fire():
 
 # ---------------------------------------------------------------- musiques en boucle
 
+# ---------------------------------------------------------------- instruments doux des musiques
+# Les musiques n'utilisent plus d'ondes carrées ni en dents de scie (le son « 8 bits », dur et crénelé) :
+# tout est fait de sinus additionnés (piano doux, nappes, flûte, cuivres feutrés), puis passé dans une
+# réverbération et un léger filtre pour un rendu doux et rond (voir soften).
+
+def additive(freq, sec, partials, attack=0.006, release=0.08):
+    """Somme de sinus : partials = [(multiple de la fréquence, volume, temps de décroissance ou None)]."""
+    n = int(sec * SR)
+    out = [0.0] * n
+    nyq = SR * 0.45
+    parts = [(TAU * freq * m / SR, g, (1.0 / (dec * SR)) if dec else 0.0) for m, g, dec in partials if freq * m < nyq]
+    A = max(1, int(attack * SR))
+    R = max(1, int(release * SR))
+    for i in range(n):
+        v = 0.0
+        for w, g, k in parts:
+            v += g * math.sin(w * i) * (math.exp(-i * k) if k else 1.0)
+        e = 1.0
+        if i < A:
+            e = i / A
+        if i > n - R:
+            e *= max(0.0, (n - i) / R)
+        out[i] = v * e
+    return out
+
+
 def pluck(freq, sec, kind='tri', decay=0.35):
-    return expdecay(lowpass(osc(kind, freq, sec), 3000), decay)
+    """Piano doux (sinus et quelques harmoniques qui s'éteignent plus vite) ; 'sine' : basse ronde."""
+    if kind == 'sine':
+        return additive(freq, sec, [(1, 1.0, decay * 1.4), (2, 0.12, decay * 0.5)], attack=0.012, release=0.12)
+    if kind == 'square':
+        decay *= 1.6   # ancien son d'arpège de combat : un piano étouffé, plus court
+    return additive(freq, sec, [(1, 1.0, decay * 1.6), (2, 0.32, decay * 0.7), (3, 0.1, decay * 0.4), (4, 0.04, decay * 0.25)],
+        attack=0.008, release=0.1)
 
 
 def pad(freqs, sec, vol=0.12, cutoff=1200):
-    s = mix(*[osc('saw', f, sec) for f in freqs] + [osc('saw', f * 1.004, sec) for f in freqs])
-    return gain(env(lowpass(s, cutoff), 0.4, 0.2, 0.8, 0.5), vol)
+    """Nappe : sinus légèrement désaccordés (effet de chœur), qui montent et retombent lentement."""
+    bright = 0.18 if cutoff > 1000 else 0.08
+    parts = []
+    for f in freqs:
+        parts.append(additive(f, sec, [(1, 0.6, None), (2, bright, None)], attack=0.0, release=0.0))
+        parts.append(additive(f * 1.003, sec, [(1, 0.45, None)], attack=0.0, release=0.0))
+    return gain(env(mix(*parts), 0.6, 0.3, 0.85, 0.7), vol * 1.6)
+
+
+def soft_lead(n, sec):
+    """Mélodie douce : une flûte (sinus, souffle léger, vibrato qui s'installe)."""
+    return flute(n, sec)
+
+
+def soft_brass(n, sec):
+    """Cuivres feutrés : harmoniques douces, attaque lente, sans le grain des dents de scie."""
+    f = note(n)
+    s = additive(f, sec, [(1, 1.0, None), (2, 0.45, None), (3, 0.22, None), (4, 0.1, None), (5, 0.05, None)], attack=0.0, release=0.0)
+    return env(s, 0.09, 0.2, 0.75, min(0.3, sec * 0.3))
+
+
+def soft_guitar(n, sec):
+    """Corde pincée (remplace l'oud en dents de scie)."""
+    f = note(n)
+    return additive(f, sec, [(1, 1.0, 0.5), (2, 0.5, 0.25), (3, 0.25, 0.15), (4, 0.12, 0.1), (5, 0.06, 0.07)], attack=0.004, release=0.06)
+
+
+def reverb(sig, wet=0.24, room=0.78, damp=0.35):
+    """Réverbération (Schroeder : 4 peignes amortis puis 2 passe-tout). La musique boucle : on la traite deux fois
+    à la suite et on garde la seconde, pour que la queue de réverbération se raccorde au début."""
+    n = len(sig)
+    src = sig + sig
+    out = [0.0] * (2 * n)
+    for d in (1116, 1188, 1277, 1356):
+        d = int(d * SR / 44100)
+        buf = [0.0] * d
+        idx = 0
+        lp = 0.0
+        for i in range(2 * n):
+            y = buf[idx]
+            lp = y * (1.0 - damp) + lp * damp
+            buf[idx] = src[i] + lp * room
+            idx += 1
+            if idx == d:
+                idx = 0
+            out[i] += y * 0.25
+    for d in (556, 441):
+        d = int(d * SR / 44100)
+        buf = [0.0] * d
+        idx = 0
+        for i in range(2 * n):
+            b = buf[idx]
+            x = out[i]
+            buf[idx] = x + b * 0.5
+            out[i] = b - x * 0.5
+            idx += 1
+            if idx == d:
+                idx = 0
+    return [src[n + i] * (1.0 - wet) + out[n + i] * wet * 2.2 for i in range(n)]
+
+
+def soften(sig):
+    """Finition des musiques : un filtre qui arrondit les aigus, puis la réverbération."""
+    return reverb(lowpass(sig, 5200))
 
 
 def kick():
@@ -481,7 +575,7 @@ def snare():
 
 
 def hat():
-    return expdecay(highpass(noise(0.05, 303), 7000), 0.012)
+    return gain(expdecay(bandpass(noise(0.05, 303), 5000, 8500), 0.01), 0.7)
 
 
 CHORDS = {  # accords en notes MIDI
@@ -595,12 +689,11 @@ def song(progression, bpm, bars_per_chord, melody, style, v=0):
                 place(out, pad([note(n) for n in notes[2:5]], bar, 0.07, 1800), t, 1.0)
             t += bar
     # mélodie : liste de (temps en temps, note MIDI, durée en temps)
-    lead = {'day': ('tri', 0.35, 0.3), 'title': ('saw', 0.25, 0.4), 'night': ('sine', 0.8, 0.28), 'combat': ('square', 0.12, 0.18)}[style]
+    lead_gain = {'day': 0.3, 'title': 0.34, 'night': 0.26, 'combat': 0.2}[style]
+    voice = soft_brass if style == 'combat' else soft_lead
     for (tb, n, d) in melody:
-        s = osc(lead[0], note(n), d * beat)
-        s = env(lowpass(s, 2600), 0.01, d * beat * 0.4, 0.5, d * beat * 0.4)
-        place(out, expdecay(s, lead[1] + d * beat), tb * beat, lead[2])
-    return fade(out, 0.0, 0.0)
+        place(out, voice(n, d * beat), tb * beat, lead_gain)
+    return soften(out)
 
 
 def music_day(v=0):
@@ -757,13 +850,11 @@ def marimba(n, sec):
 
 
 def oud(n, sec):
-    return expdecay(lowpass(osc('saw', note(n), sec), 2400), 0.22)
+    return soft_guitar(n, sec)
 
 
 def horn(n, sec):
-    f = note(n)
-    s = mix(osc('saw', f, sec), gain(osc('saw', f * 1.003, sec), 0.7))
-    return env(lowpass(s, 1300), 0.12, 0.2, 0.75, min(0.3, sec * 0.3))
+    return soft_brass(n, sec)
 
 
 def tom(pitch=110):
@@ -771,7 +862,7 @@ def tom(pitch=110):
 
 
 LEADS = {'flute': flute, 'bell': lambda n, d: bell(n, d + 0.6), 'marimba': marimba, 'oud': oud, 'horn': horn,
-         'square': lambda n, d: env(lowpass(osc('square', note(n), d), 1500), 0.01, d * 0.4, 0.5, d * 0.3)}
+         'square': soft_brass}
 
 
 def region_song(prog, bpm, melody, lead, accomp, drums='', bass=True, lead_gain=0.32, pad_cut=900, pad_vol=0.08, v=0):
@@ -835,7 +926,7 @@ def region_song(prog, bpm, melody, lead, accomp, drums='', bass=True, lead_gain=
     fn = LEADS[lead]
     for (tb, n, d) in melody:
         place(out, fn(n, d * beat), tb * beat, lead_gain)
-    return fade(out, 0.0, 0.0)
+    return soften(out)
 
 
 def music_foret(v=0):

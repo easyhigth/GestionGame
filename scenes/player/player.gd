@@ -136,15 +136,16 @@ const TOOL_HOLD := 3.0
 var camera_zoom := 1.0
 ## Point de vue (F5) : 3e personne (par défaut), vue de dessus (l'ancienne caméra), 1re personne.
 enum CamMode { THIRD, TOP, FIRST }
-## 3e personne : distance de la caméra derrière le héros (avant le zoom), champ de vision, et rayon
-## de la « bulle » de la caméra (elle s'arrête devant un obstacle au lieu d'y entrer).
+## 3e personne : distance de la caméra derrière le héros (avant le zoom) et champ de vision.
+## La caméra passe au travers des obstacles (voir _update_camera_third).
 const THIRD_DISTANCE := 6.2
 const THIRD_FOV := 55.0
-const CAMERA_RADIUS := 0.35
-## En dessous de cette part du recul voulu, la caméra 3e personne monte pour passer au-dessus de l'obstacle.
-const CAMERA_LIFT_MIN := 0.75
-## Écart de côté maximal (m) de la caméra 3e personne pour s'éloigner d'une falaise qui la longe.
-const CAMERA_SIDE_MAX := 1.8
+## Vitesse à laquelle la caméra 3e personne rattrape le héros : à l'horizontale, et en hauteur (plus lente,
+## pour que les marches, les sauts et les atterrissages ne secouent pas l'image).
+const CAM_FOLLOW := 9.0
+const CAM_FOLLOW_Y := 3.5
+## Vitesse de rattrapage de la rotation (assez vive pour viser, assez douce pour ne pas saccader).
+const CAM_TURN := 22.0
 const CAM_NAMES := ["3e personne", "Vue de dessus", "1re personne"]
 var cam_mode := CamMode.THIRD
 var _crosshair: CanvasLayer
@@ -152,10 +153,14 @@ var _crosshair: CanvasLayer
 var cam_yaw := 0.0
 ## Hauteur de la caméra (angle au-dessus de l'horizon, en radians).
 var cam_pitch := deg_to_rad(45.0)
-## Hauteur ajoutée à la caméra 3e personne pour passer au-dessus d'un obstacle bas (radians).
-var _cam_lift := 0.0
-## Écart de côté actuel de la caméra 3e personne (m, positif vers la droite).
-var _cam_side := 0.0
+## Plancher de la caméra 3e personne (hauteur du sol sous elle, lissée).
+var _cam_floor := -INF
+## Point regardé par la caméra 3e personne (suit le héros en douceur) et recul actuel (suit le zoom).
+var _cam_focus := Vector3.INF
+var _cam_dist := 6.2
+## Rotation affichée de la caméra 3e personne (suit cam_yaw / cam_pitch en douceur).
+var _view_yaw := 0.0
+var _view_pitch := deg_to_rad(45.0)
 var _orbiting := false
 var _orbit_moved := 0.0
 var _orbit_pressed_at := 0
@@ -1231,7 +1236,12 @@ func _handle_combat_input(input: Vector3, delta: float) -> void:
 	var held := Input.is_action_pressed("attack")
 	if pressed:
 		_attack_pressed()
-	if _charging:
+	# attaque maintenue sur un bloc ou un meuble posé : on le mine (pas d'attaque chargée)
+	if mine_step(delta, held and not pressed):
+		if _charging:
+			_stop_charge()
+		_held = 0.0
+	elif _charging:
 		_held += delta
 		visual.set_weapon_glow(clampf(_held / charge_time, 0.0, 1.0))
 		if not held:
@@ -1423,8 +1433,88 @@ func _harvest_swing(h: Dictionary) -> bool:
 		return false
 	var reach := clampf(attack_reach() * float(h.get("reach", 1.0)), 1.6, 2.6)
 	var power := 2.0 if float(h.get("dmg", 1.0)) * _move_damage >= 1.8 else 1.0
-	# les blocs posés ne se cassent que s'il n'y a pas d'ennemi tout près (pas de mur cassé en combat)
+	# les blocs posés ne se cassent pas d'un coup d'arme : on les mine en maintenant l'attaque (mine_step)
 	return Harvest.strike(self, reach, power, not _enemy_close(4.5))
+
+
+# ---------------------------------------------------------------- minage (comme dans Minecraft)
+
+## Un bloc ou un meuble posé se casse en maintenant l'attaque dessus : une fissure s'assombrit, le héros donne
+## des coups d'outil, puis il casse au bout de Harvest.mine_time (plus vite avec la bonne hache ou pioche).
+## Lâcher, viser autre chose ou un ennemi tout près remet le compteur à zéro. Renvoie vrai pendant qu'on mine.
+var _mine_key := ""
+var _mine_t := 0.0
+var _mine_need := 1.0
+var _mine_tick := 0.0
+var _crack: MeshInstance3D
+
+
+func mine_step(delta: float, held: bool) -> bool:
+	var t := {}
+	if held and not building and not ui_open and is_alive() and not _enemy_close(4.5):
+		t = Harvest.mine_target(self)
+	if t.is_empty():
+		_mine_key = ""
+		_mine_t = 0.0
+		if _crack:
+			_crack.visible = false
+		return false
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+	var key := str(t)
+	if key != _mine_key:
+		_mine_key = key
+		_mine_t = 0.0
+		_mine_tick = 0.0
+		_mine_need = Harvest.mine_time(self, world, t)
+		var id := Harvest.tool_for_target(self, 3.0, true)
+		if id != "":
+			_show_tool(id)
+	_mine_t += delta
+	var at := _mine_center(world, t)
+	_show_crack(at, clampf(_mine_t / _mine_need, 0.0, 1.0))
+	_mine_tick -= delta
+	if _mine_tick <= 0.0:
+		_mine_tick = 0.32
+		work_gesture(at)
+		VoxelBurst.spawn(self, at, Color(0.6, 0.55, 0.5), 5, 1.8, 0.05, 0.25, "sphere", 8.0, false)
+		Sound.play("pick" if _mine_need > 0.9 else "chop", at, -6.0)
+	if _mine_t >= _mine_need:
+		Harvest.hit_built(world, t, 1.0e9, self)
+		_mine_key = ""
+		_mine_t = 0.0
+		if _crack:
+			_crack.visible = false
+	return true
+
+
+func _mine_center(world: WorldGenerator, t: Dictionary) -> Vector3:
+	if t.has("block"):
+		var k: Vector3i = t.block
+		return Vector3(k.x + 0.5, k.y + 0.5, k.z + 0.5)
+	var grid := world.dungeon_grid if global_position.y < WorldGenerator.UNDERGROUND else world.build
+	var k2: Vector3i = t.furniture
+	var b := float(grid.furniture[k2].base) if grid.furniture.has(k2) else global_position.y
+	return Vector3(k2.x + 0.5, b + 0.5, k2.z + 0.5)
+
+
+## Fissure : une enveloppe sombre autour du bloc, de plus en plus marquée.
+func _show_crack(at: Vector3, progress: float) -> void:
+	if _crack == null:
+		_crack = MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3.ONE * 1.02
+		_crack.mesh = box
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.08, 0.06, 0.05, 0.0)
+		_crack.material_override = m
+		_crack.top_level = true
+		_crack.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_crack)
+	_crack.visible = true
+	_crack.global_position = at
+	(_crack.material_override as StandardMaterial3D).albedo_color.a = 0.1 + 0.5 * progress
 
 
 ## Un coup de pelle dans la case devant le héros (renvoie ce qui a été obtenu, ou null).
@@ -2224,71 +2314,44 @@ func _update_camera(delta: float) -> void:
 	_apply_shake(delta)
 
 
-## 3e personne : derrière l'épaule du héros, avec du recul ; la caméra s'arrête devant le sol, les murs
-## et les décors au lieu d'y entrer, et se rapproche quand un obstacle cache le héros.
+## 3e personne : derrière l'épaule du héros, avec du recul. La caméra garde toujours la même distance et
+## passe au travers des obstacles (murs, blocs, arbres, relief) au lieu de sauter devant eux : plus d'à-coups.
+## Ce qui la sépare du héros s'efface (blocs, décors et relief, voir `see_from` / `see_to`). Elle reste au-dessus
+## du sol sous elle, en glissant doucement, pour ne jamais filmer le dessous du monde.
+## Souplesse : le point regardé suit le héros avec un peu de retard, surtout en hauteur (marches, sauts,
+## atterrissages) ; la caméra est ensuite posée exactement sur son orbite, sans balancement.
 func _update_camera_third(delta: float) -> void:
 	var head := global_position + Vector3(0, 1.45 * visual.height_scale(), 0)
-	var focus := head
+	var aim_at := head
 	if lock_target and is_instance_valid(lock_target):
-		focus = focus.lerp(lock_target.global_position + Vector3(0, 1.0, 0), 0.3)
-	var want := THIRD_DISTANCE * camera_zoom
-	# au-dessus de l'épaule droite : le viseur au centre ne cache pas le héros
-	var shoulder := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw)) * 0.75
-	# un rocher ou un mur contre l'épaule : la caméra se recentre derrière la tête au lieu de s'y coller
-	shoulder *= _shoulder_room(head, shoulder)
-	var dir := _third_dir(cam_pitch)
-	var dist := _third_free_distance(focus, head, shoulder, dir, want)
-	# un obstacle bas juste derrière (butte, muret, piliers d'obélisque) : plutôt que de se coller au héros,
-	# la caméra monte par-dessus, d'un cran à la fois, jusqu'à retrouver du recul
-	var lift := 0.0
-	if dist < want * CAMERA_LIFT_MIN:
-		var best := dist
-		for k in range(1, 6):
-			var lp := minf(cam_pitch + deg_to_rad(10.0 * k), deg_to_rad(70.0))
-			var d := _third_free_distance(focus, head, shoulder, _third_dir(lp), want)
-			if d > best + 0.3:
-				best = d
-				lift = lp - cam_pitch
-			if d >= want * CAMERA_LIFT_MIN:
-				break
-	_cam_lift = lerpf(_cam_lift, lift, clampf(6.0 * delta, 0.0, 1.0))
-	if _cam_lift > 0.005:
-		dir = _third_dir(cam_pitch + _cam_lift)
-		dist = _third_free_distance(focus, head, shoulder, dir, want)
-	# caméra coincée contre un mur : on revient derrière la tête, et le héros s'efface s'il la touche presque
-	shoulder *= clampf((dist - 0.8) / (want - 0.8), 0.0, 1.0)
-	focus += shoulder
-	visual.visible = dist > 1.1
-	var target := focus + dir * dist
-	# une falaise ou un mur juste à côté de la caméra bouche la moitié de l'écran : elle s'en écarte de côté
-	target = _third_side_clear(focus, target, delta)
-	# un obstacle entre le héros et la caméra : elle s'en rapproche tout de suite (sinon, elle glisse)
-	if dist < want - 0.05 and camera.global_position.distance_to(focus) > dist:
-		camera.global_position = target
+		aim_at = aim_at.lerp(lock_target.global_position + Vector3(0, 1.0, 0), 0.3)
+	if delta >= 1.0 or _cam_focus == Vector3.INF or _cam_focus.distance_to(aim_at) > 8.0:
+		_cam_focus = aim_at
 	else:
-		camera.global_position = camera.global_position.lerp(target, clampf(10.0 * delta, 0.0, 1.0))
-	if camera.global_position.distance_to(focus) > 0.05:
-		camera.look_at(focus)
+		var flat := Vector2(_cam_focus.x, _cam_focus.z).lerp(Vector2(aim_at.x, aim_at.z), clampf(CAM_FOLLOW * delta, 0.0, 1.0))
+		_cam_focus = Vector3(flat.x, lerpf(_cam_focus.y, aim_at.y, clampf(CAM_FOLLOW_Y * delta, 0.0, 1.0)), flat.y)
+	var want := THIRD_DISTANCE * camera_zoom
+	_cam_dist = want if delta >= 1.0 else lerpf(_cam_dist, want, clampf(6.0 * delta, 0.0, 1.0))
+	# la rotation (souris, stick) est lissée un tout petit peu : les à-coups de la souris ne font plus sauter l'image
+	if delta >= 1.0:
+		_view_yaw = cam_yaw
+		_view_pitch = cam_pitch
+	else:
+		_view_yaw = lerp_angle(_view_yaw, cam_yaw, clampf(CAM_TURN * delta, 0.0, 1.0))
+		_view_pitch = lerpf(_view_pitch, cam_pitch, clampf(CAM_TURN * delta, 0.0, 1.0))
+	# au-dessus de l'épaule droite : le viseur au centre ne cache pas le héros
+	var focus := _cam_focus + Vector3(cos(_view_yaw), 0.0, -sin(_view_yaw)) * 0.75
+	var target := focus + Vector3(sin(_view_yaw) * cos(_view_pitch), sin(_view_pitch), cos(_view_yaw) * cos(_view_pitch)) * _cam_dist
+	# jamais sous le sol (dehors) : un plancher qui suit le relief en douceur
+	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
+	if w and global_position.y > WorldGenerator.UNDERGROUND:
+		var floor_y := w.terrain_height(w.cell_at(target)) + 0.6
+		_cam_floor = floor_y if delta >= 1.0 or _cam_floor == -INF else lerpf(_cam_floor, floor_y, clampf(3.0 * delta, 0.0, 1.0))
+		target.y = maxf(target.y, _cam_floor)
+	visual.visible = true
+	camera.global_position = target
+	camera.look_at(focus)
 	_apply_shake(delta)
-
-
-## Décale la caméra 3e personne de côté (jusqu'à CAMERA_SIDE_MAX) quand un obstacle la longe de près,
-## vers le côté le plus dégagé, sans traverser d'obstacle entre elle et le héros.
-func _third_side_clear(focus: Vector3, target: Vector3, delta: float) -> Vector3:
-	var right := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw))
-	var reach := CAMERA_SIDE_MAX + 1.5
-	var r := _camera_free_distance(target, right, reach)
-	var l := _camera_free_distance(target, -right, reach)
-	var want_side := 0.0
-	if minf(r, l) < reach - 0.05:
-		want_side = clampf((r - l) * 0.5, -CAMERA_SIDE_MAX, CAMERA_SIDE_MAX)
-	_cam_side = lerpf(_cam_side, want_side, clampf(4.0 * delta, 0.0, 1.0))
-	if absf(_cam_side) < 0.02:
-		return target
-	var moved := target + right * _cam_side
-	var to := moved - focus
-	var free := _camera_free_distance(focus, to.normalized(), to.length())
-	return focus + to.normalized() * free
 
 
 ## Direction du héros vers la caméra en 3e personne, pour une hauteur d'angle donnée.
@@ -2296,83 +2359,9 @@ func _third_dir(pitch: float) -> Vector3:
 	return Vector3(sin(cam_yaw) * cos(pitch), sin(pitch), cos(cam_yaw) * cos(pitch))
 
 
-## Part (0 à 1) du décalage d'épaule libre de tout obstacle, depuis la tête.
-func _shoulder_room(head: Vector3, shoulder: Vector3) -> float:
-	var room := 1.0
-	var space := get_world_3d().direct_space_state
-	if space:
-		var q := PhysicsShapeQueryParameters3D.new()
-		var ball := SphereShape3D.new()
-		ball.radius = CAMERA_RADIUS
-		q.shape = ball
-		q.transform = Transform3D(Basis.IDENTITY, head)
-		q.motion = shoulder
-		q.exclude = [get_rid()]
-		var frac := space.cast_motion(q)
-		if frac.size() == 2:
-			room = frac[0]
-	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
-	if w and global_position.y > WorldGenerator.UNDERGROUND and _camera_cell_solid(w, head + shoulder * room):
-		room = 0.0
-	return room
-
-
-## Recul libre de la caméra 3e personne : la place derrière l'épaule, et derrière la tête
-## (un pilier à côté du héros ne doit pas le cacher).
-func _third_free_distance(focus: Vector3, head: Vector3, shoulder: Vector3, dir: Vector3, want: float) -> float:
-	return minf(_camera_free_distance(focus + shoulder, dir, want), _camera_free_distance(head, dir, want) + 0.6)
-
-
-## Jusqu'où la caméra peut reculer depuis `focus` dans la direction `dir` sans entrer dans le sol,
-## un bloc construit ou un décor solide (murs des donjons, rochers...). La caméra est une petite bulle
-## (CAMERA_RADIUS) : elle ne frôle pas un mur au point de voir à travers.
-func _camera_free_distance(focus: Vector3, dir: Vector3, want: float) -> float:
-	var best := want
-	# décors et murs avec collision : on lance une sphère, pas un simple rayon
-	var space := get_world_3d().direct_space_state
-	if space:
-		var q := PhysicsShapeQueryParameters3D.new()
-		var ball := SphereShape3D.new()
-		ball.radius = CAMERA_RADIUS
-		q.shape = ball
-		q.transform = Transform3D(Basis.IDENTITY, focus)
-		q.motion = dir * (want + 0.2)
-		q.exclude = [get_rid()]
-		q.collide_with_areas = false
-		var frac := space.cast_motion(q)
-		if frac.size() == 2 and frac[0] > 0.0 and frac[0] < 1.0:
-			best = minf(best, (want + 0.2) * frac[0] - 0.1)
-	# relief et blocs posés (pas de collision physique : on les lit dans la grille), au centre de la
-	# bulle et sur ses côtés
-	var w := get_tree().get_first_node_in_group("world") as WorldGenerator
-	if w and global_position.y > WorldGenerator.UNDERGROUND:
-		var side := dir.cross(Vector3.UP)
-		side = side.normalized() * CAMERA_RADIUS if side.length() > 0.01 else Vector3.ZERO
-		var t := 0.4
-		while t <= best:
-			var p := focus + dir * t
-			if _camera_cell_solid(w, p) or _camera_cell_solid(w, p + side) or _camera_cell_solid(w, p - side) \
-					or _camera_cell_solid(w, p + Vector3(0, -CAMERA_RADIUS, 0)):
-				best = maxf(0.6, t - 0.3)
-				break
-			t += 0.2
-	return clampf(best, 0.6, want)
-
-
-func _camera_cell_solid(w: WorldGenerator, p: Vector3) -> bool:
-	var cell := w.cell_at(p)
-	if p.y < w.terrain_height(cell) + 0.25:
-		return true
-	if w.build:
-		for b in w.build.column(cell):
-			if p.y > float(b[1]) - 0.15 and p.y < float(b[2]) + 0.15:
-				return true
-	return false
-
-
 func _apply_shake(delta: float) -> void:
 	if _shake > 0.0:
-		camera.global_position += Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)) * _shake * 0.1
+		camera.global_position += Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)) * _shake * 0.06
 		_shake = maxf(_shake - delta * 4.0, 0.0)
 
 
