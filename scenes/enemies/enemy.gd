@@ -226,7 +226,7 @@ func dodge_from(attacker: Node3D) -> void:
 
 
 func _on_move_ended(_name: String, _interrupted: bool) -> void:
-	_attack_cooldown = (data.attack_cooldown if data else 1.0) * randf_range(0.8, 1.3)
+	_attack_cooldown = (data.attack_cooldown if data else 1.0) * randf_range(0.8, 1.3) * (1.0 if tamed else SaveGame.enemy_cooldown_mult())
 	_release_token()
 
 
@@ -289,7 +289,7 @@ func _physics_process(delta: float) -> void:
 		_think = 0.3
 		_choose_target()
 		_pact_hint(player_dist)
-	var speed := (data.move_speed if data else 3.5) * speed_factor() * speed_mult
+	var speed := (data.move_speed if data else 3.5) * speed_factor() * speed_mult * SaveGame.enemy_speed_mult()
 	velocity = Vector3.ZERO
 	if _fear_left > 0.0:
 		_fear_left -= delta

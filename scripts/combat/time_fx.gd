@@ -13,11 +13,16 @@ func _ready() -> void:
 
 ## Fige l'action un court instant (impact).
 func hit_stop(seconds: float) -> void:
+	if Access.reduce_motion():
+		return
 	_stop_until = maxi(_stop_until, Time.get_ticks_msec() + roundi(seconds * 1000.0))
 
 
 ## Ralentit le temps (0.3 = 30 % de la vitesse normale).
 func slow_motion(time_scale: float, seconds: float) -> void:
+	if Access.reduce_motion():
+		time_scale = lerpf(time_scale, 1.0, 0.7)
+		seconds *= 0.5
 	_slow_scale = time_scale
 	_slow_until = Time.get_ticks_msec() + roundi(seconds * 1000.0)
 

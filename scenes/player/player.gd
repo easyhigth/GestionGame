@@ -770,7 +770,7 @@ func set_level_to(n: int) -> void:
 
 ## Secoue la caméra (coup reçu, coup porté).
 func shake(strength: float) -> void:
-	_shake = maxf(_shake, strength)
+	_shake = maxf(_shake, strength * Access.shake_scale())
 
 
 ## Place la caméra directement sur le joueur (sans glissement).

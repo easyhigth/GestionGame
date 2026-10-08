@@ -39,7 +39,7 @@ func _build() -> void:
 	diff.select(int(o.difficulty))
 	diff.item_selected.connect(func(i): o.difficulty = i; _save())
 	_row("Difficulté", diff)
-	var help := MenuKit.label("Facile : monstres moins résistants et raids plus rares.  Difficile : monstres plus forts, raids plus fréquents.", 11, MenuKit.C_DIM)
+	var help := MenuKit.label("Facile : monstres moins résistants, plus lents à attaquer, raids plus rares.  Difficile : monstres plus forts, plus agressifs et plus rapides, raids plus fréquents.", 11, MenuKit.C_DIM)
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help.custom_minimum_size = Vector2(430, 0)
 	_box.add_child(help)
@@ -92,7 +92,20 @@ func _build() -> void:
 		sl.value_changed.connect(func(v): o[key] = v; _save())
 		sl.drag_ended.connect(func(_c): Sound.ui("pickup"))
 		_row(pair[1], sl)
-	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"], ["show_fps", "Afficher les images par seconde"], ["mouse_aim", "Viser à la souris (sinon : devant le héros)"]]:
+	var lang := OptionButton.new()
+	var codes := ["fr"] + I18n.LANGS.keys()
+	for c in codes:
+		lang.add_item(I18n.NAMES.get(c, c))
+	lang.select(maxi(0, codes.find(str(o.get("language", "fr")))))
+	lang.item_selected.connect(func(i): o.language = codes[i]; _save())
+	_row("Langue", lang)
+	var cb_mode := OptionButton.new()
+	for n in Access.MODES:
+		cb_mode.add_item(n)
+	cb_mode.select(int(o.get("colorblind", 0)))
+	cb_mode.item_selected.connect(func(i): o.colorblind = i; _save())
+	_row("Filtre pour daltoniens", cb_mode)
+	for pair in [["fullscreen", "Plein écran"], ["show_help", "Rappel du menu des commandes"], ["autosave", "Sauvegarde automatique (5 min)"], ["show_fps", "Afficher les images par seconde"], ["mouse_aim", "Viser à la souris (sinon : devant le héros)"], ["reduce_motion", "Mouvement réduit (moins de secousses et de ralentis)"]]:
 		var cb := CheckButton.new()
 		cb.button_pressed = bool(o.get(pair[0], false))
 		var key: String = pair[0]
