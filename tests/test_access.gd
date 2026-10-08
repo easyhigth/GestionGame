@@ -46,7 +46,12 @@ func run() -> void:
 	b.text = "Reprendre"
 	root.add_child(b)
 	check("un bouton se traduit tout seul", b.get_theme_default_font() != null and b.atr("Reprendre") == "Resume")
+	check("message composé traduit : niveau", i18n.msg("Niveau 7 : vie, attaque et magie augmentent.") == "Level 7: health, attack and magic increase.")
+	check("message composé : nom traduit", i18n.msg("Tu manges : Pain.") == "You eat: Pain.")
+	check("message composé : plusieurs valeurs", i18n.msg("Nouveau menu : Royaume (U)") == "New menu: Kingdom (U)")
+	check("message inconnu inchangé", i18n.msg("Phrase jamais vue 12") == "Phrase jamais vue 12")
 	i18n.set_language("fr")
+	check("français : message inchangé", i18n.msg("Tu manges : Pain.") == "Tu manges : Pain.")
 	check("retour au français", i18n.t("Continuer") == "Continuer")
 	i18n.set_language("zz")
 	check("langue inconnue -> français", i18n.language == "fr")

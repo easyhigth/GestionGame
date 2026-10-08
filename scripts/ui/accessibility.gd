@@ -4,22 +4,33 @@ extends CanvasLayer
 ## Les réglages sont dans SaveGame.options (« colorblind », « reduce_motion »).
 
 const MODES := ["Aucun", "Protanopie (rouge)", "Deutéranopie (vert)", "Tritanopie (bleu)"]
-## Matrices de correction (daltonisation) : chaque ligne donne un canal de sortie.
+## Pour chaque mode : [simulation de la vue (matrices de Machado, 3 lignes), report de l'erreur (3 lignes)].
+## Le filtre « daltonise » l'image : il simule ce que voit le daltonien, mesure ce qui lui échappe et le reporte
+## sur les couleurs qu'il distingue (les verts et les rouges deviennent distincts sans changer l'allure du jeu).
 const MATRICES := [
-	[Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1)],
-	[Vector3(0.0, 0.9, 0.1), Vector3(0.0, 1.0, 0.0), Vector3(0.0, 0.3, 0.7)],
-	[Vector3(1.0, 0.0, 0.0), Vector3(0.7, 0.3, 0.0), Vector3(0.0, 0.3, 0.7)],
-	[Vector3(1.0, 0.0, 0.0), Vector3(0.0, 0.8, 0.2), Vector3(0.0, 0.5, 0.5)],
+	[[Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1)], [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0)]],
+	[[Vector3(0.152286, 1.052583, -0.204868), Vector3(0.114503, 0.786281, 0.099216), Vector3(-0.003882, -0.048116, 1.051998)],
+		[Vector3(0, 0, 0), Vector3(0.7, 1, 0), Vector3(0.7, 0, 1)]],
+	[[Vector3(0.367322, 0.860646, -0.227968), Vector3(0.280085, 0.672501, 0.047413), Vector3(-0.011820, 0.042940, 0.968881)],
+		[Vector3(0, 0, 0), Vector3(0.7, 1, 0), Vector3(0.7, 0, 1)]],
+	[[Vector3(1.255528, -0.076749, -0.178779), Vector3(-0.078411, 0.930809, 0.147602), Vector3(0.004733, 0.691367, 0.303900)],
+		[Vector3(0, 0, 0.7), Vector3(0, 0, 0.7), Vector3(0, 0, 0)]],
 ]
 const SHADER := """
 shader_type canvas_item;
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear;
-uniform vec3 row_r = vec3(1.0, 0.0, 0.0);
-uniform vec3 row_g = vec3(0.0, 1.0, 0.0);
-uniform vec3 row_b = vec3(0.0, 0.0, 1.0);
+uniform vec3 sim_r = vec3(1.0, 0.0, 0.0);
+uniform vec3 sim_g = vec3(0.0, 1.0, 0.0);
+uniform vec3 sim_b = vec3(0.0, 0.0, 1.0);
+uniform vec3 shift_r = vec3(0.0);
+uniform vec3 shift_g = vec3(0.0);
+uniform vec3 shift_b = vec3(0.0);
 void fragment() {
 	vec3 c = texture(screen_tex, SCREEN_UV).rgb;
-	COLOR = vec4(dot(row_r, c), dot(row_g, c), dot(row_b, c), 1.0);
+	vec3 sim = vec3(dot(sim_r, c), dot(sim_g, c), dot(sim_b, c));
+	vec3 err = c - sim;
+	vec3 fixed_c = c + vec3(dot(shift_r, err), dot(shift_g, err), dot(shift_b, err));
+	COLOR = vec4(clamp(fixed_c, 0.0, 1.0), 1.0);
 }
 """
 
@@ -49,9 +60,9 @@ func set_colorblind(mode: int) -> void:
 		return
 	_rect.visible = mode > 0
 	var m: Array = MATRICES[mode]
-	_mat.set_shader_parameter("row_r", m[0])
-	_mat.set_shader_parameter("row_g", m[1])
-	_mat.set_shader_parameter("row_b", m[2])
+	for i in 3:
+		_mat.set_shader_parameter("sim_" + "rgb"[i], m[0][i])
+		_mat.set_shader_parameter("shift_" + "rgb"[i], m[1][i])
 
 
 func reduce_motion() -> bool:

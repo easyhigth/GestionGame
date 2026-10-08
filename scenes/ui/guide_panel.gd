@@ -647,7 +647,7 @@ func _refresh() -> void:
 			ch = c
 	var first := int(ch[1])
 	var total := int(ch[2]) - first
-	_title.text = "%s%s · %d / %d" % ["DÉFI · " if step >= CORE_STEPS else "", ch[0], step - first + 1, total]
+	_title.text = "%s · %d / %d%s" % [ch[0], step - first + 1, total, " · défi" if step >= CORE_STEPS else ""]
 	_icon.texture = UiTheme.tex("icon_" + str(CHAPTER_ICONS.get(ch[0], "compass")))
 	var n := int(s[3])
 	_task.text = s[1] + ("  (%d / %d)" % [progress, n] if n > 1 else "")
