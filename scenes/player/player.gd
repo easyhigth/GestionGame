@@ -1236,7 +1236,12 @@ func _handle_combat_input(input: Vector3, delta: float) -> void:
 	var held := Input.is_action_pressed("attack")
 	if pressed:
 		_attack_pressed()
-	if _charging:
+	# attaque maintenue sur un bloc ou un meuble posé : on le mine (pas d'attaque chargée)
+	if mine_step(delta, held and not pressed):
+		if _charging:
+			_stop_charge()
+		_held = 0.0
+	elif _charging:
 		_held += delta
 		visual.set_weapon_glow(clampf(_held / charge_time, 0.0, 1.0))
 		if not held:
@@ -1428,8 +1433,88 @@ func _harvest_swing(h: Dictionary) -> bool:
 		return false
 	var reach := clampf(attack_reach() * float(h.get("reach", 1.0)), 1.6, 2.6)
 	var power := 2.0 if float(h.get("dmg", 1.0)) * _move_damage >= 1.8 else 1.0
-	# les blocs posés ne se cassent que s'il n'y a pas d'ennemi tout près (pas de mur cassé en combat)
+	# les blocs posés ne se cassent pas d'un coup d'arme : on les mine en maintenant l'attaque (mine_step)
 	return Harvest.strike(self, reach, power, not _enemy_close(4.5))
+
+
+# ---------------------------------------------------------------- minage (comme dans Minecraft)
+
+## Un bloc ou un meuble posé se casse en maintenant l'attaque dessus : une fissure s'assombrit, le héros donne
+## des coups d'outil, puis il casse au bout de Harvest.mine_time (plus vite avec la bonne hache ou pioche).
+## Lâcher, viser autre chose ou un ennemi tout près remet le compteur à zéro. Renvoie vrai pendant qu'on mine.
+var _mine_key := ""
+var _mine_t := 0.0
+var _mine_need := 1.0
+var _mine_tick := 0.0
+var _crack: MeshInstance3D
+
+
+func mine_step(delta: float, held: bool) -> bool:
+	var t := {}
+	if held and not building and not ui_open and is_alive() and not _enemy_close(4.5):
+		t = Harvest.mine_target(self)
+	if t.is_empty():
+		_mine_key = ""
+		_mine_t = 0.0
+		if _crack:
+			_crack.visible = false
+		return false
+	var world := get_tree().get_first_node_in_group("world") as WorldGenerator
+	var key := str(t)
+	if key != _mine_key:
+		_mine_key = key
+		_mine_t = 0.0
+		_mine_tick = 0.0
+		_mine_need = Harvest.mine_time(self, world, t)
+		var id := Harvest.tool_for_target(self, 3.0, true)
+		if id != "":
+			_show_tool(id)
+	_mine_t += delta
+	var at := _mine_center(world, t)
+	_show_crack(at, clampf(_mine_t / _mine_need, 0.0, 1.0))
+	_mine_tick -= delta
+	if _mine_tick <= 0.0:
+		_mine_tick = 0.32
+		work_gesture(at)
+		VoxelBurst.spawn(self, at, Color(0.6, 0.55, 0.5), 5, 1.8, 0.05, 0.25, "sphere", 8.0, false)
+		Sound.play("pick" if _mine_need > 0.9 else "chop", at, -6.0)
+	if _mine_t >= _mine_need:
+		Harvest.hit_built(world, t, 1.0e9, self)
+		_mine_key = ""
+		_mine_t = 0.0
+		if _crack:
+			_crack.visible = false
+	return true
+
+
+func _mine_center(world: WorldGenerator, t: Dictionary) -> Vector3:
+	if t.has("block"):
+		var k: Vector3i = t.block
+		return Vector3(k.x + 0.5, k.y + 0.5, k.z + 0.5)
+	var grid := world.dungeon_grid if global_position.y < WorldGenerator.UNDERGROUND else world.build
+	var k2: Vector3i = t.furniture
+	var b := float(grid.furniture[k2].base) if grid.furniture.has(k2) else global_position.y
+	return Vector3(k2.x + 0.5, b + 0.5, k2.z + 0.5)
+
+
+## Fissure : une enveloppe sombre autour du bloc, de plus en plus marquée.
+func _show_crack(at: Vector3, progress: float) -> void:
+	if _crack == null:
+		_crack = MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3.ONE * 1.02
+		_crack.mesh = box
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.08, 0.06, 0.05, 0.0)
+		_crack.material_override = m
+		_crack.top_level = true
+		_crack.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_crack)
+	_crack.visible = true
+	_crack.global_position = at
+	(_crack.material_override as StandardMaterial3D).albedo_color.a = 0.1 + 0.5 * progress
 
 
 ## Un coup de pelle dans la case devant le héros (renvoie ce qui a été obtenu, ou null).

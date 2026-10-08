@@ -3949,8 +3949,43 @@ func spawn_pickup(item: ItemData, pos: Vector3, amount: int = 1, parent: Node = 
 	p.item = item
 	p.count = amount
 	(parent if parent else $Village).add_child(p)
-	p.global_position = Vector3(pos.x, ground_height_at(pos), pos.z)
+	var at := free_drop_position(pos)
+	p.global_position = Vector3(at.x, ground_height_at(at), at.z)
 	return p
+
+
+## Vrai si un objet posé ici serait pris dans un mur (bloc, mur de donjon, falaise) et donc hors d'atteinte.
+func _drop_blocked(pos: Vector3) -> bool:
+	var cell := cell_at(pos)
+	var g := support_height(pos, pos.y)
+	if pos.y < UNDERGROUND:
+		return dungeon_grid == null or dungeon_grid.support(cell, pos.y + max_step) == -INF or dungeon_grid.body_blocked(cell, g)
+	if build and build.body_blocked(cell, g):
+		return true
+	return terrain_height(cell) > pos.y + 1.05
+
+
+## Un objet lâché (butin, récolte, sac) qui tomberait dans un mur est déplacé sur la case libre la plus proche
+## (jusqu'à 4 m), pour qu'on puisse toujours le ramasser, dans un donjon comme dehors.
+func free_drop_position(pos: Vector3) -> Vector3:
+	if not _drop_blocked(pos):
+		return pos
+	var c0 := cell_at(pos)
+	for r in range(1, 5):
+		var best := Vector3.INF
+		for dz in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				if maxi(absi(dx), absi(dz)) != r:
+					continue
+				var c := c0 + Vector2i(dx, dz)
+				var q := Vector3(c.x + 0.5, pos.y, c.y + 0.5)
+				if _drop_blocked(q):
+					continue
+				if best == Vector3.INF or q.distance_squared_to(pos) < best.distance_squared_to(pos):
+					best = q
+		if best != Vector3.INF:
+			return best
+	return pos
 
 
 func _ensure_noises() -> void:

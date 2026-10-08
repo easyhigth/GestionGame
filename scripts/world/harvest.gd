@@ -76,7 +76,8 @@ static func strike(p: Player, reach: float, power: float, with_blocks := false) 
 	var wid: String = w.id if w else ""
 	var t := find_target(p, reach, with_blocks)
 	if t.has("block") or t.has("furniture"):
-		hit_built(world, t, power, p)
+		# un bloc ou un meuble posé ne se casse plus d'un coup d'arme : il faut maintenir l'attaque dessus
+		# (voir mine_target / Player.mine_step), comme dans Minecraft ; en combat, on ne démolit rien par erreur
 		return true
 	if t.has("crop"):
 		harvest_crop(p, t.crop)
@@ -227,6 +228,44 @@ static func _built_target(p: Player, world: WorldGenerator) -> Dictionary:
 	return {}
 
 
+## Bloc ou meuble posé que le héros est en train de viser pour le casser (à la souris : sous le viseur ;
+## sinon : juste devant lui), ou {}.
+static func mine_target(p: Player) -> Dictionary:
+	var world := p.get_tree().get_first_node_in_group("world") as WorldGenerator
+	if world == null:
+		return {}
+	var underground := p.global_position.y < WorldGenerator.UNDERGROUND
+	if underground and _cave(p) == null:
+		return {}
+	var t: Dictionary = p.aim_target() if p.aim_active() and not underground else _built_target(p, world)
+	return t if t.has("block") or t.has("furniture") else {}
+
+
+## Solidité d'un bloc ou d'un meuble posé (en « coups »).
+static func built_hp(it: ItemData) -> float:
+	if it == null:
+		return 1.0
+	if it.is_block():
+		return 1.0 if it.block_transparent else (1.5 if it.block_slab else 2.0 + it.block_tier * 1.5)
+	return 2.0
+
+
+## Temps (secondes) qu'il faut maintenir l'attaque pour casser ce bloc ou ce meuble : 0,45 s par « coup »,
+## divisé par l'outil (hache pour le bois et les meubles, pioche pour la pierre).
+const MINE_SECONDS_PER_HP := 0.45
+
+
+static func mine_time(p: Player, world: WorldGenerator, t: Dictionary) -> float:
+	var grid := world.dungeon_grid if _cave(p) else world.build
+	var it: ItemData = null
+	if t.has("block"):
+		it = grid.block_at(t.block)
+	elif grid.furniture.has(t.furniture):
+		it = grid.furniture[t.furniture].item
+	var stone := it != null and it.is_block() and it.block_tier >= 1
+	return maxf(0.2, built_hp(it) * MINE_SECONDS_PER_HP / tool_mult(p, "pioche" if stone else "hache"))
+
+
 ## Frappe un bloc ou un meuble posé : il se casse après quelques coups et revient à ramasser.
 static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Player) -> void:
 	var cave := _cave(p)
@@ -247,9 +286,7 @@ static func hit_built(world: WorldGenerator, t: Dictionary, power: float, p: Pla
 	if it == null:
 		return
 	var stone := it.is_block() and it.block_tier >= 1
-	var hp := 2.0
-	if it.is_block():
-		hp = 1.0 if it.block_transparent else (1.5 if it.block_slab else 2.0 + it.block_tier * 1.5)
+	var hp := built_hp(it)
 	var dmg := power * tool_mult(p, "pioche" if stone else "hache")
 	var dkey := ("f%s" if t.has("furniture") else "b%s") % key
 	var left: float = float(world.block_damage.get(dkey, hp)) - dmg
