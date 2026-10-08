@@ -90,7 +90,8 @@ func _process(_d) -> bool:
 	if f == 365:
 		pack[0].receive_hit(1, p, 0.0)
 		check("la meute est prévenue (%d / 3)" % pack.slice(1).filter(func(e): return e._target == p).size(), pack.slice(1).all(func(e): return e._target == p))
-		p.global_position = Vector3(c.x - 10 + 0.5, H, c.y + 8.5)
+		# le héros se tient à 5 m de la meute : elle vient l'encercler
+		p.global_position = Vector3(c.x + 2.5, H, c.y + 5.5)
 	if f == 560:
 		pack = pack.filter(func(e): return is_instance_valid(e))
 		check("la meute est toujours là (%d)" % pack.size(), pack.size() == 4)
@@ -116,10 +117,12 @@ func _process(_d) -> bool:
 		# une bête très blessée prend la fuite
 		var hurt = pack[0]
 		hurt._fled = false
+		hurt._target = p
 		hurt.health.current = int(hurt.health.max_health * 0.1)
 		var tries := 0
 		while not hurt._fled and tries < 20:
 			hurt._fled = false
+			hurt._target = p
 			hurt._fight(0.05, 3.0)
 			tries += 1
 		check("une bête très blessée décide de fuir ou de tenir (une seule fois)", hurt._fled)
