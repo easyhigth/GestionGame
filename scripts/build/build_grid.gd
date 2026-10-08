@@ -353,9 +353,11 @@ func can_place_furniture(col: Vector2i, base: float, item: ItemData = null, rot:
 		var c: Vector2i = cells[i]
 		if not _cell_free_for_furniture(c, base):
 			return false
-		# le pied d'un grand meuble repose sur un sol à la même hauteur (ni dans un mur de terre, ni dans le vide)
-		if i > 0 and world and absf(world.support_height(Vector3(c.x + 0.5, 0, c.y + 0.5), base + 0.6) - base) > 0.3:
-			return false
+		# le pied d'un grand meuble ne flotte pas au-dessus d'un trou, ni ne rentre dans une marche de plus d'un demi-cube
+		if i > 0 and world:
+			var under := world.support_height(Vector3(c.x + 0.5, 0, c.y + 0.5), base + 0.6)
+			if under < base - 0.3 or world.terrain_height(c) > base + 0.55:
+				return false
 	return true
 
 
