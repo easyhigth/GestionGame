@@ -387,6 +387,13 @@ func can_be_targeted() -> bool:
 
 # ---------------------------------------------------------------- colère (le héros l'a frappé)
 
+## Part de vie sous laquelle un habitant armé se replie un moment.
+const RETREAT_BELOW := 0.3
+var _retreat_left := 0.0
+var _retreat_cd := 0.0
+var _regen_acc := 0.0
+
+
 ## Un habitant frappé par le héros se fâche : il passe dans le camp adverse et se bat contre lui avec ses
 ## armes et ses compétences de classe (à mains nues s'il n'a pas d'arme). Il se calme au bout de ANGER_TIME s
 ## sans être frappé, quand le héros s'éloigne ou tombe, ou après avoir été mis K.O. (il ne meurt jamais).
@@ -1301,6 +1308,31 @@ func _fight_or_flee(delta: float) -> void:
 	var dist := to.length()
 	var speed := walk_speed * 2.2 * (race.speed_multiplier if race else 1.0) * equipment.speed_multiplier()
 	var w := weapon()
+	# très blessé : il se replie vers sa maison quelques secondes (le temps qu'un soigneur l'aide ou de
+	# reprendre son souffle), puis revient se battre ; jamais en pleine colère contre le héros
+	if _retreat_left <= 0.0 and health.ratio() < RETREAT_BELOW and angry_left <= 0.0 and _retreat_cd <= 0.0 and w != null:
+		_retreat_left = randf_range(3.0, 4.5)
+		_retreat_cd = 15.0
+		_show_bubble("À l'aide !", Color("ffd0a0"), 2.0)
+	_retreat_cd -= delta
+	if _retreat_left > 0.0:
+		_retreat_left -= delta
+		var back := home - global_position
+		back.y = 0.0
+		var away := global_position - _threat.global_position
+		away.y = 0.0
+		var dir := (back.normalized() * 0.6 + away.normalized()).normalized() if back.length() > 1.0 else away.normalized()
+		velocity = dir * speed
+		facing = dir if dir != Vector3.ZERO else facing
+		# il reprend son souffle : 4 % de sa vie par seconde
+		_regen_acc += health.max_health * 0.04 * delta
+		if _regen_acc >= 1.0:
+			health.heal(int(_regen_acc))
+			_regen_acc -= int(_regen_acc)
+		_move_on_ground(delta)
+		visual.animate(delta, velocity, facing)
+		_update_label()
+		return
 	if w == null and angry_left <= 0.0:
 		# pas d'arme : on court se mettre à l'abri derrière sa maison
 		var away := (home - _threat.global_position)
@@ -1317,9 +1349,16 @@ func _fight_or_flee(delta: float) -> void:
 		if dist > 0.01:
 			facing = to / dist
 		var reach := attack_reach()
-		var wanted := minf(reach * 0.85, 6.0) if w and w.projectile else reach * 0.8
-		if dist > wanted:
-			velocity = facing * speed
+		var ranged: bool = w != null and w.projectile
+		var wanted := minf(reach * 0.85, 6.0) if ranged else reach * 0.8
+		var sep := separation(delta, "allies") * speed * 0.5
+		if ranged and dist < 2.5:
+			# archer ou mage trop près : il recule pour garder ses distances
+			velocity = -facing * speed * 0.8 + sep
+		elif dist > wanted:
+			velocity = chase_dir(_threat.global_position, delta) * speed + sep
+			if not _chase_path.is_empty() and velocity.length() > 0.1:
+				facing = Vector3(velocity.x, 0, velocity.z).normalized()
 		else:
 			velocity = Vector3.ZERO
 			if can_attack():

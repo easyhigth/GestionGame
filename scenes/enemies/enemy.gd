@@ -328,25 +328,102 @@ func _fight(delta: float, speed: float) -> void:
 		facing = to / dist
 	var reach := attack_reach() + _target.body_radius * 0.5
 	var shooter := can_shoot()
+	# très blessé, un monstre agile ou une bête prend la fuite un moment (une seule fois), puis revient
+	if not _fled and not (self is Boss) and health.ratio() < FLEE_BELOW and (temperament() == "agile" or visual.is_quadruped()):
+		_fled = true
+		if randf() < 0.65:
+			frighten(randf_range(2.5, 4.0))
+			_alert_pack(_target)
+			return
+	var sep := separation(delta, "enemy_units") * speed * 0.6
 	if _attack_cooldown <= 0.0 and (_has_token or Combat.take_token(_target, self)):
 		_has_token = true
 		if dist <= reach:
 			_start_attack()
 		elif shooter and dist >= MIN_SHOT and dist <= data.ranged_range:
 			_start_attack(true)
+		elif shooter and dist < MIN_SHOT:
+			# un tireur trop près recule pour pouvoir tirer
+			velocity = (-facing * speed * 0.8 + sep)
 		else:
-			velocity = facing * speed
+			velocity = chase_dir(_target.global_position, delta) * speed + sep
+			# il contourne un obstacle : il regarde où il va
+			if not _chase_path.is_empty() and velocity.length() > 0.1:
+				facing = Vector3(velocity.x, 0, velocity.z).normalized()
 		return
-	# pas son tour : il tourne autour de sa cible en gardant ses distances
-	_orbit_timer -= delta
-	if _orbit_timer <= 0.0:
-		_orbit_timer = randf_range(1.5, 3.0)
-		_orbit_dir = -_orbit_dir if randf() < 0.4 else _orbit_dir
-	# les tireurs gardent leurs distances
+	# pas son tour : il prend sa place autour de la cible, réparti avec les autres (ils encerclent au lieu
+	# de s'agglutiner) ; les tireurs gardent leurs distances
 	var ring := clampf(data.ranged_range * 0.6, reach + 1.6, 7.0) if shooter else reach + 1.6
-	var side := facing.cross(Vector3.UP) * _orbit_dir
-	var radial := facing * clampf(dist - ring, -1.0, 1.0)
-	velocity = (side * 0.55 + radial).normalized() * speed * 0.45 if (side * 0.55 + radial).length() > 0.05 else Vector3.ZERO
+	var slot := _target.global_position + _orbit_slot() * ring
+	var to_slot := slot - global_position
+	to_slot.y = 0.0
+	if to_slot.length() > 0.4:
+		velocity = chase_dir(slot, delta) * speed * (0.75 if to_slot.length() > 2.5 else 0.45) + sep
+	else:
+		velocity = sep
+
+
+## Part de vie sous laquelle un monstre agile ou une bête prend la fuite.
+const FLEE_BELOW := 0.25
+## Rayon dans lequel les monstres d'un même camp se préviennent (meute).
+const PACK_RADIUS := 11.0
+var _fled := false
+var _slot_t := 0.0
+var _slot := Vector3.FORWARD
+
+
+## Direction de la place de ce monstre autour de sa cible : les monstres qui attendent leur tour se
+## répartissent en cercle (chacun son angle), en partant du côté où ils se trouvent.
+func _orbit_slot() -> Vector3:
+	if Time.get_ticks_msec() / 1000.0 < _slot_t:
+		return _slot
+	_slot_t = Time.get_ticks_msec() / 1000.0 + 0.6
+	var mates := []
+	for n in get_tree().get_nodes_in_group("enemy_units"):
+		if n.get("_target") == _target and n.is_alive():
+			mates.append(n)
+	mates.sort_custom(func(a, b): return a.get_instance_id() < b.get_instance_id())
+	var i := maxi(0, mates.find(self))
+	var base := atan2(global_position.x - _target.global_position.x, global_position.z - _target.global_position.z) if mates.size() <= 1 else \
+		atan2(home.x - _target.global_position.x, home.z - _target.global_position.z)
+	var a := base + TAU * float(i) / float(maxi(1, mates.size()))
+	_slot = Vector3(sin(a), 0, cos(a))
+	return _slot
+
+
+## Préviens les monstres du même camp (proches de chez lui) : ils viennent aider contre `t`.
+func _alert_pack(t: Combatant) -> void:
+	if t == null or tamed or has_meta("townsfolk"):
+		return
+	for n in get_tree().get_nodes_in_group("enemy_units"):
+		var e := n as Enemy
+		if e == null or e == self or e.tamed or not e.is_alive() or e._target != null or e.has_meta("townsfolk"):
+			continue
+		if e.home.distance_to(home) < PACK_RADIUS and e.global_position.distance_to(global_position) < PACK_RADIUS + 4.0:
+			e._target = t
+			e._returning = false
+
+
+## Le monstre voit-il `t` ? (pas à travers un mur de donjon, un mur bâti ou une falaise ; pour repérer
+## une cible, pas pour la garder une fois le combat engagé.)
+func _can_see(t: Node3D) -> bool:
+	if _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+	if _world == null:
+		return true
+	var a := global_position
+	var b := t.global_position
+	var steps := int(Vector2(b.x - a.x, b.z - a.z).length() / 0.5)
+	var under := a.y < WorldGenerator.UNDERGROUND
+	var grid: BuildGrid = _world.dungeon_grid if under else _world.build
+	for i in range(1, steps):
+		var p := a.lerp(b, float(i) / float(steps))
+		var c := _world.cell_at(p)
+		if grid and grid.body_blocked(c, p.y):
+			return false
+		if not under and _world.terrain_height(c) > maxf(a.y, b.y) + 1.6:
+			return false
+	return true
 
 
 ## Monstre qui tire de loin (harpie, fée, squelette...) : voir EnemyData.ranged_move.
@@ -409,12 +486,14 @@ func _choose_target() -> void:
 			_returning = true
 			_wander_to = home
 			health.heal(health.max_health)
+			_fled = false
 		return
 	if _returning:
 		return
 	var t := nearest_hostile(data.aggro_range if data else 9.0)
-	if t and t.global_position.distance_to(home) < range_home:
+	if t and t.global_position.distance_to(home) < range_home and _can_see(t):
 		_target = t
+		_alert_pack(t)
 
 
 # ---------------------------------------------------------------- familier et Pacte
@@ -522,6 +601,7 @@ func _on_hurt(_amount: int, source: Node) -> void:
 		_release_token()
 		_target = src
 		_returning = false
+		_alert_pack(src)
 
 
 func _on_died() -> void:

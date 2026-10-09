@@ -713,6 +713,18 @@ La carte montre maintenant les **capitales** (avec leur enceinte et leur populat
 - **Le lit fait 1 × 2 cubes** : posé à la main, il s'allonge devant toi (l'oreiller de ton côté) ; il lui faut deux cases libres au même niveau. Dans les plans prêts, il s'allonge vers la porte. Les habitants s'y couchent dans sa longueur.
 - **Le sol monte par demi-cubes** (marches de 50 cm, franchissables à pied) : il s'aligne sur les blocs et les dalles, ce qui rend la construction plus simple.
 
+## Intelligence des monstres et des habitants
+- **Contournement** : un monstre ou un habitant bloqué par un mur, un bloc ou une falaise calcule un chemin et le contourne au lieu de rester coincé.
+- **Meute** : un monstre qui te repère ou que tu frappes prévient ceux de son camp (11 m), qui viennent l'aider.
+- **Encerclement** : les monstres qui attendent leur tour (2 attaquent à la fois) se répartissent tout autour de toi et s'écartent les uns des autres au lieu de s'empiler.
+- **Tireurs** : un archer, un mage ou une harpie trop près recule pour pouvoir tirer (monstres comme habitants).
+- **Fuite** : une bête ou un monstre agile très blessé (moins de 25 % de vie) prend parfois la fuite quelques secondes, puis revient. Les boss ne fuient jamais.
+- **Ligne de vue** : un monstre ne te repère pas à travers un mur de donjon, un mur bâti ou une falaise.
+- **Habitants** : très blessé, un habitant armé crie « À l'aide ! » et se replie vers sa maison quelques secondes en reprenant son souffle, puis revient se battre.
+- **PNJ** : on ne les traverse plus ; frappés, habitants et citadins se fâchent et ripostent avec leurs armes et leurs compétences, puis se calment (voir plus haut).
+- **Mini-carte sous terre** : dans les donjons et les grottes, la mini-carte montre les salles déjà parcourues, la sortie, les coffres, les leviers, le boss et les monstres proches.
+- Test : `tests/run_tests.sh ai npc minimap_under`.
+
 ## Musique, création du héros et objets au sol
 - **Musique plus douce** : plus d'ondes carrées ni de sons « 8 bits » ; piano doux, nappes, flûte et cuivres feutrés, avec de la réverbération (`tools/audio_generator.py`).
 - **Création du héros** : les panneaux occupent toute la hauteur, collés aux bords ; le héros est toujours au centre de l'espace libre, cadré selon sa taille (d'une fée à un ogre).

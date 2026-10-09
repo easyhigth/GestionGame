@@ -696,6 +696,71 @@ func _can_swim() -> bool:
 	return false
 
 
+# ---------------------------------------------------------------- IA : poursuite et écartement
+
+## Poursuite avec contournement : tout droit tant qu'on avance ; bloqué par un mur, une falaise ou un bloc
+## (on n'avance plus depuis une seconde), on calcule un chemin (A*) et on le suit, recalculé si la cible a
+## beaucoup bougé. Renvoie la direction (horizontale, normalisée) à suivre vers `goal`.
+var _chase_path: Array[Vector3] = []
+var _chase_goal := Vector3.INF
+var _chase_check := 0.0
+var _chase_from := Vector3.INF
+var _chase_stuck := 0.0
+
+
+func chase_dir(goal: Vector3, delta: float) -> Vector3:
+	if _world == null:
+		_world = get_tree().get_first_node_in_group("world") as WorldGenerator
+	var flat := Vector3(goal.x - global_position.x, 0, goal.z - global_position.z)
+	if not _chase_path.is_empty():
+		if Vector2(goal.x - _chase_goal.x, goal.z - _chase_goal.z).length() > 3.0:
+			_chase_path.clear()
+		else:
+			while not _chase_path.is_empty() and Vector2(_chase_path[0].x - global_position.x, _chase_path[0].z - global_position.z).length() < 0.6:
+				_chase_path.pop_front()
+			if not _chase_path.is_empty():
+				var wp := _chase_path[0] - global_position
+				wp.y = 0.0
+				return wp.normalized() if wp.length() > 0.01 else Vector3.ZERO
+	_chase_check -= delta
+	if _chase_check <= 0.0:
+		_chase_check = 0.5
+		if _chase_from != Vector3.INF and global_position.distance_to(_chase_from) < 0.3 and flat.length() > 1.6:
+			_chase_stuck += 0.5
+		else:
+			_chase_stuck = 0.0
+		_chase_from = global_position
+		if _chase_stuck >= 1.0 and _world:
+			_chase_stuck = 0.0
+			_chase_path = _world.find_path(global_position, goal, 700)
+			_chase_goal = goal
+	return flat.normalized() if flat.length() > 0.01 else Vector3.ZERO
+
+
+## Écartement : les combattants d'un même camp ne s'empilent pas sur la même case (recalculé 4 fois par
+## seconde). Renvoie une petite poussée horizontale à ajouter à la vitesse.
+var _sep := Vector3.ZERO
+var _sep_t := randf() * 0.25
+
+
+func separation(delta: float, group: String, radius := 1.2) -> Vector3:
+	_sep_t -= delta
+	if _sep_t > 0.0:
+		return _sep
+	_sep_t = 0.25
+	_sep = Vector3.ZERO
+	for n in get_tree().get_nodes_in_group(group):
+		var o := n as Node3D
+		if o == null or o == self:
+			continue
+		var off := global_position - o.global_position
+		off.y = 0.0
+		var d := off.length()
+		if d < radius and d > 0.001:
+			_sep += off / d * (radius - d) / radius
+	return _sep
+
+
 ## Le combattant ennemi vivant le plus proche dans un rayon (ou null).
 func nearest_hostile(radius: float, around: Vector3 = Vector3.INF) -> Combatant:
 	var center := global_position if around == Vector3.INF else around
